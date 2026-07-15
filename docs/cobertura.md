@@ -3,7 +3,7 @@
 Medido em 15 de julho de 2026, contra o catálogo de desenvolvimento (262.569 obras,
 298.839 edições).
 
-Reproduzir: `pnpm cobertura` (só lê o banco; grava a medição em `docs/cobertura.json`).
+Reproduzir: `pnpm cobertura` (só lê o banco; grava a medição num JSON ao lado, `cobertura.json`).
 
 ---
 

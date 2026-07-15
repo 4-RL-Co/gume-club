@@ -88,6 +88,15 @@ describe("ZELADOR: DEZ correções, e só as que SOBREVIVERAM", () => {
      * Testar o resultado, e não a exceção: a exceção é um detalhe de como o insert foi
      * escrito, e a garantia é que só existe um.
      */
+    // A premissa é "já existe UM idealizador (o dono da instância)". O seed cria isso; o
+    // CI não roda o seed, então o teste cria a condição — senão a primeira concessão numa
+    // base vazia seria legítima, e não haveria segunda a bloquear. `on conflict do nothing`
+    // torna isto inócuo onde o idealizador já existe (a máquina do dono).
+    await db.execute(sql`
+      insert into badge_grants (user_id, badge, granted_by, reason)
+      values (${biblio.id}::uuid, 'idealizador', ${biblio.id}::uuid, 'dono da instância')
+      on conflict do nothing`);
+
     await conceder(biblio, leitor.id, "idealizador", "quero ser eu também");
 
     expect(

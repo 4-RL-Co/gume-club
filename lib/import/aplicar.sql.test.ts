@@ -99,8 +99,11 @@ describe("o import grava a estante inteira", () => {
     expect(await notas()).toBe(3);
 
     // A resenha E a nota privada, que são duas coisas diferentes.
+    // A fixture tem mais de uma resenha, então `limit 1` sem ordem devolvia qualquer uma:
+    // a nota privada "reler em 2030" é única do Dom Casmurro e prende a linha certa.
     const [resenha] = await db.execute<{ body: string; private_note: string | null }>(sql`
-      select body, private_note from reviews where user_id = ${actor.id}::uuid limit 1`);
+      select body, private_note from reviews
+       where user_id = ${actor.id}::uuid and private_note = 'reler em 2030' limit 1`);
     expect(resenha?.body).toContain("continua");
     expect(resenha?.private_note).toBe("reler em 2030");
 
