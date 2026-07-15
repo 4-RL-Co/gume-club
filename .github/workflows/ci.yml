@@ -1,0 +1,49 @@
+name: ci
+
+on:
+  push: { branches: [main] }
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    # The visibility rule is enforced in SQL, so the test that proves a private
+    # row does not leak has to ask a real Postgres. A JavaScript mirror of the
+    # rule would only ever prove the mirror. See SECURITY.md.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gume
+          POSTGRES_PASSWORD: gume
+          POSTGRES_DB: gume
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U gume"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: postgres://gume:gume@localhost:5432/gume
+      AUTH_SECRET: ci-only-not-a-real-secret-000000000000
+
+    steps:
+      - uses: actions/checkout@v7
+      # Sem "version" aqui: o pnpm/action-setup lê o campo "packageManager" do
+      # package.json, e recusa a rodar quando as DUAS fontes existem ("multiple
+      # versions of pnpm specified"). Era isso que quebrava o CI em todo push,
+      # antes mesmo de instalar: o alarme estava vermelho, e vermelho o tempo
+      # todo é o mesmo que desligado.
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with: { node-version: 22, cache: pnpm }
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      # structure over vigilance. this is the gate that catches what review can't.
+      - run: pnpm audit:security

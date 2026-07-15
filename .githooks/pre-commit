@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+#
+# Bloqueia arquivo grande antes que ele vire um blob.
+#
+# Isto existe porque já aconteceu: 2,7 GB de dumps do Kaggle foram parar no
+# object store do git sem nunca terem sido commitados (um `git add` bastou), o
+# .git foi para 4 GB, e um `git gc` morreu no meio com o disco cheio, deixando
+# 3,45 GB de tmp_pack órfão para trás.
+#
+# O .gitignore cobre os padrões conhecidos, mas ele não te protege de um
+# `git add -f`, nem de uma extensão que ninguém previu. Este hook é a rede.
+#
+# Instalado via core.hooksPath = .githooks, então ele é versionado e vale para
+# qualquer clone. Para pular um caso legítimo: git commit --no-verify
+
+set -euo pipefail
+
+LIMITE_MB=10
+LIMITE=$((LIMITE_MB * 1024 * 1024))
+falhou=0
+
+# Só o que está de fato staged, e só o que continua existindo (ignora deleção).
+while IFS= read -r -d '' arquivo; do
+  # O tamanho do BLOB staged, não o do disco: é o blob que entra no repositório.
+  hash=$(git ls-files -s -- "$arquivo" | awk '{print $2}')
+  [ -n "$hash" ] || continue
+  bytes=$(git cat-file -s "$hash" 2>/dev/null || echo 0)
+
+  if [ "$bytes" -gt "$LIMITE" ]; then
+    mb=$(awk -v b="$bytes" 'BEGIN {printf "%.1f", b/1048576}')
+    echo "  ✗ ${arquivo} (${mb} MB)"
+    falhou=1
+  fi
+done < <(git diff --cached --name-only --diff-filter=ACM -z)
+
+if [ "$falhou" -eq 1 ]; then
+  cat <<EOF
+
+✗ commit bloqueado: arquivo acima de ${LIMITE_MB} MB.
+
+Dado bruto não mora no repo. O dump da Open Library fica em
+OPENLIBRARY_DUMP_DIR, fora daqui (ver scripts/import-openlibrary.mjs).
+
+Se você tirar do stage agora, o blob ainda fica solto no .git até um gc.
+Para limpar de vez:
+
+    git reset HEAD <arquivo>
+    git reflog expire --expire-unreachable=now --all && git gc --prune=now
+
+Se este arquivo é legítimo mesmo assim: git commit --no-verify
+
+EOF
+  exit 1
+fi
+
+exit 0

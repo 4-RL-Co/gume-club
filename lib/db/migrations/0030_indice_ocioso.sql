@@ -1,0 +1,18 @@
+-- 47 MB DE ÍNDICE QUE FOI USADO QUATRO VEZES NA VIDA.
+--
+-- `works_title_idx` é um btree comum sobre `works.title`. Ele foi criado antes de a
+-- busca existir, e a busca nunca precisou dele: quem procura livro digita errado e
+-- sem acento, e um btree não perdoa nada. Quem responde é o `works_title_trgm`.
+--
+-- Medido em produção (pg_stat_user_indexes), com o catálogo de 373 mil obras:
+--
+--   works_title_idx     47 MB    4 usos
+--   works_title_trgm    40 MB    2.953 usos
+--
+-- Um índice que ninguém lê não é grátis: ele custa disco (e disco é a conta da Neon),
+-- e custa em toda ESCRITA, porque cada insert e cada update precisa mantê-lo.
+--
+-- Se um dia alguém precisar de um `where title = '...'` exato, o trigrama também
+-- responde. E se não responder bem, o índice volta numa migration nova, que é como
+-- este repo faz tudo.
+DROP INDEX IF EXISTS "works_title_idx";

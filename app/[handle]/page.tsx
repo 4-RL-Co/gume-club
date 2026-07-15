@@ -1,0 +1,296 @@
+import { Pencil } from "lucide-react";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { getViewer } from "@/lib/viewer";
+import { getProfile, isFollowing } from "@/lib/social";
+import { getShelf, getShelfCounts } from "@/lib/shelf";
+import { getFriendRatings } from "@/lib/ratings";
+import { Share } from "@/components/share";
+import { Report } from "@/components/report";
+import { CoverWall } from "@/components/cover-wall";
+import { Moldura, Barra } from "@/components/moldura";
+import { getEscadas } from "@/lib/escada";
+import { Empty } from "@/components/empty";
+import { FollowButton } from "@/components/follow-button";
+import { chegadaDe, getBadges } from "@/lib/badges";
+import { BadgesExplicadas } from "@/components/badges";
+import { getCollections } from "@/lib/curation";
+import { Cover } from "@/components/cover";
+import { Carrossel } from "@/components/carrossel";
+import type { ShelfBook } from "@/lib/shelf-view";
+import Link from "next/link";
+
+export const dynamic = "force-dynamic";
+
+const EYEBROW = "text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]";
+
+/** Uma tira de capas de um status só (lendo, esperando, larguei). Quebra em linhas: são
+    listas, não vitrines, e o leitor quer ver todas de uma vez sem rolar de lado. */
+function Tira({ titulo, books }: { titulo: string; books: ShelfBook[] }) {
+  return (
+    <section className="surface mt-5 p-7">
+      <h2 className={EYEBROW}>{titulo}</h2>
+      <ul className="mt-5 flex flex-wrap gap-5">
+        {books.map((b) => (
+          <li key={b.workId} className="w-20">
+            <Link href={`/livro/${b.slug}`} className="cover-lift block">
+              <Cover title={b.title} author={b.author} src={b.coverUrl} />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * The public profile: /@handle.
+ *
+ * Indexable and worth linking to, which is the point: a shelf nobody can see is a
+ * spreadsheet. Every row still passes through visibleTo() in SQL, so a stranger
+ * gets the public rows, a follower also gets the `followers` rows, and nobody
+ * gets the private ones. The page never decides that; the query does.
+ *
+ * This is the catch-all dynamic route, so it sits below every real page: /buscar,
+ * /ano and friends are static segments and win. Anything that does not start with
+ * an @ is simply not a profile.
+ */
+function parse(raw: string): string | null {
+  const handle = decodeURIComponent(raw);
+  return handle.startsWith("@") ? handle.slice(1) : null;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ handle: string }>;
+}): Promise<Metadata> {
+  const handle = parse((await params).handle);
+  if (!handle) return {};
+  const profile = await getProfile(handle);
+  if (!profile) return {};
+
+  const name = profile.displayName ?? profile.handle;
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  SEM E-MAIL VERIFICADO, O PERFIL É `noindex`.
+   *
+   *  Cadastro aberto + /@handle indexável = FAZENDA DE SEO. Não é um risco
+   *  teórico: é o que SEMPRE acontece, em todo produto que abriu o cadastro
+   *  e deixou o perfil indexável. Mil contas, mil bios com link, e o Google
+   *  indexando todas.
+   *
+   *  A verificação NÃO bloqueia nada do produto: quem não verificou usa o
+   *  app inteiro, com a estante inteira. O que ele não tem é a página no
+   *  Google — e uma página que o Google não vê não vale nada para um
+   *  spammer.
+   *
+   *  O portão está na SAÍDA, e não na entrada: trancar a porta de entrada
+   *  machuca a pessoa de verdade (que não achou o e-mail, que caiu no spam)
+   *  e não machuca o script, que verifica e segue.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  return {
+    title: `${name} · Gume`,
+    description: `A estante de ${name}.`,
+    robots: profile.emailVerified
+      ? undefined
+      : { index: false, follow: false, nocache: true },
+  };
+}
+
+export default async function Profile({ params }: { params: Promise<{ handle: string }> }) {
+  const handle = parse((await params).handle);
+  if (!handle) notFound();
+
+  const profile = await getProfile(handle);
+  if (!profile) notFound();
+
+  const viewer = await getViewer();
+  const mine = viewer?.id === profile.id;
+
+  const [books, lendo, counts, following, badges, shelves] = await Promise.all([
+    getShelf(viewer, profile.id, { filter: "tudo", sort: "adicionado" }),
+    getShelf(viewer, profile.id, { filter: "lendo" }),
+    getShelfCounts(viewer, profile.id),
+    viewer && !mine ? isFollowing(viewer.id, profile.id) : Promise.resolve(false),
+    // Insígnias, e nunca um número: o número vive em /contribuidores e não sai de lá.
+    getBadges(profile.id),
+    getCollections(viewer, profile.id),
+  ]);
+
+  // AS DUAS ESCADAS. Uma de literatura, uma de quadrinhos, porque ler Bleach são 74
+  // livros e ler Guerra e Paz é 1. Ver lib/honras.ts.
+  const escadas = await getEscadas(profile.id);
+
+  const name = profile.displayName ?? profile.handle;
+  const primeiroNome = name.split(" ")[0];
+  const opinions = await getFriendRatings(viewer, books.map((b) => b.workId));
+
+  // ═══ O PERFIL É AGRUPADO POR STATUS, E NÃO UMA PILHA ÚNICA ═══
+  //
+  // "Ter e ler são coisas diferentes, e aqui são contadas separadas" (/sobre). A parede
+  // antiga misturava tudo — lido, esperando, largado — numa grade só. Agora cada status
+  // tem seu lugar: os lidos são a parede principal (com o veredito de cada um), e o resto
+  // são tiras. Tudo derivado de `books` (filtro "tudo"), sem query nova.
+  const adorou = books.filter((b) => b.rating === 5);
+  const esperando = books.filter((b) => b.status === "want_to_read");
+  const lidos = books.filter((b) => b.status === "read");
+  const largados = books.filter((b) => b.status === "did_not_finish");
+
+  return (
+    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+      <div className="surface mt-16 flex items-start gap-6 p-7 sm:mt-24 sm:gap-8 sm:p-8">
+        {/* A person is round. A book is a rectangle. The shape alone tells you
+            which is which, and it is why a page carrying both can be skimmed. */}
+        {/* A MOLDURA. O elo da pessoa, ou — se ela apoia e escolheu isso — a verde-água
+            de apoiador. Um anel, e não um brasão: ver components/moldura.tsx. */}
+        <span className="hidden sm:block">
+          <Moldura
+            coroa={escadas.coroa}
+            src={profile.image}
+            name={profile.displayName}
+            handle={profile.handle}
+            size={124}
+          />
+        </span>
+        <span className="sm:hidden">
+          <Moldura
+            coroa={escadas.coroa}
+            src={profile.image}
+            name={profile.displayName}
+            handle={profile.handle}
+            size={80}
+          />
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <h1 className="voice text-[40px] leading-[1.02] tracking-[-0.015em] sm:text-[56px]">
+            {name}
+          </h1>
+          <p className="tabular mt-3 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+            {[`@${profile.handle}`, `${counts.tudo ?? 0} livros`, (counts.lidos ?? 0) > 0 && `${counts.lidos} lidos`]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+
+          {profile.bio && (
+            <p className="voice mt-5 max-w-lg text-[17px] leading-relaxed text-[var(--color-ink-soft)]">
+              {profile.bio}
+            </p>
+          )}
+
+          {/* As insígnias reconhecem DOAÇÃO À COMUNIDADE, nunca leitura. São um sim ou
+              um não: você tem, ou não tem. Nenhuma delas diz quanto a pessoa leu,
+              avaliou ou seguiu, e nenhuma carrega um número aqui — o número de
+              contribuição vive em /contribuidores, e não viaja. Ver lib/badges.ts. */}
+          {badges.length > 0 && (
+            <div className="mt-6">
+              <BadgesExplicadas badges={badges} chegada={chegadaDe(profile.id)} />
+            </div>
+          )}
+
+          {/* ═══ AS DUAS ESCADAS, LADO A LADO ═══
+
+              Uma por forma, e só aparece a escada em que a pessoa leu alguma coisa: quem
+              nunca leu um mangá não precisa ver uma barra vazia todo dia dizendo que está
+              devendo.
+
+              Lado a lado, e não uma embaixo da outra: elas são duas metades da mesma
+              pessoa, e empilhá-las faria a de cima parecer a principal.
+
+              Cada uma diz de qual escada é (literatura / quadrinhos) E usa o vocabulário
+              dela (Ouro é livro; Ronin é quadrinho). Duas travas para a mesma confusão,
+              porque ela é a mais fácil de fazer. */}
+          <div className="mt-7 grid gap-x-8 gap-y-5 sm:max-w-xl sm:grid-cols-2">
+            {escadas.livro.quantas > 0 && <Barra p={escadas.livro} />}
+            {escadas.quadrinho.quantas > 0 && <Barra p={escadas.quadrinho} />}
+          </div>
+
+          {/* Seguir e compartilhar moram juntos, e é de propósito: as duas são
+              a mesma pergunta ("quero levar esta pessoa comigo"), e o app cresce
+              porque um amigo mostra a estante para o outro. */}
+          <div className="mt-6 flex flex-wrap items-center gap-5">
+            {viewer && !mine && (
+              <FollowButton userId={profile.id} following={following} handle={profile.handle} />
+            )}
+
+            {/* VER, e só então editar.
+                Clicar no próprio nome levava DIRETO para o formulário, e ninguém
+                quer editar o perfil: as pessoas querem VER o perfil. Ver o que os
+                outros veem é o único jeito de saber se está bom, e o formulário
+                aparecia antes de a pessoa ter olhado para o que ia mudar. */}
+            {mine && (
+              <Link
+                href="/perfil"
+                className="flex items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-rule)] px-4 py-2 text-[13px] text-[var(--color-ink-soft)] transition-colors hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]"
+              >
+                <Pencil size={14} strokeWidth={1.5} />
+                editar perfil
+              </Link>
+            )}
+
+            <Share titulo={`A estante de ${profile.displayName ?? profile.handle}`} />
+
+            {/* Discreto de propósito: um botão de denúncia grande é um convite para
+                denunciar por discordar. Só para quem está logado, porque denúncia
+                anônima é um formulário de spam com outro nome. */}
+            {viewer && !mine && <Report handle={profile.handle} />}
+          </div>
+        </div>
+      </div>
+
+      {/* No começo do perfil, logo abaixo do nome: a vitrine dos "adorei". */}
+      {adorou.length > 0 && (
+        <Carrossel titulo={mine ? "o que eu adorei" : `o que ${primeiroNome} adorou`} books={adorou} />
+      )}
+
+      {lendo.length > 0 && <Tira titulo="lendo agora" books={lendo} />}
+
+      {esperando.length > 0 && <Tira titulo="esperando pra ler" books={esperando} />}
+
+      {shelves.length > 0 && (
+        <section className="surface mt-5 p-7">
+          {/* "Estantes personalizadas", e não só "estantes": agora lidos, esperando e
+              lendo também são estantes na página, e estas aqui são as que a pessoa
+              inventou. O nome tem que separar as duas coisas. */}
+          <h2 className={EYEBROW}>
+            {mine ? "minhas estantes personalizadas" : `estantes que ${primeiroNome} montou`}
+          </h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {shelves.map((c) => (
+              <Link
+                key={c.id}
+                href={`/estante/${c.slug}`}
+                className="pill border border-[var(--color-rule)] px-3.5 py-1.5 text-[13px] text-[var(--color-ink-soft)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]"
+              >
+                {c.name}
+                <span className="tabular ml-1.5 text-[var(--color-ink-faint)]">{c.n}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* A parede principal: os LIDOS, cada um com o que a pessoa achou. É o coração do
+          perfil, e agora ele só tem livro que aconteceu — não mais uma pilha misturada. */}
+      {lidos.length > 0 && (
+        <div className="mt-10">
+          <h2 className={EYEBROW}>lidos</h2>
+          <CoverWall books={lidos} opinions={opinions} />
+        </div>
+      )}
+
+      {largados.length > 0 && (
+        <Tira titulo={mine ? "larguei no meio" : "largou no meio"} books={largados} />
+      )}
+
+      {books.length === 0 && (
+        <Empty>
+          {mine ? "Sua estante está vazia." : `${name} ainda não mostrou nada por aqui.`}
+        </Empty>
+      )}
+    </main>
+  );
+}

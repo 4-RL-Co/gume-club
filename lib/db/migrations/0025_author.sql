@@ -1,0 +1,23 @@
+-- O AUTOR TAMBÉM É UMA FICHA, e ela estava incompleta.
+--
+-- O catálogo é de todo mundo, e qualquer leitor conserta um dado errado de uma
+-- EDIÇÃO desde a fatia 1. O AUTOR ficou de fora, e não havia motivo: o nome vem do
+-- dump da Open Library escrito de qualquer jeito, a nacionalidade está quase toda
+-- vazia, e não havia como um leitor arrumar nada disso.
+--
+-- Duas colunas novas:
+--
+--   bio        quem é essa pessoa, em um parágrafo. Escrito por leitor, e não por
+--              uma IA: não há resumo gerado em lugar nenhum deste produto.
+--
+--   image_url  o retrato, POR REFERÊNCIA (a URL da fonte), e nunca uma cópia do
+--              arquivo. Mesma política da capa: a imagem mora na fonte, e a gente
+--              guarda o endereço. Ver ai/DECISIONS.md.
+--
+-- O RETRATO passa por bibliotecário, e a bio não. É a mesma regra da capa, pelo
+-- mesmo motivo: imagem é o único campo que aparece na tela de todo mundo, e é onde
+-- o vandalismo tem plateia. Texto qualquer leitor corrige e aplica na hora, porque
+-- toda correção grava uma revisão com o nome dele, e o nome fica.
+ALTER TABLE "authors" ADD COLUMN IF NOT EXISTS "bio" text;
+--> statement-breakpoint
+ALTER TABLE "authors" ADD COLUMN IF NOT EXISTS "image_url" text;

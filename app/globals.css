@@ -1,0 +1,543 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────
+   Gume tokens. See docs/design.md.
+   Glass is chrome. Paper is content. Ink is the cover art.
+   ───────────────────────────────────────────── */
+
+@theme {
+  /* surfaces */
+  --color-canvas: #f7f5f1;        /* the page. never white: paper-warm. */
+  --color-paper: #ffffff;         /* content cards. opaque, always. */
+  --color-ink: #1a1a18;           /* text. warm near-black, never cold gray. */
+  --color-ink-soft: #6b6862;
+  --color-ink-faint: #a8a49c;
+  --color-rule: #e3ded5;          /* 1px hairlines instead of shadows */
+
+  /* ── O ACCENT: A LÂMINA ───────────────────────────────────────────
+     #7DD3C0. Verde-água frio — aço, fio de faca, terminal.
+
+     Ele sai do NOME do produto, e não de uma tendência. Gume é fio de faca, e
+     um accent que se explica em quatro palavras é um accent que sobrevive.
+
+     E ele é o que MENOS BRIGA COM A CAPA, que é o que a regra antiga estava
+     protegendo o tempo todo: nenhum livro tem capa verde-água. O olho aprende,
+     em um dia, que essa cor quer dizer "o app está falando com você" — e todo o
+     resto da tela continua sendo do livro.
+
+     ONDE ELE VIVE: link, estado ligado, moldura de apoiador. E em mais nada.
+     Ver docs/design.md. */
+  --color-accent: #7dd3c0;
+
+  /* ── COLABORAR TEM COR PRÓPRIA ────────────────────────────────────
+     #E8709F. Rosa.
+
+     "O ícone do QUEM FAZ pode ser rosa, porque é a parte mais importante:
+     colaborar."
+
+     É a terceira cor do app, e ela existe por um motivo que a marca não cobre:
+     o accent (verde-água) quer dizer "o app está falando com você", e o perigo
+     (vermelho) quer dizer "isto não tem volta". Nenhum dos dois diz "isto aqui
+     é o coração do projeto".
+
+     Ela é 340° em matiz — a mesma família da insígnia de zelador, que é quem
+     cuida do catálogo. Não é coincidência: é a mesma ideia com duas caras, e o
+     olho aprende as duas de uma vez.
+
+     E ela vive em UM lugar: a porta de "Quem faz", e as telas de contribuição.
+     Uma terceira cor que aparece em qualquer lugar deixa de ser uma terceira
+     cor e vira barulho. */
+  --color-colaborar: #e8709f;
+
+  /* ── O QUE SE ESCREVE EM CIMA DO ACCENT ───────────────────────────
+     O accent é CLARO. `bg-accent text-white` era legível com o vermelho-tijolo
+     de antes, e é ilegível agora: branco sobre verde-água não se lê.
+
+     Isto não é detalhe de acabamento — é a diferença entre um botão que a
+     pessoa consegue ler e um que ela não consegue. */
+  --color-on-accent: #08110f;
+
+  /* ── O VERMELHO NÃO É O ACCENT ────────────────────────────────────
+     Eram a mesma cor, e nunca foram a mesma coisa. Funcionava por ACIDENTE: o
+     accent antigo era vermelho-tijolo, e vermelho passa por perigo.
+
+     Com o accent virando verde-água, o acidente vira bug — e um bug feio:
+
+         "apagar a estante? os livros ficam."   ← ficaria VERDE-MENTA
+         "tirar 12 livros da estante?"          ← idem
+
+     Verde diz "pode ir, está tudo bem". Essas duas frases dizem o contrário, e
+     um botão que se lê ao contrário do que faz é o pior tipo de botão.
+
+     Este vermelho quer dizer UMA coisa: **isto deu errado, ou isto não tem
+     volta.** É semântica, e semântica não é marca. */
+  --color-perigo: #c2503a;
+
+  /* ── THE SURFACE SYSTEM ───────────────────────────────────────────
+     Harmony comes from repetition, not from taste applied case by case.
+     Four levels, and NOTHING is allowed to float loose on level 0. If a block
+     of content is not inside a container, it is wrong. See docs/design.md. */
+  --surface-0: #f7f5f1;           /* the page. grain and vignette live here. */
+  --surface-1: #ffffff;           /* a card. one step up. */
+  --surface-2: #f3f1ec;           /* a card inside a card, or a control. */
+  --color-card: var(--surface-1); /* legacy alias */
+  --color-paper: var(--surface-1);
+
+  --radius-glass: 28px;
+  --radius-1: 16px;               /* card */
+  --radius-2: 12px;               /* card in card, control */
+  --radius-pill: 999px;           /* filter, tag, state */
+  --radius-card: var(--radius-1);
+  --radius-paper: var(--radius-1);
+  --radius-control: var(--radius-2);
+  --radius-cover: 6px;            /* a book has a hard corner. 16px stops being a book. */
+
+  /* type */
+  --font-voice: "Newsreader", ui-serif, Georgia, serif;
+  /* Só a marca. Quatro letras: GUME. Ver docs/design.md, "A marca". */
+  --font-mark: var(--font-fraunces), "Fraunces", ui-serif, Georgia, serif;
+  --font-chrome: "Geist", ui-sans-serif, system-ui, sans-serif;
+
+  --ease-spring: linear(0, 0.35, 0.78, 0.97, 1.02, 1);
+
+  /**
+   * O FIO. Branco-osso, nunca uma cor saturada.
+   *
+   * O Gume é o fio da lâmina, e o item ativo da navegação é o que está afiado:
+   * a marca virou o comportamento da interface, e não um logo no canto. Em rosa
+   * neon isso seria um CRM; em branco-osso, ele convive com a parede de capas
+   * sem brigar com nenhuma delas.
+   */
+  --fio: #f0ede6;
+}
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+    --glass-tint: 62%;
+    --glass-edge: 45%;
+    --glass-border: 22%;
+    /* The cover has to LIFT off the card. This shadow is what turns it from a
+       swatch of colour into an object sitting on a surface. */
+    --shadow-cover: 0 4px 14px rgb(0 0 0 / 0.18);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* Near-absolute black. #0E0E0D was a charcoal left over from when the
+         theme was "paper", and against it a card at #171716 was two tones away:
+         nothing stood out, and nothing read as an object. The distance between
+         level 0 and level 1 is what MAKES the card. */
+      --color-canvas: #060606;
+      --surface-0: #060606;
+      --surface-1: #111111;       /* the card */
+      --surface-2: #171717;       /* a card inside a card, or a control */
+      --color-rule: #2a2a2a;
+      --color-paper: var(--surface-1);
+      --color-card: var(--surface-1);
+      --color-ink: #ece9e3;
+      --color-ink-soft: #9c988f;
+      --color-ink-faint: #625f59;
+      --color-rule: #2a2926;
+
+      /* No escuro, a lâmina brilha um pouco mais: o mesmo verde-água sobre preto
+         quase absoluto lê mais apagado do que sobre papel. */
+      --color-accent: #7dd3c0;
+      --color-on-accent: #06100e;
+      /* E o vermelho clareia: #c2503a sobre preto vira uma mancha marrom. */
+      --color-perigo: #e8705a;
+      --color-colaborar: #f087b1;
+
+      --glass-tint: 48%;
+      --glass-edge: 14%;
+      --glass-border: 12%;
+      --shadow-cover: 0 6px 16px rgb(0 0 0 / 0.45);
+    }
+  }
+
+  html { background: var(--color-canvas); color: var(--color-ink); }
+  body { font-family: var(--font-chrome); -webkit-font-smoothing: antialiased; }
+
+  /**
+   * Paper grain and a gallery vignette. This is the difference between a CSS
+   * black and a PRINTED black: a flat #0E0E0D reads as a screen, and two percent
+   * of noise over it reads as ink sitting on stock. It is meant to be felt and
+   * not seen. If you can point at it, it is too strong.
+   *
+   * One fixed layer, pointer-events none, painted above everything: it never
+   * intercepts a click and it never repaints on scroll.
+   */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    /* 2.2% over a near-black canvas is a rumour, not a texture: Gabriel could not
+       see it, and a grain nobody can see is not doing its job. The noise is also
+       desaturated now (a colour matrix), because coloured speckle over warm black
+       reads as a broken screen, not as paper. */
+    opacity: 0.02;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* The vignette. Very light: a gallery wall falls off at the edges, a dashboard does not. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    pointer-events: none;
+    background: radial-gradient(
+      120% 90% at 50% 40%,
+      transparent 55%,
+      color-mix(in srgb, black 22%, transparent) 100%
+    );
+  }
+
+  @media (prefers-color-scheme: light) {
+    body::after { opacity: 0.03; }
+
+    body::before {
+      background: radial-gradient(
+        120% 90% at 50% 40%,
+        transparent 60%,
+        color-mix(in srgb, #6b6862 9%, transparent) 100%
+      );
+    }
+  }
+
+  /* Grain is texture, not information. Anyone who asked for less motion or more
+     contrast gets the flat surface. */
+  @media (prefers-contrast: more) {
+    body::after, body::before { display: none; }
+  }
+
+  /* numbers never dance */
+  .tabular { font-variant-numeric: tabular-nums; }
+}
+
+@layer components {
+  /* The only place backdrop-filter is allowed: sticky, fixed-size chrome.
+     Never on a scrolling list of cards. See docs/design.md. */
+  .glass {
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.025) 0%, transparent 45%),
+      color-mix(in srgb, var(--color-canvas) var(--glass-tint), transparent);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 0.5px solid color-mix(in srgb, white var(--glass-border), transparent);
+    border-top-color: rgb(255 255 255 / 0.10);
+    border-radius: var(--radius-glass);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white var(--glass-edge), transparent),
+      0 8px 32px rgb(0 0 0 / 0.10),
+      0 1px 2px rgb(0 0 0 / 0.06);
+  }
+
+  /* Accessibility is not optional. Glass collapses to paper on request. */
+  @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+    .glass {
+      background: var(--color-paper);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+  }
+
+  /**
+   * LEVEL 1: the card. Every block of content on every screen lives in one.
+   *
+   * Three things make it read as a surface with matter rather than a rectangle:
+   * a specular hairline along the TOP edge only (light falls from above, so only
+   * the top lip catches it), a diffuse shadow underneath so it sits ON something,
+   * and a hairline border that is almost not there.
+   */
+  .surface {
+    /* Cor chapada não tem corpo. A luz cai de cima, então o topo é ~2% mais claro
+       que o pé, e a diferença é pequena de propósito: se dá para APONTAR o
+       gradiente, ele virou decoração. Ele é para ser sentido, não visto. */
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, white 2.5%, var(--surface-1)) 0%,
+      var(--surface-1) 60%
+    );
+    border: 1px solid rgb(255 255 255 / 0.05);
+    /* A borda de luz é só no TOPO: uma borda clara em volta inteira é um contorno,
+       e contorno é desenho de ícone, não de objeto sob uma lâmpada. */
+    border-top-color: rgb(255 255 255 / 0.08);
+    border-radius: var(--radius-1);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 1px 2px rgb(0 0 0 / 0.30),
+      0 10px 30px rgb(0 0 0 / 0.35);
+    transition:
+      border-color 200ms var(--ease-spring),
+      box-shadow 200ms var(--ease-spring),
+      transform 200ms var(--ease-spring);
+  }
+
+  /* LEVEL 2: a card inside a card, or a control. Sits ON level 1, so no shadow. */
+  .surface-2 {
+    background: var(--surface-2);
+    border: 1px solid rgb(255 255 255 / 0.05);
+    border-radius: var(--radius-2);
+  }
+
+  /**
+   * O ITEM ATIVO DA NAVEGAÇÃO. Não é uma pílula chapada: é uma superfície ELEVADA.
+   *
+   * Três camadas, e a terceira é a que faz a coisa:
+   *   1. o fundo, um degrau acima do resto da barra;
+   *   2. a borda de luz no topo, que dá espessura;
+   *   3. o FIO, na borda direita, vazando um brilho suave para fora.
+   *
+   * O fio é branco-osso. Em rosa neon isto seria o chrome de um CRM, e um CRM
+   * pode brilhar porque a tela dele é texto e vazio. O Gume é uma parede de
+   * capas: aqui o chrome tem que SUMIR para a arte aparecer, e o único brilho da
+   * tela é a lâmina, não a interface.
+   */
+  /* .pill vem depois neste arquivo, e o raio dele vencia: a especificidade tem
+     que ser maior, ou o item ativo volta a ser uma pílula com um fio boiando ao
+     lado. */
+  .afiado,
+  .pill.afiado {
+    position: relative;
+    /* Canto RETO à direita, e não pílula. Numa pílula, a borda direita é meia
+       lua, e um fio reto encostado nela fica boiando AO LADO do item em vez de
+       ser a aresta dele. A lâmina precisa de um gume onde encostar. */
+    border-radius: var(--radius-2);
+    background: linear-gradient(180deg, #202020 0%, #171717 100%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.09),
+      0 1px 2px rgb(0 0 0 / 0.35);
+  }
+
+  /* O FIO: a aresta direita do item, e o brilho que ela deixa escapar. */
+  .afiado::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    right: -0.5px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--fio);
+    box-shadow:
+      0 0 5px color-mix(in srgb, var(--fio) 70%, transparent),
+      0 0 12px color-mix(in srgb, var(--fio) 35%, transparent),
+      0 0 24px color-mix(in srgb, var(--fio) 14%, transparent);
+  }
+
+  @media (prefers-contrast: more) {
+    .afiado::after { box-shadow: none; }
+  }
+
+  /* Only things you can click or that carry a state. Filters, tags, statuses. */
+  .pill {
+    border-radius: var(--radius-pill);
+    transition: background-color 160ms var(--ease-spring), color 160ms var(--ease-spring);
+  }
+
+  /* A card you can click lifts. Everything else is a surface and stays put. */
+  .surface-hover:hover {
+    border-color: color-mix(in srgb, var(--color-ink) 18%, transparent);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.10),
+      0 2px 4px rgb(0 0 0 / 0.20),
+      0 14px 34px rgb(0 0 0 / 0.30);
+    transform: translateY(-2px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .surface, .surface-hover:hover { transition: none; transform: none; }
+  }
+
+  .paper {
+    background: var(--surface-1);
+    border: 1px solid rgb(255 255 255 / 0.06);
+    border-radius: var(--radius-1);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 8px 24px rgb(0 0 0 / 0.18);
+  }
+
+  /* The book card. Opaque paper, never glass: it scrolls, and it carries text.
+     The hairline is almost invisible on purpose; the card is a surface, not a box. */
+  /* The book tile IS a card: same system, no exception. */
+  .card {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, white 2.5%, var(--surface-1)) 0%,
+      var(--surface-1) 60%
+    );
+    border: 1px solid rgb(255 255 255 / 0.05);
+    border-top-color: rgb(255 255 255 / 0.08);
+    border-radius: var(--radius-1);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 1px 2px rgb(0 0 0 / 0.30),
+      0 10px 30px rgb(0 0 0 / 0.35);
+    transition:
+      border-color 200ms var(--ease-spring),
+      box-shadow 200ms var(--ease-spring),
+      transform 200ms var(--ease-spring);
+  }
+
+  .card:hover {
+    border-color: color-mix(in srgb, var(--color-ink) 18%, transparent);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.10),
+      0 2px 4px rgb(0 0 0 / 0.20),
+      0 14px 34px rgb(0 0 0 / 0.30);
+    transform: translateY(-2px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card, .card:hover { transition: none; transform: none; }
+  }
+
+  /**
+   * The cover floats inside the card. The shadow is what makes it an object
+   * rather than a swatch, and the specular line along the top edge is what makes
+   * it a PRINTED object: coated stock catching the light. Almost imperceptible on
+   * purpose. It sits above the image, so it works on a real jacket and on a
+   * generated cover alike.
+   */
+  .cover-lift {
+    position: relative;
+    box-shadow: var(--shadow-cover);
+    border-radius: var(--radius-cover);
+  }
+
+  .cover-lift::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: var(--radius-cover);
+    background: linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 0.14) 0%,
+      rgb(255 255 255 / 0.03) 6%,
+      transparent 14%
+    );
+  }
+
+  .voice { font-family: var(--font-voice); }
+
+  /**
+   * A palavra da marca. NUNCA para outra coisa: é a fonte de UMA palavra, e usá-la
+   * num título faria o título competir com a marca. Entreletra apertada de
+   * propósito: espaçamento largo espalha a palavra e afasta o símbolo dela, e a
+   * marca tem que ler como UM objeto.
+   */
+  /**
+   * ════════════════════════════════════════════════════════════════
+   *  A PALAVRA DA MARCA. Peso 400.
+   *
+   *  Ela era 700, e a nota do sistema de design dizia, com todas as letras, que peso é o
+   *  que sobrevive ao pixel — e que uma serifada fina, testada, tinha sido recusada.
+   *
+   *  A recusa continua correta para o que ela julgava (a Cinzel, e a Newsreader, que ao
+   *  lado do ícone liam como um FIO contra uma MASSA). A Fraunces 400 é outra coisa: ela
+   *  tem serifa desenhada e um traço que não morre no pixel, e a 400 ela lê como um nome
+   *  em vez de um monumento.
+   *
+   *  Foi olhado no tamanho de verdade, sobre o fundo de verdade, ao lado do ícone de
+   *  verdade — que é a única forma de decidir isto. Conceito não sobrevive ao pixel.
+   * ════════════════════════════════════════════════════════════════
+   */
+  .mark-word {
+    font-family: var(--font-mark);
+    font-weight: 400;
+    letter-spacing: 0.005em;
+  }
+
+  /**
+   * ════════════════════════════════════════════════════════════════
+   *  O GRÁFICO É MONOCROMÁTICO. Sem exceção, e em toda a página.
+   *
+   *  A ÚNICA COISA COLORIDA NO GUME É A CAPA DE UM LIVRO. Gráfico,
+   *  insígnia, botão e acento nunca competem com uma capa: no dia em
+   *  que uma barra laranja divide a tela com uma capa, a capa perde, e
+   *  a capa é o conteúdo.
+   *
+   *  O acento saiu daqui. Ele era a única cor da tela e não pertencia a
+   *  lugar nenhum do sistema.
+   *
+   *  ═══ A BARRA É LUZ, E NÃO UM BLOCO ═══
+   *
+   *  Preenchimento a 14%: um volume de luz baixa, e não um retângulo
+   *  cinza chapado. E a ARESTA SUPERIOR acesa, 1px a 100%.
+   *
+   *  O topo aceso é o que dá borda, contraste e vida a um gráfico sem
+   *  cor. E ele É A MARCA: o fio é onde a luz bate. A mesma ideia que
+   *  desenha o símbolo desenha o gráfico.
+   *
+   *  Sem contorno nos outros três lados, sem sombra, sem gradiente, sem
+   *  arredondamento: um filete não tem canto redondo.
+   * ════════════════════════════════════════════════════════════════
+   */
+  /**
+   * O material da barra mora no ESTILO INLINE do componente, e não aqui, e isso
+   * é de propósito.
+   *
+   * Uma classe pode não chegar: em desenvolvimento o Next injeta o CSS por
+   * JavaScript, e o gráfico já apareceu VAZIO na tela por causa disso, com as
+   * barras existindo no HTML e invisíveis para quem olhava. Um gráfico é
+   * conteúdo, e conteúdo não pode depender de uma folha de estilo chegar.
+   *
+   * O que sobra aqui é só o HOVER, e ele muda uma VARIÁVEL, e não o fundo: o
+   * estilo inline lê essa variável, então o hover funciona sem que o CSS precise
+   * ganhar do inline (o que ele nunca ganharia).
+   */
+  .barra-item {
+    --barra-luz: 14%;
+  }
+
+  .barra-item:hover {
+    --barra-luz: 22%;
+  }
+}
+
+@layer components {
+  /**
+   * ════════════════════════════════════════════════════════════════
+   *  A PAREDE DA HOME. Três fileiras, e elas andam em sentidos opostos.
+   *
+   *  A fita é duplicada, então andar 50% do próprio comprimento fecha o laço sem emenda:
+   *  sem JavaScript, sem medir largura, e sem um pulo quando reinicia.
+   *
+   *  ═══ POR QUE SENTIDOS ALTERNADOS ═══
+   *
+   *  Três fileiras andando para o mesmo lado, na mesma velocidade, leem como UMA IMAGEM
+   *  deslizando — e uma imagem deslizando é um banner. Em sentidos e ritmos diferentes,
+   *  elas leem como PROFUNDIDADE, que é o que uma estante tem: coisas em planos
+   *  diferentes, a distâncias diferentes do olho.
+   *
+   *  Devagar de propósito (90 a 140 segundos por volta): é uma parede, e não um carrossel.
+   *  O movimento tem que ser notado só se a pessoa parar para olhar.
+   * ════════════════════════════════════════════════════════════════
+   */
+  .marquee {
+    animation: parede 90s linear infinite;
+  }
+
+  .marquee-reverso {
+    animation: parede-reverso 110s linear infinite;
+  }
+
+  @keyframes parede {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  @keyframes parede-reverso {
+    from { transform: translateX(-50%); }
+    to   { transform: translateX(0); }
+  }
+
+  /* Quem pediu menos movimento vê a parede parada, e ela continua sendo a parede. */
+  @media (prefers-reduced-motion: reduce) {
+    .marquee,
+    .marquee-reverso { animation: none; }
+  }
+}

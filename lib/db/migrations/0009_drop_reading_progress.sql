@@ -1,0 +1,13 @@
+-- Reading progress is gone. Three states, and that is all.
+--
+-- A progress bar is not a field, it is a demand. It only makes sense if you come
+-- back every night to move it, and on the night you do not, the number sits there
+-- lying to you. It is a streak wearing another name, and streaks are on the never
+-- list. See ai/DECISIONS.md.
+--
+-- Nothing of value is lost: the year's page count comes from summing page_count
+-- across the editions you FINISHED, which never depended on this table. What dies
+-- is the obligation to report to the app.
+--
+-- Append-only, per AGENTS.md: this is a new migration, not an edit of 0007.
+DROP TABLE IF EXISTS "reading_progress";

@@ -1,0 +1,22 @@
+-- A NOTA PRIVADA, e ela existe porque a régua "sem perdas" TEM DENTE.
+--
+-- O Goodreads (e o LibraryThing) exportam DUAS coisas de texto:
+--
+--   My Review      o que a pessoa escreveu para o mundo
+--   Private Notes  o que ela escreveu para si
+--
+-- `reviews` tem um índice único em (user_id, work_id) e UM campo `body`. Só cabia
+-- uma das duas, e a outra se perderia em silêncio na importação.
+--
+-- Três saídas foram consideradas:
+--
+--   (a) grudar a nota no fim da resenha, com um separador. Não perde o texto, e
+--       mistura duas coisas que a pessoa manteve separadas DE PROPÓSITO.
+--   (b) uma coluna nova. É esta.
+--   (c) descartar a nota privada. Fora de questão: é exatamente a perda que o
+--       importador existe para impedir.
+--
+-- A coluna é anulável e não tem default: quase ninguém escreve nota privada, e uma
+-- string vazia e um NULL parecem iguais na tela e se comportam diferente em toda
+-- query que testa `is null`.
+ALTER TABLE "reviews" ADD COLUMN IF NOT EXISTS "private_note" text;

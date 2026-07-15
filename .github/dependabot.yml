@@ -1,0 +1,36 @@
+# Um repositório aberto mostra as suas versões para qualquer pessoa. Isso é bom
+# (é o que permite alguém avisar), e é também um mapa: quem quer atacar lê o
+# lockfile e procura a falha conhecida que você ainda não fechou. A defesa não é
+# esconder o lockfile; é fechar a falha antes de ela virar notícia.
+#
+# Automerge SÓ para patch. Um patch é correção de bug e de segurança, e o teste
+# decide se ele entra. Minor e major são decisão de gente: eles mudam
+# comportamento, e um agente aprovando major sozinho é como o problema entra.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      # Um PR por semana com todos os patches, em vez de vinte PRs abertos que
+      # ninguém lê. PR que ninguém lê é PR que ninguém revisa.
+      patches:
+        update-types:
+          - patch
+    ignore:
+      # Major nunca vem sozinho pela porta automática.
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "chore(ci)"

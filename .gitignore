@@ -1,0 +1,55 @@
+node_modules/
+.next/
+.env
+.env.local
+*.log
+.DS_Store
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# raw dataset dumps: never in the repo. see scripts/import-openlibrary.mjs
+*.zip
+*.code-workspace
+
+# nenhuma pasta de dados brutos entra no repo. o dump da Open Library mora em
+# OPENLIBRARY_DUMP_DIR, fora daqui. ver scripts/import-openlibrary.mjs
+/data/
+/datasets/
+*-data/
+*.gz
+*.tar
+*.rar
+*.7z
+*.csv.gz
+*.sqlite
+*.dump
+public/uploads
+.demo-seed.json
+
+# Notas internas do Gabriel (Obsidian). Ficam na máquina dele, não no repo.
+HANDOFF.md
+docs/ANTES-DO-DEPLOY.md
+docs/cobertura.json
+.dump/
+
+# A estante real do Gabriel: o que ele leu, com procedência. Histórico de leitura é
+# dado pessoal, e num repo público fica para sempre. O arquivo continua no disco dele
+# (pnpm db:seed usa ele), mas não entra no controle de versão. Quem clona usa
+# seed/exemplo.csv (pnpm db:seed:exemplo).
+seed/olegas-shelf.csv
+
+# A biblioteca pessoal do Gabriel, exportada em CSV (o que ele leu, com nota e data).
+# É dado pessoal, igual ao olegas-shelf.csv, e nunca entra no repo público. Fica no disco
+# para popular a conta @olegas4real, e só. Qualquer CSV solto na raiz é suspeito de ser isto.
+/*.csv
+Biblioteca_*.csv
+
+# O importador da biblioteca pessoal do Gabriel: um one-off com o nome do arquivo dele
+# embutido. Roda no disco; não nasce no repo público. (O padrão do repo é script público,
+# mas este é pessoal demais para valer a pena.)
+scripts/importar-biblioteca.mjs
+
+# a Fraunces variável, baixada pelo scripts/wordmark.py sob demanda
+.fraunces-var.ttf

@@ -1,0 +1,165 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { getActor } from "@/lib/actor";
+import { getViewer } from "@/lib/viewer";
+import { limitarEscrita } from "@/lib/escrita";
+import { LIMITS, clamp, clampRequired } from "@/lib/limits";
+import {
+  removeFromShelf, removeManyFromShelf, editBook, setShelvesByName, setMyEdition, toggleInCollection,
+  createCollection, renameCollection, deleteCollection, setCollectionVisibility,
+  snapshotShelf, restoreShelf, setStatusMany, addManyToCollection,
+  type BookEdit, type ShelfSnapshot,
+} from "@/lib/curation";
+import type { Visibility } from "@/lib/authz";
+
+/** Take the book off your shelf. Everything you attached to it goes with it. */
+export async function takeOffShelf(workId: string): Promise<void> {
+  const actor = await getActor();
+  await removeFromShelf(actor, workId);
+  revalidatePath("/");
+  revalidatePath("/estante");
+  redirect("/estante");
+}
+
+const num = (v: string | undefined): number | null => {
+  const n = Number(String(v ?? "").trim());
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+};
+
+/** Todo texto que entra tem teto, e o teto é do servidor. Ver lib/limits.ts. */
+const str = (v: string | undefined, max: number = LIMITS.title): string | null => clamp(v, max);
+
+/**
+ * Fix a book in the catalogue. Anyone may, and every edit writes a revision with
+ * a name on it: nothing is overwritten in silence. See lib/curation.ts.
+ */
+export async function saveBookEdit(
+  slug: string,
+  workId: string,
+  editionId: string | null,
+  form: Record<string, string>,
+): Promise<void> {
+  const viewer = await getViewer();
+  if (viewer) await limitarEscrita(viewer.id);
+
+  const isbn = (form.isbn ?? "").replace(/[^0-9X]/gi, "");
+  // A allow-list é esta, e ela é explícita: o que não está aqui não entra, venha
+  // o campo que vier no corpo da requisição. Ver lib/limits.ts.
+  const edit: BookEdit = {
+    title: clampRequired(form.title, LIMITS.title),
+    author: clampRequired(form.author, LIMITS.author),
+    firstPublished: num(form.firstPublished),
+    publisher: str(form.publisher, LIMITS.publisher),
+    publishedYear: num(form.publishedYear),
+    pageCount: num(form.pageCount),
+    format: clampRequired(form.format, 20),
+    isbn13: isbn.length === 13 ? isbn : null,
+    coverUrl: str(form.coverUrl, LIMITS.url),
+  };
+
+  await editBook(viewer, workId, editionId, edit, str(form.reason, LIMITS.note));
+
+  revalidatePath(`/livro/${slug}`);
+  revalidatePath("/");
+  revalidatePath("/estante");
+}
+
+/** Type "para reler, do meu pai" and be done. Creates the shelves that do not exist. */
+export async function saveShelves(slug: string, workId: string, raw: string): Promise<void> {
+  const actor = await getActor();
+  await setShelvesByName(actor, workId, raw);
+  revalidatePath(`/livro/${slug}`);
+  revalidatePath("/estante");
+}
+
+/** Which copy am I reading. Page counts differ; the cover on the shelf depends on it. */
+export async function escolherEdicao(slug: string, workId: string, editionId: string | null): Promise<void> {
+  const actor = await getActor();
+  await setMyEdition(actor, workId, editionId);
+  revalidatePath(`/livro/${slug}`);
+  revalidatePath("/estante");
+}
+
+/** Take several books off the shelf at once. One confirm, not twenty. */
+/**
+ * Tirar vários da estante, e devolver o RETRATO do que saiu.
+ *
+ * O retrato volta para a tela porque é ele que faz o "desfazer" ser verdadeiro: a
+ * nota, a resenha e a procedência saem junto com o livro, e um desfazer que
+ * devolvesse só a linha da estante seria um desfazer mentiroso.
+ */
+export async function tirarVarios(workIds: string[]): Promise<ShelfSnapshot> {
+  const actor = await getActor();
+  const snapshot = await snapshotShelf(actor, workIds);
+  await removeManyFromShelf(actor, workIds);
+  revalidatePath("/estante");
+  revalidatePath("/");
+  return snapshot;
+}
+
+/** Cinco segundos de arrependimento. É o que faz a pessoa se sentir livre para experimentar. */
+export async function desfazerRemocao(snapshot: ShelfSnapshot): Promise<void> {
+  const actor = await getActor();
+  await restoreShelf(actor, snapshot);
+  revalidatePath("/estante");
+  revalidatePath("/");
+}
+
+/** Marcar vários de uma vez: lido, lendo, esperando, abandonado. */
+export async function prateleirarVarios(workIds: string[], status: string): Promise<number> {
+  const actor = await getActor();
+  const n = await setStatusMany(actor, workIds, status);
+  revalidatePath("/estante");
+  revalidatePath("/");
+  revalidatePath("/estatisticas");
+  return n;
+}
+
+/** Jogar vários numa estante que você inventou. */
+export async function moverVariosPara(collectionId: string, workIds: string[]): Promise<number> {
+  const actor = await getActor();
+  const n = await addManyToCollection(actor, collectionId, workIds);
+  revalidatePath("/estante");
+  return n;
+}
+
+export async function toggleCollection(
+  slug: string, collectionId: string, workId: string, on: boolean,
+): Promise<void> {
+  const actor = await getActor();
+  await toggleInCollection(actor, collectionId, workId, on);
+  revalidatePath(`/livro/${slug}`);
+  revalidatePath("/");
+  revalidatePath("/estante");
+}
+
+export async function novaEstante(name: string, visibility: Visibility): Promise<void> {
+  const actor = await getActor();
+  await createCollection(actor, name, visibility);
+  revalidatePath("/");
+  revalidatePath("/estante");
+}
+
+export async function renomearEstante(id: string, name: string): Promise<void> {
+  const actor = await getActor();
+  await renameCollection(actor, id, name);
+  revalidatePath("/");
+  revalidatePath("/estante");
+}
+
+export async function apagarEstante(id: string): Promise<void> {
+  const actor = await getActor();
+  await deleteCollection(actor, id);
+  revalidatePath("/");
+  revalidatePath("/estante");
+  redirect("/estante");
+}
+
+export async function visibilidadeEstante(id: string, visibility: Visibility): Promise<void> {
+  const actor = await getActor();
+  await setCollectionVisibility(actor, id, visibility);
+  revalidatePath("/");
+  revalidatePath("/estante");
+}

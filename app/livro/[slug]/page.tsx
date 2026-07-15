@@ -1,0 +1,501 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { Cover } from "@/components/cover";
+import { Prosa } from "@/components/prosa";
+import { Gaveta } from "@/components/gaveta";
+import { Share } from "@/components/share";
+import { BookPanel } from "@/components/book-panel";
+import { Leituras } from "@/components/leituras";
+import { getLeituras } from "@/lib/leituras";
+import { AuthorPanel } from "@/components/author-panel";
+import { Recommend } from "@/components/recommend";
+import { BookTools } from "@/components/book-tools";
+import { Correcao } from "@/components/correction";
+import { CorrectionsLog } from "@/components/corrections-log";
+import { getCorrecoes, souBibliotecario } from "@/lib/corrections";
+import { getFollowees, getRecommender } from "@/lib/social";
+import { getShelvesOf, getCollections } from "@/lib/curation";
+import { getFriendRatings } from "@/lib/ratings";
+import { getBook } from "@/lib/book";
+import { AvatarLink } from "@/components/avatar";
+import { RememberBook } from "@/components/remember-book";
+import { VerdictOf } from "@/components/veredito";
+import { getViewer } from "@/lib/viewer";
+import { getActorOrNull } from "@/lib/actor";
+import { FORMAT_LABEL } from "@/lib/shelf-view";
+
+export const dynamic = "force-dynamic";
+
+/**
+ * The book page: a cover on the left, a STACK OF CARDS on the right, one card per
+ * subject. Nothing floats loose on the page background.
+ *
+ * Before, this was a cover and some metadata adrift in two thirds of nothing. The
+ * fix is not more spacing, it is containment: the book, the actions, the review,
+ * the author and the editions are five different subjects, so they are five
+ * different surfaces.
+ *
+ * The serif is for VOICE: the title, and nothing else on this page. "Companhia
+ * das Letras" and "capa dura" are interface data, and setting data in a display
+ * serif is what made this look amateur. Data is Inter.
+ */
+export default async function BookPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const [viewer, actor] = await Promise.all([getViewer(), getActorOrNull()]);
+  const book = await getBook(slug, viewer, actor?.id ?? null);
+
+  if (!book) notFound();
+
+  const [friends, recommender, shelves, todasAsEstantes, opinions] = await Promise.all([
+    actor ? getFollowees(actor.id) : Promise.resolve([]),
+    actor ? getRecommender(actor.id, book.workId) : Promise.resolve(null),
+    /** As estantes suas em que ESTE livro já está. */
+    actor ? getShelvesOf(actor.id, book.workId) : Promise.resolve([]),
+    /**
+     * E TODAS as suas estantes, para o painel poder OFERECÊ-LAS em vez de pedir que você
+     * digite o nome delas.
+     *
+     * Digitar o nome de uma coisa que já existe é uma máquina de fazer duplicata: "para
+     * reler" e "pra reler" viram duas estantes, e a pessoa só descobre quando a barra
+     * lateral está cheia de quase-iguais. Ver components/book-panel.tsx.
+     */
+    actor ? getCollections(viewer, actor.id) : Promise.resolve([]),
+    getFriendRatings(viewer, [book.workId]),
+  ]);
+
+  const opinion = opinions[book.workId];
+
+  // O histórico é PÚBLICO: é ele, e não uma permissão, que torna vandalismo caro.
+  // O histórico é PÚBLICO: é ele, e não uma permissão, que torna vandalismo caro.
+  // O histórico é PÚBLICO: é ele, e não uma permissão, que torna vandalismo caro.
+  //
+  // A cópia de papel saiu daqui: "de onde veio esse livro" mora numa gaveta dentro do
+  // painel, e ele lê a nota direto de `book.mine`. Doar, trocar e emprestar foram
+  // removidos do app (migration 0046).
+  const [correcoes, bibliotecario] = await Promise.all([
+    getCorrecoes([book.workId, ...book.editions.map((e) => e.id)]),
+    souBibliotecario(viewer),
+  ]);
+
+  /**
+   * AS MINHAS LEITURAS deste livro, com as datas EDITÁVEIS.
+   *
+   * Só as minhas: corrigir a data de uma leitura é mexer na história de quem leu, e
+   * quem lê o perfil de outra pessoa lê, e não escreve. A autorização real mora em
+   * lib/leituras.ts, no servidor — `readings` não tem dono próprio, o dono está em
+   * `library_entries`, e é lá que a checagem salta.
+   */
+  const leituras = actor ? await getLeituras(viewer, actor.id, book.workId) : [];
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  A CAPA É A DA SUA EDIÇÃO. E ELA NÃO ERA.
+   *
+   *  "Quando eu mudo qual edição é a minha, não muda a página/capa do livro."
+   *
+   *  Estava certo pela metade, que é o pior jeito de estar. Os DADOS já respeitavam a sua
+   *  escolha (editora, ano, páginas, ISBN vinham da sua edição), e a CAPA era escolhida à
+   *  parte: "a primeira edição que tiver capa". A sua não entrava na conta.
+   *
+   *  Então a pessoa escolhia a edição da Companhia das Letras, via "Companhia das Letras"
+   *  escrito na ficha, e continuava olhando para a capa da Penguin. O app parecia ter
+   *  ignorado o clique — e, na parte que ela olhava, tinha mesmo.
+   *
+   *  ═══ E POR QUE A ESCOLHA DE EDIÇÃO EXISTE ═══
+   *
+   *  Porque a OBRA é a ideia e a EDIÇÃO é o objeto (docs/schema.md, decisão 1). Dom
+   *  Casmurro é um só; o exemplar na sua mão tem uma editora, um número de páginas, um
+   *  tradutor e uma capa. É a confusão entre as duas coisas que apodreceu o catálogo do
+   *  Goodreads, e é por isso que aqui elas são tabelas diferentes.
+   *
+   *  Escolher a sua edição é dizer QUAL objeto você tem. A partir daqui, a página mostra
+   *  o seu.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const minha = book.editions.find((e) => e.id === book.mine?.editionId);
+  const comCapa = book.editions.find((e) => e.coverUrl);
+
+  /** A ficha é a da sua edição, se você declarou uma. */
+  const edition = minha ?? comCapa ?? book.editions[0];
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  A CAPA EMPRESTADA, E POR QUE ELA PRECISA DIZER QUE É EMPRESTADA.
+   *
+   *  "Mudei a edição do Dom Casmurro do Clube de Literatura Clássica para o do Instituto
+   *   Nacional do Livro e todos os dados mudaram, menos a capa."
+   *
+   *  A edição do INL, de 1969, **não tem capa cadastrada**. Nenhuma das 44 edições de Dom
+   *  Casmurro no acervo tem, exceto sete.
+   *
+   *  E a página fazia o que parecia gentil: emprestava a capa de outra edição, calada.
+   *  Resultado: todos os dados da tela mudaram e a capa ficou igual — e o que a pessoa
+   *  entende disso não é "esta edição não tem capa". É **"o app ignorou o meu clique"**.
+   *  Ela clica de novo, desiste, e volta para a edição de antes. Que foi exatamente o que
+   *  aconteceu.
+   *
+   *  ═══ EU ESCREVI ESSE EMPRÉSTIMO HOJE DE MANHÃ, E O ARGUMENTO ERA BOM ═══
+   *
+   *  "Mostrar um retângulo vazio seria trocar um erro por outro." Continua sendo verdade.
+   *  O erro não era emprestar: era emprestar EM SILÊNCIO.
+   *
+   *  Uma tela que mostra uma coisa que não é a que você pediu, e não avisa, mente. Agora
+   *  ela empresta e DIZ que emprestou — e o convite para arrumar vem junto, porque quem
+   *  acabou de escolher a edição é exatamente quem tem o livro na mão.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const cover = minha?.coverUrl ? minha : (comCapa ?? book.editions[0]);
+
+  /** A capa na tela é de OUTRA edição, e não da que você escolheu. */
+  const capaEmprestada = Boolean(minha && !minha.coverUrl && cover?.coverUrl);
+
+  return (
+    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+      <RememberBook slug={slug} title={book.title} />
+      <div className="mt-16 grid gap-5 sm:mt-24 sm:grid-cols-12">
+        {/* ── left: the cover, in a card of its own ─────────────────── */}
+        <aside className="sm:col-span-4 lg:col-span-3">
+          <div className="surface sticky top-6 p-6">
+            <div className="cover-lift">
+              <Cover title={book.title} author={book.author} src={cover?.coverUrl ?? null} />
+            </div>
+
+            {/* A CAPA EMPRESTADA DIZ QUE É EMPRESTADA.
+                Sem esta frase, quem troca de edição vê os dados mudarem e a capa ficar
+                igual, e conclui que o app ignorou o clique. Ver a nota lá em cima. */}
+            {capaEmprestada && (
+              <p className="mt-4 text-[12px] leading-relaxed text-[var(--color-ink-faint)]">
+                Esta capa é de outra edição. A sua ({edition?.publisher ?? "a que você escolheu"}
+                {edition?.publishedYear ? `, ${edition.publishedYear}` : ""}) ainda não tem capa no
+                Gume.{" "}
+                <a
+                  href="#ficha"
+                  className="underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+                >
+                  Você tem esse livro na mão: sugira a capa dele.
+                </a>
+              </p>
+            )}
+
+            {/**
+              * ═══ ISTO ERA UMA NOTA INTERNA VAZANDO PARA O LEITOR ═══
+              *
+              * Dizia: "Este livro foi cadastrado à mão. Ainda vamos conferir os dados."
+              *
+              * Um leitor de fora leu e disse: "não sei se isso é pra mim ou é uma nota
+              * interna de vocês — como usuário, me deixa desconfiado dos dados sem
+              * necessidade."
+              *
+              * Ele tem razão. A frase fala do NOSSO processo ("vamos conferir"), e o que ela
+              * consegue transmitir é: não confie no que você está lendo. Espalha dúvida sobre
+              * a ficha inteira e não oferece nada em troca.
+              *
+              * A frase certa não fala de processo: fala do que a PESSOA pode fazer. A ficha
+              * está incompleta, ela tem o livro na mão, e arrumar leva um minuto.
+              */}
+            {book.needsReview && (
+              <p className="mt-4 text-[12px] leading-relaxed text-[var(--color-ink-faint)]">
+                A ficha deste livro veio incompleta.{" "}
+                <a
+                  href="#ficha"
+                  className="underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+                >
+                  Se você tem ele aí, arrume.
+                </a>
+              </p>
+            )}
+          </div>
+        </aside>
+
+        {/* ── right: a stack of cards, one subject each ─────────────── */}
+        <div className="flex flex-col gap-5 sm:col-span-8 lg:col-span-9">
+          <section className="surface p-6 sm:p-8">
+            <h1 className="voice text-[34px] leading-[1.05] tracking-[-0.015em] sm:text-[44px]">
+              {book.title}
+            </h1>
+
+            {/* O AUTOR É UM LUGAR, e o nome dele é a porta.
+                Antes isto era texto morto: o leitor clicava no nome e não acontecia
+                nada. A página do autor existia — com retrato, biografia e o resto da
+                obra dele — e não tinha entrada. */}
+            {book.author && (
+              <p className="mt-3 text-[15px] text-[var(--color-ink-soft)]">
+                {book.authorSlug ? (
+                  <Link
+                    href={`/autor/${book.authorSlug}`}
+                    className="underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+                  >
+                    {book.author}
+                  </Link>
+                ) : (
+                  book.author
+                )}
+              </p>
+            )}
+
+            <div className="mt-6">
+              <Share titulo={book.title} texto={book.author ?? undefined} />
+            </div>
+
+            {/* ═══ A SINOPSE ═══
+                O que o livro É, em um parágrafo. Não é resenha — resenha é o que o
+                LEITOR escreve, e é o produto deste app. A sinopse existe para quem
+                ainda não decidiu se quer ler, e sem ela a página de um livro mostrava
+                título, autor e capa, e mais nada.
+
+                Ela vem do dump da Open Library, cujo dado é CC0 — e por isso ela pode
+                entrar no dataset aberto que o Gume promete publicar. Sinopse de loja é
+                texto autoral, com direito, e fica de fora. Ver ai/PRD.md. */}
+            <Prosa
+              texto={book.description}
+              fonte={book.descriptionSource}
+              className="mt-8"
+            />
+
+            {/* The year of the WORK and the year of the EDITION are different
+                facts, so they sit side by side and are labelled. */}
+            <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3">
+              <Fact label="editora" value={edition?.publisher ?? null} />
+              <Fact label="ano da obra" value={book.firstPublished} />
+              <Fact label="ano da edição" value={edition?.publishedYear ?? null} />
+              <Fact
+                label="formato"
+                value={edition?.format ? FORMAT_LABEL[edition.format] ?? edition.format : null}
+              />
+              <Fact label="páginas" value={edition?.pageCount ?? null} />
+              <Fact label="ISBN" value={edition?.isbn13 ?? null} />
+            </dl>
+          </section>
+
+          {recommender && (
+            <section className="surface flex gap-5 p-6 sm:p-7">
+              <AvatarLink
+                src={recommender.image}
+                name={recommender.displayName}
+                handle={recommender.handle}
+                size={44}
+              />
+              <div className="min-w-0 flex-1">
+                <Label>veio de alguém</Label>
+                <p className="mt-3 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
+                  <span className="font-medium text-[var(--color-ink)]">
+                    {recommender.displayName ?? recommender.handle}
+                  </span>{" "}
+                  recomendou este livro para você{recommender.note ? ":" : "."}
+                </p>
+                {recommender.note && (
+                  <p className="voice mt-3 text-[17px] leading-relaxed text-[var(--color-ink)]">
+                    {recommender.note}
+                  </p>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/*
+            O que as pessoas que você SEGUE acharam, com a cara delas, em palavras.
+            Sem média: nem a global (que é a nota do Goodreads, um veredito sem
+            ninguém atrás para você discordar) nem a dos amigos, porque palavra não
+            soma. "O Rui adorou e a Tereza gostou" é opinião de gente.
+          */}
+          {opinion && opinion.friends.length > 0 && (
+            <section className="surface p-6 sm:p-7">
+              <Label>quem você segue</Label>
+
+              <ul className="mt-5 flex flex-col gap-3">
+                {opinion.friends.map((f) => (
+                  <li key={f.handle} className="flex items-center gap-3">
+                    <AvatarLink src={f.image} name={f.name} handle={f.handle} size={28} />
+                    <a href={`/@${f.handle}`} className="min-w-0 flex-1 truncate hover:underline">
+                      <VerdictOf name={f.name ?? f.handle} value={f.value} />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {actor ? (
+            <>
+              <BookPanel
+                book={book}
+                slug={slug}
+                shelves={shelves}
+                todas={todasAsEstantes.map((e) => e.name)}
+              />
+
+              {/* QUANDO você leu. As datas são do leitor, e não do relógio do
+                  servidor: o app carimbava a data de hoje e não soltava mais, e a
+                  página de estatísticas inteira é construída em cima delas. */}
+              <Leituras leituras={leituras} slug={slug} />
+            </>
+          ) : (
+            <section className="surface p-6">
+              <p className="text-[14px] text-[var(--color-ink-soft)]">
+                Entre para prateleirar, dar nota e escrever.
+              </p>
+            </section>
+          )}
+
+          {/* ═══ DAQUI PARA BAIXO, TUDO MORA EM GAVETA ═══
+
+              Esta página tinha DOZE cartões empilhados. Cada um é útil, e juntos eram um
+              formulário de cadastro — ninguém entra num app de leitura com vontade de
+              preencher um cadastro.
+
+              O que fica ABERTO é o que a pessoa faz toda vez: prateleira, nota, resenha,
+              e quem escreveu o livro. O que ela faz uma vez na vida — a linhagem da
+              cópia, o registro de correções, a lista das quarenta edições — abre com um
+              toque, e diz o que tem dentro antes de abrir. Ver components/gaveta.tsx. */}
+
+          {actor && friends.length > 0 && (
+            <Gaveta titulo="passar adiante" resumo="indicar este livro para alguém que você segue">
+              <Recommend workId={book.workId} slug={slug} friends={friends} />
+            </Gaveta>
+          )}
+
+          {book.author && (
+            <AuthorPanel
+              name={book.author}
+              slug={book.authorSlug}
+              nationality={book.nationality}
+              portraitUrl={book.authorImage}
+              bio={book.authorBio}
+              bioSource={book.authorBioSource}
+            />
+          )}
+
+          {/* ═══ A CÓPIA DE PAPEL SAIU DAQUI ═══
+
+              Doar, trocar e emprestar foram removidos do Gume (migration 0046). Aquilo
+              empurrava o app para ser um lugar de TRANSAÇÃO entre pessoas — com contato,
+              combinado e encontro — e trazia um peso de moderação mesmo quando dava certo.
+
+              O que sobrou é "de onde veio esse livro", que é a HISTÓRIA de um exemplar, e
+              não um anúncio. Ela mora numa gaveta dentro do painel. Ver lib/copies.ts. */}
+
+          {/* ── CORREÇÕES: quem arrumou o quê, e quando. Para sempre. ──── */}
+          <Gaveta
+            titulo="correções"
+            resumo={
+              correcoes.length > 0
+                ? `${correcoes.length} ${correcoes.length === 1 ? "conserto" : "consertos"} nesta ficha`
+                : "achou um erro nesta ficha? conserte"
+            }
+          >
+            <CorrectionsLog
+              slug={slug}
+              correcoes={correcoes}
+              souBibliotecario={bibliotecario}
+            />
+
+            {actor && edition && (
+              <div id="ficha" className="mt-6 scroll-mt-6 border-t border-[var(--color-rule)] pt-5">
+                <Correcao
+                  slug={slug}
+                  edicao={{
+                    id: edition.id,
+                    publisher: edition.publisher,
+                    publishedYear: edition.publishedYear,
+                  }}
+                  temOutrasEdicoes={book.editions.length > 1}
+                />
+              </div>
+            )}
+          </Gaveta>
+
+          {book.editions.length > 1 && (
+            <Gaveta
+              titulo="edições"
+              resumo={`${book.editions.length} edições desta obra`}
+            >
+              <ul className="flex flex-col gap-1">
+                {book.editions.slice(0, 8).map((e) => (
+                  <li
+                    key={e.id}
+                    className={[
+                      "tabular flex flex-wrap items-center gap-x-3 px-3 py-2 text-[14px]",
+                      e.id === book.mine?.editionId
+                        ? "surface-2 text-[var(--color-ink)]"
+                        : "text-[var(--color-ink-soft)]",
+                    ].join(" ")}
+                  >
+                    <span className="min-w-0 flex-1 truncate">
+                      {e.publisher ?? "editora desconhecida"}
+                      {e.publishedYear ? `, ${e.publishedYear}` : ""}
+                    </span>
+                    {e.pageCount && (
+                      <span className="text-[var(--color-ink-faint)]">{e.pageCount} p.</span>
+                    )}
+                    {e.id === book.mine?.editionId && (
+                      <span className="text-[11px] uppercase tracking-[0.12em]">a minha</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              {book.editions.length > 8 && (
+                <p className="mt-3 text-[13px] text-[var(--color-ink-faint)]">
+                  e mais {book.editions.length - 8}.
+                </p>
+              )}
+            </Gaveta>
+          )}
+
+          {actor && (
+            <BookTools
+              slug={slug}
+              workId={book.workId}
+              editionId={edition?.id ?? null}
+              onShelf={Boolean(book.mine?.status)}
+              shelves={shelves}
+              myEditionId={book.mine?.editionId ?? null}
+              editions={book.editions.map((e) => ({
+                id: e.id,
+                publisher: e.publisher,
+                year: e.publishedYear,
+                pages: e.pageCount,
+                isbn: e.isbn13,
+              }))}
+              book={{
+                title: book.title,
+                author: book.author,
+                firstPublished: book.firstPublished,
+                publisher: edition?.publisher ?? null,
+                publishedYear: edition?.publishedYear ?? null,
+                pageCount: edition?.pageCount ?? null,
+                format: edition?.format ?? null,
+                isbn13: edition?.isbn13 ?? null,
+                coverUrl: edition?.coverUrl ?? null,
+              }}
+            />
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+/** A section label. Small caps, letterspaced, quiet. Never the serif. */
+function Label({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+      {children}
+    </h2>
+  );
+}
+
+/**
+ * A fact. Inter, not the serif: "Companhia das Letras" is interface data, and
+ * setting data in a display serif is exactly what made this look amateur.
+ */
+function Fact({ label, value }: { label: string; value: string | number | null }) {
+  if (value === null || value === "") return null;
+  return (
+    <div>
+      <dt className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+        {label}
+      </dt>
+      <dd className="tabular mt-1.5 text-[15px] text-[var(--color-ink)]">{value}</dd>
+    </div>
+  );
+}
