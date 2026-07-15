@@ -64,6 +64,16 @@ Nada sobe até que cada linha esteja verde.
 - [ ] Passada manual: DevTools, aba Network, clique por todo o app, procure chaves e PII de outras pessoas
 - [ ] Backups rodando, e um restore testado pelo menos uma vez
 
+## Os avisos do Dependabot, e por que ficam abertos
+
+Com o repositório público, a aba **Security** mostra os avisos do Dependabot — e hoje eles apontam para a **cadeia de build e de teste**, nunca para o serviço no ar.
+
+Os pacotes citados vêm por baixo, sem serem dependência direta nossa: `vite` e `esbuild` chegam pelo `vitest` (o test runner), `postcss` roda no `build` sobre o **nosso próprio CSS**, e o utilitário que abre o editor a partir do overlay de erro só existe no `next dev`. **Nenhum deles atende requisição de usuário em produção.** No pior caso, a falha exige alguém na mesma rede local enquanto um desenvolvedor roda `pnpm dev` ou os testes — é uma superfície da máquina de quem desenvolve, não do `gume.club`.
+
+Por isso ficam abertos de propósito: a correção não é pontual. Ela vem quando o `vitest` e o `next` sobem de versão maior, e isso é uma decisão de upgrade, não um remendo de véspera de deploy. O Dependabot abre os PRs; a gente mescla quando passam no CI sem quebrar nada.
+
+**Um aviso aberto e explicado não é uma falha ignorada.** No dia em que um destes tocar o código de produção — o servidor, o banco, o dado do leitor — a régua muda, e ele vira prioridade na hora.
+
 ## Como reportar
 
 Achou algo? Escreva para security@gume.club (ou abra um security advisory privado no GitHub). Por favor, não abra uma issue pública. A gente dá o crédito a você, a não ser que você prefira que não.
