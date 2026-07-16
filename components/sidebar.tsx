@@ -205,19 +205,14 @@ export function Sidebar({
         as="nav"
         className="fixed inset-x-3 bottom-3 z-40 flex h-16 items-center justify-around px-2 sm:hidden"
       >
-        {[
-          ...LUGARES,
-          session
-            ? { href: "/eu", label: "Perfil", Icon: UserRound }
-            : { href: "/entrar", label: "Entrar", Icon: LogIn },
-        ].map(({ href, label, Icon }) => (
+        {LUGARES.map(({ href, label, Icon }) => (
           <Link
             key={href}
             href={href}
             aria-current={aceso(href) ? "page" : undefined}
             aria-label={label}
             className={[
-              "flex flex-col items-center gap-1 rounded-[var(--radius-control)] px-4 py-2 transition-colors",
+              "flex flex-col items-center gap-1 rounded-[var(--radius-control)] px-3 py-2 transition-colors",
               aceso(href) ? "text-[var(--color-ink)]" : "text-[var(--color-ink-faint)]",
             ].join(" ")}
           >
@@ -225,6 +220,52 @@ export function Sidebar({
             <span className="text-[10px] uppercase tracking-[0.12em]">{label}</span>
           </Link>
         ))}
+
+        {/* ════════════════════════════════════════════════════════════
+            ═══ A BUSCA, QUE NO CELULAR NÃO EXISTIA ═══
+
+            O campo de busca morava só na coluna do desktop (`hidden … sm:flex`), e a
+            paleta só abria por ⌘K — um atalho de teclado, num aparelho que não tem
+            teclado. Passada a tela de boas-vindas, quem estava no telefone não tinha
+            NENHUM caminho até a busca: nem para achar um livro, nem para cadastrar o
+            que não existe.
+
+            Achar um livro e pôr na estante é o app inteiro. Ele estava fora do alcance
+            de metade das pessoas, e nada na tela dizia isso: não havia botão quebrado,
+            havia botão nenhum. É o pior tipo de bug — o que não deixa rastro.
+
+            Ela é um BOTÃO, e não um link: abre a mesma paleta do ⌘K, com o mesmo
+            evento que o atalho dispara. Ver abrirBusca(), abaixo.
+            ════════════════════════════════════════════════════════════ */}
+        <button
+          onClick={abrirBusca}
+          aria-label="Buscar"
+          className="flex flex-col items-center gap-1 rounded-[var(--radius-control)] px-3 py-2 text-[var(--color-ink-faint)] transition-colors active:text-[var(--color-ink)]"
+        >
+          <Search size={20} strokeWidth={1.5} />
+          <span className="text-[10px] uppercase tracking-[0.12em]">Buscar</span>
+        </button>
+
+        {(() => {
+          const eu = session
+            ? { href: "/eu", label: "Perfil", Icon: UserRound }
+            : { href: "/entrar", label: "Entrar", Icon: LogIn };
+
+          return (
+            <Link
+              href={eu.href}
+              aria-current={aceso(eu.href) ? "page" : undefined}
+              aria-label={eu.label}
+              className={[
+                "flex flex-col items-center gap-1 rounded-[var(--radius-control)] px-3 py-2 transition-colors",
+                aceso(eu.href) ? "text-[var(--color-ink)]" : "text-[var(--color-ink-faint)]",
+              ].join(" ")}
+            >
+              <eu.Icon size={20} strokeWidth={1.5} />
+              <span className="text-[10px] uppercase tracking-[0.12em]">{eu.label}</span>
+            </Link>
+          );
+        })()}
       </GlassBar>
 
       {/* o fio no topo, para o celular saber de quem é o app, e o sino ao lado */}
@@ -248,13 +289,21 @@ export function Sidebar({
  * uma segunda busca para manter, e as duas divergiriam em um mês. Mesmo teclado,
  * mesmo resultado, uma implementação só.
  */
-function BuscaFalsa() {
-  const abrir = () =>
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
+/**
+ * Abre a paleta de busca sem teclado: dispara o MESMO evento que o ⌘K dispara.
+ *
+ * Mora aqui fora porque quem chama são dois: o campo do desktop e a lupa da barra de
+ * baixo do celular. Duas cópias de "como se abre a busca" divergem no dia em que o
+ * atalho mudar, e aí uma das duas para de abrir sem ninguém perceber.
+ */
+function abrirBusca() {
+  window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
+}
 
+function BuscaFalsa() {
   return (
     <button
-      onClick={abrir}
+      onClick={abrirBusca}
       className="surface-2 mt-6 flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:ring-1 hover:ring-white/[0.10]"
     >
       <Search size={16} strokeWidth={1.5} className="shrink-0 text-[var(--color-ink-faint)]" />
