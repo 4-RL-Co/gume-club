@@ -74,6 +74,20 @@ const SEM_PORTEIRO: Record<string, string> = {
   mandarCodigo:
     "roda no meio do login, quando a sessão ainda não existe. Quem autoriza é o cookie de " +
     "segundo passo do Better Auth, e a ação repassa os cabeçalhos para ele decidir.",
+
+  /**
+   * ═══ A BUSCA DE PESSOAS CONTA, MAS NO OUTRO BALDE ═══
+   *
+   * Ela é POR TECLA — a pessoa digita um nome e cada pausa dispara uma consulta. Contar
+   * isso no balde de ESCRITA (120/min) esgotaria o teto do dono no meio de uma palavra, e
+   * ele veria "espere um minuto" só por ter procurado a esposa.
+   *
+   * Então ela conta no balde de BUSCA (RATES.search, 300/min), o mesmo da busca de livros.
+   * É contada — só não pelo porteiro da escrita. Ver app/pessoas/actions.ts.
+   */
+  procurarPessoas:
+    "é busca por tecla, e conta no balde de BUSCA (RATES.search), não no de escrita: " +
+    "contar tecla a tecla no balde de escrita esgotaria o teto do dono numa palavra.",
 };
 
 /** Todo arquivo que declara `"use server"`. */

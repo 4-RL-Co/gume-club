@@ -476,3 +476,75 @@ export async function getProfile(handle: string) {
     .limit(1);
   return row ?? null;
 }
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  ACHAR UMA PESSOA PELO NOME OU PELO @.
+ *
+ *  O "explorar" mostra estantes para DESCOBRIR gente que você não conhece. Mas quem já
+ *  sabe o nome — a esposa que acabou de criar conta e te seguiu — não quer descobrir: quer
+ *  ACHAR. Sem uma busca de gente, a única forma de chegar num perfil era saber o @ exato e
+ *  digitar na barra de endereço, o que ninguém faz.
+ *
+ *  ═══ O QUE ISTO REVELA, E O QUE NÃO ═══
+ *
+ *  Devolve nome, @ e a moldura — as três coisas que já aparecem em toda cara pública do
+ *  app. Não devolve nada da estante: quem é privado aparece na lista (você acha a pessoa e
+ *  a segue), mas o que ela leu continua atrás da porta que o perfil guarda. Achar alguém
+ *  pelo nome não é ler a estante dela.
+ *
+ *  Bane e apagado ficam de fora, e você não aparece para si mesmo.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export type PessoaAchada = {
+  id: string;
+  handle: string;
+  name: string | null;
+  image: string | null;
+  isPrivate: boolean;
+  following: boolean;
+};
+
+export async function buscarPessoas(viewer: Viewer, termo: string): Promise<PessoaAchada[]> {
+  assertAuthenticated(viewer);
+
+  // Os curingas do ILIKE (%, _, \) saem do que a pessoa digitou: um nome não os contém, e
+  // deixá-los passar transformaria a busca num padrão em vez de num nome.
+  const limpo = termo.trim().replace(/[\\%_]/g, "");
+  if (limpo.length < 2) return []; // uma letra casa com meio mundo, e não é uma busca
+
+  const contem = `%${limpo}%`;
+  const comeca = `${limpo}%`;
+
+  const rows = await db.execute<{
+    id: string; handle: string; name: string | null; image: string | null;
+    is_private: boolean; following: boolean;
+  }>(sql`
+    select u.id,
+           u.handle,
+           u.display_name as name,
+           u.image,
+           u.is_private,
+           exists(
+             select 1 from follows f
+              where f.follower_id = ${viewer!.id}::uuid and f.followee_id = u.id
+           ) as following
+      from users u
+     where u.deleted_at is null
+       and u.banned_at is null
+       and u.id <> ${viewer!.id}::uuid
+       and (u.handle ilike ${contem} or u.display_name ilike ${contem})
+     -- Quem começa com o que você digitou vem primeiro: "ana" acha a @ana antes da @joana.
+     order by (u.handle ilike ${comeca}) desc,
+              coalesce(u.display_name, u.handle) asc
+     limit 20`);
+
+  return rows.map((r) => ({
+    id: r.id,
+    handle: r.handle,
+    name: r.name,
+    image: r.image,
+    isPrivate: r.is_private,
+    following: r.following,
+  }));
+}

@@ -5,6 +5,7 @@ import { Moldura } from "@/components/moldura";
 import { Empty } from "@/components/empty";
 import { Cover } from "@/components/cover";
 import { AfinidadeLinha } from "@/components/afinidade-linha";
+import { BuscaPessoas } from "@/components/busca-pessoas";
 import type { Viewer } from "@/lib/authz";
 
 /**
@@ -55,11 +56,18 @@ export async function Explore({ viewer }: { viewer: Viewer }) {
 
   return (
     <div className="mt-8">
+      {/* ── BUSCAR UMA PESSOA: fica no topo, e sempre, mesmo quando não há estante
+          pública para descobrir. Achar quem você já conhece não depende de ter gente
+          nova para conhecer. Ver components/busca-pessoas.tsx. */}
+      <BuscaPessoas />
+
       {vazio ? (
-        <Empty>
-          Ainda não tem estante pública para mostrar. Assim que alguém abrir a estante, ela aparece
-          aqui.
-        </Empty>
+        <div className="mt-10">
+          <Empty>
+            Ainda não tem estante pública para descobrir. Assim que alguém abrir a estante, ela
+            aparece aqui. Mas você já pode buscar quem conhece pelo nome, ali em cima.
+          </Empty>
+        </div>
       ) : (
         <div className="mt-10 flex flex-col gap-10">
           {/* ── 1. ESTANTES PARA DESCOBRIR: o coração da tela ────────── */}
