@@ -71,6 +71,9 @@ Considerado e rejeitado: fazer scraping do Goodreads/Skoob por ISBN para preench
 **2026-07-11: Exatamente um tipo de notificação: um amigo terminou um livro que você leu.**
 Todo o resto é silêncio. Esse único evento é o único em que uma conversa genuinamente quer acontecer.
 
+**2026-07-16: O sino avisa três laços, e o "visto" mora no navegador.**
+Estende a decisão acima. Ela nasceu antes de existir gente de verdade no app e mirava o RUÍDO (o mural de "fulano curtiu", a esteira de engajamento). Com amigos usando de verdade, apareceram três momentos em que alguém age SOBRE você e você não tem como saber sozinho: **te seguiram**, **alguém que você convidou entrou**, **te recomendaram um livro**. Some a esposa que criou conta e te seguiu; some o convite que deu certo. Não é ruído: é laço, e laço é o produto. Sem contador de likes, sem "em alta", nada para performar. Um sino no topo (escolha do dono sobre um item de menu), com um pontinho quando há algo novo. Os três eventos já têm dado no banco (`follows`, `users.invited_by`, `recommendations`); ver lib/novidades.ts e components/sino.tsx. Ficam de fora, por ora, a resenha de terceiro e o "amigo terminou um livro que você já leu" (esse é mais frequente; entra se pedirem). O estado de "já vi" mora no `localStorage` do navegador, e não numa coluna: o deploy não roda migration sozinho, e "já vi isto" é coisa que o aparelho sabe. Por aparelho, e tudo bem.
+
 **2026-07-11: Este é um projeto brasileiro, em português.**
 Reverte a decisão anterior de EN primeiro. O público é de leitores brasileiros de clássicos (Antofágica, Martin Claret, Editora 34), filosofia e mangá. O Skoob é o único incumbente e está apodrecendo. A cópia de produto é PT-BR; código, schema e commits ficam em inglês para manter o público de contribuidores aberto; o README é bilíngue, português primeiro.
 

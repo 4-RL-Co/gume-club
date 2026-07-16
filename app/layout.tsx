@@ -9,6 +9,7 @@ import { getViewer } from "@/lib/viewer";
 import { getCollections } from "@/lib/curation";
 import { souModerador } from "@/lib/moderacao";
 import { podeVerAFila } from "@/lib/torneira";
+import { getNovidades } from "@/lib/novidades";
 import "./globals.css";
 
 /**
@@ -66,7 +67,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   if (!viewer) {
     return (
-      <html lang="pt-BR" className={`${chrome.variable} ${voice.variable} ${mark.variable}`}>
+      <html lang="pt-BR" suppressHydrationWarning className={`${chrome.variable} ${voice.variable} ${mark.variable}`}>
         <body className="min-h-dvh">
           <PublicHeader />
           {children}
@@ -77,7 +78,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   // A barra não recebe mais contagem: contagem é de FILTRO, e filtro mora na
   // tela que ele filtra. Ela só precisa das estantes que você inventou.
-  const [shelves, moderador, fila] = await Promise.all([
+  const [shelves, moderador, fila, novidades] = await Promise.all([
     getCollections(viewer, viewer.id),
     // MODERADOR, e não bibliotecário: bibliotecário mexe em ficha de livro, moderador
     // mexe em gente, e os dois cargos deixaram de ser o mesmo. Ver lib/moderacao.ts.
@@ -85,14 +86,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     // A FILA DE PEDIDOS é de BIBLIOTECÁRIO ou moderador: ela é trabalho de catálogo.
     // Ver lib/torneira.ts.
     podeVerAFila(viewer),
+    // As três novidades do sino: te seguiram, seu convidado entrou, te recomendaram um
+    // livro. Ver lib/novidades.ts.
+    getNovidades(viewer),
   ]);
 
   return (
-    <html lang="pt-BR" className={`${chrome.variable} ${voice.variable} ${mark.variable}`}>
+    <html lang="pt-BR" suppressHydrationWarning className={`${chrome.variable} ${voice.variable} ${mark.variable}`}>
       <body className="min-h-dvh">
         {/* useSearchParams needs a suspense boundary at the layout level */}
         <Suspense fallback={null}>
-          <Sidebar shelves={shelves} moderador={moderador} fila={fila} />
+          <Sidebar shelves={shelves} moderador={moderador} fila={fila} novidades={novidades} />
         </Suspense>
 
         {/* Cmd+K de qualquer tela: achar um livro e pôr na estante é a ação mais

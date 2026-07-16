@@ -11,6 +11,8 @@ import { CONVERSA } from "@/lib/onde";
 import { GlassBar } from "@/components/glass-bar";
 import { Logo, Mark } from "@/components/logo";
 import { MyShelves, type Shelf } from "@/components/my-shelves";
+import { Sino } from "@/components/sino";
+import type { Novidade } from "@/lib/novidades";
 import { Avatar } from "@/components/avatar";
 import { useSession, signOut } from "@/lib/auth-client";
 
@@ -78,11 +80,14 @@ export function Sidebar({
   shelves,
   moderador = false,
   fila = false,
+  novidades = [],
 }: {
   shelves: Shelf[];
   moderador?: boolean;
   /** Bibliotecário ou moderador: quem cuida do acervo vê a fila de pedidos. */
   fila?: boolean;
+  /** Te seguiram, seu convidado entrou, te recomendaram: o que o sino mostra. */
+  novidades?: Novidade[];
 }) {
   const path = usePathname();
   const router = useRouter();
@@ -107,9 +112,12 @@ export function Sidebar({
         as="aside"
         className="fixed left-3 top-3 bottom-3 z-40 hidden w-[230px] flex-col overflow-y-auto px-4 py-6 sm:flex"
       >
-        <Link href="/" className="px-2">
-          <Logo />
-        </Link>
+        <div className="flex items-center justify-between px-2">
+          <Link href="/">
+            <Logo />
+          </Link>
+          {session && <Sino novidades={novidades} />}
+        </div>
 
         <BuscaFalsa />
 
@@ -219,11 +227,12 @@ export function Sidebar({
         ))}
       </GlassBar>
 
-      {/* o fio sozinho, no topo, para o celular saber de quem é o app */}
-      <div className="px-6 pt-6 sm:hidden">
+      {/* o fio no topo, para o celular saber de quem é o app, e o sino ao lado */}
+      <div className="flex items-center justify-between px-6 pt-6 sm:hidden">
         <Link href="/" aria-label="Gume">
           <Mark size={22} />
         </Link>
+        {session && <Sino novidades={novidades} />}
       </div>
     </>
   );
