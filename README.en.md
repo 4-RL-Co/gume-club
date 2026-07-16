@@ -1,6 +1,9 @@
 <div align="center">
 
-# Gume
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./public/logo/lockup-vertical-branco.png">
+  <img src="./public/logo/lockup-vertical-preto.png" alt="Gume" width="260">
+</picture>
 
 **The mind never loses its edge.**
 
@@ -150,7 +153,7 @@ The model:
 
 **It works.** The product is up and used every day by the person who maintains it: shelf, search over a Portuguese catalog of nearly 300 thousand editions, chronological feed, person-to-person recommendation, curation statistics, catalog corrections, and lossless import and export.
 
-It is **not yet live** for the public: the deploy is missing. There is no account to create today.
+**It's live at [gume.club](https://gume.club).** The official instance runs on [Railway](https://railway.app) (the Next.js app and Postgres, on the same private network), with [Vercel Blob](https://vercel.com/storage/blob) for reader-uploaded images. None of that is required: being self-hostable, you can run your own with a Postgres and any place to keep the images.
 
 The schema, the plan, and the design system are public on purpose, because they're the decisions that are expensive to change later and cheap to argue about now. If you think one of them is wrong, open an issue. That's not a formality.
 

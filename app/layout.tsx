@@ -46,6 +46,9 @@ const mark = Fraunces({
 });
 
 export const metadata: Metadata = {
+  // A base das URLs absolutas (Open Graph, Twitter). Sem ela, o Next usa localhost
+  // e as imagens de compartilhamento quebram fora da máquina. Vem do APP_URL.
+  metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
   title: "Gume",
   description: "A mente nunca perde o fio.",
 };

@@ -1,6 +1,9 @@
 <div align="center">
 
-# Gume
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./public/logo/lockup-vertical-branco.png">
+  <img src="./public/logo/lockup-vertical-preto.png" alt="Gume" width="260">
+</picture>
 
 **A mente nunca perde o fio.**
 
@@ -154,7 +157,7 @@ O modelo:
 
 **Funciona.** O produto está de pé e é usado todo dia por quem o mantém: estante, busca sobre um catálogo em português de quase 300 mil edições, feed cronológico, recomendação de pessoa para pessoa, estatísticas de curadoria, correções do catálogo, importação e exportação sem perdas.
 
-Ainda **não está no ar** para o público: falta o deploy. Não há conta para criar hoje.
+**Está no ar em [gume.club](https://gume.club).** A instância oficial roda no [Railway](https://railway.app) (o app Next.js e o Postgres, na mesma rede privada), com [Vercel Blob](https://vercel.com/storage/blob) para as imagens que o leitor sobe. Nada disso é obrigatório: sendo auto-hospedável, você roda a sua com um Postgres e um lugar qualquer para as imagens.
 
 O schema, o plano e o sistema de design são públicos de propósito, porque são as decisões caras de mudar depois e baratas de discutir agora. Se você acha que uma delas está errada, abra uma issue. Isso não é formalidade.
 

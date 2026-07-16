@@ -62,10 +62,17 @@ export async function saveProfile(form: {
      * mensagem passa a dizer a verdade, e um erro que não seja de handle sobe em vez de virar
      * uma mentira educada.
      */
-    const err = e as { code?: string; message?: string };
-    if (err.code === "23505") return { ok: false, error: "esse @ já é de outra pessoa" };
-    if (err.code === "23514") {
-      return err.message?.includes("número")
+    /**
+     * O Drizzle EMBRULHA o erro do driver: o código do Postgres (23514, 23505) chega em
+     * `err.cause.code`, não em `err.code`. Olhar só o nível de cima deixava o erro de handle
+     * reservado escapar e virar um 500 na cara do dono. Aqui a gente olha os dois níveis.
+     */
+    const err = e as { code?: string; message?: string; cause?: { code?: string; message?: string } };
+    const code = err.code ?? err.cause?.code;
+    const message = err.message ?? err.cause?.message;
+    if (code === "23505") return { ok: false, error: "esse @ já é de outra pessoa" };
+    if (code === "23514") {
+      return message?.includes("número")
         ? { ok: false, error: "o @ não pode começar com número" }
         : { ok: false, error: "esse @ é reservado, escolha outro" };
     }
