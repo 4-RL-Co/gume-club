@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, CornerDownLeft } from "lucide-react";
+import { Search, CornerDownLeft, Plus } from "lucide-react";
 import { Cover } from "@/components/cover";
 import { Avatar } from "@/components/avatar";
 import { addFromSearch } from "@/app/buscar/actions";
@@ -288,6 +288,29 @@ export function Command() {
               Confira se não escapou uma letra. O acento não faz falta: &ldquo;principe&rdquo;
               acha &ldquo;O Príncipe&rdquo;.
             </p>
+
+            {/**
+             * ═══ E A SAÍDA, QUE NÃO EXISTIA ═══
+             *
+             * O acervo do Gume é escolhido a mão, então "o Gume não tem esse livro" é o
+             * caso NORMAL, e não a exceção. Cadastrar na mão sempre foi possível, mas só
+             * em /buscar — e quase todo mundo busca por aqui, pelo ⌘K. Quem não achava
+             * lia "confira se não escapou uma letra" e acabava ali: a tela dizia que a
+             * culpa era da digitação, quando o livro simplesmente não existia ainda.
+             *
+             * Um beco sem saída no minuto em que a pessoa quer DAR um livro ao catálogo é
+             * o pior lugar possível para ter um beco sem saída.
+             */}
+            <button
+              onClick={() => {
+                router.push(`/buscar?q=${encodeURIComponent(q.trim())}`);
+                setOpen(false);
+              }}
+              className="mt-4 flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-ink)] px-4 py-2 text-[13px] font-medium text-[var(--color-canvas)]"
+            >
+              <Plus size={15} strokeWidth={2} />
+              Cadastrar este livro à mão
+            </button>
           </div>
         )}
 
@@ -414,6 +437,30 @@ export function Command() {
                 </li>
               );
             })}
+
+            {/**
+             * ═══ "NÃO É NENHUM DESSES" ═══
+             *
+             * Achar ALGUMA coisa não é achar O livro. A busca devolve três edições
+             * parecidas, nenhuma é a da pessoa, e sem esta linha ela conclui que o jeito
+             * é aceitar a errada — que é exatamente como um catálogo comum começa a
+             * mentir. A saída fica ao lado do erro, e não numa tela que ela teria que
+             * saber que existe.
+             */}
+            {livros.length > 0 && (
+              <li className="mt-2 border-t border-[var(--color-rule)] pt-2">
+                <button
+                  onClick={() => {
+                    router.push(`/buscar?q=${encodeURIComponent(q.trim())}`);
+                    setOpen(false);
+                  }}
+                  className="flex w-full items-center gap-3 px-6 py-3 text-left text-[13px] text-[var(--color-ink-faint)] transition-colors hover:bg-white/[0.04] hover:text-[var(--color-ink)]"
+                >
+                  <Plus size={15} strokeWidth={1.5} className="shrink-0" />
+                  Não é nenhum desses? Cadastre o livro à mão
+                </button>
+              </li>
+            )}
           </ul>
         )}
 
