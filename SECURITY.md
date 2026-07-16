@@ -76,4 +76,4 @@ Por isso ficam abertos de propósito: a correção não é pontual. Ela vem quan
 
 ## Como reportar
 
-Achou algo? Escreva para security@gume.club (ou abra um security advisory privado no GitHub). Por favor, não abra uma issue pública. A gente dá o crédito a você, a não ser que você prefira que não.
+Achou algo? Escreva para olegas@4real.ventures (ou abra um security advisory privado no GitHub). Por favor, não abra uma issue pública. A gente dá o crédito a você, a não ser que você prefira que não.

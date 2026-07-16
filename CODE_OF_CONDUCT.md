@@ -36,7 +36,7 @@ Este Código de Conduta se aplica em todos os espaços da comunidade, e também 
 
 ## Aplicação
 
-Casos de comportamento abusivo, de assédio ou de qualquer outra forma inaceitável podem ser reportados aos líderes da comunidade responsáveis pela aplicação em conduta@gume.club. Todas as reclamações serão analisadas e investigadas de forma rápida e justa.
+Casos de comportamento abusivo, de assédio ou de qualquer outra forma inaceitável podem ser reportados aos líderes da comunidade responsáveis pela aplicação em olegas@4real.ventures. Todas as reclamações serão analisadas e investigadas de forma rápida e justa.
 
 Todos os líderes da comunidade têm a obrigação de respeitar a privacidade e a segurança de quem reportar qualquer incidente.
 
