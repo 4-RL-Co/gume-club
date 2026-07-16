@@ -7,7 +7,8 @@ import {
   findOrCreateWork, hitToWork, shelve, setProvenance,
   isStatus, type Status,
 } from "@/lib/library";
-import { searchAll, enriquecer, type Hit } from "@/lib/catalog";
+import { searchAll, enriquecer, porIsbn, type Hit } from "@/lib/catalog";
+import { porQueNaoAceita } from "@/lib/imagens";
 
 /**
  * Adding a book, in one tap. The result carries the ids back so the page can
@@ -73,15 +74,50 @@ export async function answerProvenance(
  *  ninguém para ter o próprio livro na própria estante.
  * ════════════════════════════════════════════════════════════════════
  */
+/**
+ * A ficha inteira, pelo código de barras. É o que o cadastro à mão chama quando você
+ * digita um ISBN: título, autor, editora, ano, páginas e capa voltam prontos.
+ *
+ * `getActor()` porque isto bate em API de terceiro (Open Library, Google Books): um
+ * endereço anônimo que dispara busca externa é um amplificador de graça. Ele também
+ * conta, e a conta é barata aqui — um ISBN só fica válido com 10 ou 13 dígitos, então
+ * a tela dispara isto uma vez, e não a cada tecla.
+ */
+export async function puxarPorIsbn(bruto: string): Promise<{
+  title: string;
+  author: string | null;
+  publisher: string | null;
+  isbn13: string | null;
+  publishedYear: number | null;
+  pageCount: number | null;
+  coverUrl: string | null;
+} | null> {
+  await getActor();
+
+  const hit = await porIsbn(bruto);
+  if (!hit) return null;
+
+  return {
+    title: hit.title,
+    author: hit.author,
+    publisher: hit.publisher,
+    isbn13: hit.isbn13,
+    publishedYear: hit.publishedYear,
+    pageCount: hit.pageCount,
+    coverUrl: hit.coverUrl,
+  };
+}
+
 export async function addByHand(form: {
   title: string;
   author: string;
   status: Status;
-  /** Os opcionais. Ficam atrás de um "mais detalhes" que quase ninguém vai abrir. */
   publisher?: string;
   isbn?: string;
   year?: string;
   pageCount?: string;
+  /** A capa: a que o ISBN trouxe, ou a que a pessoa subiu do computador. */
+  coverUrl?: string;
 }): Promise<Added> {
   const actor = await getActor();
 
@@ -103,9 +139,21 @@ export async function addByHand(form: {
     pageCount: Number.isInteger(paginas) && paginas > 0 ? paginas : null,
   };
 
-  // A máquina vai atrás do resto. Se ela não achar com confiança, devolve null, e o
-  // livro entra com o que a pessoa deu — que já basta.
-  const achado = await enriquecer(title, author);
+  /**
+   * A capa passa pelo mesmo porteiro do retrato de autor: ela vem por referência, e um
+   * endereço fora da lista viraria uma capa quebrada na tela de todo mundo (a CSP a
+   * bloqueia na hora de mostrar). Ver lib/imagens.ts.
+   *
+   * Na prática ela só chega daqui de dentro (o Blob do upload) ou da fonte que o ISBN
+   * trouxe, e as duas já são aceitas: esta checagem é a trava, e não o caminho.
+   */
+  const capa = clamp(form.coverUrl ?? "", LIMITS.url);
+  const naoAceita = porQueNaoAceita(capa ?? "");
+  if (naoAceita) throw new Error(naoAceita);
+
+  // A máquina vai atrás do resto, e agora ela usa o ISBN quando existe — que é o
+  // identificador preciso, e não um título parecido. Ver enriquecer() em lib/catalog.ts.
+  const achado = await enriquecer(title, author, digits);
 
   const { workId, editionId } = await findOrCreateWork({
     title,
@@ -119,7 +167,9 @@ export async function addByHand(form: {
     pageCount: digitado.pageCount ?? achado?.pageCount ?? null,
     // O ano da OBRA ninguém digita, e é dele que a página de estatísticas vive.
     firstPublished: achado?.firstPublished ?? null,
-    coverUrl: achado?.coverUrl ?? null,
+    // A capa que a pessoa escolheu (ou confirmou) ganha da que a máquina adivinhou,
+    // pela mesma razão de todos os outros campos: ela está com o livro na mão.
+    coverUrl: capa ?? achado?.coverUrl ?? null,
     needsReview: true, // é um livro de verdade na estante enquanto isso, e não um de segunda
   });
 

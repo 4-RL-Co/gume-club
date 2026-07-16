@@ -406,22 +406,46 @@ function bate(digitado: string, veio: string): boolean {
 export async function enriquecer(
   titulo: string,
   autor: string | null,
+  /**
+   * O ISBN, quando a pessoa deu um.
+   *
+   * ═══ O FURO QUE ESTE PARÂMETRO FECHA ═══
+   *
+   * O ISBN era GUARDADO e nunca USADO: a máquina saía procurando por "título autor"
+   * mesmo quando tinha o código de barras na mão. E título é justamente o que falha na
+   * edição brasileira, que é o caso em que alguém cadastra um livro à mão.
+   *
+   * O identificador mais preciso que existe estava sendo jogado fora na hora exata da
+   * consulta. Agora ele vem primeiro.
+   */
+  isbn?: string | null,
 ): Promise<Enriquecido | null> {
   const t = titulo.trim();
-  if (t.length < 2) return null;
+  const codigo = asIsbn(isbn ?? "");
+  if (!codigo && t.length < 2) return null;
 
   let hits: Hit[];
   try {
-    hits = await search(autor ? `${t} ${autor}` : t);
+    hits = await search(codigo ?? (autor ? `${t} ${autor}` : t));
   } catch {
     // Uma fonte fora do ar não pode impedir alguém de cadastrar o próprio livro.
     return null;
   }
 
   for (const hit of hits) {
-    if (!bate(t, hit.title)) continue;
-    // Se a pessoa deu o autor, ele é prova, e ela não pode ser ignorada.
-    if (autor && !(hit.author && bate(autor, hit.author))) continue;
+    /**
+     * ═══ O ISBN DISPENSA A CONFERÊNCIA DO TÍTULO ═══
+     *
+     * Quando a busca foi POR CÓDIGO, o que voltou É o livro: um ISBN é uma edição só.
+     * Exigir que o título "bata" rejeitaria a edição certa porque ela traz um subtítulo,
+     * ou o nome em outra língua. E quem digitou o código está com o livro na mão, que é
+     * a melhor prova que existe.
+     */
+    if (!codigo) {
+      if (!bate(t, hit.title)) continue;
+      // Se a pessoa deu o autor, ele é prova, e ela não pode ser ignorada.
+      if (autor && !(hit.author && bate(autor, hit.author))) continue;
+    }
 
     return {
       isbn13: hit.isbn13,
@@ -437,6 +461,47 @@ export async function enriquecer(
   // Não achou com confiança. O livro entra assim mesmo, e um bibliotecário completa
   // depois: `needs_review` existe exatamente para isto.
   return null;
+}
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  O LIVRO INTEIRO, PELO CÓDIGO DE BARRAS.
+ *
+ *  É o que o cadastro à mão usa: quem está com o livro na mão digita o ISBN, e a ficha
+ *  se preenche sozinha — título, autor, editora, ano, páginas e capa.
+ *
+ *  Isto existe porque a alternativa é pior: um humano cansado preenchendo seis campos no
+ *  fim de uma busca que já falhou digita menos e erra mais do que a fonte. A ficha
+ *  completa vem do código, e não do esforço.
+ *
+ *  Diferente de `enriquecer`, devolve o Hit INTEIRO: o formulário precisa do título e do
+ *  autor para se preencher, e não só dos complementos.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export async function porIsbn(bruto: string): Promise<Hit | null> {
+  const isbn = asIsbn(bruto);
+  if (!isbn) return null;
+
+  let hits: Hit[];
+  try {
+    hits = await search(isbn);
+  } catch {
+    // Fonte fora do ar devolve "não achei", e nunca um 500 na cara de quem cadastra.
+    return null;
+  }
+
+  /**
+   * O PRIMEIRO, e aqui a ordem SIGNIFICA alguma coisa: a busca foi por ISBN, e um ISBN é
+   * uma edição só. Todo hit que voltou é o MESMO livro (a Open Library e o Google
+   * respondem sobre a mesma edição), então não há papel nenhum a escolher entre eles.
+   * Não é o `[0]` cego que o AGENTS.md proíbe: é uma lista sem papéis.
+   */
+  const hit = hits[0];
+  if (!hit) return null;
+
+  // A capa é o campo que mais falta, e a que vem no hit nem sempre existe: se não veio,
+  // procura pelo código antes de desistir. Ver findCover().
+  return { ...hit, coverUrl: hit.coverUrl ?? (await findCover(hit.isbn13 ?? isbn, hit.title, hit.author)) };
 }
 
 // ─────────────────────────────────────────────────────────────────── search

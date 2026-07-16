@@ -701,6 +701,30 @@ que volta tem que conter todas as palavras significativas do que a pessoa digito
 autor tem que bater. Na dúvida não preenche — **a capa errada na estante de alguém é pior
 que capa nenhuma**, e ninguém perceberia, porque o leitor não pediu nada disso.
 
+### 2026-07-16 — Revisado: a ficha é INTEIRA, e quem preenche é o ISBN
+
+O corte para dois campos matou o abandono e criou outro problema: **a ficha pela metade**.
+A máquina procurava por **título**, e título é exatamente o que falha na edição brasileira
+obscura — que é exatamente o caso de quem chega ao cadastro à mão. O livro entrava magro:
+sem capa, sem editora, sem páginas.
+
+E havia um furo bobo no meio disso: **o ISBN era guardado e nunca usado**. A pessoa digitava
+o código de barras, com o livro na mão, e a máquina saía procurando por título assim mesmo.
+O identificador mais preciso que existe era jogado fora na hora da consulta.
+
+Agora o formulário mostra **tudo** (título, autor, ISBN, editora, ano, páginas e capa), e o
+**ISBN preenche o resto sozinho** (`porIsbn()` em `lib/catalog.ts`; `enriquecer()` passou a
+receber o código e, quando ele existe, dispensa a conferência de título — um ISBN é uma
+edição só). Medido em ISBN brasileiro real: `9788535914849` volta "1984, Companhia das
+Letras", com capa. Dois de quatro não voltam nada — e é por isso que os campos ficam à
+vista e a **capa aceita upload**: quando a fonte não sabe, quem está com o livro na mão
+sabe.
+
+Isto **não** ressuscita o formulário de nove campos: a diferença é que ninguém precisa
+preencher seis coisas. Um campo (o código) faz o trabalho, e a pessoa só confere. O que
+ficar em branco continua entrando, com `needs_review`, esperando um bibliotecário. Só o
+título é obrigatório.
+
 ---
 
 ## As datas de leitura são do LEITOR, e não do relógio do servidor
