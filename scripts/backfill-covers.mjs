@@ -18,6 +18,12 @@
  *    pnpm covers --tudo          o catálogo inteiro (leva horas)
  *    pnpm covers --limite 500    para experimentar
  *
+ *    pnpm covers --fantasmas     confere as capas que JÁ existem e mata as mentiras
+ *                                (a Open Library responde 200 com 43 bytes quando não
+ *                                tem a imagem). Rode ANTES de preencher: fantasma é
+ *                                pior que nulo, porque impede o app de emprestar a
+ *                                capa de outra edição sozinho.
+ *
  *  ═══ POR QUE EXISTE O --canone ═══
  *
  *  Não dá para consertar 336 mil capas. Dá para consertar as dos 300
@@ -233,6 +239,119 @@ async function noGoogle(isbn, titulo, autor) {
 }
 
 // ─────────────────────────────────────────────────────────────── o alvo
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  A FAXINA DOS FANTASMAS.    pnpm covers --fantasmas
+ *
+ *  ═══ O BUG QUE ELA EXISTE PARA CONSERTAR ═══
+ *
+ *  Uma leitora e o dono tinham o MESMO livro. Na estante dela, capa. Na dele, um
+ *  retângulo vazio — e na página do livro também. Mesma obra, mesmo catálogo.
+ *
+ *  A causa não era o código. A estante (lib/shelf.ts) e a página do livro empresta
+ *  a capa de outra edição quando a sua não tem — as duas defesas estavam certas e
+ *  funcionando. Só que as duas perguntam a MESMA coisa: "a capa é nula?".
+ *
+ *  E a capa dele não era nula. Era um FANTASMA: a Open Library responde `200 OK`
+ *  com 43 bytes de nada quando não tem a imagem — sem 404, sem erro, sem
+ *  content-type. O campo ficava preenchido com uma promessa vazia, os dois planos B
+ *  concluíam "ele já tem capa", e ninguém emprestava nada.
+ *
+ *  **Uma linha de dado mentiroso derrotou duas defesas corretas.** É a lei do
+ *  AGENTS.md do outro lado do balcão: a fonte traduziu "não tenho" em "200 OK", e a
+ *  gente acreditou.
+ *
+ *  Fantasma é PIOR que nulo: nulo o app conserta sozinho (empresta), fantasma ele
+ *  não tem como saber. Por isso esta faxina vem ANTES de preencher: ela devolve as
+ *  mentiras ao estado de nulo, e aí o resto do sistema volta a funcionar sozinho.
+ * ════════════════════════════════════════════════════════════════════
+ */
+const FANTASMAS = process.argv.includes("--fantasmas");
+
+/**
+ * Esta capa é uma capa de verdade?
+ *
+ * TRÊS estados, e não dois: `true` é capa, `false` é fantasma, e `null` é NÃO DEU
+ * PARA PERGUNTAR. Confundir os dois últimos apagaria capas boas toda vez que a rede
+ * tossisse — e apagar capa boa é exatamente o estrago que esta faxina existe para
+ * desfazer.
+ */
+async function capaViva(endereco) {
+  let res;
+  try {
+    res = await fetch(endereco, { redirect: "follow", signal: AbortSignal.timeout(8000) });
+  } catch {
+    return null; // a rede não respondeu. NÃO é "esta capa não existe".
+  }
+
+  if (!res.ok) return false;
+
+  const tipo = (res.headers.get("content-type") ?? "").toLowerCase();
+  const tamanho = Number(res.headers.get("content-length") ?? "0");
+
+  // O fantasma da Open Library não se declara imagem: vem sem content-type nenhum.
+  if (!tipo.startsWith("image/")) return false;
+
+  // E quando se declara, o tamanho entrega: 43 bytes não são uma capa.
+  if (tamanho > 0) return tamanho > 1000;
+
+  // Sem content-length, só o corpo responde.
+  try {
+    return (await res.arrayBuffer()).byteLength > 1000;
+  } catch {
+    return null;
+  }
+}
+
+if (FANTASMAS) {
+  const alvos = TUDO
+    ? sql`select e.id, e.cover_url from editions e where e.cover_url is not null limit ${LIMITE}`
+    : sql`select distinct e.id, e.cover_url
+            from editions e
+            join library_entries le on le.work_id = e.work_id
+           where e.cover_url is not null
+           limit ${LIMITE}`;
+
+  const linhas = await alvos;
+  console.log(
+    TUDO
+      ? `Conferindo ${linhas.length} capas do catálogo inteiro.`
+      : `Conferindo ${linhas.length} capas de livros que estão em alguma estante.`,
+  );
+
+  let vivas = 0;
+  let mortas = 0;
+  let mudas = 0;
+
+  for (const l of linhas) {
+    const viva = await capaViva(l.cover_url);
+
+    if (viva === true) {
+      vivas++;
+    } else if (viva === false) {
+      await sql`update editions set cover_url = null where id = ${l.id}::uuid`;
+      mortas++;
+      console.log(`  fantasma → nula: ${l.cover_url}`);
+    } else {
+      // Não deu para perguntar. NÃO MEXE: o silêncio da rede não é um fato sobre a capa.
+      mudas++;
+    }
+
+    await espera(PAUSA_MS);
+  }
+
+  console.log(
+    `\n✓ ${vivas} vivas · ${mortas} fantasmas viraram nulas · ${mudas} não responderam (não mexi).`,
+  );
+  if (mortas > 0) {
+    console.log("  Agora o plano B pode emprestar a capa de outra edição sozinho.");
+    console.log("  E 'pnpm covers' pode preencher as que ficaram nulas.");
+  }
+
+  await sql.end();
+  process.exit(0);
+}
 
 /**
  * Só edições sem capa cuja OBRA também não tem capa em nenhuma outra edição: se
