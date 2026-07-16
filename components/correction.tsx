@@ -42,11 +42,38 @@ export function Correcao({
   const [capa, setCapa] = useState("");
   const [recusa, setRecusa] = useState<string | null>(null);
   const [naoCarregou, setNaoCarregou] = useState(false);
+  const [subindo, setSubindo] = useState(false);
   const [pending, start] = useTransition();
 
   const fechar = () => {
     setAberto(false);
     setCaminho(null);
+  };
+
+  // Subir a capa direto do computador: a foto do livro que não está em fonte aberta
+  // nenhuma (o Clube de Literatura Clássica é o caso). Vai para o nosso Blob, que já é
+  // uma origem aceita, então o endereço cai no mesmo campo e segue pela mesma conferência
+  // do bibliotecário. Nada de link de loja: aquilo gira e quebra. Ver lib/imagens.ts.
+  const subirCapa = async (arquivo: File) => {
+    setSubindo(true);
+    setRecusa(null);
+    try {
+      const body = new FormData();
+      body.append("file", arquivo);
+      body.append("para", "capas");
+      const res = await fetch("/api/upload", { method: "POST", body });
+      const json = await res.json();
+      if (!res.ok || !json.url) {
+        setRecusa(typeof json.error === "string" ? json.error : "Não deu para subir a imagem. Tente outra.");
+        return;
+      }
+      setCapa(json.url as string);
+      setNaoCarregou(false);
+    } catch {
+      setRecusa("Não deu para subir a imagem. Tente outra.");
+    } finally {
+      setSubindo(false);
+    }
   };
 
   if (!aberto) {
@@ -199,8 +226,9 @@ export function Correcao({
           <h3 className="text-[15px] text-[var(--color-ink)]">Sugerir uma capa</h3>
           <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-ink-faint)]">
             A capa é a única coisa que um bibliotecário confere antes de entrar, porque ela aparece
-            na tela de todo mundo. O endereço de uma imagem na internet, e não um arquivo: a capa
-            mora na fonte — por isso ela só pode vir de {DE_ONDE_ACEITA.join(", ")}.
+            na tela de todo mundo. Ela pode vir de um endereço em {DE_ONDE_ACEITA.join(", ")}, ou de
+            uma imagem que você sobe aqui do computador (a foto do seu livro, quando ele não está em
+            nenhuma dessas fontes).
           </p>
 
           <input
@@ -216,6 +244,26 @@ export function Correcao({
             placeholder="https://upload.wikimedia.org/…"
             className="mt-4 w-full rounded-[var(--radius-2)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[14px] outline-none focus:border-[var(--color-ink)]"
           />
+
+          <div className="mt-3 flex items-center gap-3 text-[12px] text-[var(--color-ink-faint)]">
+            <span className="h-px flex-1 bg-[var(--color-rule)]" />
+            ou
+            <span className="h-px flex-1 bg-[var(--color-rule)]" />
+          </div>
+
+          <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-rule)] px-4 py-2 text-[13px] text-[var(--color-ink-soft)] transition-colors hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]">
+            {subindo ? "subindo a imagem" : "subir uma imagem do computador"}
+            <input
+              type="file"
+              accept="image/*"
+              disabled={subindo}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void subirCapa(f);
+              }}
+              className="hidden"
+            />
+          </label>
 
           {recusa && (
             <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-perigo)]" aria-live="polite">

@@ -46,6 +46,9 @@ export async function guardarImagem(
   bytes: Uint8Array,
   ext: string,
   mime: string,
+  // Onde no Blob a imagem mora. A foto de perfil vai para `avatares/`; a capa de um livro,
+  // para `capas/`. É o mesmo store e o mesmo token — só uma pasta para não misturar.
+  pasta: "avatares" | "capas" = "avatares",
 ): Promise<Guardada> {
   // O nome é NOSSO. Nada que o cliente mandou encosta no caminho do arquivo, e por isso
   // "../../etc/passwd" não é um pensamento que alguém precise ter.
@@ -54,7 +57,7 @@ export async function guardarImagem(
   const token = process.env.BLOB_READ_WRITE_TOKEN;
 
   if (token) {
-    const { url } = await put(`avatares/${nome}`, Buffer.from(bytes), {
+    const { url } = await put(`${pasta}/${nome}`, Buffer.from(bytes), {
       access: "public",
       contentType: mime,
       token,

@@ -82,7 +82,9 @@ export async function POST(req: Request) {
    * Ver lib/guardar.ts.
    */
   try {
-    const { url } = await guardarImagem(bytes, kind.ext, kind.mime);
+    // Avatar por padrão; `para=capas` guarda a imagem na pasta das capas de livro.
+    const para = form.get("para") === "capas" ? "capas" : "avatares";
+    const { url } = await guardarImagem(bytes, kind.ext, kind.mime, para);
     return NextResponse.json({ url });
   } catch (e) {
     /**
