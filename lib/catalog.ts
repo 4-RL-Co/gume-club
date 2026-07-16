@@ -170,8 +170,13 @@ function fromOpenLibrary(doc: OlDoc): Hit | null {
 async function searchOpenLibrary(query: string, isbn: string | null): Promise<Hit[]> {
   const fields = "key,title,author_name,isbn,publisher,first_publish_year,number_of_pages_median,cover_i,cover_edition_key";
   const url = isbn
+    // ═══ PELO ISBN, NENHUM FILTRO DE IDIOMA ═══
+    //
+    // O código é definitivo, e é a única porta para um livro que NÃO está em português:
+    // quem tem o volume em inglês na mão escaneia a contracapa e ele entra. Filtrar aqui
+    // fecharia essa porta sem ganhar nada — um ISBN não devolve lixo.
     ? `https://openlibrary.org/search.json?isbn=${encodeURIComponent(isbn)}&limit=5&fields=${fields}`
-    : `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=20&fields=${fields}`;
+    : `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&language=por&limit=20&fields=${fields}`;
 
   const data = (await getJson(url)) as { docs?: OlDoc[] } | null;
   return (data?.docs ?? []).map(fromOpenLibrary).filter((h): h is Hit => h !== null);
@@ -243,7 +248,10 @@ function fromGoogle(vol: GoogleVolume): Hit | null {
  */
 async function searchGoogleBooks(query: string, isbn: string | null): Promise<Hit[]> {
   const q = isbn ? `isbn:${isbn}` : query;
-  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=20&printType=books`;
+  // Pelo ISBN, sem restrição de idioma: o código é definitivo, e é a porta do livro que
+  // não está em português. Por título, só português. Ver searchOpenLibrary(), acima.
+  const idioma = isbn ? "" : "&langRestrict=pt";
+  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}${idioma}&maxResults=20&printType=books`;
 
   const data = (await getJson(url, { headers: googleKey() })) as { items?: GoogleVolume[] } | null;
   return (data?.items ?? []).map(fromGoogle).filter((h): h is Hit => h !== null);
@@ -519,9 +527,34 @@ export async function search(rawQuery: string): Promise<Hit[]> {
 
   const isbn = asIsbn(query);
   const hits = await searchOpenLibrary(query, isbn);
-  if (hits.length > 0) return dedupe(hits);
+  if (hits.length > 0) return dedupe(semIngles(hits, isbn));
 
-  return dedupe(await searchGoogleBooks(query, isbn));
+  return dedupe(semIngles(await searchGoogleBooks(query, isbn), isbn));
+}
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  A SEGUNDA TRAVA, PORQUE A PRIMEIRA É DE OUTRA PESSOA.
+ *
+ *  O `language=por` é uma promessa da Open Library, e ela é cumprida por uma etiqueta que
+ *  alguém pôs lá — e etiqueta errada existe. "Blank Sudoku Grids 12x12", "All 2004-2009
+ *  Cadillac XLR Colors" e "Czech Catholic Union of Texas" chegaram à busca de um app
+ *  brasileiro porque a busca pedia o mundo inteiro; quando ela parar de pedir, quase tudo
+ *  isso morre na fonte. O que escapar por etiqueta errada morre aqui.
+ *
+ *  ═══ E ELA NÃO CHUTA ═══
+ *
+ *  `ehIngles` só derruba o que ele AFIRMA ser inglês. "Berserk", "Xlr8" e "Frankenstein"
+ *  são `null` — ele não sabe —, e o que ele não sabe passa. Um filtro que chuta some com
+ *  o livro certo, e sumir com o livro certo é pior que mostrar um errado: o errado a
+ *  pessoa ignora, o certo ela nunca descobre que existiu. Ver lib/idioma.ts.
+ *
+ *  Pelo ISBN não filtra nada: o código é definitivo, e é a porta do livro em inglês.
+ * ════════════════════════════════════════════════════════════════════
+ */
+function semIngles(hits: Hit[], isbn: string | null): Hit[] {
+  if (isbn) return hits;
+  return hits.filter((h) => !ehIngles(h.title));
 }
 
 /** The same book twice is worse than one fewer result. Match on ISBN, else title + author. */
@@ -539,6 +572,8 @@ export function dedupe(hits: Hit[]): Hit[] {
 
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
+// A trava do inglês na busca de fora. Ele nunca chuta: ver semIngles(), acima.
+import { ehIngles } from "@/lib/idioma";
 
 /**
  * The catalogue we already have. 414k Portuguese editions came in from the Open
