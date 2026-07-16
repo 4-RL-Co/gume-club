@@ -1,65 +1,36 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Pencil, BookOpen, Trash2 } from "lucide-react";
-import {
-  takeOffShelf, saveBookEdit, escolherEdicao,
-} from "@/app/livro/[slug]/curation-actions";
+import { BookOpen, Trash2 } from "lucide-react";
+import { takeOffShelf, escolherEdicao } from "@/app/livro/[slug]/curation-actions";
 
 const ICON = { size: 16, strokeWidth: 1.25 } as const;
 
 export type Tool = {
   slug: string;
   workId: string;
-  editionId: string | null;
   onShelf: boolean;
-  shelves: string[];
   editions: { id: string; publisher: string | null; year: number | null; pages: number | null; isbn: string | null }[];
   myEditionId: string | null;
-  book: {
-    title: string;
-    author: string | null;
-    firstPublished: number | null;
-    publisher: string | null;
-    publishedYear: number | null;
-    pageCount: number | null;
-    format: string | null;
-    isbn13: string | null;
-    coverUrl: string | null;
-  };
 };
 
 /**
- * Everything else you can do to a book: fix it, tag it, put it on a shelf you
- * invented, take it off your shelf.
+ * As duas coisas que sobraram nesta barra: dizer QUAL edição é a sua, e tirar o livro da
+ * estante.
  *
- * All of it is folded away behind a quiet row of links. These are the actions you
- * reach for once in a while, and a book page should be about the book, not about
- * its own controls.
+ * ═══ "CORRIGIR OS DADOS" SAIU DAQUI ═══
+ *
+ * Havia um formulário de correção aqui e OUTRO na gaveta "correções", logo acima. Dois
+ * caminhos para a mesma coisa, com regras diferentes para a capa: um contradizia o outro,
+ * e ninguém sabia qual usar. Agora existe um lugar só para arrumar um livro, dentro da
+ * gaveta "correções", e a capa é um campo como os outros. Ver components/correction.tsx.
  */
 export function BookTools(t: Tool) {
-  const [open, setOpen] = useState<"editar" | "edicao" | null>(null);
+  const [open, setOpen] = useState<"edicao" | null>(null);
 
   return (
     <section className="surface p-6">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-        <Toggle icon={<Pencil {...ICON} />} on={open === "editar"} onClick={() => setOpen(open === "editar" ? null : "editar")}>
-          corrigir os dados
-        </Toggle>
-        {/* ═══ "MINHAS ESTANTES" SAIU DAQUI ═══
-
-            Ela morava nesta barra, ao lado de "corrigir os dados" e "qual edição é a
-            minha" — e ninguém a achava. Duas coisas estavam erradas ao mesmo tempo:
-
-            O LUGAR. Esta barra é de CURADORIA: mexer no catálogo, arrumar ficha, escolher
-            edição. Pôr um livro numa estante não é curadoria, é a coisa mais básica que um
-            leitor faz. Estava na gaveta das ferramentas quando devia estar na mesa.
-
-            O NOME. "Minhas estantes" parece um LINK para as suas estantes, e não um lugar
-            onde se PÕE alguma coisa. O nome descrevia o destino, e não a ação.
-
-            Agora ela é a continuação natural de "prateleira", dentro do painel do livro.
-            Ver components/book-panel.tsx. */}
         {t.onShelf && t.editions.length > 1 && (
           <Toggle icon={<BookOpen {...ICON} />} on={open === "edicao"} onClick={() => setOpen(open === "edicao" ? null : "edicao")}>
             qual edição é a minha
@@ -68,7 +39,6 @@ export function BookTools(t: Tool) {
         {t.onShelf && <Remove workId={t.workId} />}
       </div>
 
-      {open === "editar" && <Editar {...t} />}
       {open === "edicao" && <Edicao {...t} />}
     </section>
   );
@@ -125,80 +95,6 @@ function Remove({ workId }: { workId: string }) {
   );
 }
 
-const FORMATS = [
-  ["paperback", "brochura"],
-  ["hardcover", "capa dura"],
-  ["ebook", "e-book"],
-  ["audiobook", "audiolivro"],
-  ["other", "outro"],
-] as const;
-
-/** Anyone can fix any book. Every change is recorded with a name on it. */
-function Editar(t: Tool) {
-  const [saved, setSaved] = useState(false);
-  const [pending, start] = useTransition();
-  const b = t.book;
-
-  return (
-    <form
-      className="paper mt-6 p-5"
-      action={(data: FormData) =>
-        start(async () => {
-          const form = Object.fromEntries(
-            [...data.entries()].map(([k, v]) => [k, String(v)]),
-          ) as Record<string, string>;
-          await saveBookEdit(t.slug, t.workId, t.editionId, form);
-          setSaved(true);
-        })
-      }
-    >
-      <p className="text-[13px] text-[var(--color-ink-soft)]">
-        Qualquer pessoa pode corrigir um livro. Toda mudança fica registrada com o nome de quem
-        fez, e dá para voltar atrás.
-      </p>
-
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <Field name="title" label="título" defaultValue={b.title} required />
-        <Field name="author" label="autor" defaultValue={b.author ?? ""} />
-        <Field name="publisher" label="editora" defaultValue={b.publisher ?? ""} />
-        <Field name="firstPublished" label="ano da obra" defaultValue={b.firstPublished ?? ""} inputMode="numeric" />
-        <Field name="publishedYear" label="ano da edição" defaultValue={b.publishedYear ?? ""} inputMode="numeric" />
-        <Field name="pageCount" label="páginas" defaultValue={b.pageCount ?? ""} inputMode="numeric" />
-        <Field name="isbn" label="ISBN" defaultValue={b.isbn13 ?? ""} inputMode="numeric" />
-        <label className="block">
-          <Label>formato</Label>
-          <select
-            name="format"
-            defaultValue={b.format ?? "paperback"}
-            className="mt-1.5 w-full rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[14px]"
-          >
-            {FORMATS.map(([v, l]) => (
-              <option key={v} value={v}>{l}</option>
-            ))}
-          </select>
-        </label>
-        <div className="sm:col-span-2">
-          <Field name="coverUrl" label="endereço da capa" defaultValue={b.coverUrl ?? ""} placeholder="https://..." />
-        </div>
-        <div className="sm:col-span-2">
-          <Field name="reason" label="o que você mudou (opcional)" placeholder="a editora estava errada" />
-        </div>
-      </div>
-
-      <div className="mt-5 flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-[var(--radius-control)] bg-[var(--color-ink)] px-4 py-2 text-[13px] font-medium text-[var(--color-canvas)] disabled:opacity-40"
-        >
-          {pending ? "Salvando" : "Salvar correção"}
-        </button>
-        {saved && !pending && <span className="text-[12px] text-[var(--color-ink-faint)]">salvo</span>}
-      </div>
-    </form>
-  );
-}
-
 /**
  * WHICH copy is yours.
  *
@@ -246,28 +142,5 @@ function Edicao(t: Tool) {
         );
       })}
     </ul>
-  );
-}
-
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-      {children}
-    </span>
-  );
-}
-
-function Field({
-  name, label, ...rest
-}: { name: string; label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <label className="block">
-      <Label>{label}</Label>
-      <input
-        name={name}
-        {...rest}
-        className="mt-1.5 w-full rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[14px] outline-none placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-ink)]"
-      />
-    </label>
   );
 }

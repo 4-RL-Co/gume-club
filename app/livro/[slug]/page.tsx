@@ -374,37 +374,49 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
               O que sobrou é "de onde veio esse livro", que é a HISTÓRIA de um exemplar, e
               não um anúncio. Ela mora numa gaveta dentro do painel. Ver lib/copies.ts. */}
 
-          {/* ── CORREÇÕES: quem arrumou o quê, e quando. Para sempre. ──── */}
+          {/* ── ARRUMAR ESTE LIVRO: a ficha, e o histórico de quem a arrumou. ── */}
           <Gaveta
-            titulo="correções"
+            titulo="arrumar este livro"
             resumo={
               correcoes.length > 0
-                ? `${correcoes.length} ${correcoes.length === 1 ? "conserto" : "consertos"} nesta ficha`
-                : "achou um erro nesta ficha? conserte"
+                ? `${correcoes.length} ${correcoes.length === 1 ? "conserto" : "consertos"} já nesta ficha`
+                : "faltou capa, ou tem algum dado errado? você mesmo ajeita"
             }
           >
-            <CorrectionsLog
-              slug={slug}
-              correcoes={correcoes}
-              souBibliotecario={bibliotecario}
-            />
-
-            {actor && edition && (
-              <div id="ficha" className="mt-6 scroll-mt-6 border-t border-[var(--color-rule)] pt-5">
+            {actor && edition ? (
+              <>
                 <Correcao
                   slug={slug}
-                  edicao={{
-                    id: edition.id,
-                    publisher: edition.publisher,
-                    publishedYear: edition.publishedYear,
-                  }}
+                  workId={book.workId}
+                  editionId={edition.id}
                   temOutrasEdicoes={book.editions.length > 1}
+                  livro={{
+                    title: book.title,
+                    author: book.author,
+                    publisher: edition.publisher,
+                    firstPublished: book.firstPublished,
+                    publishedYear: edition.publishedYear,
+                    pageCount: edition.pageCount,
+                    format: edition.format,
+                    isbn13: edition.isbn13,
+                    coverUrl: edition.coverUrl,
+                  }}
                 />
-              </div>
+
+                <div id="ficha" className="mt-8 scroll-mt-6 border-t border-[var(--color-rule)] pt-6">
+                  <Label>o que já foi arrumado</Label>
+                  <div className="mt-4">
+                    <CorrectionsLog slug={slug} correcoes={correcoes} souBibliotecario={bibliotecario} />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <CorrectionsLog slug={slug} correcoes={correcoes} souBibliotecario={bibliotecario} />
             )}
           </Gaveta>
 
           {book.editions.length > 1 && (
+            <div id="edicoes" className="scroll-mt-6">
             <Gaveta
               titulo="edições"
               resumo={`${book.editions.length} edições desta obra`}
@@ -439,15 +451,14 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
                 </p>
               )}
             </Gaveta>
+            </div>
           )}
 
-          {actor && (
+          {actor && book.mine?.status && (
             <BookTools
               slug={slug}
               workId={book.workId}
-              editionId={edition?.id ?? null}
               onShelf={Boolean(book.mine?.status)}
-              shelves={shelves}
               myEditionId={book.mine?.editionId ?? null}
               editions={book.editions.map((e) => ({
                 id: e.id,
@@ -456,17 +467,6 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
                 pages: e.pageCount,
                 isbn: e.isbn13,
               }))}
-              book={{
-                title: book.title,
-                author: book.author,
-                firstPublished: book.firstPublished,
-                publisher: edition?.publisher ?? null,
-                publishedYear: edition?.publishedYear ?? null,
-                pageCount: edition?.pageCount ?? null,
-                format: edition?.format ?? null,
-                isbn13: edition?.isbn13 ?? null,
-                coverUrl: edition?.coverUrl ?? null,
-              }}
             />
           )}
         </div>

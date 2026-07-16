@@ -1,57 +1,75 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { corrigir, proporUmaCapa } from "@/app/livro/[slug]/correction-actions";
+import { saveBookEdit } from "@/app/livro/[slug]/curation-actions";
 import { toast } from "@/lib/toast";
-import { CAMPOS, type Campo } from "@/lib/corrections-view";
 import { LIMITS } from "@/lib/limits";
 
 /**
  * ════════════════════════════════════════════════════════════════════
- *  A TELA DE CORREÇÃO PERGUNTA PRIMEIRO, E A PERGUNTA É A FEATURE.
+ *  ARRUMAR UM LIVRO: UM LUGAR SÓ, E A CAPA MORA COM OS OUTROS CAMPOS.
  *
- *  Sobrescrever a edição compartilhada para ela bater com a SUA cópia é
- *  proibido. Capa diferente é EDIÇÃO diferente. Foi exatamente assim que
- *  o catálogo do Goodreads virou lixo: cada leitor foi ajustando a ficha
- *  comum até ela não descrever livro nenhum.
+ *  Antes havia DUAS telas para corrigir a mesma ficha, e elas se contradiziam: uma
+ *  perguntava "o que está errado?" e mandava a capa para uma FILA; a outra era um
+ *  formulário que trocava tudo na hora, a capa por um link colado. A pessoa achava as
+ *  duas, não sabia qual usar, e a capa que ela "sugeria" sumia numa fila que só o
+ *  bibliotecário via — num app onde o bibliotecário é ela mesma.
  *
- *  Então, antes de deixar alguém editar qualquer coisa, a tela pergunta
- *  o que está errado, e empurra para o caminho certo:
+ *  Agora é um formulário só. A capa é um campo como os outros: você sobe a imagem, e ela
+ *  entra na hora, para todo mundo, com o seu nome no histórico. Sem fila. A fila de
+ *  moderação continua no código, engatilhada, para o dia em que aparecer gente demais
+ *  mexendo — mas esse dia não é hoje. Ver ai/DECISIONS.md ("sem fila de moderação agora").
  *
- *    1. um DADO desta edição está errado    → corrige, e aplica na hora
- *    2. a MINHA edição é outra              → escolher/criar outra edição
- *    3. eu só quero mostrar a MINHA cópia   → foto da sua cópia, e a
- *                                             ficha comum não é tocada
+ *  ═══ O QUE A CAPA AINDA PROTEGE ═══
+ *
+ *  Trocar a capa muda a ficha COMPARTILHADA desta edição. Se a sua cópia só tem a capa
+ *  diferente, ela não é uma correção: é OUTRA edição. O aviso mora ao lado do botão de
+ *  capa, no exato momento em que a pessoa vai trocar a foto de todo mundo — é ali que ele
+ *  serve para alguma coisa. Foi assim que o catálogo do Goodreads virou lixo: cada leitor
+ *  ajustou a ficha comum até ela não descrever livro nenhum.
  * ════════════════════════════════════════════════════════════════════
  */
-type Edicao = { id: string; publisher: string | null; publishedYear: number | null };
+type Livro = {
+  title: string;
+  author: string | null;
+  publisher: string | null;
+  firstPublished: number | null;
+  publishedYear: number | null;
+  pageCount: number | null;
+  format: string | null;
+  isbn13: string | null;
+  coverUrl: string | null;
+};
+
+const FORMATS = [
+  ["paperback", "brochura"],
+  ["hardcover", "capa dura"],
+  ["ebook", "e-book"],
+  ["audiobook", "audiolivro"],
+  ["other", "outro"],
+] as const;
 
 export function Correcao({
   slug,
-  edicao,
+  workId,
+  editionId,
+  livro,
   temOutrasEdicoes,
 }: {
   slug: string;
-  edicao: Edicao;
+  workId: string;
+  editionId: string | null;
+  livro: Livro;
   temOutrasEdicoes: boolean;
 }) {
-  const [aberto, setAberto] = useState(false);
-  const [caminho, setCaminho] = useState<null | "dado" | "capa">(null);
-  const [campo, setCampo] = useState<Campo>("pageCount");
-  const [capa, setCapa] = useState("");
-  const [recusa, setRecusa] = useState<string | null>(null);
+  const [capa, setCapa] = useState(livro.coverUrl ?? "");
   const [subindo, setSubindo] = useState(false);
+  const [recusa, setRecusa] = useState<string | null>(null);
+  const [salvo, setSalvo] = useState(false);
   const [pending, start] = useTransition();
 
-  const fechar = () => {
-    setAberto(false);
-    setCaminho(null);
-  };
-
-  // Subir a capa direto do computador: a foto do livro que não está em fonte aberta
-  // nenhuma (o Clube de Literatura Clássica é o caso). Vai para o nosso Blob, que já é
-  // uma origem aceita, então o endereço cai no mesmo campo e segue pela mesma conferência
-  // do bibliotecário. Nada de link de loja: aquilo gira e quebra. Ver lib/imagens.ts.
+  // Subir a capa do computador. Vai para o nosso Blob, que já é uma origem aceita, então
+  // o endereço volta pronto para entrar na ficha pela mesma porta dos outros campos.
   const subirCapa = async (arquivo: File) => {
     setSubindo(true);
     setRecusa(null);
@@ -66,6 +84,7 @@ export function Correcao({
         return;
       }
       setCapa(json.url as string);
+      setSalvo(false);
     } catch {
       setRecusa("Não deu para subir a imagem. Tente outra.");
     } finally {
@@ -73,156 +92,62 @@ export function Correcao({
     }
   };
 
-  if (!aberto) {
-    return (
-      <button
-        onClick={() => setAberto(true)}
-        className="text-[13px] text-[var(--color-ink-faint)] underline decoration-[var(--color-rule)] underline-offset-4 transition-colors hover:text-[var(--color-ink)]"
-      >
-        Tem algo errado nesta ficha?
-      </button>
-    );
-  }
-
   return (
-    <div className="surface-2 mt-4 p-5">
-      {!caminho ? (
-        <>
-          <h3 className="text-[15px] text-[var(--color-ink)]">O que está errado?</h3>
-
-          <div className="mt-5 flex flex-col gap-2">
-            <Escolha onClick={() => setCaminho("dado")}>
-              Um dado desta edição está errado
-              <Sub>páginas, ano, editora, ISBN, tradutor, formato, idioma</Sub>
-            </Escolha>
-
-            <Escolha onClick={() => setCaminho("capa")}>
-              A capa está errada, ou não tem capa
-              <Sub>você sugere, e um bibliotecário confere antes de entrar</Sub>
-            </Escolha>
-
-            {/*
-              O caminho 2 e o 3 NÃO editam a ficha comum, e é por isso que eles
-              existem: é para cá que a maioria das pessoas deveria ir, e é o
-              caminho que os outros apps não oferecem, então todo mundo acaba
-              estragando a ficha compartilhada por falta de alternativa.
-            */}
-            <Escolha href={temOutrasEdicoes ? "#edicoes" : undefined} onClick={fechar}>
-              A minha edição é outra, diferente desta
-              <Sub>
-                então não é uma correção: escolha a sua edição na lista abaixo, ou cadastre ela.
-                Capa diferente é edição diferente.
-              </Sub>
-            </Escolha>
-
-            <Escolha href="#minha-copia" onClick={fechar}>
-              Nada. Eu só quero mostrar a minha cópia
-              <Sub>a foto do seu exemplar, com a orelha rasgada e tudo. A ficha comum não muda.</Sub>
-            </Escolha>
-          </div>
-
-          <button
-            onClick={fechar}
-            className="mt-5 text-[13px] text-[var(--color-ink-faint)] hover:text-[var(--color-ink)]"
-          >
-            deixa
-          </button>
-        </>
-      ) : caminho === "dado" ? (
-        <form
-          action={(data: FormData) =>
-            start(async () => {
-              try {
-                await corrigir(
-                  slug,
-                  edicao.id,
-                  campo,
-                  String(data.get("valor") ?? ""),
-                  String(data.get("motivo") ?? ""),
-                );
-                toast("Corrigido. O seu nome fica no histórico.");
-                fechar();
-              } catch {
-                toast("Não deu para gravar a correção.");
-              }
-            })
+    <form
+      action={(data: FormData) =>
+        start(async () => {
+          setRecusa(null);
+          const form = {
+            title: String(data.get("title") ?? ""),
+            author: String(data.get("author") ?? ""),
+            publisher: String(data.get("publisher") ?? ""),
+            firstPublished: String(data.get("firstPublished") ?? ""),
+            publishedYear: String(data.get("publishedYear") ?? ""),
+            pageCount: String(data.get("pageCount") ?? ""),
+            format: String(data.get("format") ?? ""),
+            isbn: String(data.get("isbn") ?? ""),
+            coverUrl: capa,
+            reason: String(data.get("reason") ?? ""),
+          };
+          try {
+            const { erro } = await saveBookEdit(slug, workId, editionId, form);
+            if (erro) {
+              setRecusa(erro);
+              return;
+            }
+            setSalvo(true);
+            toast("Pronto. A sua correção vale para todo mundo, e fica com o seu nome.");
+          } catch {
+            setRecusa("Não deu para guardar a correção agora. O problema é nosso, e não seu.");
           }
-        >
-          <h3 className="text-[15px] text-[var(--color-ink)]">Corrigir um dado desta edição</h3>
-          <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-ink-faint)]">
-            Vale na hora, para todo mundo, e fica gravado com o seu nome.
-          </p>
+        })
+      }
+    >
+      <h3 className="text-[15px] text-[var(--color-ink)]">Arrumar este livro</h3>
+      <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-ink-faint)]">
+        Você tem o livro na mão? Arrume o que estiver errado. Vale na hora, para todo mundo, e fica
+        gravado com o seu nome. Dá para voltar atrás.
+      </p>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            {(Object.keys(CAMPOS) as Campo[]).map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCampo(c)}
-                aria-pressed={campo === c}
-                className={[
-                  "pill border px-3 py-1.5 text-[13px]",
-                  campo === c
-                    ? "border-[var(--color-ink)] bg-[var(--color-ink)] text-[var(--color-canvas)]"
-                    : "border-[var(--color-rule)] text-[var(--color-ink-soft)] hover:border-[var(--color-ink)]",
-                ].join(" ")}
-              >
-                {CAMPOS[c].label}
-              </button>
-            ))}
-          </div>
-
-          <input
-            name="valor"
-            autoFocus
-            maxLength={LIMITS.title}
-            placeholder={`o ${CAMPOS[campo].label} correto`}
-            className="mt-4 w-full rounded-[var(--radius-2)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[14px] outline-none focus:border-[var(--color-ink)]"
+      {/* ── A CAPA, COM O AVISO ONDE ELE SERVE ──────────────────────── */}
+      <div className="mt-5 flex items-start gap-4">
+        {capa.trim() ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={capa}
+            src={capa.trim()}
+            alt=""
+            className="h-28 w-20 shrink-0 rounded-[var(--radius-2)] border border-[var(--color-rule)] object-cover"
           />
-          <input
-            name="motivo"
-            maxLength={LIMITS.note}
-            placeholder="onde você viu isso? (opcional)"
-            className="mt-2 w-full rounded-[var(--radius-2)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[13px] outline-none focus:border-[var(--color-ink)]"
-          />
-
-          <div className="mt-4 flex items-center gap-4">
-            <button
-              type="submit"
-              disabled={pending}
-              className="rounded-[var(--radius-control)] bg-[var(--color-ink)] px-5 py-2 text-[14px] font-medium text-[var(--color-canvas)] disabled:opacity-40"
-            >
-              {pending ? "corrigindo" : "corrigir"}
-            </button>
-            <button type="button" onClick={() => setCaminho(null)} className="text-[13px] text-[var(--color-ink-faint)]">
-              voltar
-            </button>
+        ) : (
+          <div className="flex h-28 w-20 shrink-0 items-center justify-center rounded-[var(--radius-2)] border border-dashed border-[var(--color-rule)] text-[11px] text-[var(--color-ink-faint)]">
+            sem capa
           </div>
-        </form>
-      ) : (
-        <form
-          action={() =>
-            start(async () => {
-              // A ação DEVOLVE a recusa: o Next apaga a mensagem de um erro lançado numa
-              // ação de servidor em produção, e a pessoa ficaria sem saber o que fazer.
-              const { erro } = await proporUmaCapa(slug, edicao.id, capa, "");
-              if (erro) {
-                setRecusa(erro);
-                return;
-              }
-              toast("Sugestão enviada. Um bibliotecário confere.");
-              fechar();
-            })
-          }
-        >
-          <h3 className="text-[15px] text-[var(--color-ink)]">Sugerir uma capa</h3>
-          <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-ink-faint)]">
-            Suba a imagem da capa do seu livro. Um bibliotecário confere antes de entrar, porque ela
-            aparece na tela de todo mundo.
-          </p>
+        )}
 
-          <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-rule)] px-4 py-2.5 text-[14px] text-[var(--color-ink-soft)] transition-colors hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]">
-            {subindo ? "subindo a imagem" : capa ? "escolher outra imagem" : "escolher uma imagem"}
+        <div className="min-w-0 flex-1">
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-rule)] px-4 py-2.5 text-[14px] text-[var(--color-ink-soft)] transition-colors hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]">
+            {subindo ? "subindo a imagem" : capa.trim() ? "trocar a capa" : "subir uma capa"}
             <input
               type="file"
               accept="image/*"
@@ -235,70 +160,87 @@ export function Correcao({
             />
           </label>
 
-          {recusa && (
-            <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-perigo)]" aria-live="polite">
-              {recusa}
-            </p>
-          )}
+          <p className="mt-2 text-[12px] leading-relaxed text-[var(--color-ink-faint)]">
+            Trocar a capa muda a ficha desta edição para todo mundo. Se a sua cópia só tem a capa
+            diferente, ela é outra edição, e não uma correção.
+            {temOutrasEdicoes && (
+              <>
+                {" "}
+                <a href="#edicoes" className="underline decoration-[var(--color-rule)] underline-offset-2 hover:text-[var(--color-ink)]">
+                  veja as outras edições
+                </a>
+                .
+              </>
+            )}
+          </p>
+        </div>
+      </div>
 
-          {capa.trim() && !recusa && (
-            <div className="mt-4 flex items-start gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                key={capa}
-                src={capa.trim()}
-                alt=""
-                className="h-28 w-20 shrink-0 rounded-[var(--radius-2)] border border-[var(--color-rule)] object-cover"
-              />
-              <p className="text-[13px] leading-relaxed text-[var(--color-ink-faint)]">
-                É esta a capa que o bibliotecário vai ver.
-              </p>
-            </div>
-          )}
+      {/* ── OS DADOS ─────────────────────────────────────────────────── */}
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <Campo name="title" label="título" defaultValue={livro.title} required maxLength={LIMITS.title} />
+        <Campo name="author" label="autor" defaultValue={livro.author ?? ""} maxLength={LIMITS.author} />
+        <Campo name="publisher" label="editora" defaultValue={livro.publisher ?? ""} maxLength={LIMITS.publisher} />
+        <Campo name="firstPublished" label="ano da obra" defaultValue={livro.firstPublished ?? ""} inputMode="numeric" />
+        <Campo name="publishedYear" label="ano da edição" defaultValue={livro.publishedYear ?? ""} inputMode="numeric" />
+        <Campo name="pageCount" label="páginas" defaultValue={livro.pageCount ?? ""} inputMode="numeric" />
+        <Campo name="isbn" label="ISBN" defaultValue={livro.isbn13 ?? ""} inputMode="numeric" />
+        <label className="block">
+          <Rotulo>formato</Rotulo>
+          <select
+            name="format"
+            defaultValue={livro.format ?? "paperback"}
+            className="mt-1.5 w-full rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[14px]"
+          >
+            {FORMATS.map(([v, l]) => (
+              <option key={v} value={v}>{l}</option>
+            ))}
+          </select>
+        </label>
+        <div className="sm:col-span-2">
+          <Campo name="reason" label="o que você mudou (opcional)" placeholder="a editora estava errada" maxLength={LIMITS.note} />
+        </div>
+      </div>
 
-          <div className="mt-4 flex items-center gap-4">
-            <button
-              type="submit"
-              disabled={pending || subindo || !capa.trim()}
-              className="rounded-[var(--radius-control)] bg-[var(--color-ink)] px-5 py-2 text-[14px] font-medium text-[var(--color-canvas)] disabled:opacity-40"
-            >
-              {pending ? "enviando" : "sugerir"}
-            </button>
-            <button type="button" onClick={() => setCaminho(null)} className="text-[13px] text-[var(--color-ink-faint)]">
-              voltar
-            </button>
-          </div>
-        </form>
+      {recusa && (
+        <p className="mt-4 text-[13px] leading-relaxed text-[var(--color-perigo)]" aria-live="polite">
+          {recusa}
+        </p>
       )}
-    </div>
+
+      <div className="mt-5 flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={pending || subindo}
+          className="rounded-[var(--radius-control)] bg-[var(--color-ink)] px-5 py-2 text-[14px] font-medium text-[var(--color-canvas)] disabled:opacity-40"
+        >
+          {pending ? "salvando" : "salvar"}
+        </button>
+        {salvo && !pending && <span className="text-[12px] text-[var(--color-ink-faint)]">salvo</span>}
+      </div>
+    </form>
   );
 }
 
-function Escolha({
-  children, onClick, href,
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  href?: string;
-}) {
-  const classe =
-    "surface w-full rounded-[var(--radius-2)] p-4 text-left text-[14px] text-[var(--color-ink)] transition-colors hover:border-[var(--color-ink)]";
-
-  return href ? (
-    <a href={href} onClick={onClick} className={classe}>
-      {children}
-    </a>
-  ) : (
-    <button onClick={onClick} className={classe}>
-      {children}
-    </button>
-  );
-}
-
-function Sub({ children }: { children: React.ReactNode }) {
+function Rotulo({ children }: { children: React.ReactNode }) {
   return (
-    <span className="mt-1.5 block text-[12px] leading-relaxed text-[var(--color-ink-faint)]">
+    <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
       {children}
     </span>
+  );
+}
+
+function Campo({
+  name, label, ...rest
+}: { name: string; label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <label className="block">
+      <Rotulo>{label}</Rotulo>
+      <input
+        name={name}
+        {...rest}
+        className="mt-1.5 w-full rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[14px] outline-none placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-ink)]"
+      />
+    </label>
   );
 }

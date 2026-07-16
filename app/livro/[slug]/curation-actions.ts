@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getActor } from "@/lib/actor";
 import { getViewer } from "@/lib/viewer";
 import { limitarEscrita } from "@/lib/escrita";
+import { porQueNaoAceita } from "@/lib/imagens";
 import { LIMITS, clamp, clampRequired } from "@/lib/limits";
 import {
   removeFromShelf, removeManyFromShelf, editBook, setShelvesByName, setMyEdition, toggleInCollection,
@@ -40,9 +41,26 @@ export async function saveBookEdit(
   workId: string,
   editionId: string | null,
   form: Record<string, string>,
-): Promise<void> {
+): Promise<{ erro: string | null }> {
   const viewer = await getViewer();
   if (viewer) await limitarEscrita(viewer.id);
+
+  /**
+   * ═══ A CAPA ENTRA POR AQUI, E É O ÚNICO CAMPO COM PORTEIRO ═══
+   *
+   * A capa vem por referência: guardamos o endereço, e ele tem que ser de um acervo
+   * público (ou do nosso Blob, onde a imagem que a própria pessoa subiu já mora). Um
+   * endereço fora da lista viraria uma capa quebrada na tela de todo mundo, porque a
+   * CSP a bloqueia na hora de mostrar. `porQueNaoAceita` é o mesmo porteiro do retrato
+   * de autor; ver lib/imagens.ts.
+   *
+   * A recusa VOLTA COMO VALOR, e não como exceção: o Next apaga a mensagem de um erro
+   * lançado numa ação de servidor em produção, e esta frase é uma instrução — a pessoa
+   * precisa dela para acertar na segunda tentativa.
+   */
+  const capa = str(form.coverUrl, LIMITS.url);
+  const naoAceita = porQueNaoAceita(capa ?? "");
+  if (naoAceita) return { erro: naoAceita };
 
   const isbn = (form.isbn ?? "").replace(/[^0-9X]/gi, "");
   // A allow-list é esta, e ela é explícita: o que não está aqui não entra, venha
@@ -56,7 +74,7 @@ export async function saveBookEdit(
     pageCount: num(form.pageCount),
     format: clampRequired(form.format, 20),
     isbn13: isbn.length === 13 ? isbn : null,
-    coverUrl: str(form.coverUrl, LIMITS.url),
+    coverUrl: capa,
   };
 
   await editBook(viewer, workId, editionId, edit, str(form.reason, LIMITS.note));
@@ -64,6 +82,7 @@ export async function saveBookEdit(
   revalidatePath(`/livro/${slug}`);
   revalidatePath("/");
   revalidatePath("/estante");
+  return { erro: null };
 }
 
 /** Type "para reler, do meu pai" and be done. Creates the shelves that do not exist. */
