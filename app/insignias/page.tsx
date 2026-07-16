@@ -251,8 +251,8 @@ function Honras({ escadas }: { escadas: Awaited<ReturnType<typeof getEscadas>> |
         const onde = escadas ? (HONRAS as readonly string[]).indexOf(escadas.posicao.honra) : -1;
 
         return (
-          <div className="mt-10 max-w-md">
-            <ul className="flex flex-col gap-3">
+          <div className="mt-10">
+            <ul className="grid gap-x-10 gap-y-3 sm:grid-cols-2">
               {HONRAS.map((honra, i) => {
                 const aqui = onde === i;
                 const passei = onde >= i;
