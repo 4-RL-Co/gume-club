@@ -504,3 +504,152 @@ export async function corrigirRetrato(
     });
   });
 }
+
+// ───────────────────────────────────────────────── dois autores, uma pessoa
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  DOIS AUTORES QUE SÃO A MESMA PESSOA.
+ *
+ *  ═══ A ARMADILHA QUE ISTO DESARMA ═══
+ *
+ *  `authors.name` é único, e o índice diferencia maiúscula e acento. O dump guarda a
+ *  mesma pessoa várias vezes: "Oswaldo França Júnior", "Oswaldo Franca Junior",
+ *  "Oswaldo Franc̦a Júnior" — seis linhas, um homem só. São **7.887 nomes** assim.
+ *
+ *  E o motivo número um para alguém querer arrumar um nome é justamente normalizar um
+ *  desses. Era exatamente aí que o app estourava: renomear para a forma certa colide
+ *  com a linha que JÁ tem a forma certa, o unique recusa, e a tela dizia "não deu para
+ *  arrumar agora" — uma mentira genérica em cima de um fato específico, que nem quem
+ *  escreveu o código conseguia diagnosticar.
+ *
+ *  A saída não é afrouxar o unique: é entender o que a pessoa está dizendo. Arrumar o
+ *  nome de um duplicado não é RENOMEAR, é dizer **"estes dois são a mesma pessoa"**.
+ *  Então o app pergunta, e funde.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export type Homonimo = {
+  id: string;
+  name: string;
+  /** Quantos livros ele carrega: é o que a pergunta mostra ("com 12 livros"). */
+  livros: number;
+  /**
+   * Os dois têm o MESMO livro (título exato, mesmo volume)?
+   *
+   * Aí a fusão não pode acontecer: `works` tem unique em (title, author_id, volume), e
+   * juntar faria duas linhas idênticas caírem no mesmo autor. Consertar isso é fundir
+   * as OBRAS também, e isso mexe na estante, na nota e na resenha de gente de verdade.
+   * É outra fatia, e ela não sai de véspera. São 793 dos 7.887.
+   */
+  colide: boolean;
+};
+
+/** Já existe alguém com esse nome? É a pergunta que o formulário faz antes de gravar. */
+export async function homonimoDe(nome: string, exceto: string): Promise<Homonimo | null> {
+  const limpo = clamp(nome, LIMITS.author);
+  if (!limpo) return null;
+
+  const [row] = await db.execute<Homonimo>(sql`
+    select a.id, a.name,
+           (select count(*) from works w where w.author_id = a.id)::int as livros,
+           exists (
+             select 1
+               from works meu
+               join works dele on dele.title = meu.title
+                              and coalesce(dele.volume, -1) = coalesce(meu.volume, -1)
+              where meu.author_id = ${exceto}::uuid
+                and dele.author_id = a.id
+           ) as colide
+      from authors a
+     where a.name = ${limpo}
+       and a.id <> ${exceto}::uuid
+     limit 1`);
+
+  return row ?? null;
+}
+
+/**
+ * Juntar dois autores: os livros do `de` passam para o `para`, o nome do `de` vira
+ * apelido, e a linha duplicada sai.
+ *
+ * Não pede permissão, como toda correção: a revisão fica gravada com o nome de quem
+ * fez, e é a assinatura — e não a permissão — que torna o vandalismo caro.
+ */
+export async function fundirAutores(
+  viewer: Viewer,
+  deId: string,
+  paraId: string,
+  motivo: string | null,
+): Promise<void> {
+  assertAuthenticated(viewer);
+  if (deId === paraId) return;
+
+  const [de] = await db.select().from(authors).where(eq(authors.id, deId)).limit(1);
+  const [para] = await db.select().from(authors).where(eq(authors.id, paraId)).limit(1);
+  if (!de || !para) throw new Error("autor não encontrado");
+
+  await db.transaction(async (tx) => {
+    /**
+     * A COLISÃO É CONFERIDA AQUI DENTRO, e não só na tela.
+     *
+     * A tela pergunta antes para poder explicar; esta checagem existe porque entre a
+     * pergunta e o clique cabe um livro novo, e porque um POST direto não passa por
+     * tela nenhuma. Sem ela, o unique de `works` estouraria no meio da transação e a
+     * pessoa levaria de novo o "não deu para arrumar" que este código veio matar.
+     */
+    const [choque] = await tx.execute<{ existe: boolean }>(sql`
+      select exists (
+        select 1
+          from works a
+          join works b on b.title = a.title and coalesce(b.volume, -1) = coalesce(a.volume, -1)
+         where a.author_id = ${deId}::uuid and b.author_id = ${paraId}::uuid
+      ) as existe`);
+
+    if (choque?.existe) {
+      throw new Forbidden("os dois têm o mesmo livro: fundir os autores exige fundir as obras");
+    }
+
+    /**
+     * Os livros mudam de dono ANTES de a linha sair.
+     *
+     * `works.author_id` é `on delete set null`: apagar primeiro deixaria os livros
+     * órfãos, sem autor, e em silêncio — o pior jeito possível de perder um dado.
+     */
+    await tx.execute(sql`update works  set author_id      = ${paraId}::uuid where author_id      = ${deId}::uuid`);
+    await tx.execute(sql`update series set author_id      = ${paraId}::uuid where author_id      = ${deId}::uuid`);
+    await tx.execute(sql`update series set illustrator_id = ${paraId}::uuid where illustrator_id = ${deId}::uuid`);
+
+    /**
+     * O nome que sai não se perde: vira APELIDO do sobrevivente.
+     *
+     * Apelido é buscável (ver lib/catalog.ts): quem procurar por "Oswaldo Franca
+     * Junior", escrito errado como estava no dump, continua achando o homem. Fundir não
+     * pode custar a busca de ninguém.
+     */
+    await tx.execute(sql`
+      update authors p
+         set alt_names = (
+           select array(
+             select distinct x
+               from unnest(
+                 coalesce(p.alt_names, '{}'::text[])
+                 || coalesce(d.alt_names, '{}'::text[])
+                 || array[d.name]
+               ) as x
+              where x is not null and x <> '' and x <> p.name
+           ))
+        from authors d
+       where p.id = ${paraId}::uuid and d.id = ${deId}::uuid`);
+
+    await tx.insert(revisions).values({
+      userId: viewer.id,
+      targetType: "author",
+      targetId: paraId,
+      patch: { fundidoCom: de.name, livrosMovidos: true },
+      previous: { name: para.name },
+      reason: motivo,
+    });
+
+    await tx.delete(authors).where(eq(authors.id, deId));
+  });
+}

@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { getViewer } from "@/lib/viewer";
 import { limitarEscrita } from "@/lib/escrita";
-import { corrigirAutor, corrigirRetrato, type CampoAutor } from "@/lib/corrections";
+import {
+  corrigirAutor, corrigirRetrato, homonimoDe, fundirAutores,
+  type CampoAutor, type Homonimo,
+} from "@/lib/corrections";
 import { porQueNaoAceita } from "@/lib/imagens";
 import { Forbidden } from "@/lib/authz";
 
@@ -31,6 +34,104 @@ export async function corrigir(
   await corrigirAutor(viewer, authorId, campo, valor, motivo || null);
 
   revalidatePath(`/autor/${slug}`);
+}
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  A FICHA INTEIRA, DE UMA VEZ. E a verdade quando o nome já existe.
+ *
+ *  ═══ OS DOIS BUGS QUE ISTO MATA ═══
+ *
+ *  1. A tela pedia UM campo por vez, e trocar de campo apagava o que você tinha
+ *     digitado. Arrumar nome e nacionalidade eram duas viagens, e ninguém descobria
+ *     isso antes de perder o texto.
+ *
+ *  2. Arrumar o NOME estourava. `authors.name` é único, o dump tem a mesma pessoa
+ *     escrita de seis jeitos, e normalizar um deles colide com a forma certa que já
+ *     existe. A tela dizia "não deu para arrumar agora" — uma frase que não diz nada
+ *     sobre um fato muito específico.
+ *
+ *  ═══ POR QUE O RESULTADO É UM VALOR, E NÃO UMA EXCEÇÃO ═══
+ *
+ *  O Next apaga a mensagem de um erro lançado numa ação de servidor em produção. E o
+ *  que esta função tem a dizer não é um vazamento: é uma PERGUNTA ("já existe um
+ *  Oswaldo França Júnior com 12 livros, são a mesma pessoa?"). Lançada, ela morreria
+ *  no caminho e viraria de novo o "não deu" sem motivo.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export type Salvou =
+  | { ok: true }
+  | { erro: string }
+  /** O nome já é de outro. Não é erro: é uma pergunta. Ver fundir(), abaixo. */
+  | { homonimo: Homonimo };
+
+export async function salvarAutor(
+  authorId: string,
+  slug: string,
+  campos: { name: string; nationality: string; bio: string },
+  motivo: string,
+): Promise<Salvou> {
+  const viewer = await getViewer();
+  if (viewer) await limitarEscrita(viewer.id);
+
+  const razao = motivo || null;
+
+  try {
+    /**
+     * Nacionalidade e "quem é" gravam SEMPRE, mesmo que o nome vá abrir uma pergunta.
+     * O trabalho da pessoa não pode ficar refém de uma decisão sobre outro campo: ela
+     * digitou três coisas, e duas delas não têm dúvida nenhuma.
+     */
+    await corrigirAutor(viewer, authorId, "nationality", campos.nationality, razao);
+    await corrigirAutor(viewer, authorId, "bio", campos.bio, razao);
+
+    const nome = campos.name.trim();
+    if (nome) {
+      const homonimo = await homonimoDe(nome, authorId);
+
+      if (homonimo?.colide) {
+        return {
+          erro:
+            `Já existe um ${homonimo.name}, e os dois têm o mesmo livro. Juntar os dois ` +
+            "exigiria juntar os livros também, e isso mexe na estante de outras pessoas. " +
+            "Esse conserto ainda não existe, e o resto do que você arrumou foi salvo.",
+        };
+      }
+
+      // Existe outro com esse nome, e dá para juntar. A tela pergunta antes de fundir.
+      if (homonimo) return { homonimo };
+
+      await corrigirAutor(viewer, authorId, "name", nome, razao);
+    }
+  } catch {
+    return { erro: "Não deu para gravar agora. O problema é nosso, e não seu." };
+  }
+
+  revalidatePath(`/autor/${slug}`);
+  return { ok: true };
+}
+
+/** "São a mesma pessoa": os livros do duplicado vêm para cá, e o nome dele vira apelido. */
+export async function fundir(
+  deId: string,
+  paraId: string,
+  slug: string,
+  motivo: string,
+): Promise<{ erro: string | null }> {
+  const viewer = await getViewer();
+  if (viewer) await limitarEscrita(viewer.id);
+
+  try {
+    await fundirAutores(viewer, deId, paraId, motivo || null);
+  } catch (e) {
+    if (e instanceof Forbidden) {
+      return { erro: "Esses dois têm o mesmo livro: juntar exigiria juntar as obras também." };
+    }
+    return { erro: "Não deu para juntar agora. O problema é nosso." };
+  }
+
+  revalidatePath(`/autor/${slug}`);
+  return { erro: null };
 }
 
 /**
