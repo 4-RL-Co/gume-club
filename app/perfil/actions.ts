@@ -37,9 +37,20 @@ export async function saveProfile(form: {
   const handle = cleanHandle(form.handle);
   if (handle.length < 2) return { ok: false, error: "escolha um @ com pelo menos duas letras" };
 
-  // The image must be one of ours. A url pointing anywhere else is somebody
-  // hotlinking a tracking pixel onto every page that renders this reader.
-  const image = form.image?.startsWith("/uploads/") ? form.image : null;
+  // A imagem tem que ser NOSSA: ou o disco de dev (`/uploads/`), ou o nosso Vercel Blob
+  // (`*.public.blob.vercel-storage.com`, para onde `lib/guardar.ts` sobe em produção).
+  // Uma url apontando para qualquer outro lugar é alguém pendurando um pixel de rastreio
+  // em toda página que renderiza este leitor — ou a foto de perfil de outra pessoa.
+  //
+  // ═══ SEM ISTO, TODA FOTO SUMIA ═══
+  // A checagem só aceitava `/uploads/`, o caminho do disco. Em produção o upload volta uma
+  // URL do Blob, que não começa com `/uploads/`, então o save gravava `image = null`: a foto
+  // subia, "salvava sem erro", e o perfil continuava sem rosto. Ver lib/guardar.ts.
+  const daGente = Boolean(
+    form.image?.startsWith("/uploads/") ||
+      /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\//.test(form.image ?? ""),
+  );
+  const image = daGente ? form.image! : null;
 
   try {
     await db
