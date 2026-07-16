@@ -54,6 +54,24 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 12,
+
+    /**
+     * ESQUECI A SENHA. Sem isto, quem esquece a senha fica trancado para sempre — não há
+     * outra porta. O link vai por e-mail (o mesmo cano do Resend), vale uma hora, e a tela
+     * nunca diz se o e-mail existe: "se a conta existe, o link foi enviado" protege quem tem
+     * conta aqui de quem só está testando endereços.
+     */
+    sendResetPassword: async ({ user, url }) => {
+      await enviar({
+        para: user.email,
+        assunto: "Redefinir a sua senha no Gume",
+        texto:
+          `Oi.\n\n` +
+          `Alguém pediu para redefinir a senha desta conta. Se foi você, clique aqui:\n${url}\n\n` +
+          `O link vale por uma hora e serve uma vez. Se não foi você, é só ignorar este ` +
+          `e-mail — a sua senha continua a mesma.\n`,
+      });
+    },
   },
 
   /**

@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { signIn, signUp } from "@/lib/auth-client";
 import { rememberInviter } from "@/app/entrar/invite";
 
@@ -88,6 +89,15 @@ export default function Entrar() {
         >
           {pending ? "Um momento" : mode === "entrar" ? "Entrar" : "Criar conta"}
         </button>
+
+        {mode === "entrar" && (
+          <Link
+            href="/entrar/esqueci"
+            className="mt-1 text-center text-[12px] text-[var(--color-ink-faint)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+          >
+            esqueci a senha
+          </Link>
+        )}
       </form>
 
       <div className="my-6 flex items-center gap-3">

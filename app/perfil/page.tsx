@@ -6,6 +6,7 @@ import { getViewer } from "@/lib/viewer";
 import { getInviter, isHerald, inviteLink } from "@/lib/invite";
 import { InviteLink } from "@/components/invite-link";
 import { CodigoPorEmail } from "@/components/codigo-email";
+import { TrocarSenha } from "@/components/trocar-senha";
 import { ProfileForm } from "@/components/profile-form";
 import { HeraldSeal } from "@/components/herald-seal";
 
@@ -103,6 +104,8 @@ export default async function Perfil() {
           reset de senha também vai por e-mail — é o mesmo fator, duas vezes. Ele protege
           contra senha vazada, e não contra e-mail invadido. Ver ai/DECISIONS.md. */}
       <CodigoPorEmail ativo={Boolean(me.two_factor_enabled)} email={me.email} />
+
+      <TrocarSenha />
 
       <dl className="surface mt-6 flex flex-wrap gap-x-12 gap-y-8 p-6">
         <Stat n={me.livros} label="na estante" />
