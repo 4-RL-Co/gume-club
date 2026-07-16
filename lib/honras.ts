@@ -1,6 +1,6 @@
 /**
  * ════════════════════════════════════════════════════════════════════
- *  AS HONRAS. Duas escadas, dois vocabulários, e um topo que não é o fim.
+ *  AS HONRAS. Uma escada só, e um topo que não é o fim.
  *
  *  ═══ NÃO SE CHAMA MAIS "ELO" ═══
  *
@@ -8,79 +8,63 @@
  *  palavra portuguesa, e ela diz o que a coisa é: um reconhecimento pelo que você leu na
  *  vida, e não uma posição numa fila.
  *
- *  ═══ DOIS VOCABULÁRIOS, E NÃO DOIS NÚMEROS ═══
+ *  ═══ UMA ESCADA, E NÃO DUAS ═══
  *
- *  Antes, as duas escadas tinham os MESMOS nomes com números diferentes: "Ouro" na
- *  literatura eram 30 livros e "Ouro" nos quadrinhos eram 75 volumes.
+ *  Antes havia duas: uma de literatura (Ferro → … → Gume) e uma de quadrinhos (Aprendiz →
+ *  … → Katana), cada uma com a régua dela, porque um volume de mangá se lê num quarto do
+ *  tempo de um romance.
  *
- *  Isso confunde na hora exata em que as duas aparecem lado a lado no perfil: duas
- *  palavras iguais, dois números diferentes, e ninguém sabe qual é qual.
+ *  Era honesto e era complicado. Duas barras no perfil, dois vocabulários, e uma linha
+ *  cinzenta no meio: uma HQ marcada como "brochura" caía na escada errada, e a pessoa não
+ *  entendia por quê. A separação resolvia um problema de JUSTIÇA que quase ninguém sentia,
+ *  e criava um problema de CLAREZA que todo mundo via.
  *
- *      LITERATURA    Ferro → Bronze → … → Lâmina → Navalha → GUME
- *      QUADRINHOS    Aprendiz → Discípulo → Ronin → … → Oni → Tengu → KATANA
- *
- *  A de livro é METAL E PEDRA, e termina no fio: o Gume.
- *  A de quadrinho é o DOJÔ, e termina na lâmina inteira: a Katana.
- *
- *  As duas terminam numa lâmina, e é de propósito. É o mesmo app.
+ *  Então virou uma só, a de metal e pedra, terminando no fio: o Gume. Tudo conta junto:
+ *  um romance é uma leitura, uma HQ é uma leitura, e **cada volume de mangá é uma
+ *  leitura**. Sim, isso deixa a honra mais fácil de subir para quem lê mangá. Tudo bem:
+ *  ler quinhentas obras, do tipo que for, é uma vida de leitor, e uma vida de leitor é
+ *  digna de mérito. A honra não é um prêmio de dificuldade, é um retrato de quanto você
+ *  leu.
  *
  *  ═══ O TOPO É ALCANÇÁVEL, E DEPOIS DELE A ESCADA NÃO ACABA ═══
  *
- *  Mil livros era um número que quase ninguém alcança numa vida. Uma escada cujo último
+ *  Mil leituras era um número que quase ninguém alcança numa vida. Uma escada cujo último
  *  degrau é inatingível não é uma escada: é um pôster.
  *
- *  O topo agora são **500 livros** — uma vida de leitor de verdade, doze por ano por
- *  quarenta anos. E depois dele o Gume não para: vira **Gume +1, Gume +2, Gume +3**, um
- *  a cada 25 livros, para sempre.
+ *  O topo agora são **500 leituras** — uma vida de leitor de verdade, doze por ano por
+ *  quarenta anos. E depois dele o Gume não para: vira **Gume +1, Gume +2, Gume +3**, um a
+ *  cada 25 leituras, para sempre.
  *
  *  É o Paragon do Diablo, e a ideia é a mesma: quem chegou ao topo continua tendo o que
  *  fazer, sem que o app precise inventar um degrau novo a cada dois anos.
  * ════════════════════════════════════════════════════════════════════
  */
 
-/** A forma de uma obra. Bate com o enum `forma_da_obra` da migration 0041. */
 import { DEGRAU, type Tinta } from "@/lib/paleta";
 
-export type Forma = "livro" | "quadrinho";
-
 /**
- * A chave de uma honra. Ela é ÚNICA entre as duas escadas — `ouro` é de livro, `ronin` é
- * de quadrinho, e nunca há como confundir uma com a outra num banco de dados.
+ * A escada, do Ferro ao Gume. Metal e pedra, terminando no fio.
+ *
+ * A chave é a que fica gravada no banco (`activities.honra`); o NOME que a pessoa lê está
+ * em `NOME`, logo abaixo.
  */
-export const HONRAS = {
-  livro: [
-    "ferro",
-    "bronze",
-    "prata",
-    "ouro",
-    "platina",
-    "esmeralda",
-    "diamante",
-    "lamina",
-    "navalha",
-    "gume",
-  ],
-  quadrinho: [
-    "aprendiz",
-    "discipulo",
-    "ronin",
-    "samurai",
-    "kenshi",
-    "sensei",
-    "shogun",
-    "oni",
-    "tengu",
-    "katana",
-  ],
-} as const;
+export const HONRAS = [
+  "ferro",
+  "bronze",
+  "prata",
+  "ouro",
+  "platina",
+  "esmeralda",
+  "diamante",
+  "lamina",
+  "navalha",
+  "gume",
+] as const;
 
-export type HonraDeLivro = (typeof HONRAS)["livro"][number];
-export type HonraDeQuadrinho = (typeof HONRAS)["quadrinho"][number];
-export type Honra = HonraDeLivro | HonraDeQuadrinho;
+export type Honra = (typeof HONRAS)[number];
 
 /** O nome que a pessoa lê. Nunca a chave crua. */
 export const NOME: Record<Honra, string> = {
-  // ── literatura: metal e pedra, terminando no fio
   ferro: "Ferro",
   bronze: "Bronze",
   prata: "Prata",
@@ -91,18 +75,6 @@ export const NOME: Record<Honra, string> = {
   lamina: "Lâmina",
   navalha: "Navalha",
   gume: "Gume",
-
-  // ── quadrinhos: o dojô, terminando na lâmina inteira
-  aprendiz: "Aprendiz",
-  discipulo: "Discípulo",
-  ronin: "Ronin",
-  samurai: "Samurai",
-  kenshi: "Kenshi",
-  sensei: "Sensei",
-  shogun: "Shogun",
-  oni: "Oni",
-  tengu: "Tengu",
-  katana: "Katana",
 };
 
 /**
@@ -110,59 +82,46 @@ export const NOME: Record<Honra, string> = {
  *
  * Quantas leituras é preciso ter para entrar em cada honra.
  *
- * Os degraus de baixo são CURTOS de propósito: cinco livros e você sai do Ferro. O que
+ * Os degraus de baixo são CURTOS de propósito: cinco leituras e você sai do Ferro. O que
  * demora é o meio, e é assim que tem que ser.
- *
- * A escada de quadrinho pede mais volumes porque um volume de mangá tem umas 190 páginas
- * contra 320 de um romance, e se lê num quarto do tempo. Não é castigo: é a mesma régua,
- * medida na unidade certa.
  */
-const PISO: Record<Forma, number[]> = {
-  //     Ferro Bronze Prata Ouro Platina Esmeralda Diamante Lâmina Navalha Gume
-  livro: [0, 5, 15, 30, 60, 100, 150, 225, 325, 500],
-
-  //         Aprendiz Discípulo Ronin Samurai Kenshi Sensei Shogun Oni Tengu Katana
-  quadrinho: [0, 12, 40, 75, 150, 250, 375, 560, 810, 1250],
-};
+//               Ferro Bronze Prata Ouro Platina Esmeralda Diamante Lâmina Navalha Gume
+const PISO = [0, 5, 15, 30, 60, 100, 150, 225, 325, 500];
 
 /**
  * ═══ O PARAGON ═══
  *
  * Depois do topo, a cada tantas leituras a pessoa ganha um `+1`.
  *
- * Vinte e cinco livros por estrela. É mais ou menos dois anos de leitura para a maioria
- * das pessoas, e é de propósito: uma estrela que chega toda semana não é uma estrela, é
- * um contador.
+ * Vinte e cinco por estrela. É mais ou menos dois anos de leitura para a maioria das
+ * pessoas, e é de propósito: uma estrela que chega toda semana não é uma estrela, é um
+ * contador.
  */
-const PARAGON: Record<Forma, number> = {
-  livro: 25,
-  quadrinho: 60,
-};
+const PARAGON = 25;
 
-/** As honras de uma forma, do Ferro ao Gume. */
-export function escadaDe(forma: Forma): readonly Honra[] {
-  return HONRAS[forma];
+/** A escada, do Ferro ao Gume. */
+export function escada(): readonly Honra[] {
+  return HONRAS;
 }
 
 /** O piso de uma honra. */
-export function piso(forma: Forma, honra: Honra): number {
-  const i = (HONRAS[forma] as readonly string[]).indexOf(honra);
-  if (i < 0) throw new Error(`"${honra}" não é uma honra de ${forma}`);
-  return PISO[forma][i]!;
+export function piso(honra: Honra): number {
+  const i = (HONRAS as readonly string[]).indexOf(honra);
+  if (i < 0) throw new Error(`"${honra}" não é uma honra`);
+  return PISO[i]!;
 }
 
 export type Posicao = {
-  forma: Forma;
   honra: Honra;
-  /** Quantas leituras a pessoa tem nesta escada. */
+  /** Quantas leituras a pessoa tem. */
   quantas: number;
 
   /**
    * As estrelas do topo. Zero para quem não chegou lá.
    *
    * "Gume +3" quer dizer 3 estrelas. Elas não têm teto, e é essa a graça: quem chegou ao
-   * fim da escada continua tendo o que fazer, e o app não precisa inventar um degrau
-   * novo a cada dois anos. É o Paragon do Diablo.
+   * fim da escada continua tendo o que fazer, e o app não precisa inventar um degrau novo
+   * a cada dois anos. É o Paragon do Diablo.
    */
   estrelas: number;
 
@@ -179,32 +138,30 @@ export type Posicao = {
 /**
  * Onde a pessoa está.
  *
- * `quantas` é o número de leituras TERMINADAS na vida, naquela forma. Não é por ano, não
- * zera, e não expira: é uma vida de leitor, e vida não tem temporada.
+ * `quantas` é o número de leituras TERMINADAS na vida — livros, HQs e volumes de mangá,
+ * tudo junto. Não é por ano, não zera, e não expira: é uma vida de leitor, e vida não tem
+ * temporada.
  */
-export function posicaoDe(forma: Forma, quantas: number): Posicao {
+export function posicaoDe(quantas: number): Posicao {
   const n = Math.max(0, Math.floor(quantas));
-  const escada = HONRAS[forma];
-  const pisos = PISO[forma];
 
   let i = 0;
-  for (let k = 0; k < escada.length; k++) {
-    if (n >= pisos[k]!) i = k;
+  for (let k = 0; k < HONRAS.length; k++) {
+    if (n >= PISO[k]!) i = k;
   }
 
-  const honra = escada[i]! as Honra;
-  const noTopo = i === escada.length - 1;
+  const honra = HONRAS[i]! as Honra;
+  const noTopo = i === HONRAS.length - 1;
 
   if (!noTopo) {
-    const daqui = pisos[i]!;
-    const ate = pisos[i + 1]!;
+    const daqui = PISO[i]!;
+    const ate = PISO[i + 1]!;
 
     return {
-      forma,
       honra,
       quantas: n,
       estrelas: 0,
-      proxima: escada[i + 1]! as Honra,
+      proxima: HONRAS[i + 1]! as Honra,
       faltam: ate - n,
       fracao: (n - daqui) / (ate - daqui),
     };
@@ -216,24 +173,22 @@ export function posicaoDe(forma: Forma, quantas: number): Posicao {
    * A barra passa a medir a distância até a PRÓXIMA estrela, e não até um degrau que não
    * existe. Uma barra cheia e parada, para sempre, é uma barra que zomba de quem chegou.
    */
-  const passo = PARAGON[forma];
-  const acima = n - pisos[i]!;
-  const estrelas = Math.floor(acima / passo);
-  const dentro = acima % passo;
+  const acima = n - PISO[i]!;
+  const estrelas = Math.floor(acima / PARAGON);
+  const dentro = acima % PARAGON;
 
   return {
-    forma,
     honra,
     quantas: n,
     estrelas,
     proxima: null,
-    faltam: passo - dentro,
-    fracao: dentro / passo,
+    faltam: PARAGON - dentro,
+    fracao: dentro / PARAGON,
   };
 }
 
 /**
- * O nome completo, com as estrelas. "Gume +3". "Katana +1". "Prata".
+ * O nome completo, com as estrelas. "Gume +3". "Prata".
  *
  * As estrelas viram um `+N`, e não N estrelinhas desenhadas: doze estrelinhas ao lado de
  * um nome viram uma constelação, e ninguém consegue contar. O número se lê de relance.
@@ -242,35 +197,11 @@ export function nomeCompleto(p: Posicao): string {
   return p.estrelas > 0 ? `${NOME[p.honra]} +${p.estrelas}` : NOME[p.honra];
 }
 
-/** Quão alto é isto? Só para comparar as duas escadas ENTRE SI, e nunca para exibir. */
-export function altura(p: Posicao): number {
-  const i = (HONRAS[p.forma] as readonly string[]).indexOf(p.honra);
-  return i * 1000 + p.estrelas;
-}
-
 /**
  * ════════════════════════════════════════════════════════════════════
- *  A MOLDURA DA CARA MOSTRA A HONRA MAIS ALTA. SEMPRE.
+ *  A MOLDURA DA CARA MOSTRA A HONRA. E, SE A PESSOA APOIA E ESCOLHEU, O APOIO.
  *
- *  Uma pessoa tem duas honras (uma por escada) e **uma cara só**. Alguma das duas tem
- *  que ir para o anel, e a regra é: a mais alta.
- *
- *  ═══ POR QUE A MAIS ALTA, E NÃO A ESCOLHA DA PESSOA ═══
- *
- *  Deixar escolher parece mais gentil, e é pior. Quem leu 300 livros e 12 mangás
- *  escolheria mostrar o Aprendiz num dia de modéstia — e aí o anel deixa de dizer
- *  alguma coisa sobre a pessoa e passa a dizer alguma coisa sobre o humor dela.
- *
- *  Um sinal que depende de escolha não é um sinal: é um enfeite. E a moldura só vale a
- *  pena existir porque, olhando uma cara no feed, dá para saber o que aquela pessoa é.
- *
- *  ═══ E "MAIS ALTA" É POR DEGRAU, NUNCA PELO NÚMERO ═══
- *
- *  146 volumes de mangá (Samurai, o 4º degrau) não podem ganhar de 150 livros (Diamante,
- *  o 7º) só por serem quase o mesmo número. As duas escadas existem exatamente para isso
- *  não acontecer, e comparar pelo número cru desfaria as duas de uma vez.
- *
- *  ═══ A ÚNICA COISA QUE PASSA NA FRENTE ═══
+ *  ═══ A ÚNICA COISA QUE PASSA NA FRENTE DA HONRA ═══
  *
  *  A moldura de APOIADOR, e só se a pessoa escolher usá-la. Ela não é um degrau: não diz
  *  quanto você leu, diz que você paga a conta do servidor. É outra coisa, e por isso ela
@@ -284,14 +215,11 @@ export function altura(p: Posicao): number {
 export type Coroa = { honra: Honra; estrelas?: number } | { apoiador: true };
 
 export function coroaDe(
-  livro: Posicao,
-  quadrinho: Posicao,
+  p: Posicao,
   { apoia, moldura }: { apoia: boolean; moldura: string | null },
 ): Coroa {
   if (apoia && moldura === "apoiador") return { apoiador: true };
-
-  const maior = altura(livro) >= altura(quadrinho) ? livro : quadrinho;
-  return { honra: maior.honra, estrelas: maior.estrelas };
+  return { honra: p.honra, estrelas: p.estrelas };
 }
 
 /**
@@ -323,16 +251,9 @@ export function coroaDe(
  *  da cor da honra na sua estante."
  *
  *  O dado já existia: `activities.honra` guarda, desde sempre, a honra em que a pessoa
- *  ENTROU ao terminar aquele livro. Estava gravado e não estava sendo mostrado em lugar
- *  nenhum — a estante não sabia que uma das capas dela era um marco.
- *
- *  ═══ POR QUE ISTO NÃO É UM PLACAR ═══
- *
- *  Porque é uma MEMÓRIA, e não uma contagem. A moldura não diz "você leu 60 livros": diz
- *  "foi este aqui que te levou à Platina". Ela não ordena ninguém contra ninguém, não
- *  aparece na estante dos outros como comparação, e não some se você parar de ler.
- *
- *  É a coisa que um app de leitura devia fazer e nenhum faz: lembrar QUAL livro foi.
+ *  ENTROU ao terminar aquele livro. É uma MEMÓRIA, e não uma contagem: a moldura não diz
+ *  "você leu 60 livros", diz "foi este aqui que te levou à Platina". Ela não ordena
+ *  ninguém contra ninguém e não some se você parar de ler.
  * ════════════════════════════════════════════════════════════════════
  */
 
@@ -341,22 +262,14 @@ export function coroaDe(
  *
  * O valor gravado no banco pode vir com o paragon colado ("gume+3"), porque é assim que
  * `degrauNovo` o escreve. O que interessa aqui é o degrau, e o degrau é o que vem antes
- * do `+`.
- *
- * As duas escadas compartilham a paleta degrau a degrau (ver lib/paleta.ts), então o
- * índice na escada é o índice na paleta — venha ele da literatura ou dos quadrinhos.
+ * do `+`. O índice na escada é o índice na paleta (ver lib/paleta.ts).
  */
 export function tintaDeHonra(gravado: string | null | undefined): Tinta | null {
   if (!gravado) return null;
 
   const nome = gravado.split("+")[0]!.trim().toLowerCase();
-
-  for (const forma of ["livro", "quadrinho"] as const) {
-    const i = (HONRAS[forma] as readonly string[]).indexOf(nome);
-    if (i >= 0) return DEGRAU[i] ?? null;
-  }
-
-  return null;
+  const i = (HONRAS as readonly string[]).indexOf(nome);
+  return i >= 0 ? DEGRAU[i] ?? null : null;
 }
 
 /** O nome de exibição de uma honra gravada. "gume+3" vira "Gume +3". */

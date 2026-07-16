@@ -5,7 +5,7 @@ import { INSIGNIAS, ORDEM } from "@/lib/badges-view";
 import { Cabecalho, Portas } from "@/components/casa-de-quem-faz";
 import { Moldura } from "@/components/moldura";
 import { getEscadas } from "@/lib/escada";
-import { escadaDe, NOME, piso, type Honra } from "@/lib/honras";
+import { HONRAS, NOME, piso, type Honra } from "@/lib/honras";
 import { Placa } from "@/components/badges";
 import { cor as matizDe } from "@/lib/badges-view";
 
@@ -69,7 +69,7 @@ export default async function Insignias() {
   const [minhas, progresso, escadas] = await Promise.all([
     viewer ? getBadges(viewer.id) : Promise.resolve([]),
     viewer ? getProgresso(viewer.id) : Promise.resolve(null),
-    // As duas escadas de quem está olhando, para acender o degrau em que ela está.
+    // A honra de quem está olhando, para acender o degrau em que ela está.
     viewer ? getEscadas(viewer.id) : Promise.resolve(null),
   ]);
 
@@ -209,7 +209,7 @@ export default async function Insignias() {
 
 /**
  * ════════════════════════════════════════════════════════════════════
- *  AS DUAS ESCADAS, INTEIRAS, COM OS NÚMEROS NA CARA.
+ *  A ESCADA INTEIRA, COM OS NÚMEROS NA CARA.
  *
  *  Uma escada que ninguém sabe onde termina não é uma escada: é um corredor escuro. A
  *  pessoa tem direito de ver os dez degraus, os números de cada um, e a moldura que vem
@@ -240,78 +240,69 @@ function Honras({ escadas }: { escadas: Awaited<ReturnType<typeof getEscadas>> |
       </p>
 
       <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-[var(--color-ink-soft)]">
-        São <strong className="font-medium text-[var(--color-ink)]">duas escadas</strong>, porque
-        ler Bleach inteiro são setenta e quatro volumes e ler Guerra e Paz é um livro. Numa escada
-        só, quem lê mangá subiria por construção. Cada uma mede na régua dela.
+        É uma escada só. Um livro, uma HQ e{" "}
+        <strong className="font-medium text-[var(--color-ink)]">cada volume de mangá</strong>{" "}
+        contam a mesma coisa: uma leitura. Quem lê mangá sobe mais rápido, e tudo bem. Ler
+        quinhentas obras, do tipo que for, é uma vida de leitor, e isso é o que a honra
+        celebra.
       </p>
 
-      <div className="mt-10 grid gap-10 sm:grid-cols-2">
-        {(["livro", "quadrinho"] as const).map((forma) => {
-          const escada = escadaDe(forma);
-          const onde = escadas ? escada.indexOf(escadas[forma].honra as never) : -1;
+      {(() => {
+        const onde = escadas ? (HONRAS as readonly string[]).indexOf(escadas.posicao.honra) : -1;
 
-          return (
-            <div key={forma}>
-              <h3 className="text-[11px] uppercase tracking-[0.16em] text-[var(--color-ink-faint)]">
-                {forma === "livro" ? "literatura" : "quadrinhos"}
-              </h3>
+        return (
+          <div className="mt-10 max-w-md">
+            <ul className="flex flex-col gap-3">
+              {HONRAS.map((honra, i) => {
+                const aqui = onde === i;
+                const passei = onde >= i;
 
-              <ul className="mt-5 flex flex-col gap-3">
-                {escada.map((honra, i) => {
-                  const aqui = onde === i;
-                  const passei = onde >= i;
+                return (
+                  <li key={honra} className="flex items-center gap-3.5">
+                    <span style={{ opacity: passei ? 1 : 0.3 }}>
+                      <Moldura coroa={{ honra }} handle="_" name={NOME[honra as Honra]} size={34} />
+                    </span>
 
-                  return (
-                    <li key={honra} className="flex items-center gap-3.5">
-                      <span style={{ opacity: passei ? 1 : 0.3 }}>
-                        <Moldura coroa={{ honra }} handle="_" name={NOME[honra as Honra]} size={34} />
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={[
+                          "block text-[14px]",
+                          aqui ? "text-[var(--color-ink)]" : "text-[var(--color-ink-soft)]",
+                        ].join(" ")}
+                      >
+                        {NOME[honra as Honra]}
+                        {aqui && (
+                          <span className="ml-2 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+                            você está aqui
+                          </span>
+                        )}
                       </span>
 
-                      <span className="min-w-0 flex-1">
-                        <span
-                          className={[
-                            "block text-[14px]",
-                            aqui ? "text-[var(--color-ink)]" : "text-[var(--color-ink-soft)]",
-                          ].join(" ")}
-                        >
-                          {NOME[honra as Honra]}
-                          {aqui && (
-                            <span className="ml-2 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-                              você está aqui
-                            </span>
-                          )}
-                        </span>
-
-                        <span className="tabular block text-[12px] text-[var(--color-ink-faint)]">
-                          {piso(forma, honra) === 0
-                            ? "de graça, desde o primeiro dia"
-                            : `${piso(forma, honra).toLocaleString("pt-BR")} ${
-                                forma === "livro" ? "livros" : "volumes"
-                              }`}
-                        </span>
+                      <span className="tabular block text-[12px] text-[var(--color-ink-faint)]">
+                        {piso(honra as Honra) === 0
+                          ? "de graça, desde o primeiro dia"
+                          : `${piso(honra as Honra).toLocaleString("pt-BR")} leituras`}
                       </span>
-                    </li>
-                  );
-                })}
-              </ul>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
 
-              {/* O TOPO NÃO É O FIM. Depois dele, uma estrela a cada vinte e cinco. */}
-              <p className="mt-5 text-[12px] leading-relaxed text-[var(--color-ink-faint)]">
-                Depois do último degrau a escada não acaba: a cada{" "}
-                {forma === "livro" ? "25 livros" : "60 volumes"} vem uma estrela.{" "}
-                {forma === "livro" ? "Gume +1, Gume +2" : "Katana +1, Katana +2"}, e assim
-                por diante.
-              </p>
-            </div>
-          );
-        })}
-      </div>
+            {/* O TOPO NÃO É O FIM. Depois dele, uma estrela a cada vinte e cinco. */}
+            <p className="mt-6 text-[12px] leading-relaxed text-[var(--color-ink-faint)]">
+              Depois do último degrau a escada não acaba: a cada 25 leituras vem uma estrela.
+              Gume +1, Gume +2, e assim por diante.
+            </p>
+          </div>
+        );
+      })()}
 
       {/* A verdade sobre a moldura de apoiador, dita aqui e não escondida numa página de
           preço: ela NÃO é um degrau, e não fica acima de nada. */}
       <p className="mt-10 max-w-xl text-[15px] leading-relaxed text-[var(--color-ink-faint)]">
         Quem apoia o Gume ganha uma moldura rosa, a mesma cor de quem constrói o app, e escolhe
-        qual das duas quer usar. Ela não é melhor que o Gume nem que a Navalha: ela não diz
+        entre ela e a da honra. Ela não é melhor que o Gume nem que a Navalha: ela não diz
         quanto você leu, diz que você paga a conta do servidor. São duas coisas diferentes, e
         nenhuma ganha da outra.
       </p>

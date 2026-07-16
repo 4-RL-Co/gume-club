@@ -60,7 +60,7 @@ export async function setStatus(
    *
    * Só em "terminou": prateleirar não sobe elo, e começar a ler também não.
    */
-  const honra = status === "read" ? await degrauNovo(actor.id, workId) : null;
+  const honra = status === "read" ? await degrauNovo(actor.id) : null;
 
   await record(actor.id, verb, workId, {
     visibility: entry.visibility as Visibility,

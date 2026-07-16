@@ -120,8 +120,8 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
     getCollections(viewer, profile.id),
   ]);
 
-  // AS DUAS ESCADAS. Uma de literatura, uma de quadrinhos, porque ler Bleach são 74
-  // livros e ler Guerra e Paz é 1. Ver lib/honras.ts.
+  // A HONRA. Uma escada só: livros, HQs e cada volume de mangá contam juntos. Ver
+  // lib/honras.ts.
   const escadas = await getEscadas(profile.id);
 
   const name = profile.displayName ?? profile.handle;
@@ -191,21 +191,13 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
             </div>
           )}
 
-          {/* ═══ AS DUAS ESCADAS, LADO A LADO ═══
+          {/* ═══ A HONRA ═══
 
-              Uma por forma, e só aparece a escada em que a pessoa leu alguma coisa: quem
-              nunca leu um mangá não precisa ver uma barra vazia todo dia dizendo que está
-              devendo.
-
-              Lado a lado, e não uma embaixo da outra: elas são duas metades da mesma
-              pessoa, e empilhá-las faria a de cima parecer a principal.
-
-              Cada uma diz de qual escada é (literatura / quadrinhos) E usa o vocabulário
-              dela (Ouro é livro; Ronin é quadrinho). Duas travas para a mesma confusão,
-              porque ela é a mais fácil de fazer. */}
-          <div className="mt-7 grid gap-x-8 gap-y-5 sm:max-w-xl sm:grid-cols-2">
-            {escadas.livro.quantas > 0 && <Barra p={escadas.livro} />}
-            {escadas.quadrinho.quantas > 0 && <Barra p={escadas.quadrinho} />}
+              Uma barra só. Livros, HQs e volumes de mangá contam juntos, e só aparece
+              quando a pessoa leu alguma coisa: quem nunca terminou nada não precisa ver
+              uma barra vazia todo dia dizendo que está devendo. */}
+          <div className="mt-7 sm:max-w-xl">
+            {escadas.posicao.quantas > 0 && <Barra p={escadas.posicao} />}
           </div>
 
           {/* Seguir e compartilhar moram juntos, e é de propósito: as duas são

@@ -110,6 +110,11 @@ Duas consequências, decididas agora em vez de descobertas depois:
 - **Livros e volumes são contados separadamente.** "12 livros, 30 volumes, 4 séries." Trinta volumes de Vagabond não são trinta livros, e uma estatística que finge o contrário é uma em que o próprio dono para de confiar.
 - **Uma série é um tile na parede de capas**, com os volumes dentro. Trinta lombadas quase idênticas em fila arruinariam a única tela de que o produto depende.
 
+**2026-07-16: A honra é uma escada só. Livros, HQs e cada volume de mangá contam juntos.**
+Antes eram duas escadas: literatura (Ferro → … → Gume) e quadrinhos (Aprendiz → … → Katana), cada uma com a régua dela, porque um volume de mangá se lê num quarto do tempo de um romance. Era honesto e era complicado: duas barras no perfil, dois vocabulários, e uma HQ marcada como "brochura" caindo na escada errada sem a pessoa entender por quê. A separação resolvia um problema de *justiça* que quase ninguém sentia e criava um problema de *clareza* que todo mundo via. Agora é uma escada só, a de metal e pedra que termina no fio (o Gume), e **cada volume de mangá vale uma leitura**, igual a um livro. Sim, isso deixa a honra mais fácil para quem lê mangá — e tudo bem: a honra é um retrato de *quanto* você leu, não um prêmio de dificuldade, e ler 500 obras, do tipo que for, é uma vida de leitor. Removeu-se a escada `quadrinho`, o tipo `Forma` e `altura()` de lib/honras.ts; `posicaoDe`/`coroaDe` perderam o parâmetro de forma; `getEscadas`/`degrauNovo` (lib/escada.ts) contam `status='read'` sem filtrar forma.
+
+Isto vale **só para a honra**. A ESTATÍSTICA continua contando separado ("12 livros, 30 volumes, 4 séries"): lá a mentira de que trinta volumes de Vagabond são trinta livros faria o dono parar de confiar no número. Na honra, o que importa é o esforço de leitura acumulado, e volume lido é leitura.
+
 **2026-07-11: A identidade de uma obra é `(title, author_id, volume)`, com unique NULLS NOT DISTINCT.**
 Um seed rodado duas vezes duplicou as 44 obras para 88, porque `works` não tinha unique e o insert era cego. Rejeitado `(title, author_id)` puro: dois volumes de mangá com o mesmo título e autor colidiriam (o schema já tem `works.volume`). Rejeitado o `works.slug` único do modelo-alvo em docs/schema.md: o código real usa `author_id` (autor único) e ainda não tem slug; entra quando `/livro/[slug]` chegar. Como `volume` e `author_id` são nuláveis e um clássico tem `volume` nulo, um unique comum trataria cada nulo como distinto e não pegaria os duplicados: por isso **NULLS NOT DISTINCT** (Postgres 15+). O seed virou idempotente (upsert por essa constraint), e uma migration deduplicou os dados existentes preservando `library_entries` e `owned_copies`.
 
@@ -179,6 +184,11 @@ Substitui o "livro novo passa por aprovação de bibliotecário".
 - **Arautos** (os antigos "embaixadores") podem editar livro de qualquer um.
 - Sem fila de aprovação, sem curso, sem programa de bibliotecário.
 Motivo: com dez amigos, fila de moderação é cerimônia que ninguém usa e que trava o catálogo, que é o gargalo real. O `revisions` append-only já dá o que importa: nada some em silêncio e tudo é revertível. Quando o spam aparecer (e ele aparece), a gente aperta. Não antes.
+
+**2026-07-15 — A capa também entra na hora, e há um lugar só para arrumar um livro.**
+Estende a decisão acima ("moderação aberta por enquanto") para o último campo que ainda contrariava ela. A capa era o **único** campo com fila: propor uma capa mandava ela para uma fila que só o bibliotecário via, num app onde o bibliotecário é a própria pessoa. Agora a capa é um campo como os outros: sobe a imagem, entra na hora, com o nome no `revisions`. A fila (`proporCapa`/`julgarCapa`/`getFilaDeCapas`, `components/cover-queue.tsx`, a tela "o que falta") **continua no código, engatilhada**, para o dia em que apertar — mesma régua de todo o resto: aperta quando o spam vier, não antes.
+
+Duas telas de correção que se sobrepunham viraram **uma só**, dentro da gaveta "arrumar este livro": um formulário com todos os campos, a capa no topo por **upload** (o campo de link colado saiu, gerava atrito e capa quebrada). O `saveBookEdit` passou a validar a origem da capa pelo mesmo porteiro do retrato de autor (`porQueNaoAceita`, lib/imagens.ts) e a devolver a recusa **como valor**, porque o Next apaga mensagem de exceção em produção. O aviso anti-lixo ("capa diferente é edição diferente") mora ao lado do botão de capa, no momento em que a pessoa vai trocar a foto de todo mundo.
 
 **2026-07-11 — Direção visual: editorial de galeria, não dashboard.**
 Referências: a grade de pôsteres do Milk & Bone, o site de arte e manuscritos, o Atelier, o Voyager2, e o Country Books.

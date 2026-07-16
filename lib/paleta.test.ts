@@ -27,9 +27,8 @@ import { HONRAS } from "./honras";
  * ════════════════════════════════════════════════════════════════════
  */
 describe("a paleta da moldura", () => {
-  it("tem uma cor por degrau, e as duas escadas têm a mesma altura", () => {
-    expect(DEGRAU).toHaveLength(HONRAS.livro.length);
-    expect(DEGRAU).toHaveLength(HONRAS.quadrinho.length);
+  it("tem uma cor por degrau da escada", () => {
+    expect(DEGRAU).toHaveLength(HONRAS.length);
   });
 
   /**
@@ -60,7 +59,7 @@ describe("a paleta da moldura", () => {
 
     const TODAS = [
       ...DEGRAU.map((t, i) => ({
-        nome: `${HONRAS.livro[i]}/${HONRAS.quadrinho[i]}`,
+        nome: `${HONRAS[i]}`,
         cor: t.de,
       })),
       { nome: "APOIADOR", cor: APOIADOR.de },
@@ -174,7 +173,7 @@ describe("a paleta da moldura", () => {
     for (let i = 0; i < DEGRAU.length - 1; i++) {
       expect(
         luz(gume),
-        `${HONRAS.livro[i]} (${DEGRAU[i]!.de}) é mais claro que o Gume`,
+        `${HONRAS[i]} (${DEGRAU[i]!.de}) é mais claro que o Gume`,
       ).toBeGreaterThan(luz(DEGRAU[i]!.de));
     }
   });

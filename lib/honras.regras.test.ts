@@ -80,7 +80,7 @@ describe("a honra é uma escada, e não uma esteira", () => {
   it("a honra de quem parou de ler é a mesma de ontem", () => {
     // A função é PURA e só recebe um número. Ela não tem como saber que dia é hoje — e é
     // essa incapacidade que garante que a honra nunca cai.
-    expect(posicaoDe("livro", 225).honra).toBe("lamina");
+    expect(posicaoDe(225).honra).toBe("lamina");
   });
 
   /**
@@ -174,7 +174,7 @@ describe("a honra é uma escada, e não uma esteira", () => {
       /did_not_finish|abandonad/i,
     );
 
-    expect(posicaoDe("livro", 0).honra).toBe("ferro");
+    expect(posicaoDe(0).honra).toBe("ferro");
   });
 
   /**

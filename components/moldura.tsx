@@ -37,7 +37,7 @@ import { Avatar } from "@/components/avatar";
  * e nunca duas cores diferentes: um anel bicolor vira um adesivo.
  */
 /**
- * O que a moldura mostra: uma honra (de qualquer escada), ou o apoio.
+ * O que a moldura mostra: uma honra, ou o apoio.
  *
  * O TIPO mora em lib/honras.ts, junto com a REGRA que decide qual das duas honras vai
  * para o anel (`coroaDe`). Ele morava aqui também, e dois tipos com o mesmo nome sobre a
@@ -53,8 +53,7 @@ import { Avatar } from "@/components/avatar";
 function tinta(coroa: Coroa) {
   if ("apoiador" in coroa) return APOIADOR;
 
-  const escada = HONRAS.livro.includes(coroa.honra as never) ? HONRAS.livro : HONRAS.quadrinho;
-  const i = (escada as readonly string[]).indexOf(coroa.honra);
+  const i = (HONRAS as readonly string[]).indexOf(coroa.honra);
   return DEGRAU[i] ?? DEGRAU[0]!;
 }
 
@@ -173,35 +172,23 @@ export function Moldura({
 
 /**
  * ════════════════════════════════════════════════════════════════════
- *  A BARRA. Uma por escada, e as duas lado a lado no perfil.
+ *  A BARRA. Uma só, no perfil.
  *
- *  ═══ POR QUE CADA UMA DIZ O QUE ELA É ═══
- *
- *  Antes o perfil dizia "Ouro · 214 livros" e "Ouro · 146 volumes": duas palavras iguais,
- *  dois números diferentes, e ninguém sabia qual era qual.
- *
- *  Agora cada escada tem o vocabulário dela (Ouro é de livro, Ronin é de quadrinho) E um
- *  rótulo em cima. Duas travas para a mesma confusão, porque ela é a mais fácil de fazer.
+ *  Uma escada só: livros, HQs e volumes de mangá contam juntos. O número diz "leituras",
+ *  e não "livros" nem "volumes", porque agora ele é os três somados.
  * ════════════════════════════════════════════════════════════════════
  */
 export function Barra({ p }: { p: Posicao }) {
   const { de, brilho } = tinta({ honra: p.honra });
 
-  const oQue = p.forma === "livro" ? "livros" : "volumes";
-  const escada = p.forma === "livro" ? "literatura" : "quadrinhos";
-
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-ink-faint)]">
-        {escada}
-      </p>
-
-      <div className="mt-2 flex items-baseline justify-between gap-4">
+      <div className="flex items-baseline justify-between gap-4">
         <span className="text-[11px] uppercase tracking-[0.12em]">
           <span style={{ color: de }}>{nomeCompleto(p)}</span>
           <span className="text-[var(--color-ink-faint)]">
             {" · "}
-            <span className="tabular">{p.quantas.toLocaleString("pt-BR")}</span> {oQue}
+            <span className="tabular">{p.quantas.toLocaleString("pt-BR")}</span> leituras
           </span>
         </span>
 

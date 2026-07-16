@@ -321,13 +321,16 @@ rosa. Ela virou escarlate.
 O Gume agora tem **honras** e tem barra de progresso de leitura. É uma virada deliberada,
 e ela está em [ai/DECISIONS.md](../ai/DECISIONS.md).
 
-São **duas escadas**, porque quem lê mangá lê em outra escala, e uma escada só faria de
-quarenta volumes de Berserk a mesma coisa que quarenta romances:
+É **uma escada só**. Já foram duas (uma de literatura, uma de quadrinhos, cada uma com a
+régua dela), e a separação resolvia um problema de justiça que quase ninguém sentia e
+criava um de clareza que todo mundo via. Agora livros, HQs e cada volume de mangá contam
+juntos: cada volume vale uma leitura. Sobe mais fácil para quem lê mangá, e tudo bem — a
+honra é um retrato de quanto você leu, não um prêmio de dificuldade. A virada está em
+[ai/DECISIONS.md](../ai/DECISIONS.md).
 
 | | os dez degraus | o topo |
 |---|---|---|
-| **livro** | Ferro, Bronze, Prata, Ouro, Platina, Esmeralda, Diamante, Lâmina, Navalha, **Gume** | 500 lidos |
-| **quadrinho** | Aprendiz, Discípulo, Ronin, Samurai, Kenshi, Sensei, Shogun, Oni, Tengu, **Katana** | 1.250 volumes |
+| **honra** | Ferro, Bronze, Prata, Ouro, Platina, Esmeralda, Diamante, Lâmina, Navalha, **Gume** | 500 leituras |
 
 Depois do topo não vem outro degrau: vem uma contagem discreta ao lado do nome
 (**Gume +3**), no espírito do paragon do Diablo. Uma escada infinita é uma corrida
