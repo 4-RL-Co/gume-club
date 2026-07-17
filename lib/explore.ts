@@ -291,3 +291,72 @@ export async function getLendoAgora(viewer: Viewer, limite = 18): Promise<Lendo[
     .sort((a, b) => new Date(b.status_at).getTime() - new Date(a.status_at).getTime())
     .map((r) => ({ slug: r.slug, title: r.title, author: r.author, coverUrl: r.cover_url }));
 }
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  AS RESENHAS DE UMA PESSOA. No perfil dela.
+ *
+ *  A resenha é a coisa mais demorada que alguém escreve no Gume, e ela só existia em dois
+ *  lugares: na página do livro (uma por vez) e no "resenhas recentes" do explorar (a de
+ *  todo mundo, misturada). Não havia como ler o que UMA pessoa escreveu — que é
+ *  exatamente o que se quer depois de gostar de uma resenha dela.
+ *
+ *  ═══ E A VISIBILIDADE NÃO É NEGOCIÁVEL ═══
+ *
+ *  Resenha nasce PRIVADA, de propósito (ai/DECISIONS.md): a maior parte é escrita para si
+ *  mesmo, e um app que publica por padrão ensina, em silêncio, a escrever para uma
+ *  plateia. Um perfil que listasse tudo transformaria um caderno em vitrine, sem ninguém
+ *  ter pedido.
+ *
+ *  Então o filtro é o `visibleTo()`, NO SQL, como toda leitura de dado alheio neste repo:
+ *  o dono vê as dele, quem segue vê as de "quem me segue", e um estranho vê só as
+ *  públicas. A tela não decide nada disso — a consulta decide. Ver SECURITY.md.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export type ResenhaDaPessoa = {
+  id: string;
+  body: string;
+  createdAt: Date;
+  slug: string;
+  title: string;
+  coverUrl: string | null;
+  /** Só o dono vê isto: é o que deixa ele saber o que está aberto e o que não está. */
+  visibility: string;
+};
+
+export async function getResenhasDe(
+  viewer: Viewer,
+  donoId: string,
+  limite = 20,
+): Promise<ResenhaDaPessoa[]> {
+  const rows = await db.execute<{
+    id: string;
+    body: string;
+    created_at: Date;
+    slug: string;
+    title: string;
+    cover_url: string | null;
+    visibility: string;
+  }>(sql`
+    -- Sem apelido em "reviews": o visibleTo() emite o nome real da tabela, e um
+    -- apelido faz o Postgres não achar a coluna que a regra de visibilidade cita.
+    select reviews.id, reviews.body, reviews.created_at, reviews.visibility,
+           w.slug, w.title, ${capaDaObra} as cover_url
+      from reviews
+      join works w on w.id = reviews.work_id
+     where reviews.user_id = ${donoId}::uuid
+       and reviews.deleted_at is null
+       and ${visibleTo(viewer, reviews.userId, reviews.visibility)}
+     order by reviews.created_at desc
+     limit ${limite}`);
+
+  return rows.map((r) => ({
+    id: r.id,
+    body: r.body,
+    createdAt: r.created_at,
+    slug: r.slug,
+    title: r.title,
+    coverUrl: r.cover_url,
+    visibility: r.visibility,
+  }));
+}

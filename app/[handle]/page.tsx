@@ -15,6 +15,7 @@ import { FollowButton } from "@/components/follow-button";
 import { chegadaDe, getBadges } from "@/lib/badges";
 import { BadgesExplicadas } from "@/components/badges";
 import { getCollections } from "@/lib/curation";
+import { getResenhasDe } from "@/lib/explore";
 import { Cover } from "@/components/cover";
 import { Carrossel } from "@/components/carrossel";
 import type { ShelfBook } from "@/lib/shelf-view";
@@ -110,7 +111,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
   const viewer = await getViewer();
   const mine = viewer?.id === profile.id;
 
-  const [books, lendo, counts, following, badges, shelves] = await Promise.all([
+  const [books, lendo, counts, following, badges, shelves, resenhas] = await Promise.all([
     getShelf(viewer, profile.id, { filter: "tudo", sort: "adicionado" }),
     getShelf(viewer, profile.id, { filter: "lendo" }),
     getShelfCounts(viewer, profile.id),
@@ -118,6 +119,9 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
     // Insígnias, e nunca um número: o número vive em /contribuidores e não sai de lá.
     getBadges(profile.id),
     getCollections(viewer, profile.id),
+    // As resenhas DELA, e a consulta é quem decide quais: privada nunca sai daqui.
+    // Ver getResenhasDe() em lib/explore.ts e SECURITY.md.
+    getResenhasDe(viewer, profile.id),
   ]);
 
   // A HONRA. Uma escada só: livros, HQs e cada volume de mangá contam juntos. Ver
@@ -276,6 +280,55 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
 
       {largados.length > 0 && (
         <Tira titulo={mine ? "larguei no meio" : "largou no meio"} books={largados} />
+      )}
+
+      {/* ═══ AS RESENHAS ═══
+
+          A resenha é a coisa mais demorada que alguém escreve aqui, e ela só existia
+          espalhada: uma por página de livro, e a de todo mundo misturada no explorar.
+          Não dava para ler o que UMA pessoa escreveu, que é exatamente o que se quer
+          depois de gostar de uma resenha dela.
+
+          Quais aparecem é a CONSULTA que decide, e não esta tela: resenha nasce privada
+          neste app, e a privada não sai de getResenhasDe(). Ver SECURITY.md. */}
+      {resenhas.length > 0 && (
+        <section className="surface mt-5 p-7">
+          <h2 className={EYEBROW}>{mine ? "o que eu escrevi" : `o que ${primeiroNome} escreveu`}</h2>
+
+          <ul className="mt-6 flex flex-col gap-6">
+            {resenhas.map((r) => (
+              <li key={r.id} className="flex gap-5">
+                <Link href={`/livro/${r.slug}`} className="cover-lift w-14 shrink-0">
+                  <Cover title={r.title} src={r.coverUrl} />
+                </Link>
+
+                <div className="min-w-0 flex-1">
+                  <Link href={`/livro/${r.slug}`} className="voice text-[17px] leading-snug hover:underline">
+                    {r.title}
+                  </Link>
+
+                  {/* `line-clamp` porque isto é uma LISTA: a resenha inteira mora na
+                      página do livro, e uma lista onde cada item tem seis parágrafos
+                      deixa de ser uma lista. */}
+                  <p className="voice mt-2 line-clamp-4 whitespace-pre-wrap text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
+                    {r.body}
+                  </p>
+
+                  <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+                    {new Date(r.createdAt).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })}
+                    {/* Só o dono precisa saber o que está fechado: para os outros, o que
+                        eles estão vendo já É o que dá para ver. */}
+                    {mine && r.visibility !== "public" && (
+                      <span className="normal-case tracking-normal">
+                        {r.visibility === "private" ? " · só para você" : " · para quem te segue"}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {books.length === 0 && (
