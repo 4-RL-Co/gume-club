@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { saveBookEdit } from "@/app/livro/[slug]/curation-actions";
+import { saveBookEdit, fundirLivros } from "@/app/livro/[slug]/curation-actions";
+import { useRouter } from "next/navigation";
+import type { ObraGemea } from "@/lib/corrections";
 import { toast } from "@/lib/toast";
 import { LIMITS } from "@/lib/limits";
 
@@ -63,6 +65,8 @@ export function Correcao({
   temOutrasEdicoes: boolean;
 }) {
   const [capa, setCapa] = useState(livro.coverUrl ?? "");
+  const [gemea, setGemea] = useState<ObraGemea | null>(null);
+  const router = useRouter();
   const [subindo, setSubindo] = useState(false);
   const [recusa, setRecusa] = useState<string | null>(null);
   const [salvo, setSalvo] = useState(false);
@@ -92,6 +96,74 @@ export function Correcao({
     }
   };
 
+  /**
+   * ═══ A PERGUNTA DA FUSÃO ═══
+   *
+   * Trocar o autor é o que faz duas fichas do mesmo livro colidirem: o dump gravou o
+   * TRADUTOR como autor de um "Frankenstein", a autora de verdade ficou com outro, e no
+   * instante em que alguém arruma o autor as duas viram a mesma linha.
+   *
+   * Antes isto estourava no unique e a tela dizia "não deu para guardar" — eram 793
+   * livros sem saída. Não é erro: é uma pergunta, e ela toma a tela porque juntar duas
+   * fichas apaga um endereço público.
+   */
+  if (gemea) {
+    return (
+      <div className="paper mt-8 p-5">
+        <h3 className="text-[15px] text-[var(--color-ink)]">É o mesmo livro?</h3>
+
+        <p className="voice mt-3 text-[17px] leading-snug text-[var(--color-ink)]">
+          {livro.author} já tem uma ficha de {gemea.title}, com {gemea.edicoes}{" "}
+          {gemea.edicoes === 1 ? "edição" : "edições"}.
+        </p>
+
+        <p className="mt-3 max-w-lg text-[13px] leading-relaxed text-[var(--color-ink-soft)]">
+          O catálogo veio com duas fichas para o mesmo livro. Se são o mesmo, o Gume junta:
+          as edições, as estantes, as notas e as resenhas daqui passam para lá, e esta ficha
+          sai. O endereço dela deixa de existir.
+        </p>
+
+        {recusa && (
+          <p className="mt-3 text-[13px] leading-relaxed text-[var(--color-perigo)]" aria-live="polite">
+            {recusa}
+          </p>
+        )}
+
+        <div className="mt-5 flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() =>
+              start(async () => {
+                setRecusa(null);
+                const { erro, slug: vivo } = await fundirLivros(workId, gemea.id, "");
+                if (erro) {
+                  setRecusa(erro);
+                  return;
+                }
+                toast("Juntados. Agora é um livro só.");
+                if (vivo) router.push(`/livro/${vivo}`);
+              })
+            }
+            className="rounded-[var(--radius-control)] bg-[var(--color-ink)] px-5 py-2 text-[14px] font-medium text-[var(--color-canvas)] disabled:opacity-40"
+          >
+            {pending ? "juntando" : "Sim, é o mesmo livro"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setGemea(null);
+              setRecusa(null);
+            }}
+            className="text-[13px] text-[var(--color-ink-faint)]"
+          >
+            não, são livros diferentes
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form
       action={(data: FormData) =>
@@ -110,7 +182,11 @@ export function Correcao({
             reason: String(data.get("reason") ?? ""),
           };
           try {
-            const { erro } = await saveBookEdit(slug, workId, editionId, form);
+            const { erro, gemea: g } = await saveBookEdit(slug, workId, editionId, form);
+            if (g) {
+              setGemea(g);
+              return;
+            }
             if (erro) {
               setRecusa(erro);
               return;

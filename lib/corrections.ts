@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { assertAuthenticated, assertLibrarian, Forbidden, type Viewer } from "@/lib/authz";
 import { LIMITS, clamp } from "@/lib/limits";
 import { porQueNaoAceita } from "@/lib/imagens";
-import { editions, authors, revisions, coverProposals, users } from "@/lib/db/schema";
+import { editions, authors, works, revisions, coverProposals, users } from "@/lib/db/schema";
 import { ehBibliotecario } from "@/lib/librarian";
 import {
   CAMPOS, CAMPOS_AUTOR, type Campo, type CampoAutor, type Correcao, type Proposta,
@@ -651,5 +651,175 @@ export async function fundirAutores(
     });
 
     await tx.delete(authors).where(eq(authors.id, deId));
+  });
+}
+
+// ─────────────────────────────────────────────────────── duas fichas, um livro
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  DUAS FICHAS DO MESMO LIVRO.
+ *
+ *  ═══ DE ONDE ELAS VÊM ═══
+ *
+ *  Do dump. "Frankenstein" existia duas vezes: uma da Mary Shelley, com uma edição, e
+ *  outra de "matias sanchez" — o TRADUTOR, que a importação gravou como autor (a coluna
+ *  `translator` ficou vazia nas nove edições). É o bug que lib/posicao.test.ts existe
+ *  para impedir, e que o catálogo já trouxe pronto de antes dele existir.
+ *
+ *  ═══ POR QUE ISTO É A ÚNICA PORTA ═══
+ *
+ *  Quem tentava arrumar batia numa parede dos dois lados: fundir os AUTORES recusa (e
+ *  deve recusar: o tradutor não é a autora, e fundir daria a ela os livros dele), e
+ *  arrumar o autor na ficha do livro estoura no unique de `works` (title, author_id,
+ *  volume). São 793 livros nessa situação, e não havia saída para nenhum.
+ *
+ *  ═══ E O QUE ELA RECUSA A FAZER ═══
+ *
+ *  Se a MESMA PESSOA tem as duas fichas na estante, juntar teria que decidir qual nota e
+ *  qual resenha sobrevivem. Isso não é decisão de máquina: uma resenha é a única coisa
+ *  neste app que alguém sentou e escreveu. Então ela recusa e devolve a decisão para a
+ *  pessoa, do mesmo jeito que a fusão de autores faz.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export type ObraGemea = {
+  id: string;
+  slug: string;
+  title: string;
+  edicoes: number;
+  /** Alguém tem as DUAS na estante (ou nota, ou resenha)? Aí a fusão não decide sozinha. */
+  conflito: boolean;
+};
+
+/**
+ * Já existe uma ficha igual para este autor? É a pergunta que a ficha do livro faz antes
+ * de trocar o autor, porque trocar o autor é o que dispara a colisão.
+ */
+export async function obraGemeaDe(
+  workId: string,
+  authorId: string,
+  title: string,
+  /**
+   * `works.volume` é `numeric(6,1)`, e o Drizzle o entrega como STRING para não perder
+   * precisão. O tipo aqui diz a verdade sobre isso em vez de fingir que é número: o
+   * `::numeric` lá embaixo é quem devolve a comparação para o Postgres.
+   */
+  volume: string | null,
+): Promise<ObraGemea | null> {
+  const [row] = await db.execute<ObraGemea>(sql`
+    select g.id, g.slug::text as slug, g.title,
+           (select count(*) from editions e where e.work_id = g.id)::int as edicoes,
+           (
+             -- A mesma pessoa dos dois lados, em qualquer tabela que tenha unique por
+             -- (pessoa, obra). Se houver, a fusão não pode escolher por ela.
+             exists (select 1 from library_entries a join library_entries b
+                       on b.user_id = a.user_id and b.work_id = g.id
+                      where a.work_id = ${workId}::uuid)
+             or exists (select 1 from ratings a join ratings b
+                          on b.user_id = a.user_id and b.work_id = g.id
+                         where a.work_id = ${workId}::uuid)
+             or exists (select 1 from reviews a join reviews b
+                          on b.user_id = a.user_id and b.work_id = g.id
+                         where a.work_id = ${workId}::uuid)
+             or exists (select 1 from owned_copies a join owned_copies b
+                          on b.user_id = a.user_id and b.work_id = g.id
+                         where a.work_id = ${workId}::uuid)
+             or exists (select 1 from collection_items a join collection_items b
+                          on b.collection_id = a.collection_id and b.work_id = g.id
+                         where a.work_id = ${workId}::uuid)
+             or exists (select 1 from recommendations a join recommendations b
+                          on b.from_user_id = a.from_user_id and b.to_user_id = a.to_user_id
+                         and b.work_id = g.id
+                         where a.work_id = ${workId}::uuid)
+           ) as conflito
+      from works g
+     where g.title = ${title}
+       and g.author_id = ${authorId}::uuid
+       and coalesce(g.volume, -1) = coalesce(${volume}::numeric, -1)
+       and g.id <> ${workId}::uuid
+     limit 1`);
+
+  return row ?? null;
+}
+
+/**
+ * Juntar duas fichas do mesmo livro: tudo do `de` passa para o `para`, e o `de` sai.
+ *
+ * A que SOBREVIVE é a `para`, e isso é escolha de quem chama: no caso que deu origem a
+ * isto, a ficha certa era a da autora certa, e o endereço dela (`/livro/frankenstein-mary-shelley`)
+ * é o que devia continuar existindo. O endereço da outra morre, e é o preço honesto de
+ * ter tido duas fichas para um livro só.
+ */
+export async function fundirObras(
+  viewer: Viewer,
+  deId: string,
+  paraId: string,
+  motivo: string | null,
+): Promise<void> {
+  assertAuthenticated(viewer);
+  if (deId === paraId) return;
+
+  const [de] = await db.select().from(works).where(eq(works.id, deId)).limit(1);
+  const [para] = await db.select().from(works).where(eq(works.id, paraId)).limit(1);
+  if (!de || !para) throw new Error("obra não encontrada");
+
+  await db.transaction(async (tx) => {
+    /**
+     * A RECUSA É CONFERIDA AQUI DENTRO, e não só na tela: entre a pergunta e o clique
+     * cabe alguém pôr o livro na estante, e um POST direto não passa por tela nenhuma.
+     */
+    const [choque] = await tx.execute<{ existe: boolean }>(sql`
+      select (
+        exists (select 1 from library_entries a join library_entries b
+                  on b.user_id = a.user_id and b.work_id = ${paraId}::uuid
+                 where a.work_id = ${deId}::uuid)
+        or exists (select 1 from ratings a join ratings b
+                     on b.user_id = a.user_id and b.work_id = ${paraId}::uuid
+                    where a.work_id = ${deId}::uuid)
+        or exists (select 1 from reviews a join reviews b
+                     on b.user_id = a.user_id and b.work_id = ${paraId}::uuid
+                    where a.work_id = ${deId}::uuid)
+        or exists (select 1 from owned_copies a join owned_copies b
+                     on b.user_id = a.user_id and b.work_id = ${paraId}::uuid
+                    where a.work_id = ${deId}::uuid)
+        or exists (select 1 from collection_items a join collection_items b
+                     on b.collection_id = a.collection_id and b.work_id = ${paraId}::uuid
+                    where a.work_id = ${deId}::uuid)
+        or exists (select 1 from recommendations a join recommendations b
+                     on b.from_user_id = a.from_user_id and b.to_user_id = a.to_user_id
+                    and b.work_id = ${paraId}::uuid
+                    where a.work_id = ${deId}::uuid)
+      ) as existe`);
+
+    if (choque?.existe) {
+      throw new Forbidden("a mesma pessoa tem as duas fichas: a fusão não escolhe nota nem resenha");
+    }
+
+    /**
+     * Tudo muda de ficha ANTES de a linha sair: as nove tabelas que apontam para `works`
+     * são `on delete cascade`, então apagar primeiro apagaria a estante, a nota e a
+     * resenha de gente de verdade — em silêncio, e sem volta.
+     *
+     * `editions` não colide por ISBN (o unique é global, e não por obra), e `activities`
+     * não tem unique por pessoa: essas duas passam inteiras.
+     */
+    for (const tabela of [
+      sql`editions`, sql`library_entries`, sql`ratings`, sql`reviews`,
+      sql`activities`, sql`owned_copies`, sql`recommendations`, sql`collection_items`,
+      sql`autor_conhecido_nao_gravado`,
+    ]) {
+      await tx.execute(sql`update ${tabela} set work_id = ${paraId}::uuid where work_id = ${deId}::uuid`);
+    }
+
+    await tx.insert(revisions).values({
+      userId: viewer.id,
+      targetType: "work",
+      targetId: paraId,
+      patch: { fundidaCom: de.title, edicoesMovidas: true },
+      previous: { slug: de.slug },
+      reason: motivo,
+    });
+
+    await tx.delete(works).where(eq(works.id, deId));
   });
 }

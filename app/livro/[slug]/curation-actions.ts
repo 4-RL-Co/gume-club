@@ -6,6 +6,12 @@ import { getActor } from "@/lib/actor";
 import { getViewer } from "@/lib/viewer";
 import { limitarEscrita } from "@/lib/escrita";
 import { porQueNaoAceita } from "@/lib/imagens";
+import { db } from "@/lib/db";
+import { eq } from "drizzle-orm";
+import { authors, works } from "@/lib/db/schema";
+import { limparNomeDeAutor } from "@/lib/autores";
+import { obraGemeaDe, fundirObras, type ObraGemea } from "@/lib/corrections";
+import { Forbidden } from "@/lib/authz";
 import { LIMITS, clamp, clampRequired } from "@/lib/limits";
 import {
   removeFromShelf, removeManyFromShelf, editBook, setShelvesByName, setMyEdition, toggleInCollection,
@@ -41,9 +47,61 @@ export async function saveBookEdit(
   workId: string,
   editionId: string | null,
   form: Record<string, string>,
-): Promise<{ erro: string | null }> {
+): Promise<{ erro: string | null; gemea?: ObraGemea }> {
   const viewer = await getViewer();
   if (viewer) await limitarEscrita(viewer.id);
+
+  /**
+   * ═══ TROCAR O AUTOR É O QUE FAZ DUAS FICHAS COLIDIREM ═══
+   *
+   * O dump gravou o TRADUTOR como autor de um "Frankenstein", e a autora de verdade
+   * ficou com outro. As duas fichas convivem em paz porque `works` é único em (título,
+   * AUTOR, volume) — são autores diferentes. A colisão nasce no instante em que alguém
+   * arruma o autor para o certo: aí as duas viram a mesma linha, e o unique recusa.
+   *
+   * Sem isto, essa correção estourava e a tela dizia "não deu para guardar" — a mesma
+   * mentira genérica que a ficha do autor dava, e o mesmo beco: eram 793 livros sem
+   * saída nenhuma.
+   *
+   * Não é erro: é uma PERGUNTA. "A Mary Shelley já tem um Frankenstein. É o mesmo
+   * livro?" Ver fundirObras() em lib/corrections.ts.
+   */
+  const autorNovo = limparNomeDeAutor(form.author);
+  if (autorNovo) {
+    const [dono] = await db
+      .select({ id: authors.id })
+      .from(authors)
+      .where(eq(authors.name, autorNovo))
+      .limit(1);
+
+    if (dono) {
+      const [obra] = await db
+        .select({ volume: works.volume, authorId: works.authorId })
+        .from(works)
+        .where(eq(works.id, workId))
+        .limit(1);
+
+      // Só quando o autor MUDA: reescrever o mesmo autor não colide com nada.
+      if (obra && obra.authorId !== dono.id) {
+        const gemea = await obraGemeaDe(
+          workId,
+          dono.id,
+          clampRequired(form.title, LIMITS.title) ?? "",
+          obra.volume,
+        );
+
+        if (gemea?.conflito) {
+          return {
+            erro:
+              `${autorNovo} já tem uma ficha deste livro, e a mesma pessoa tem as duas na ` +
+              "estante. Juntar teria que escolher qual nota e qual resenha sobrevivem, e isso " +
+              "não é decisão de máquina.",
+          };
+        }
+        if (gemea) return { erro: null, gemea };
+      }
+    }
+  }
 
   /**
    * ═══ A CAPA ENTRA POR AQUI, E É O ÚNICO CAMPO COM PORTEIRO ═══
@@ -181,4 +239,37 @@ export async function visibilidadeEstante(id: string, visibility: Visibility): P
   await setCollectionVisibility(actor, id, visibility);
   revalidatePath("/");
   revalidatePath("/estante");
+}
+
+/**
+ * "São o mesmo livro": tudo do `de` passa para o `para`, e a ficha duplicada sai.
+ *
+ * Quem sobrevive é a ficha do autor CERTO, e o endereço dela é o que continua existindo.
+ * O endereço da outra morre, e é o preço honesto de ter tido duas fichas para um livro
+ * só. Ver fundirObras() em lib/corrections.ts.
+ */
+export async function fundirLivros(
+  deId: string,
+  paraId: string,
+  motivo: string,
+): Promise<{ erro: string | null; slug?: string }> {
+  const viewer = await getViewer();
+  if (viewer) await limitarEscrita(viewer.id);
+
+  try {
+    await fundirObras(viewer, deId, paraId, motivo || null);
+  } catch (e) {
+    if (e instanceof Forbidden) {
+      return { erro: "A mesma pessoa tem as duas fichas: a fusão não escolhe nota nem resenha." };
+    }
+    return { erro: "Não deu para juntar agora. O problema é nosso." };
+  }
+
+  const [viva] = await db.select({ slug: works.slug }).from(works).where(eq(works.id, paraId)).limit(1);
+
+  revalidatePath("/");
+  revalidatePath("/estante");
+  if (viva) revalidatePath(`/livro/${viva.slug}`);
+
+  return { erro: null, slug: viva?.slug };
 }
