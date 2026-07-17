@@ -101,14 +101,37 @@
   --ease-spring: linear(0, 0.35, 0.78, 0.97, 1.02, 1);
 
   /**
-   * O FIO. Branco-osso, nunca uma cor saturada.
+   * O FIO. Nunca uma cor saturada.
    *
    * O Gume é o fio da lâmina, e o item ativo da navegação é o que está afiado:
    * a marca virou o comportamento da interface, e não um logo no canto. Em rosa
-   * neon isso seria um CRM; em branco-osso, ele convive com a parede de capas
-   * sem brigar com nenhuma delas.
+   * neon isso seria um CRM; sem cor, ele convive com a parede de capas sem
+   * brigar com nenhuma delas.
+   *
+   * ═══ E ELE TEM DUAS COBERTURAS, PORQUE O APP TEM DUAS ═══
+   *
+   * Este bloco é o tema CLARO (o escuro é o override, mais abaixo). O fio morava
+   * aqui valendo branco-osso — que é a cor do tema ESCURO. Resultado: no claro,
+   * uma lâmina branca sobre papel branco, invisível; e o `.afiado` inteiro, com a
+   * cor cravada em #202020, virava um bloco PRETO com texto preto em cima.
+   *
+   * Ninguém viu porque ninguém do time abre o app no claro. O primeiro leitor a
+   * chegar com o sistema no tema claro viu a barra lateral com um retângulo preto
+   * no lugar do item onde ele estava. No papel, o fio é tinta.
    */
-  --fio: #f0ede6;
+  --fio: #1a1a18;
+
+  /**
+   * O item afiado: uma superfície um tom além do papel, e não uma cor nova. No
+   * claro é papel um pouco mais fundo; no escuro, grafite um pouco mais claro.
+   */
+  --afiado-de: #ebe8e1;
+  --afiado-para: #e3dfd7;
+  --afiado-borda: rgb(0 0 0 / 0.06);
+  --afiado-sombra: rgb(0 0 0 / 0.05);
+  --fio-halo-1: 26%;
+  --fio-halo-2: 12%;
+  --fio-halo-3: 0%;
 }
 
 @layer base {
@@ -152,6 +175,17 @@
       --glass-edge: 14%;
       --glass-border: 12%;
       --shadow-cover: 0 6px 16px rgb(0 0 0 / 0.45);
+
+      /* O FIO, no escuro: branco-osso. É aqui que ele é a lâmina que brilha, e é
+         por isso que ele nunca pôde ser uma cor só. Ver o bloco do tema claro. */
+      --fio: #f0ede6;
+      --afiado-de: #202020;
+      --afiado-para: #171717;
+      --afiado-borda: rgb(255 255 255 / 0.09);
+      --afiado-sombra: rgb(0 0 0 / 0.35);
+      --fio-halo-1: 70%;
+      --fio-halo-2: 35%;
+      --fio-halo-3: 14%;
     }
   }
 
@@ -306,10 +340,13 @@
        lua, e um fio reto encostado nela fica boiando AO LADO do item em vez de
        ser a aresta dele. A lâmina precisa de um gume onde encostar. */
     border-radius: var(--radius-2);
-    background: linear-gradient(180deg, #202020 0%, #171717 100%);
+    /* A COR VEM DO TEMA, e não daqui. Cravada em #202020, ela virava um bloco preto
+       com texto preto em cima no tema claro — em sete telas de uma vez, porque é esta
+       classe que marca TODO item ativo do app. Ver --afiado-de no topo. */
+    background: linear-gradient(180deg, var(--afiado-de) 0%, var(--afiado-para) 100%);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.09),
-      0 1px 2px rgb(0 0 0 / 0.35);
+      inset 0 1px 0 var(--afiado-borda),
+      0 1px 2px var(--afiado-sombra);
   }
 
   /* O FIO: a aresta direita do item, e o brilho que ela deixa escapar. */
@@ -322,10 +359,12 @@
     width: 2px;
     border-radius: 2px;
     background: var(--fio);
+    /* O halo é do TEMA: no escuro a lâmina emite luz; no claro ela é tinta no papel,
+       e tinta não brilha — um halo forte ali vira borrão sujo em volta de um traço. */
     box-shadow:
-      0 0 5px color-mix(in srgb, var(--fio) 70%, transparent),
-      0 0 12px color-mix(in srgb, var(--fio) 35%, transparent),
-      0 0 24px color-mix(in srgb, var(--fio) 14%, transparent);
+      0 0 5px color-mix(in srgb, var(--fio) var(--fio-halo-1), transparent),
+      0 0 12px color-mix(in srgb, var(--fio) var(--fio-halo-2), transparent),
+      0 0 24px color-mix(in srgb, var(--fio) var(--fio-halo-3), transparent);
   }
 
   @media (prefers-contrast: more) {
