@@ -145,49 +145,111 @@
     --shadow-cover: 0 4px 14px rgb(0 0 0 / 0.18);
   }
 
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  O ESCURO ACONTECE DE DOIS JEITOS, E POR ISSO ELE ESTÁ ESCRITO DUAS VEZES.
+   *
+   *  1. o sistema pede escuro, e a pessoa não escolheu nada
+   *  2. a pessoa ESCOLHEU escuro, doa-se o que o sistema disser
+   *
+   *  Não dá para juntar os dois num seletor só: um é `@media`, o outro é atributo, e
+   *  CSS não deixa misturar. Então os tokens aparecem duas vezes — e é exatamente o
+   *  tipo de duplicação que diverge sozinha em três meses, quando alguém arruma um
+   *  tom num lugar e não no outro.
+   *
+   *  `lib/tema.test.ts` prova que os dois blocos são idênticos, token por token. A
+   *  duplicação é o preço do CSS; a divergência não é obrigatória.
+   *
+   *  O `:not([data-theme="light"])` é quem faz a ESCOLHA ganhar do sistema: quem pediu
+   *  claro num computador escuro recebe claro.
+   * ════════════════════════════════════════════════════════════════════
+   */
   @media (prefers-color-scheme: dark) {
-    :root {
-      /* Near-absolute black. #0E0E0D was a charcoal left over from when the
-         theme was "paper", and against it a card at #171716 was two tones away:
-         nothing stood out, and nothing read as an object. The distance between
-         level 0 and level 1 is what MAKES the card. */
-      --color-canvas: #060606;
-      --surface-0: #060606;
-      --surface-1: #111111;       /* the card */
-      --surface-2: #171717;       /* a card inside a card, or a control */
-      --color-rule: #2a2a2a;
-      --color-paper: var(--surface-1);
-      --color-card: var(--surface-1);
-      --color-ink: #ece9e3;
-      --color-ink-soft: #9c988f;
-      --color-ink-faint: #625f59;
-      --color-rule: #2a2926;
+    :root:not([data-theme="light"]) {
+    /* Near-absolute black. #0E0E0D was a charcoal left over from when the
+       theme was "paper", and against it a card at #171716 was two tones away:
+       nothing stood out, and nothing read as an object. The distance between
+       level 0 and level 1 is what MAKES the card. */
+    --color-canvas: #060606;
+    --surface-0: #060606;
+    --surface-1: #111111;       /* the card */
+    --surface-2: #171717;       /* a card inside a card, or a control */
+    --color-rule: #2a2a2a;
+    --color-paper: var(--surface-1);
+    --color-card: var(--surface-1);
+    --color-ink: #ece9e3;
+    --color-ink-soft: #9c988f;
+    --color-ink-faint: #625f59;
+    --color-rule: #2a2926;
 
-      /* No escuro, a lâmina brilha um pouco mais: o mesmo verde-água sobre preto
-         quase absoluto lê mais apagado do que sobre papel. */
-      --color-accent: #7dd3c0;
-      --color-on-accent: #06100e;
-      /* E o vermelho clareia: #c2503a sobre preto vira uma mancha marrom. */
-      --color-perigo: #e8705a;
-      --color-colaborar: #f087b1;
+    /* No escuro, a lâmina brilha um pouco mais: o mesmo verde-água sobre preto
+       quase absoluto lê mais apagado do que sobre papel. */
+    --color-accent: #7dd3c0;
+    --color-on-accent: #06100e;
+    /* E o vermelho clareia: #c2503a sobre preto vira uma mancha marrom. */
+    --color-perigo: #e8705a;
+    --color-colaborar: #f087b1;
 
-      --glass-tint: 48%;
-      --glass-edge: 14%;
-      --glass-border: 12%;
-      --shadow-cover: 0 6px 16px rgb(0 0 0 / 0.45);
+    --glass-tint: 48%;
+    --glass-edge: 14%;
+    --glass-border: 12%;
+    --shadow-cover: 0 6px 16px rgb(0 0 0 / 0.45);
 
-      /* O FIO, no escuro: branco-osso. É aqui que ele é a lâmina que brilha, e é
-         por isso que ele nunca pôde ser uma cor só. Ver o bloco do tema claro. */
-      --fio: #f0ede6;
-      --afiado-de: #202020;
-      --afiado-para: #171717;
-      --afiado-borda: rgb(255 255 255 / 0.09);
-      --afiado-sombra: rgb(0 0 0 / 0.35);
-      --fio-halo-1: 70%;
-      --fio-halo-2: 35%;
-      --fio-halo-3: 14%;
+    /* O FIO, no escuro: branco-osso. É aqui que ele é a lâmina que brilha, e é
+       por isso que ele nunca pôde ser uma cor só. Ver o bloco do tema claro. */
+    --fio: #f0ede6;
+    --afiado-de: #202020;
+    --afiado-para: #171717;
+    --afiado-borda: rgb(255 255 255 / 0.09);
+    --afiado-sombra: rgb(0 0 0 / 0.35);
+    --fio-halo-1: 70%;
+    --fio-halo-2: 35%;
+    --fio-halo-3: 14%;
     }
   }
+
+  /* A escolha explícita. Mesmos tokens, e o teste garante que continuam os mesmos. */
+  :root[data-theme="dark"] {
+    /* Near-absolute black. #0E0E0D was a charcoal left over from when the
+       theme was "paper", and against it a card at #171716 was two tones away:
+       nothing stood out, and nothing read as an object. The distance between
+       level 0 and level 1 is what MAKES the card. */
+    --color-canvas: #060606;
+    --surface-0: #060606;
+    --surface-1: #111111;       /* the card */
+    --surface-2: #171717;       /* a card inside a card, or a control */
+    --color-rule: #2a2a2a;
+    --color-paper: var(--surface-1);
+    --color-card: var(--surface-1);
+    --color-ink: #ece9e3;
+    --color-ink-soft: #9c988f;
+    --color-ink-faint: #625f59;
+    --color-rule: #2a2926;
+
+    /* No escuro, a lâmina brilha um pouco mais: o mesmo verde-água sobre preto
+       quase absoluto lê mais apagado do que sobre papel. */
+    --color-accent: #7dd3c0;
+    --color-on-accent: #06100e;
+    /* E o vermelho clareia: #c2503a sobre preto vira uma mancha marrom. */
+    --color-perigo: #e8705a;
+    --color-colaborar: #f087b1;
+
+    --glass-tint: 48%;
+    --glass-edge: 14%;
+    --glass-border: 12%;
+    --shadow-cover: 0 6px 16px rgb(0 0 0 / 0.45);
+
+    /* O FIO, no escuro: branco-osso. É aqui que ele é a lâmina que brilha, e é
+       por isso que ele nunca pôde ser uma cor só. Ver o bloco do tema claro. */
+    --fio: #f0ede6;
+    --afiado-de: #202020;
+    --afiado-para: #171717;
+    --afiado-borda: rgb(255 255 255 / 0.09);
+    --afiado-sombra: rgb(0 0 0 / 0.35);
+    --fio-halo-1: 70%;
+    --fio-halo-2: 35%;
+    --fio-halo-3: 14%;
+    }
 
   html { background: var(--color-canvas); color: var(--color-ink); }
   body { font-family: var(--font-chrome); -webkit-font-smoothing: antialiased; }

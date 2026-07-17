@@ -12,6 +12,7 @@ import { GlassBar } from "@/components/glass-bar";
 import { Logo, Mark } from "@/components/logo";
 import { MyShelves, type Shelf } from "@/components/my-shelves";
 import { Sino } from "@/components/sino";
+import { Tema } from "@/components/tema";
 import type { Novidade } from "@/lib/novidades";
 import { Avatar } from "@/components/avatar";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -184,6 +185,10 @@ export function Sidebar({
           <Item href="/sobre" active={aceso("/sobre")} icon={<Info {...ICON} />}>
             Sobre
           </Item>
+
+          {/* O TEMA. Três estados, e o do meio é o padrão: seguir o sistema é um bom
+              padrão e uma péssima prisão. Ver components/tema.tsx. */}
+          <Tema />
 
           {session ? (
             <Eu

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Geist, Newsreader, Fraunces } from "next/font/google";
 import { Sidebar } from "@/components/sidebar";
+import { SCRIPT_DO_TEMA } from "@/components/tema";
 import { Command } from "@/components/command";
 import { ToastHost } from "@/components/toast-host";
 import { PublicHeader } from "@/components/public-header";
@@ -68,6 +69,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   if (!viewer) {
     return (
       <html lang="pt-BR" suppressHydrationWarning className={`${chrome.variable} ${voice.variable} ${mark.variable}`}>
+        <head><script dangerouslySetInnerHTML={{ __html: SCRIPT_DO_TEMA }} /></head>
         <body className="min-h-dvh">
           <PublicHeader />
           {children}
@@ -93,6 +95,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="pt-BR" suppressHydrationWarning className={`${chrome.variable} ${voice.variable} ${mark.variable}`}>
+      {/* Antes do primeiro pixel: sem isto, quem escolheu escuro num computador claro
+          leva um flash branco toda vez que abre uma página. Ver components/tema.tsx. */}
+      <head><script dangerouslySetInnerHTML={{ __html: SCRIPT_DO_TEMA }} /></head>
       <body className="min-h-dvh">
         {/* useSearchParams needs a suspense boundary at the layout level */}
         <Suspense fallback={null}>
