@@ -18,7 +18,21 @@ export default async function Estante({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { filter, sort, view, direcao, ano } = readParams(await searchParams);
+  const params = await searchParams;
+  const { filter, sort, view, direcao, ano } = readParams(params);
+
+  /**
+   * O RECORTE, EM TEXTO, para viajar até a página do livro e voltar de lá.
+   *
+   * É a URL desta tela sem o "?": quem estava nos lidos, ordenados por nota, volta para
+   * os lidos ordenados por nota. Sem isto, o único caminho de volta era a seta do
+   * navegador, e cada livro aberto custava o recorte inteiro. Ver BookCard.
+   */
+  const de = new URLSearchParams(
+    Object.entries(params).flatMap(([k, v]) =>
+      typeof v === "string" ? [[k, v] as [string, string]] : [],
+    ),
+  ).toString();
   const viewer = await getViewer();
 
   // Logged in, you are looking at your own shelf. Logged out, at the founding
@@ -113,7 +127,7 @@ export default async function Estante({
           )}
         </Empty>
       ) : (
-        <ShelfSelect books={books} view={view} mine={mine} opinions={opinions} shelves={shelves} />
+        <ShelfSelect books={books} view={view} mine={mine} opinions={opinions} shelves={shelves} de={de} />
       )}
 
       {/* Quem JÁ tem estante também traz mais livros — só não precisa que isso grite

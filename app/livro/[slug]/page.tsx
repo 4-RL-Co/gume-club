@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { Cover } from "@/components/cover";
 import { Prosa } from "@/components/prosa";
 import { Gaveta } from "@/components/gaveta";
@@ -39,8 +40,29 @@ export const dynamic = "force-dynamic";
  * das Letras" and "capa dura" are interface data, and setting data in a display
  * serif is what made this look amateur. Data is Inter.
  */
-export default async function BookPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function BookPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { slug } = await params;
+
+  /**
+   * ═══ DE ONDE VOCÊ VEIO ═══
+   *
+   * A estante manda o recorte dela no link ("filtro=lidos&ordem=nota"), e aqui ele vira
+   * um caminho de volta. Quem estava organizando os LIDOS abria um livro e só tinha a
+   * seta do navegador para voltar — e a seta é do navegador, não do app: ela não sabe se
+   * você entrou por ali ou caiu de um link de fora.
+   *
+   * É só a QUERY, e nunca uma URL inteira: o destino é sempre /estante, montado aqui.
+   * Um "voltar" que aceitasse endereço de fora seria um pulo para qualquer site, escrito
+   * por quem mandou o link. Ver BookCard.
+   */
+  const de = (await searchParams).de;
+  const volta = typeof de === "string" && de ? `/estante?${de}` : null;
   const [viewer, actor] = await Promise.all([getViewer(), getActorOrNull()]);
   const book = await getBook(slug, viewer, actor?.id ?? null);
 
@@ -151,6 +173,15 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
 
   return (
     <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+      {volta && (
+        <Link
+          href={volta}
+          className="mt-8 inline-flex items-center gap-2 text-[13px] text-[var(--color-ink-faint)] transition-colors hover:text-[var(--color-ink)] sm:mt-10"
+        >
+          <ArrowLeft size={15} strokeWidth={1.5} />
+          voltar para a estante
+        </Link>
+      )}
       <RememberBook slug={slug} title={book.title} />
       <div className="mt-16 grid gap-5 sm:mt-24 sm:grid-cols-12">
         {/* ── left: the cover, in a card of its own ─────────────────── */}

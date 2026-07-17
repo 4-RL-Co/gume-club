@@ -11,14 +11,17 @@ import type { Opinion } from "@/lib/ratings";
 export function CoverWall({
   books,
   opinions = {},
+  de,
 }: {
   books: ShelfBook[];
   opinions?: Record<string, Opinion>;
+  /** O recorte de onde estes livros vieram, para o "voltar". Ver BookCard. */
+  de?: string;
 }) {
   return (
     <ul className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
       {books.map((b) => (
-        <BookCard key={b.workId} book={b} opinion={opinions[b.workId]} />
+        <BookCard key={b.workId} book={b} opinion={opinions[b.workId]} de={de} />
       ))}
     </ul>
   );

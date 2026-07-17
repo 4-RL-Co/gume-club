@@ -29,11 +29,20 @@ export function BookCard({
   book,
   opinion,
   focused = false,
+  de,
 }: {
   book: ShelfBook;
   opinion?: Opinion;
   /** Em foco pelo teclado: j e k andam por aqui, e o card precisa dizer onde você está. */
   focused?: boolean;
+  /**
+   * DE ONDE VOCÊ VEIO: a query da estante ("filtro=lidos&ordem=nota").
+   *
+   * Ela viaja no link para a página do livro saber para onde é "voltar". Sem isto, o
+   * único caminho de volta era a seta do navegador — e quem estava organizando os LIDOS
+   * caía na estante inteira de novo, e perdia o recorte a cada livro que abria.
+   */
+  de?: string;
 }) {
   const status = STATUS_LABEL[book.status] ?? book.status;
 
@@ -61,7 +70,8 @@ export function BookCard({
       {/* h-full so a one-line title and a two-line title still bottom out level:
           a ragged baseline across a row reads as a bug, not as rhythm. */}
       <Link
-        href={`/livro/${book.slug}`}
+        /* A ORIGEM VIAJA NO LINK. Ver o "voltar" em app/livro/[slug]/page.tsx. */
+        href={de ? `/livro/${book.slug}?de=${encodeURIComponent(de)}` : `/livro/${book.slug}`}
         className={[
           "card group relative flex h-full flex-col items-center p-6 text-center sm:p-7",
           focused ? "ring-1 ring-[var(--color-accent)]" : "",

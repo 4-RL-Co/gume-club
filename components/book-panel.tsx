@@ -275,17 +275,63 @@ function Review({
   const [visibility, setVisibility] = useState<Visibility>(
     (mine.review?.visibility as Visibility) ?? "private",
   );
-  const [saved, setSaved] = useState(false);
   const [texto, setTexto] = useState(mine.review?.body ?? "");
+
+  /**
+   * ═══ UMA RESENHA SALVA FICA EM REPOUSO, E NÃO EM RASCUNHO ═══
+   *
+   * Ela era um campo de texto aberto, sempre, com um "Salvar" do lado. Quem já tinha
+   * escrito e salvado voltava e via a mesma tela de antes de salvar: parecia que o
+   * trabalho não tinha ido, ou que ainda devia alguma coisa ao botão. Um "salva" cinza
+   * ao lado não desfaz isso — a FORMA da tela diz mais alto que a legenda.
+   *
+   * Agora o texto salvo se lê como texto: na serifa da voz, do jeito que ele aparece
+   * para as outras pessoas. Editar é um clique, e é raro: a resenha é a coisa mais
+   * demorada que alguém escreve aqui, e não é uma coisa que se ajusta toda hora.
+   */
+  const [editando, setEditando] = useState(!(mine.review?.body ?? "").trim());
+
+  const ROTULO: Record<Visibility, string> = {
+    private: "só para você",
+    followers: "para quem te segue",
+    public: "pública",
+  };
+
+  if (!editando) {
+    return (
+      <Section label="resenha">
+        {/* `whitespace-pre-wrap` porque os parágrafos são da pessoa: sem ele, o texto
+            que ela separou vira um bloco só, e a resenha some dentro de si mesma. */}
+        <div className="paper p-4 sm:p-5">
+          <p className="voice whitespace-pre-wrap text-[16px] leading-relaxed text-[var(--color-ink)]">
+            {texto}
+          </p>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-4">
+          <span className="text-[12px] text-[var(--color-ink-faint)]">{ROTULO[visibility]}</span>
+          <button
+            type="button"
+            onClick={() => setEditando(true)}
+            className="text-[13px] text-[var(--color-ink-soft)] underline decoration-[var(--color-rule)] underline-offset-4 transition-colors hover:text-[var(--color-ink)]"
+          >
+            editar
+          </button>
+        </div>
+      </Section>
+    );
+  }
 
   return (
     <Section label="resenha">
       <form
         action={(data: FormData) => {
-          setSaved(false);
           act(async () => {
-            await saveReview(slug, book.workId, String(data.get("body") ?? ""), visibility);
-            setSaved(true);
+            const corpo = String(data.get("body") ?? "");
+            await saveReview(slug, book.workId, corpo, visibility);
+            // Salvou: a resenha volta ao repouso. Só continua aberta se ficou vazia,
+            // porque um campo vazio fechado seria uma seção que não diz nada.
+            if (corpo.trim()) setEditando(false);
           });
         }}
       >
@@ -335,8 +381,17 @@ function Review({
             {pending ? "Salvando" : "Salvar"}
           </button>
 
-          {saved && !pending && (
-            <span className="text-[12px] text-[var(--color-ink-faint)]">salva</span>
+          {!(mine.review?.body ?? "").trim() ? null : (
+            <button
+              type="button"
+              onClick={() => {
+                setTexto(mine.review?.body ?? "");
+                setEditando(false);
+              }}
+              className="text-[13px] text-[var(--color-ink-faint)] hover:text-[var(--color-ink)]"
+            >
+              deixa
+            </button>
           )}
         </div>
 

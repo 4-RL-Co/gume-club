@@ -32,12 +32,15 @@ export function ShelfSelect({
   mine,
   opinions = {},
   shelves = [],
+  de,
 }: {
   books: ShelfBook[];
   view: "parede" | "lista";
   mine: boolean;
   opinions?: Record<string, Opinion>;
   shelves?: Shelf[];
+  /** O recorte da estante, para o livro saber para onde é "voltar". Ver BookCard. */
+  de?: string;
 }) {
   const router = useRouter();
   const [on, setOn] = useState(false);
@@ -121,7 +124,7 @@ export function ShelfSelect({
     return view === "lista" ? (
       <DenseList books={shown} opinions={opinions} />
     ) : (
-      <Wall books={shown} opinions={opinions} focus={-1} />
+      <Wall books={shown} opinions={opinions} focus={-1} de={de} />
     );
   }
 
@@ -288,7 +291,7 @@ export function ShelfSelect({
             mine
           />
         ) : (
-          <Wall books={shown} opinions={opinions} focus={focus} />
+          <Wall books={shown} opinions={opinions} focus={focus} de={de} />
         )
       ) : (
         <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
@@ -346,15 +349,18 @@ function Wall({
   books,
   opinions,
   focus,
+  de,
 }: {
   books: ShelfBook[];
   opinions: Record<string, Opinion>;
   focus: number;
+  /** O recorte da estante, que viaja até o livro para o "voltar". Ver BookCard. */
+  de?: string;
 }) {
   return (
     <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
       {books.map((b, i) => (
-        <BookCard key={b.workId} book={b} opinion={opinions[b.workId]} focused={i === focus} />
+        <BookCard key={b.workId} book={b} opinion={opinions[b.workId]} focused={i === focus} de={de} />
       ))}
     </ul>
   );
