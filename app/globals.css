@@ -7,12 +7,18 @@
 
 @theme {
   /* surfaces */
-  --color-canvas: #f7f5f1;        /* the page. never white: paper-warm. */
-  --color-paper: #ffffff;         /* content cards. opaque, always. */
+  /* A PÁGINA e o CARTÃO, e nenhum dos dois é branco.
+     A página já era papel-morno; o CARTÃO era #ffffff — e como quase todo conteúdo
+     mora dentro de um cartão, o app inteiro lia como branco de escritório. Papel de
+     verdade não é branco: ele tem creme. O degrau entre os dois níveis continua
+     existindo (é ele que faz o cartão ser um objeto), só que agora entre dois cremes,
+     e não entre um creme e uma lâmpada. */
+  --color-canvas: #f2efe8;        /* the page. never white: paper-warm. */
+  --color-paper: #fbf9f4;         /* content cards. opaque, always. never white. */
   --color-ink: #1a1a18;           /* text. warm near-black, never cold gray. */
   --color-ink-soft: #6b6862;
   --color-ink-faint: #a8a49c;
-  --color-rule: #e3ded5;          /* 1px hairlines instead of shadows */
+  --color-rule: #ddd7cb;          /* 1px hairlines instead of shadows */
 
   /* ── O ACCENT: A LÂMINA ───────────────────────────────────────────
      #7DD3C0. Verde-água frio — aço, fio de faca, terminal.
@@ -77,9 +83,9 @@
      Harmony comes from repetition, not from taste applied case by case.
      Four levels, and NOTHING is allowed to float loose on level 0. If a block
      of content is not inside a container, it is wrong. See docs/design.md. */
-  --surface-0: #f7f5f1;           /* the page. grain and vignette live here. */
-  --surface-1: #ffffff;           /* a card. one step up. */
-  --surface-2: #f3f1ec;           /* a card inside a card, or a control. */
+  --surface-0: #f2efe8;           /* the page. grain and vignette live here. */
+  --surface-1: #fbf9f4;           /* a card. one step up, and ainda assim creme. */
+  --surface-2: #eeebe3;           /* a card inside a card, or a control. */
   --color-card: var(--surface-1); /* legacy alias */
   --color-paper: var(--surface-1);
 
@@ -125,8 +131,8 @@
    * O item afiado: uma superfície um tom além do papel, e não uma cor nova. No
    * claro é papel um pouco mais fundo; no escuro, grafite um pouco mais claro.
    */
-  --afiado-de: #ebe8e1;
-  --afiado-para: #e3dfd7;
+  --afiado-de: #e5e1d8;
+  --afiado-para: #dcd8cd;
   --afiado-borda: rgb(0 0 0 / 0.06);
   --afiado-sombra: rgb(0 0 0 / 0.05);
   --fio-halo-1: 26%;

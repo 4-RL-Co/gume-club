@@ -242,47 +242,15 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
         <Carrossel titulo={mine ? "o que eu adorei" : `o que ${primeiroNome} adorou`} books={adorou} />
       )}
 
-      {lendo.length > 0 && <Tira titulo="lendo agora" books={lendo} />}
-
-      {esperando.length > 0 && <Tira titulo="esperando pra ler" books={esperando} />}
-
-      {shelves.length > 0 && (
-        <section className="surface mt-5 p-7">
-          {/* "Estantes personalizadas", e não só "estantes": agora lidos, esperando e
-              lendo também são estantes na página, e estas aqui são as que a pessoa
-              inventou. O nome tem que separar as duas coisas. */}
-          <h2 className={EYEBROW}>
-            {mine ? "minhas estantes personalizadas" : `estantes que ${primeiroNome} montou`}
-          </h2>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {shelves.map((c) => (
-              <Link
-                key={c.id}
-                href={`/estante/${c.slug}`}
-                className="pill border border-[var(--color-rule)] px-3.5 py-1.5 text-[13px] text-[var(--color-ink-soft)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]"
-              >
-                {c.name}
-                <span className="tabular ml-1.5 text-[var(--color-ink-faint)]">{c.n}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* A parede principal: os LIDOS, cada um com o que a pessoa achou. É o coração do
-          perfil, e agora ele só tem livro que aconteceu — não mais uma pilha misturada. */}
-      {lidos.length > 0 && (
-        <div className="mt-10">
-          <h2 className={EYEBROW}>lidos</h2>
-          <CoverWall books={lidos} opinions={opinions} />
-        </div>
-      )}
-
-      {largados.length > 0 && (
-        <Tira titulo={mine ? "larguei no meio" : "largou no meio"} books={largados} />
-      )}
-
       {/* ═══ AS RESENHAS ═══
+
+          ELAS FICAM NO ALTO, e isso é o conserto de um erro meu: nasceram no fim da
+          página, depois da parede inteira de lidos. O dono rolava meia tela de capas e
+          não achava o que ele mesmo tinha escrito — a coisa mais demorada que ele fez
+          aqui, enterrada embaixo da coisa mais automática.
+
+          A ordem agora conta uma história: a cara, o que a pessoa adorou, o que ela
+          escreveu, e só então as estantes.
 
           A resenha é a coisa mais demorada que alguém escreve aqui, e ela só existia
           espalhada: uma por página de livro, e a de todo mundo misturada no explorar.
@@ -329,6 +297,46 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
             ))}
           </ul>
         </section>
+      )}
+
+      {lendo.length > 0 && <Tira titulo="lendo agora" books={lendo} />}
+
+      {esperando.length > 0 && <Tira titulo="esperando pra ler" books={esperando} />}
+
+      {shelves.length > 0 && (
+        <section className="surface mt-5 p-7">
+          {/* "Estantes personalizadas", e não só "estantes": agora lidos, esperando e
+              lendo também são estantes na página, e estas aqui são as que a pessoa
+              inventou. O nome tem que separar as duas coisas. */}
+          <h2 className={EYEBROW}>
+            {mine ? "minhas estantes personalizadas" : `estantes que ${primeiroNome} montou`}
+          </h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {shelves.map((c) => (
+              <Link
+                key={c.id}
+                href={`/estante/${c.slug}`}
+                className="pill border border-[var(--color-rule)] px-3.5 py-1.5 text-[13px] text-[var(--color-ink-soft)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]"
+              >
+                {c.name}
+                <span className="tabular ml-1.5 text-[var(--color-ink-faint)]">{c.n}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* A parede principal: os LIDOS, cada um com o que a pessoa achou. É o coração do
+          perfil, e agora ele só tem livro que aconteceu — não mais uma pilha misturada. */}
+      {lidos.length > 0 && (
+        <div className="mt-10">
+          <h2 className={EYEBROW}>lidos</h2>
+          <CoverWall books={lidos} opinions={opinions} />
+        </div>
+      )}
+
+      {largados.length > 0 && (
+        <Tira titulo={mine ? "larguei no meio" : "largou no meio"} books={largados} />
       )}
 
       {books.length === 0 && (

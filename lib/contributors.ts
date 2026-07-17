@@ -131,8 +131,32 @@ export async function getCodigo(): Promise<DoCodigo[]> {
   const repo = REPO;
 
   try {
+    /**
+     * ═══ O TOKEN, E POR QUE ELE DEIXOU DE SER OPCIONAL NA PRÁTICA ═══
+     *
+     * Sem token, o GitHub dá 60 chamadas por hora POR IP. Na máquina de quem desenvolve
+     * isso é infinito; em produção, o IP de saída é COMPARTILHADO com todo mundo que
+     * hospeda no mesmo lugar — e sessenta chamadas por hora se esgotam com os vizinhos,
+     * sem ninguém aqui ter chamado nada.
+     *
+     * Resultado: a página de quem faz o Gume dizia "não deu para consultar" para o
+     * próprio dono do projeto. Ela estava CERTA (é honesta em vez de dizer que ninguém
+     * contribuiu), e ainda assim inútil.
+     *
+     * Com token são 5.000 por hora, e ele não precisa de escopo nenhum: a lista de
+     * contribuidores de um repositório público já é pública. O token aqui não dá acesso
+     * a nada — ele só diz quem está perguntando.
+     *
+     * Sem token, continua funcionando, e continua dizendo a verdade quando não der.
+     */
+    const token = process.env.GITHUB_TOKEN;
+
     const res = await fetch(`https://api.github.com/repos/${repo}/contributors?per_page=100`, {
-      headers: { Accept: "application/vnd.github+json", "User-Agent": "Gume (gume.club)" },
+      headers: {
+        Accept: "application/vnd.github+json",
+        "User-Agent": "Gume (gume.club)",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       next: { revalidate: 3600 },
     });
 
