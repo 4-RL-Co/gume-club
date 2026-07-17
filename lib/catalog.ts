@@ -167,7 +167,7 @@ function fromOpenLibrary(doc: OlDoc): Hit | null {
   };
 }
 
-async function searchOpenLibrary(query: string, isbn: string | null): Promise<Hit[]> {
+async function searchOpenLibrary(query: string, isbn: string | null, soPt = true): Promise<Hit[]> {
   const fields = "key,title,author_name,isbn,publisher,first_publish_year,number_of_pages_median,cover_i,cover_edition_key";
   const url = isbn
     // ═══ PELO ISBN, NENHUM FILTRO DE IDIOMA ═══
@@ -176,7 +176,7 @@ async function searchOpenLibrary(query: string, isbn: string | null): Promise<Hi
     // quem tem o volume em inglês na mão escaneia a contracapa e ele entra. Filtrar aqui
     // fecharia essa porta sem ganhar nada — um ISBN não devolve lixo.
     ? `https://openlibrary.org/search.json?isbn=${encodeURIComponent(isbn)}&limit=5&fields=${fields}`
-    : `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&language=por&limit=20&fields=${fields}`;
+    : `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}${soPt ? "&language=por" : ""}&limit=20&fields=${fields}`;
 
   const data = (await getJson(url)) as { docs?: OlDoc[] } | null;
   return (data?.docs ?? []).map(fromOpenLibrary).filter((h): h is Hit => h !== null);
@@ -246,11 +246,11 @@ function fromGoogle(vol: GoogleVolume): Hit | null {
  * Por ISBN quando existe um ISBN, e por título quando não: são consultas
  * diferentes, e a por ISBN é exata.
  */
-async function searchGoogleBooks(query: string, isbn: string | null): Promise<Hit[]> {
+async function searchGoogleBooks(query: string, isbn: string | null, soPt = true): Promise<Hit[]> {
   const q = isbn ? `isbn:${isbn}` : query;
   // Pelo ISBN, sem restrição de idioma: o código é definitivo, e é a porta do livro que
   // não está em português. Por título, só português. Ver searchOpenLibrary(), acima.
-  const idioma = isbn ? "" : "&langRestrict=pt";
+  const idioma = isbn || !soPt ? "" : "&langRestrict=pt";
   const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}${idioma}&maxResults=20&printType=books`;
 
   const data = (await getJson(url, { headers: googleKey() })) as { items?: GoogleVolume[] } | null;
@@ -526,11 +526,57 @@ export async function search(rawQuery: string): Promise<Hit[]> {
   if (query.length < 2) return [];
 
   const isbn = asIsbn(query);
-  const hits = await searchOpenLibrary(query, isbn);
-  if (hits.length > 0) return dedupe(semIngles(hits, isbn));
 
-  return dedupe(semIngles(await searchGoogleBooks(query, isbn), isbn));
+  /**
+   * ═══ PELO CÓDIGO DE BARRAS, IDIOMA NÃO EXISTE ═══
+   *
+   * Um ISBN é UM livro. Filtrar idioma aqui fecharia a porta do volume em inglês que a
+   * pessoa tem na mão, e não ganharia nada: um ISBN não devolve lixo.
+   */
+  if (isbn) {
+    const ol = await searchOpenLibrary(query, isbn, false);
+    if (ol.length > 0) return dedupe(ol);
+    return dedupe(await searchGoogleBooks(query, isbn, false));
+  }
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  PREFERIR PORTUGUÊS NÃO É PROIBIR O RESTO. E CONFIAR NÃO É VERIFICAR.
+   *
+   *  ═══ O QUE A FILA DE PEDIDOS VEIO CONTAR ═══
+   *
+   *      Locomotion and Posture in Older Adults  ·  pedido 2 vezes
+   *
+   *  A Open Library TEM esse livro. É a pesquisa de alguém, existe só em inglês, e o app
+   *  respondia que ele não existe. Sumir com o livro certo é pior que mostrar um errado:
+   *  o errado a pessoa ignora, o certo ela nunca descobre que existiu.
+   *
+   *  ═══ E POR QUE O GOOGLE SAIU DA ETAPA DO PORTUGUÊS ═══
+   *
+   *  Medido, nas duas fontes, com a mesma busca:
+   *
+   *      Open Library, `language=por`   → 0 fichas.  Ela FILTRA.
+   *      Google Books, `langRestrict=pt`→ "Neurologic Interventions for Physical
+   *                                        Therapy". Ele NÃO filtra: manda inglês.
+   *
+   *  O `langRestrict` do Google é uma sugestão, e não uma regra. Com ele nesta etapa, a
+   *  busca "em português" voltava cheia de inglês fuzzy — nunca vinha vazia, e por isso
+   *  o plano B nunca disparava. O filtro parecia funcionar e escondia o livro certo.
+   *
+   *  Então a etapa do português é só a Open Library, que cumpre o que promete. O Google
+   *  continua sendo o último recurso, onde ele é ótimo: achar o que ninguém mais tem.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const emPortugues = dedupe(semIngles(await searchOpenLibrary(query, null, true), null, true));
+  if (emPortugues.length > 0) return emPortugues;
+
+  // O português não tinha NADA. Agora sim, o mundo inteiro.
+  const noMundo = await searchOpenLibrary(query, null, false);
+  if (noMundo.length > 0) return dedupe(noMundo);
+
+  return dedupe(await searchGoogleBooks(query, null, false));
 }
+
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -552,8 +598,10 @@ export async function search(rawQuery: string): Promise<Hit[]> {
  *  Pelo ISBN não filtra nada: o código é definitivo, e é a porta do livro em inglês.
  * ════════════════════════════════════════════════════════════════════
  */
-function semIngles(hits: Hit[], isbn: string | null): Hit[] {
-  if (isbn) return hits;
+function semIngles(hits: Hit[], isbn: string | null, soPt = true): Hit[] {
+  // Pelo ISBN, e na busca do mundo inteiro, não filtra: nos dois casos o inglês é o
+  // ponto. A segunda só acontece quando o português não tinha NADA a oferecer.
+  if (isbn || !soPt) return hits;
   return hits.filter((h) => !ehIngles(h.title));
 }
 
