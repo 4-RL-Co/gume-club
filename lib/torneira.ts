@@ -47,9 +47,12 @@ function canonico(texto: string): string {
 /**
  * REGISTRAR UM "NÃO ACHEI".
  *
- * Só a busca DELIBERADA conta — a que foi até a Open Library e ao Google e voltou
- * de mãos vazias. A busca-enquanto-digita não conta: "t", "to", "tol" voltam vazias
- * três vezes no caminho de "tolstoi", e a fila encheria de pedaços de palavra.
+ * A busca que foi até a Open Library e ao Google e voltou de mãos vazias.
+ *
+ * Ela vem da busca-enquanto-digita, e não de um humano apertando um botão: a paleta vai
+ * buscar lá fora sozinha a cada pausa. Por isso os PEDAÇOS são apagados aqui dentro
+ * quando o título inteiro chega — ver o delete lá embaixo. Sem ele, uma pessoa atrás de
+ * um livro deixa cinco pedidos, e a fila deixa de ser legível.
  *
  * Nunca levanta. Um erro ao anotar um pedido não pode derrubar a busca de ninguém:
  * a pessoa está tentando achar um livro, e o nosso caderninho é problema nosso.
@@ -63,6 +66,40 @@ export async function registrarBuscaVazia(texto: string): Promise<void> {
   if (chave.length < 3) return;
 
   try {
+    /**
+     * ═══ OS PEDAÇOS MORREM QUANDO O INTEIRO CHEGA ═══
+     *
+     * O guard acima jurava que "só a busca deliberada conta", e essa frase era falsa: o
+     * `fora=1` não é um humano apertando nada — é a PRÓPRIA paleta indo buscar lá fora
+     * sozinha, a cada pausa de digitação, quando o acervo local vem curto.
+     *
+     * O resultado estava na fila, medido: uma pessoa procurando UM livro deixou CINCO
+     * pedidos.
+     *
+     *     negocie como sua
+     *     negocie como sua vida
+     *     negocie como se sua vida
+     *     negocie como se sua vida depende
+     *     negocie como se sua vida dependesse disso
+     *
+     * Não é um problema que aparece com cem leitores: já estava quebrado com dois. E o
+     * estrago não é a linha a mais — é que a fila deixa de ser legível, e uma fila que
+     * ninguém lê é uma fila que ninguém atende.
+     *
+     * Quem digita não muda de ideia no meio da palavra: se o que chegou agora COMEÇA com
+     * o que já estava lá, os dois são a mesma pessoa, no mesmo minuto, atrás do mesmo
+     * livro. O pedaço sai, e o inteiro fica.
+     *
+     * A janela é curta de propósito: dois leitores diferentes podem, meses depois,
+     * procurar "duna" e "duna messias" — e aí são dois pedidos de verdade.
+     */
+    await db.execute(sql`
+      delete from buscas_vazias
+       where atendida_em is null
+         and canonico <> ${chave}
+         and ${chave} like canonico || '%'
+         and ultima_em > now() - interval '15 minutes'`);
+
     await db.execute(sql`
       insert into buscas_vazias (texto, canonico)
       values (${limpo}, ${chave})

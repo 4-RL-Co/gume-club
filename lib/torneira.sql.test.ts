@@ -214,3 +214,72 @@ describe("a fila não guarda quem procurou", () => {
     ).toEqual([]);
   });
 });
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  UMA PESSOA ATRÁS DE UM LIVRO DEIXA UM PEDIDO, E NÃO CINCO.
+ *
+ *  Medido na fila de produção, com dois leitores usando o app:
+ *
+ *      negocie como sua
+ *      negocie como sua vida
+ *      negocie como se sua vida
+ *      negocie como se sua vida depende
+ *      negocie como se sua vida dependesse disso
+ *
+ *  Cinco linhas, um livro, uma pessoa. O código jurava num comentário que "só a busca
+ *  deliberada conta", e a frase era falsa: quem chama não é um humano apertando um botão,
+ *  é a própria paleta indo buscar lá fora a cada pausa de digitação.
+ *
+ *  O estrago não é a linha a mais: é que a fila deixa de ser legível, e uma fila que
+ *  ninguém lê é uma fila que ninguém atende — ela era "a coisa mais útil que um leitor
+ *  nos dá de graça".
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("a fila não guarda pedaço de digitação", () => {
+  it("o título inteiro apaga os pedaços dele", async () => {
+    const alvo = `${marca} negocie como se sua vida dependesse disso`;
+
+    // Como alguém digita, com a paleta buscando lá fora a cada pausa.
+    await registrarBuscaVazia(`${marca} negocie como se`);
+    await registrarBuscaVazia(`${marca} negocie como se sua`);
+    await registrarBuscaVazia(`${marca} negocie como se sua vida`);
+    await registrarBuscaVazia(alvo);
+
+    const fila = await getFila(biblio, 200);
+    const meus = fila.filter((p) => p.texto.includes("negocie") && p.texto.includes(marca));
+
+    expect(
+      meus.map((m) => m.texto),
+      "a fila guardou pedaço de digitação: uma pessoa atrás de um livro tem que deixar UM pedido",
+    ).toEqual([alvo]);
+  });
+
+  /**
+   * ═══ E O QUE ELE NÃO CONSERTA, DITO EM VOZ ALTA ═══
+   *
+   * Prefixo não une um galho novo. Na fila de produção estava assim:
+   *
+   *     negocie como sua vida          ← digitou
+   *     negocie como se sua vida       ← CORRIGIU o "se" no meio
+   *
+   * O segundo não começa com o primeiro, então os dois sobrevivem: cinco linhas viram
+   * DUAS, e não uma. Dá para fazer melhor (distância de edição, agrupar por pessoa), e
+   * cada um desses jeitos erra de um jeito pior: eles apagam pedido de VERDADE de duas
+   * pessoas que procuraram coisas parecidas.
+   *
+   * Duas linhas onde havia cinco é a fila voltando a ser legível. Este teste existe para
+   * a próxima pessoa saber que o resto é escolha, e não esquecimento.
+   */
+  it("uma correção no meio da palavra vira outro galho, e os dois ficam", async () => {
+    await registrarBuscaVazia(`${marca} duna messias`);
+    await registrarBuscaVazia(`${marca} duna herege`);
+
+    const fila = await getFila(biblio, 200);
+    const textos = fila.filter((p) => p.texto.includes("duna") && p.texto.includes(marca)).map((p) => p.texto);
+
+    expect(textos.sort(), "pedido de verdade foi apagado por engano").toEqual(
+      [`${marca} duna herege`, `${marca} duna messias`].sort(),
+    );
+  });
+});
