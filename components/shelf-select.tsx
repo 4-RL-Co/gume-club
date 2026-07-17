@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { semAcento } from "@/lib/texto";
+import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { CheckSquare, Trash2, BookOpen, FolderInput } from "lucide-react";
 import { BookCard } from "@/components/book-card";
@@ -115,16 +117,80 @@ export function ShelfSelect({
   }, [focus, books]);
 
   /** A estante que a tela mostra, com as notas otimistas por cima. */
-  const shown: ShelfBook[] = books.map((b) => {
+  const todos: ShelfBook[] = books.map((b) => {
     const nota = notas[b.workId];
     return nota === undefined ? b : { ...b, rating: nota };
   });
 
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  PROCURAR NA PRÓPRIA ESTANTE.
+   *
+   *  Os filtros respondem "que recorte" (lidos, lendo, por nota). Nenhum deles responde
+   *  "cadê o Frankenstein" — e numa estante de cento e quarenta e seis livros, achar um
+   *  pelo olho é varrer uma parede inteira. A busca do ⌘K procura o CATÁLOGO, que são
+   *  duzentas e sessenta mil fichas: perguntar a ela por um livro que já é seu é
+   *  atravessar o mundo para chegar em casa.
+   *
+   *  ═══ SEM IR AO SERVIDOR ═══
+   *
+   *  Os livros já estão todos aqui, nesta tela. Filtrar é uma volta no array, e ela
+   *  acontece enquanto a pessoa digita: nenhuma requisição, nenhum "procurando", nenhum
+   *  jeito de estar fora do ar.
+   *
+   *  ═══ E ELA IGNORA ACENTO, COMO O RESTO DO APP ═══
+   *
+   *  "principe" acha "O Príncipe". Quem digita rápido não põe acento, e uma busca que
+   *  exige acento é uma busca que responde "não achei" sobre um livro que está na tela.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const [busca, setBusca] = useState("");
+
+  const shown = useMemo(() => {
+    const q = semAcento(busca);
+    if (!q) return todos;
+    return todos.filter(
+      (b) => semAcento(b.title).includes(q) || semAcento(b.author ?? "").includes(q),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busca, books, notas]);
+
+  const campoDeBusca = (
+    <div className="relative mt-8">
+      <Search
+        size={16}
+        strokeWidth={1.5}
+        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-ink-faint)]"
+      />
+      <input
+        value={busca}
+        onChange={(e) => setBusca(e.target.value)}
+        placeholder={`procurar nos seus ${todos.length} livros`}
+        aria-label="procurar na sua estante"
+        className="w-full rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent py-2.5 pl-11 pr-4 text-[14px] outline-none placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-ink)]"
+      />
+    </div>
+  );
+
+  /** Achou nada: a tela DIZ isso, em vez de mostrar uma parede vazia sem explicação. */
+  const vazio = busca.trim() && shown.length === 0 && (
+    <p className="surface mt-6 p-7 text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
+      Nenhum livro seu casa com {busca.trim()}. Ele pode estar em outro recorte: a busca
+      olha só o que esta tela está mostrando.
+    </p>
+  );
+
   if (!mine) {
-    return view === "lista" ? (
-      <DenseList books={shown} opinions={opinions} />
-    ) : (
-      <Wall books={shown} opinions={opinions} focus={-1} de={de} />
+    return (
+      <>
+        {campoDeBusca}
+        {vazio}
+        {view === "lista" ? (
+          <DenseList books={shown} opinions={opinions} />
+        ) : (
+          <Wall books={shown} opinions={opinions} focus={-1} de={de} />
+        )}
+      </>
     );
   }
 
@@ -147,7 +213,9 @@ export function ShelfSelect({
 
   return (
     <>
-      <div className="mt-10 flex flex-wrap items-center gap-4">
+      {campoDeBusca}
+
+      <div className="mt-6 flex flex-wrap items-center gap-4">
         {!on ? (
           <>
             <button
@@ -291,7 +359,7 @@ export function ShelfSelect({
             mine
           />
         ) : (
-          <Wall books={shown} opinions={opinions} focus={focus} de={de} />
+          <>{vazio}<Wall books={shown} opinions={opinions} focus={focus} de={de} /></>
         )
       ) : (
         <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">

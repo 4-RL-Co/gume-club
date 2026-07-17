@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { limparMarcacao } from "./texto";
+import { limparMarcacao, semAcento } from "./texto";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -76,5 +76,43 @@ describe("limparMarcacao", () => {
     const saida = limparMarcacao(sujo);
     expect(saida).not.toContain("<script");
     expect(saida).toBe("Um livro.alert(1)");
+  });
+});
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  A BUSCA DA ESTANTE IGNORA ACENTO.
+ *
+ *  Quem digita rápido não põe acento, e uma busca que exige acento responde "não achei"
+ *  sobre um livro que está na tela — o pior "não achei" que existe, porque a pessoa está
+ *  OLHANDO para o livro enquanto ele some.
+ *
+ *  É a mesma regra que o Postgres já aplica ao catálogo com `immutable_unaccent(lower())`.
+ *  Aqui ela vale para os livros que já estão na tela. Duas implementações da mesma ideia
+ *  divergem, então esta é testada com os casos que importam: os do acervo real.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("semAcento", () => {
+  it("acha o livro sem o acento que ninguém digita", () => {
+    expect(semAcento("O Príncipe")).toContain("principe");
+    expect(semAcento("Memórias Póstumas")).toContain("memorias postumas");
+    expect(semAcento("Grande Sertão: Veredas")).toContain("grande sertao");
+    expect(semAcento("A Paixão Segundo G.H.")).toContain("paixao");
+  });
+
+  it("ignora a caixa: ninguém digita como o dump escreve", () => {
+    expect(semAcento("MACHADO DE ASSIS")).toBe(semAcento("Machado de Assis"));
+    expect(semAcento("Oswaldo França Júnior")).toBe(semAcento("oswaldo franca junior"));
+  });
+
+  it("o ç é c, e o til não muda a letra", () => {
+    expect(semAcento("Coração")).toBe("coracao");
+    expect(semAcento("São Bernardo")).toBe("sao bernardo");
+  });
+
+  it("nada não quebra", () => {
+    expect(semAcento(null)).toBe("");
+    expect(semAcento(undefined)).toBe("");
+    expect(semAcento("  ")).toBe("");
   });
 });

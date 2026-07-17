@@ -59,3 +59,20 @@ export function limparMarcacao(texto: string | null): string | null {
 
   return limpo.length > 0 ? limpo : null;
 }
+
+
+/**
+ * Sem acento, sem caixa. É o que a busca da estante usa para "principe" achar "O
+ * Príncipe".
+ *
+ * O mesmo que o `immutable_unaccent(lower(...))` faz no Postgres para a busca do
+ * catálogo (ver lib/catalog.ts): quem digita rápido não põe acento, e uma busca que
+ * exige acento responde "não achei" sobre um livro que está na tela.
+ */
+export function semAcento(texto: string | null | undefined): string {
+  return (texto ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
