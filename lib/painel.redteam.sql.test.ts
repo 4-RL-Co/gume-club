@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { readFileSync } from "node:fs";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
@@ -150,7 +151,6 @@ describe("o markdown do painel não leva e-mail de ninguém", () => {
 
 describe("o backup do banco inteiro é gated na sessão, e o token não abre", () => {
   it("a rota de backup NÃO conhece o token do painel", () => {
-    const { readFileSync } = require("node:fs") as typeof import("node:fs");
     const rota = readFileSync("app/api/painel/backup/route.ts", "utf8");
 
     // O backup leva TUDO (e-mail, estante privada). Um token estático que baixa o banco
