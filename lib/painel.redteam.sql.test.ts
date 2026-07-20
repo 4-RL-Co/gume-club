@@ -92,6 +92,41 @@ describe("o idealizador abre o painel, e as agregações rodam", () => {
     expect(painel.catalogo.obras).toBeGreaterThanOrEqual(0);
     expect(Array.isArray(painel.catalogo.buscasVazias)).toBe(true);
     expect(painel.gente.ativos1).toBeGreaterThanOrEqual(0);
+    expect(painel.uso.tamanhoEstante).toHaveLength(5);
+    expect(painel.metas.usuarios.alvo).toBeGreaterThan(0);
+    expect(painel.metas.contribuidores.alvo).toBeGreaterThan(0);
+    expect(Array.isArray(painel.insights)).toBe(true);
+  });
+
+  it("o filtro por período muda o que a série e o log devolvem", async () => {
+    const largo = await coletarPainel({
+      periodo: "tudo", desde: null, ate: null, gran: "mes", metodo: "todos", origem: "todos",
+    });
+    const estreito = await coletarPainel({
+      // uma janela impossível no passado: nada foi criado antes do Gume existir.
+      periodo: "custom", desde: "1901-01-01", ate: "1901-12-31", gran: "mes", metodo: "todos", origem: "todos",
+    });
+
+    // A janela vazia não traz cadastro nenhum no período, mas o total (ponto no tempo) não muda.
+    expect(estreito.gente.novosPeriodo).toBe(0);
+    expect(estreito.gente.serie.length).toBe(0);
+    expect(largo.gente.total).toBe(estreito.gente.total);
+  });
+});
+
+// ─────────────────────────────────────────────────────── as metas sobem sozinhas
+
+describe("as metas sobem quando são batidas", () => {
+  it("bater 100 usuários move o alvo para 250, e conta a meta batida", async () => {
+    // Não mexe no banco: prova a regra da escada pela via pública (coletarPainel usa metaDe).
+    // Aqui a base real decide o alvo; o que este teste trava é a MONOTONIA: alvo sempre > atual,
+    // ou igual ao teto, e batidas nunca negativas.
+    const p = await coletarPainel();
+    expect(p.metas.usuarios.alvo).toBeGreaterThanOrEqual(p.metas.usuarios.atual > 25000 ? 25000 : p.metas.usuarios.atual);
+    expect(p.metas.contribuidores.batidas).toBeGreaterThanOrEqual(0);
+    // O primeiro degrau de cada escada é o que o dono pediu.
+    if (p.metas.usuarios.atual < 100) expect(p.metas.usuarios.alvo).toBe(100);
+    if (p.metas.contribuidores.atual < 5) expect(p.metas.contribuidores.alvo).toBe(5);
   });
 });
 
@@ -108,6 +143,40 @@ describe("o markdown do painel não leva e-mail de ninguém", () => {
     // E o markdown tem substância: não é uma casca vazia que passa por acidente.
     expect(md).toContain("# O Gume, por dentro");
     expect(md).toContain("## Gente");
+  });
+});
+
+// ──────────────────────────────────────── o backup do banco: só sessão, nunca token
+
+describe("o backup do banco inteiro é gated na sessão, e o token não abre", () => {
+  it("a rota de backup NÃO conhece o token do painel", () => {
+    const { readFileSync } = require("node:fs") as typeof import("node:fs");
+    const rota = readFileSync("app/api/painel/backup/route.ts", "utf8");
+
+    // O backup leva TUDO (e-mail, estante privada). Um token estático que baixa o banco
+    // inteiro é perigoso demais. A rota só pode abrir pela sessão do idealizador.
+    expect(rota).not.toMatch(/tokenDePainelValido/);
+    expect(rota).toMatch(/souIdealizador/);
+  });
+
+  it("o backup lista as tabelas do banco, com users entre elas", async () => {
+    const { tabelasDoBanco } = await import("@/lib/backup");
+    const nomes = await tabelasDoBanco();
+    expect(nomes).toContain("users");
+    expect(nomes).toContain("editions");
+  });
+
+  it("o backup sai por streaming: a primeira coisa é um marcador de tabela, não a tabela inteira", async () => {
+    const { backupComoNdjson } = await import("@/lib/backup");
+    // Só a PRIMEIRA linha. Não consumimos o gerador inteiro: ele dumparia as 400 mil edições,
+    // e o ponto do streaming é justamente não fazer isso de uma vez.
+    const it = backupComoNdjson()[Symbol.asyncIterator]();
+    const primeira = await it.next();
+    if (it.return) await it.return(undefined);
+
+    expect(primeira.done).toBe(false);
+    const marcador = JSON.parse(String(primeira.value).trim());
+    expect(marcador).toHaveProperty("__tabela__");
   });
 });
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getViewer } from "@/lib/viewer";
 import { souIdealizador, tokenDePainelValido } from "@/lib/authz";
-import { coletarPainel, painelEmMarkdown } from "@/lib/painel";
+import { coletarPainel, filtroDaUrl, painelEmMarkdown } from "@/lib/painel";
 import { FUSO } from "@/lib/datas";
 
 /**
@@ -45,7 +45,9 @@ export async function GET(req: Request) {
     return new NextResponse("não encontrado", { status: 404 });
   }
 
-  const dados = await coletarPainel();
+  const url = new URL(req.url);
+  const filtro = filtroDaUrl(Object.fromEntries(url.searchParams));
+  const dados = await coletarPainel(filtro);
 
   // O E-MAIL NÃO SAI NUM ARQUIVO, em NENHUM formato. Ele existe só na tela, que só o dono
   // abre. O que sai (markdown ou json) leva o log SEM e-mail: handle, dia, método e
@@ -59,7 +61,6 @@ export async function GET(req: Request) {
     },
   };
 
-  const url = new URL(req.url);
   const formato = url.searchParams.get("formato") ?? "md";
 
   if (formato === "json") {

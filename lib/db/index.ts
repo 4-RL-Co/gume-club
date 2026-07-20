@@ -59,3 +59,12 @@ const client =
 if (process.env.NODE_ENV !== "production") globalForDb.__gumeSql = client;
 
 export const db = drizzle(client, { schema });
+
+/**
+ * O cliente bruto do postgres.js. Quase ninguém precisa dele: a porta normal é `db`,
+ * o drizzle. Ele existe para o UM caso que o drizzle não faz bem: transmitir uma tabela
+ * inteira por CURSOR, sem carregá-la na memória de uma vez. É o que o backup do banco usa
+ * (lib/backup.ts): a tabela de edições tem centenas de milhares de linhas, e um `json_agg`
+ * dela num tiro só derruba a conexão. Não use para consulta comum.
+ */
+export const sqlBruto = client;

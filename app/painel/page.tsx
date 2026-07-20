@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getViewer } from "@/lib/viewer";
 import { souIdealizador } from "@/lib/authz";
-import { getPainel } from "@/lib/painel";
+import { getPainel, filtroDaUrl } from "@/lib/painel";
 import { Painel } from "@/components/painel";
 
 export const dynamic = "force-dynamic";
@@ -23,13 +23,21 @@ export const dynamic = "force-dynamic";
  *  notFound() daqui, o dado ainda não sai.
  * ════════════════════════════════════════════════════════════════════
  */
-export default async function PainelPrivado() {
+export default async function PainelPrivado({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const viewer = await getViewer();
 
   // A porta. Não é o idealizador, a página não existe.
   if (!(await souIdealizador(viewer))) notFound();
 
-  const dados = await getPainel(viewer);
+  // Os filtros vêm da URL: o período, a granularidade e os recortes do log. A barra de
+  // filtros na tela só reescreve a URL, e a página busca de novo com eles. filtroDaUrl não
+  // confia no formato: valor estranho cai no padrão.
+  const filtro = filtroDaUrl(await searchParams);
+  const dados = await getPainel(viewer, filtro);
 
   return <Painel dados={dados} />;
 }

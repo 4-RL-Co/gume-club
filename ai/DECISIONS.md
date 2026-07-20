@@ -2206,3 +2206,21 @@ Métricas de dono que entraram, além das anteriores: **DAU/WAU/MAU** (ativos ho
 A trava que importa: **o arquivo que sai NUNCA leva e-mail**, em nenhum formato (md ou json). O e-mail existe só no log da tela, que só o dono abre. Um arquivo viaja (é anexado, colado num chat de agente, fica em disco), e e-mail é dado pessoal. O que sai leva handle, dia, método e procedência, que é o que um agente precisa e nada do que dói se vazar. Um teste prova que nenhum e-mail entra no markdown.
 
 E o link do painel passou a aparecer na barra lateral **só para o idealizador**, pela mesma lógica dos links de papel (moderação, fila): esconder não é a defesa (a defesa é o 404 no servidor), é não desenhar uma porta que dá 404 para todo mundo menos uma pessoa.
+
+---
+
+**2026-07-20: O painel ganhou backup do banco, filtros completos, metas que sobem e insights.**
+
+Cinco pedidos do dono, e as decisões que saíram deles:
+
+**Backup do banco inteiro, e por que ele é a porta mais estreita.** `/api/painel/backup` baixa TUDO: toda linha de toda tabela, inclusive e-mail e estante privada de todo mundo. Por isso ele é gated na SESSÃO do idealizador e NUNCA no token do painel. A separação é o ponto: o token abre os NÚMEROS (sem e-mail, para um agente ler); o backup abre o BANCO, e um segredo estático que baixa o banco inteiro é perigoso demais para existir. Duas formas, as duas por streaming (a tabela de edições tem 400 mil linhas, e um `json_agg` dela num tiro só derrubou a conexão, de verdade, no primeiro teste): `.ndjson` por cursor (roda em qualquer lugar, memória baixa) e `.sql` pelo pg_dump com o stdout direto na resposta (restaurável, quando o binário existe). Um teste trava que a rota de backup não conhece o token.
+
+**Filtros completos, na URL.** Período (7d/30d/90d/12m/tudo/personalizado com duas datas), granularidade (dia/semana/mês), e recorte do log (método, origem). Eles moram nos parâmetros da URL: a barra só reescreve a URL e a página busca de novo, então o estado filtrado é um link compartilhável e recarregável, e há uma fonte da verdade. O filtro vale para o gráfico, o log e o "novos no período", E para o export (o agente pode filtrar). Os KPIs de saúde (7/30/90, ativos, retenção) são janelas FIXAS de propósito: uma régua que muda de tamanho não compara nada. O catálogo é ponto no tempo e não filtra.
+
+**Metas que sobem sozinhas.** Começam onde o dono pediu (100 usuários, 5 contribuidores) e sobem em degraus redondos quando são batidas (100 vira 250; 5 vira 10). Uma meta parada depois de batida deixa de puxar; uma que sobe continua sendo horizonte. A barra enche até o alvo, e conta quantas já foram batidas.
+
+**Mais indicadores.** DAU/WAU/MAU e aderência (DAU/MAU), ativação, adormecidos (sem aparecer há 30+ dias), split de método (google contra e-mail), velocidade (resenhas e notas nos últimos 30 dias), cobertura de capa do catálogo, distribuição do tamanho das estantes (histograma), e média de convidados que vingaram por convidante (um proxy de viralidade).
+
+**Insights.** Uma seção de frases que o dono leria pensando alto, geradas por aritmética com limiar (não é IA): ativação baixa, retenção que dói, o buraco mais pedido do catálogo, quanto falta para cada meta. Cada uma aponta uma coisa que talvez mereça ação.
+
+E o painel deixou de ser monocromático: é dashboard de dono, com cor (parcimoniosa), gráfico de área, e a exceção de voz continua cobrindo a tela e o resto do app segue protegido.
