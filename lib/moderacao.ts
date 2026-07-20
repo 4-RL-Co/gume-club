@@ -1,6 +1,8 @@
 import { sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { assertAuthenticated, Forbidden, type Viewer } from "@/lib/authz";
+import {
+  assertAuthenticated, assertIdealizador, ehIdealizador, souIdealizador, Forbidden, type Viewer,
+} from "@/lib/authz";
 
 import { LIMITS, clamp } from "@/lib/limits";
 
@@ -70,15 +72,12 @@ export function ehModerador(alias: SQL): SQL {
   )`;
 }
 
-/** Quem imaginou o Gume. Único no mundo, e é ele quem promove moderador. */
-export function ehIdealizador(alias: SQL): SQL {
-  return sql`exists (
-    select 1 from badge_grants g
-     where g.user_id = ${alias}.id
-       and g.badge = 'idealizador'
-       and g.revoked_at is null
-  )`;
-}
+/**
+ * O idealizador (ehIdealizador, assertIdealizador, souIdealizador) mora agora em
+ * lib/authz.ts, que é onde toda autorização mora. Ele decide quem promove moderador E
+ * quem vê o painel privado, e duas telas não podem responder "é o idealizador?" cada uma
+ * do seu jeito. Este arquivo importa de lá.
+ */
 
 async function assertModerador(viewer: Viewer): Promise<{ id: string }> {
   assertAuthenticated(viewer);
@@ -89,19 +88,6 @@ async function assertModerador(viewer: Viewer): Promise<{ id: string }> {
      where u.id = ${viewer.id}::uuid`);
 
   if (!eu?.sim) throw new Forbidden("moderação não é de bibliotecário: é de moderador");
-  return viewer;
-}
-
-/** Só o idealizador promove. Não é "o admin", não é "um bibliotecário sênior". */
-async function assertIdealizador(viewer: Viewer): Promise<{ id: string }> {
-  assertAuthenticated(viewer);
-
-  const [eu] = await db.execute<{ sim: boolean }>(sql`
-    select ${ehIdealizador(sql`u`)} as sim
-      from users u
-     where u.id = ${viewer.id}::uuid and u.deleted_at is null and u.banned_at is null`);
-
-  if (!eu?.sim) throw new Forbidden("só quem imaginou o Gume promove moderador");
   return viewer;
 }
 
@@ -151,14 +137,8 @@ export async function getModeradores(viewer: Viewer): Promise<Moderador[]> {
   return rows.map((r) => ({ id: r.id, handle: r.handle, name: r.name, ehDono: r.dono }));
 }
 
-/** Quem está olhando é o idealizador? A tela precisa saber para desenhar (ou não) os botões. */
-export async function souIdealizador(viewer: Viewer): Promise<boolean> {
-  if (!viewer) return false;
-  const [eu] = await db.execute<{ sim: boolean }>(sql`
-    select ${ehIdealizador(sql`u`)} as sim
-      from users u where u.id = ${viewer.id}::uuid and u.deleted_at is null`);
-  return eu?.sim ?? false;
-}
+// souIdealizador vem de lib/authz.ts, e é reexportado para quem já importava daqui.
+export { souIdealizador };
 
 /** Quem está olhando é moderador? Para a barra decidir se desenha o link. */
 export async function souModerador(viewer: Viewer): Promise<boolean> {

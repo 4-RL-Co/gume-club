@@ -203,6 +203,18 @@ describe("o número não sai de /contribuidores", () => {
        * e nunca leva a contagem junto. O teste logo abaixo prova isso.
        */
       "lib/badges.ts",
+      /**
+       * O PAINEL PRIVADO conta quantos escreveram código, e mostra o número, DE PROPÓSITO.
+       *
+       * A garantia original continua inteira: o número não VIAJA. Ele não vai para o perfil,
+       * nem para o feed, nem para nenhuma tela de leitor. Ele fica preso a uma página que só
+       * o idealizador abre, que responde 404 para todo mundo (ver app/painel/page.tsx), e que
+       * existe para uma pessoa saber se o projeto está vivo. É o oposto de placar: não ordena
+       * gente, não põe número ao lado de nome. Reusa lib/contributors.getCodigo para não ter
+       * uma segunda fonte da mesma verdade. Se um dia o painel virar público, esta linha sai,
+       * e o teste volta a proteger a tela de todo mundo.
+       */
+      "lib/painel.ts",
     ];
     const infratores: string[] = [];
 

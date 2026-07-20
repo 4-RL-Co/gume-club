@@ -2167,3 +2167,25 @@ O que faltava, e entrou:
 - **Quem entrou pelo seu link aparece no perfil.** Rostos, nunca número, e privado igual às conexões (`getConvidados`, mesma `assertOwner()`). É a procedência da conexão, e não o placar dela.
 
 **E o arauto tinha DUAS definições, que discordavam.** `lib/invite.ts` tinha uma `isHerald()` (um convidado, um livro) e `lib/badges.ts` tinha a régua de verdade (cinco leitores que ficaram, cada um com dez livros). O perfil lia a primeira e mostrava o selo; a página de insígnias lia a segunda e não reconhecia a pessoa. O mesmo leitor era arauto numa tela e não na outra. `isHerald()` foi apagada, o perfil passou a derivar o selo de `getBadges`, e um teste trava a régua única: uma honra, uma régua, um lugar.
+
+---
+
+**2026-07-20: O painel privado. Uma pessoa, os números de verdade, e a linha entre saúde e vigilância.**
+
+Uma página que só o idealizador abre, com os dados do projeto: gente (contas, crescimento, ativos, retenção, log de cadastro), uso (mediana e média de livros, contas vazias, resenhas, notas em palavra), contribuição (correções que sobreviveram, capas, obras de leitor, código, e a fatia que contribui ao menos uma vez), convite (quem veio por convite, quem já convidou, convites que vingaram) e catálogo (obras, edições sem capa, sem ano, sem editora, sem autor, e as buscas que não acharam nada).
+
+As decisões duras:
+
+- **Acesso é o idealizador, e a checagem passa por lib/authz.ts.** Não se inventou papel novo (coluna de role, lista de e-mails em env): o idealizador já existe, único no mundo por índice do banco. O que mudou é que a checagem (`ehIdealizador`, `souIdealizador`, `assertIdealizador`) MUDOU de lib/moderacao.ts para lib/authz.ts, que é onde toda autorização mora. Ela decide dois poderes (promover moderador, ver o painel), e uma pergunta de autorização respondida em dois lugares um dia diverge. authz.ts ganhou um import de db para isso, o que é novo para esse arquivo, e é aceito: a autorização mora lá, mesmo quando precisa do banco.
+
+- **404, e não 403.** A página responde "não existe" para quem não é o idealizador, porque um 403 confessa que a página existe. `souIdealizador` vira o notFound. E `getPainel` chama `assertIdealizador` por dentro: a defesa não depende de a página lembrar de checar. O red team prova as duas recusas (lib/painel.redteam.sql.test.ts).
+
+- **Retenção custou uma coluna, e ela é a única coisa do painel na fronteira da vigilância.** `users.last_seen_on`, uma DATA (não um relógio), preenchida no máximo uma vez por dia no funil por onde tudo passa (getViewer), no fuso de São Paulo. Ela responde "a pessoa voltou?" e nada mais: não guarda hora, nem página, nem o que a pessoa fez. Um histórico de presença por dia por pessoa (coorte de verdade, semana 1/2/4) foi recusado: já seria vigilância pela régua do próprio projeto. A retenção nasce subestimada (contas velhas não têm passado registrado), e o painel diz isso em vez de fingir.
+
+- **Buscas sem resultado NÃO precisaram de tabela nova.** `buscas_vazias` (a torneira, migration 0031) já registra o termo e quantas vezes, sem user_id de propósito. O painel reusa. É a lista mais valiosa da página, e ela já existia.
+
+- **Média E mediana, sempre as duas.** Se um leitor tem 142 livros e os outros têm 3, a média mente e a mediana não. E a taxa período-contra-período diz "poucos dados ainda" abaixo de um piso, em vez de mostrar "+300%" porque saiu de 1 para 4. Nada de placar: distribuição e mediana, nunca uma lista de gente ordenada por quanto leu, mesmo que só o dono veja.
+
+- **Importação e exportação ainda não são contadas**, porque não há log delas, e o painel diz isso na cara em vez de inventar um número. Medir a exportação (a promessa central) é a próxima coisa a fazer ali.
+
+- **Duas exceções nos testes estruturais, explícitas e comentadas, para a rota do painel só.** (1) lib/voice.test.ts: o painel fala com o dono e usa palavras que o resto do app não pode (retenção, coorte, mediana). `EXCECAO` virou um conjunto com a página e o componente do painel; a regra global continua valendo para todo o resto. (2) lib/contributors.sql.test.ts: o painel mostra a contagem de quem escreveu código, reusando lib/contributors.getCodigo. lib/painel.ts entrou no `permitido`. A garantia original continua: o número não viaja para tela de leitor, ele fica preso a uma página que só o idealizador abre. Se o painel um dia virar público, as duas exceções saem.

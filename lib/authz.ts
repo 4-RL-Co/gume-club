@@ -1,5 +1,6 @@
 import { and, eq, or, sql, type SQL } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
+import { db } from "@/lib/db";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -249,4 +250,60 @@ export function assertCanRecommendTo(
 export function assertLibrarian(viewer: Viewer, tier: number): asserts viewer is { id: string } {
   assertAuthenticated(viewer);
   if (tier < 1) throw new Forbidden("not a librarian");
+}
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  O IDEALIZADOR. Quem imaginou o Gume, único no mundo por índice do banco.
+ *
+ *  Não é "o admin", não é "um bibliotecário sênior": é UMA pessoa, e não dá
+ *  para virar ela. A concessão mora em `badge_grants`, e a unicidade é
+ *  travada no banco (migration 0024), não aqui.
+ *
+ *  ═══ POR QUE ISTO MORA EM authz.ts ═══
+ *
+ *  Ele decide quem promove moderador E quem vê o painel privado. Dois
+ *  poderes, uma pergunta: "é o idealizador?". Uma pergunta de autorização
+ *  respondida em dois lugares é uma pergunta que um dia diverge, e uma das
+ *  duas telas passa a confiar na resposta errada. Então ela é respondida
+ *  aqui, uma vez, do mesmo jeito que toda autorização deste app.
+ *
+ *  A predicata é SQL, como visibleTo() e mutuals(): a checagem roda no
+ *  banco, e não em JavaScript sobre linhas já carregadas.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export function ehIdealizador(alias: SQL): SQL {
+  return sql`exists (
+    select 1 from badge_grants g
+     where g.user_id = ${alias}.id
+       and g.badge = 'idealizador'
+       and g.revoked_at is null
+  )`;
+}
+
+/** É este viewer o idealizador? Uma pergunta, respondida no banco. */
+export async function souIdealizador(viewer: Viewer): Promise<boolean> {
+  if (!viewer) return false;
+  const [eu] = await db.execute<{ sim: boolean }>(sql`
+    select ${ehIdealizador(sql`u`)} as sim
+      from users u
+     where u.id = ${viewer.id}::uuid
+       and u.deleted_at is null
+       and u.banned_at is null`);
+  return eu?.sim ?? false;
+}
+
+/**
+ * Recusa quem não é o idealizador. Levanta `Forbidden`, para quem PROMOVE moderador.
+ *
+ * Uma tela PRIVADA que não quer confessar que existe (o painel) NÃO usa isto: ela chama
+ * `souIdealizador()` e responde 404 por conta própria, porque um 403 já conta que a página
+ * existe. Ver app/painel/page.tsx.
+ */
+export async function assertIdealizador(viewer: Viewer): Promise<{ id: string }> {
+  assertAuthenticated(viewer);
+  if (!(await souIdealizador(viewer))) {
+    throw new Forbidden("só quem imaginou o Gume faz isso");
+  }
+  return viewer;
 }
