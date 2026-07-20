@@ -26,37 +26,52 @@ export async function getViewer(): Promise<Viewer> {
    * depende de a gente ter conseguido apagar todas as sessões é uma defesa que falha
    * na sessão que a gente não achou.
    */
+  const [row] = await db.execute<{ id: string }>(sql`
+    select id from users
+     where id = ${session.user.id}::uuid
+       and deleted_at is null
+       and banned_at is null
+     limit 1
+  `);
+  if (!row) return null;
+
+  const viewer = { id: row.id };
+
   /**
-   * ═══ O ÚLTIMO DIA, GRAVADO AQUI, DE GRAÇA ═══
+   * ═══ O ÚLTIMO DIA, GRAVADO AQUI, MAS BEST-EFFORT ═══
    *
    * Este é o funil por onde TODA tela passa, então é o único lugar que sabe que a pessoa
    * apareceu HOJE mesmo quando ela nunca faz login de novo (a sessão dura). É aqui, e não
    * no login, que a retenção fica honesta.
    *
-   * O update mora na MESMA ida ao banco que a checagem, num CTE: uma consulta, não duas.
-   * E ele é um no-op depois da primeira vez no dia (`is distinct from` a data de hoje em
-   * São Paulo), então é no máximo uma escrita por pessoa por dia. Um banido ou apagado
-   * não atualiza nada, porque a condição do update é a mesma da checagem.
+   * ═══ POR QUE ELE É SEPARADO, E POR QUE ELE ENGOLE O ERRO ═══
    *
-   * A data é a de São Paulo (`at time zone`), e nunca a de UTC: "apareceu hoje" tem que
-   * ser o hoje do leitor. Ver lib/datas.ts e a migration 0050.
+   * Gravar o último dia é ANALÍTICA, e não autorização. Ele NÃO PODE derrubar o funil.
+   * Uma vez ele já derrubou: a coluna `last_seen_on` (migration 0050) não existia no banco
+   * de produção, e um CTE que a mencionava fazia TODA página do site cair. Um dado que só
+   * o painel do dono lê não vale uma tela branca para o leitor.
+   *
+   * Então: a checagem crítica (existe? banido?) roda primeiro, sozinha, e decide o viewer.
+   * A escrita do último dia vem DEPOIS, num try/catch que engole qualquer erro (coluna que
+   * ainda não migrou, banco de leitura, o que for). O pior caso é a retenção ficar um pouco
+   * menos precisa até o deploy migrar, e isso é aceitável. Uma tela branca não é.
+   *
+   * O update é no-op depois da primeira vez no dia (`is distinct from` a data de São Paulo),
+   * então é no máximo uma escrita por pessoa por dia. Fuso de São Paulo, nunca UTC. Ver
+   * lib/datas.ts e a migration 0050.
    */
-  const [row] = await db.execute<{ id: string }>(sql`
-    with vivo as (
-      select id from users
-       where id = ${session.user.id}::uuid
-         and deleted_at is null
-         and banned_at is null
-    ), visto as (
+  try {
+    await db.execute(sql`
       update users
          set last_seen_on = (now() at time zone 'America/Sao_Paulo')::date
-       where id = (select id from vivo)
+       where id = ${viewer.id}::uuid
          and last_seen_on is distinct from (now() at time zone 'America/Sao_Paulo')::date
-      returning id
-    )
-    select id from vivo
-  `);
-  return row ? { id: row.id } : null;
+    `);
+  } catch {
+    // Analítica não derruba o funil. Ver o comentário acima.
+  }
+
+  return viewer;
 }
 
 /** One reader, by id. Not a permission: just a name to put on a page. */
