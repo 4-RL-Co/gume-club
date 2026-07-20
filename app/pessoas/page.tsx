@@ -6,7 +6,9 @@ import { FeedList } from "@/components/feed-list";
 import { Explore } from "@/components/explore";
 import { Recomendacoes } from "@/components/recomendacoes";
 import { AmigosLendo } from "@/components/amigos-lendo";
+import { Conexoes } from "@/components/conexoes";
 import { getAmigosLendo } from "@/lib/social";
+import { getConexoes } from "@/lib/conexoes";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +44,13 @@ export default async function Pessoas({
 
   // A tira de "lendo agora" só faz sentido na aba de amigos, e só para quem entrou.
   const lendo = viewer && aba === "amigos" ? await getAmigosLendo(viewer) : [];
+
+  /**
+   * As duas listas de conexão. `getConexoes` recusa qualquer id que não seja o de
+   * quem pediu, e aqui só existe um id possível: o do próprio viewer. Não há como
+   * esta tela pedir a lista de outra pessoa, porque ela não aceita um alvo.
+   */
+  const conexoes = viewer && aba === "amigos" ? await getConexoes(viewer, viewer.id) : null;
 
   return (
     <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
@@ -81,6 +90,9 @@ export default async function Pessoas({
       ) : aba === "amigos" ? (
         <>
           <AmigosLendo amigos={lendo} />
+          {conexoes && (
+            <Conexoes seguindo={conexoes.seguindo} seguidores={conexoes.seguidores} />
+          )}
           <FeedList viewer={viewer} cursor={one(params.antes) ?? null} />
         </>
       ) : aba === "explorar" ? (
