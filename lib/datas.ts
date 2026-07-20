@@ -44,6 +44,18 @@
  */
 export const PRIMEIRO_ANO = 1900;
 
+/**
+ * O FUSO do Gume. Um leitor terminou o livro às 23h de 31 de dezembro em São Paulo, e não
+ * em 1º de janeiro em Greenwich.
+ *
+ * Já valia como `process.env.TZ` no runtime (ver lib/fuso.test.ts). Isto é o mesmo fuso,
+ * nomeado, para o SQL que agrupa por DIA: `created_at at time zone FUSO` devolve o dia em
+ * que a coisa aconteceu para quem estava aqui, e não o dia do relógio de Greenwich. Um
+ * gráfico de crescimento agrupado em UTC erra na virada de cada dia, que é o mesmo bug que
+ * a data de leitura já sofreu.
+ */
+export const FUSO = "America/Sao_Paulo";
+
 export class DataInvalida extends Error {}
 
 /** Hoje, no calendário. Sem hora, sem fuso: é uma data, e data não tem relógio. */

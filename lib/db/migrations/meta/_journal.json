@@ -351,6 +351,13 @@
       "when": 1784700817002,
       "tag": "0049_dono_edita_o_proprio_handle",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1784700817003,
+      "tag": "0050_o_ultimo_dia",
+      "breakpoints": true
     }
   ]
 }

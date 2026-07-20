@@ -26,12 +26,35 @@ export async function getViewer(): Promise<Viewer> {
    * depende de a gente ter conseguido apagar todas as sessões é uma defesa que falha
    * na sessão que a gente não achou.
    */
+  /**
+   * ═══ O ÚLTIMO DIA, GRAVADO AQUI, DE GRAÇA ═══
+   *
+   * Este é o funil por onde TODA tela passa, então é o único lugar que sabe que a pessoa
+   * apareceu HOJE mesmo quando ela nunca faz login de novo (a sessão dura). É aqui, e não
+   * no login, que a retenção fica honesta.
+   *
+   * O update mora na MESMA ida ao banco que a checagem, num CTE: uma consulta, não duas.
+   * E ele é um no-op depois da primeira vez no dia (`is distinct from` a data de hoje em
+   * São Paulo), então é no máximo uma escrita por pessoa por dia. Um banido ou apagado
+   * não atualiza nada, porque a condição do update é a mesma da checagem.
+   *
+   * A data é a de São Paulo (`at time zone`), e nunca a de UTC: "apareceu hoje" tem que
+   * ser o hoje do leitor. Ver lib/datas.ts e a migration 0050.
+   */
   const [row] = await db.execute<{ id: string }>(sql`
-    select id from users
-     where id = ${session.user.id}::uuid
-       and deleted_at is null
-       and banned_at is null
-     limit 1
+    with vivo as (
+      select id from users
+       where id = ${session.user.id}::uuid
+         and deleted_at is null
+         and banned_at is null
+    ), visto as (
+      update users
+         set last_seen_on = (now() at time zone 'America/Sao_Paulo')::date
+       where id = (select id from vivo)
+         and last_seen_on is distinct from (now() at time zone 'America/Sao_Paulo')::date
+      returning id
+    )
+    select id from vivo
   `);
   return row ? { id: row.id } : null;
 }

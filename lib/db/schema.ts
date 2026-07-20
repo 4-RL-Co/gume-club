@@ -91,6 +91,18 @@ export const users = pgTable("users", {
   bannedBy: uuid("banned_by").references((): AnyPgColumn => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  /**
+   * O último dia em que a pessoa apareceu. Uma DATA, e não um relógio, e é a decisão.
+   *
+   * Ela responde UMA pergunta: a pessoa voltou? Ativos na semana, ativos no mês, e a
+   * retenção (quem se cadastrou e ainda aparece). Não guarda a hora, não guarda a página,
+   * não guarda o que a pessoa fez: só que ela esteve aqui, no dia. É a fronteira entre
+   * saber se o projeto está vivo e vigiar leitor, e ela fica do lado de cá de propósito.
+   *
+   * Escrita no máximo uma vez por dia, no funil por onde tudo passa (getViewer). Ver
+   * lib/viewer.ts, e o painel privado em lib/painel.ts.
+   */
+  lastSeenOn: date("last_seen_on"),
 });
 
 export const follows = pgTable("follows", {

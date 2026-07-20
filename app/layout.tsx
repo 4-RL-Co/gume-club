@@ -7,6 +7,7 @@ import { Command } from "@/components/command";
 import { ToastHost } from "@/components/toast-host";
 import { PublicHeader } from "@/components/public-header";
 import { getViewer } from "@/lib/viewer";
+import { souIdealizador } from "@/lib/authz";
 import { getCollections } from "@/lib/curation";
 import { souModerador } from "@/lib/moderacao";
 import { podeVerAFila } from "@/lib/torneira";
@@ -80,7 +81,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   // A barra não recebe mais contagem: contagem é de FILTRO, e filtro mora na
   // tela que ele filtra. Ela só precisa das estantes que você inventou.
-  const [shelves, moderador, fila, novidades] = await Promise.all([
+  const [shelves, moderador, fila, idealizador, novidades] = await Promise.all([
     getCollections(viewer, viewer.id),
     // MODERADOR, e não bibliotecário: bibliotecário mexe em ficha de livro, moderador
     // mexe em gente, e os dois cargos deixaram de ser o mesmo. Ver lib/moderacao.ts.
@@ -88,6 +89,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     // A FILA DE PEDIDOS é de BIBLIOTECÁRIO ou moderador: ela é trabalho de catálogo.
     // Ver lib/torneira.ts.
     podeVerAFila(viewer),
+    // Só o idealizador vê a porta do painel privado. A defesa é no servidor; isto é só
+    // sobre não desenhar um link que dá 404 para todo mundo menos uma pessoa.
+    souIdealizador(viewer),
     // As três novidades do sino: te seguiram, seu convidado entrou, te recomendaram um
     // livro. Ver lib/novidades.ts.
     getNovidades(viewer),
@@ -101,7 +105,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-dvh">
         {/* useSearchParams needs a suspense boundary at the layout level */}
         <Suspense fallback={null}>
-          <Sidebar shelves={shelves} moderador={moderador} fila={fila} novidades={novidades} />
+          <Sidebar shelves={shelves} moderador={moderador} fila={fila} idealizador={idealizador} novidades={novidades} />
         </Suspense>
 
         {/* Cmd+K de qualquer tela: achar um livro e pôr na estante é a ação mais

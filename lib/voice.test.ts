@@ -111,8 +111,26 @@ const PROIBIDO: { termo: RegExp; porque: string }[] = [
   { termo: /,\s*e nada mais\b/i, porque: "tique: 'e nada mais' não informa nada" },
 ];
 
-/** A página Sobre é a ÚNICA que pode dizer, em uma frase, que o código é aberto. */
-const EXCECAO = "app/sobre/page.tsx";
+/**
+ * As telas que NÃO falam com o leitor, e por isso não caem sob esta regra.
+ *
+ * A regra global (sentence case, sem jargão, sem travessão) continua valendo para todo o
+ * resto do app, e não afrouxou. Aqui moram só as duas telas cujo leitor É o dono:
+ *
+ *  - /sobre pode dizer, em uma frase, que o código é aberto (é o manifesto).
+ *
+ *  - O PAINEL PRIVADO (a página e o seu componente) fala com o idealizador, e só com ele.
+ *    Ele usa palavras que uma tela de leitor não pode usar (retenção, coorte, mediana,
+ *    cadastros), porque quem lê ali é quem construiu o Gume. A rota inteira é privada e
+ *    responde 404 para qualquer outra pessoa (ver app/painel/page.tsx), então nenhuma
+ *    dessas palavras chega a um leitor. A exceção é DESTAS telas, e de mais nenhuma: um
+ *    jargão que vaze para qualquer outra continua quebrando o build.
+ */
+const EXCECAO = new Set([
+  "app/sobre/page.tsx",
+  "app/painel/page.tsx",
+  "components/painel.tsx",
+]);
 
 function arquivos(dir: string, out: string[] = []): string[] {
   for (const nome of readdirSync(dir)) {
@@ -189,7 +207,7 @@ describe("a voz do produto", () => {
 
   it.each(alvos)("%s não fala com desenvolvedor", (arquivo) => {
     const rel = arquivo.replace(process.cwd() + "/", "");
-    if (rel === EXCECAO) return;
+    if (EXCECAO.has(rel)) return;
 
     const violacoes: string[] = [];
     for (const texto of textoDeTela(readFileSync(arquivo, "utf8"))) {

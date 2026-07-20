@@ -1,12 +1,16 @@
 import Link from "next/link";
-import { getViewer } from "@/lib/viewer";
+import { getViewer, getUser } from "@/lib/viewer";
 import { ScreenHeader } from "@/components/screen-header";
 import { Empty } from "@/components/empty";
 import { FeedList } from "@/components/feed-list";
 import { Explore } from "@/components/explore";
 import { Recomendacoes } from "@/components/recomendacoes";
 import { AmigosLendo } from "@/components/amigos-lendo";
+import { Conexoes } from "@/components/conexoes";
+import { InviteLink } from "@/components/invite-link";
 import { getAmigosLendo } from "@/lib/social";
+import { getConexoes } from "@/lib/conexoes";
+import { inviteLink } from "@/lib/invite";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +46,18 @@ export default async function Pessoas({
 
   // A tira de "lendo agora" só faz sentido na aba de amigos, e só para quem entrou.
   const lendo = viewer && aba === "amigos" ? await getAmigosLendo(viewer) : [];
+
+  /**
+   * As duas listas de conexão. `getConexoes` recusa qualquer id que não seja o de
+   * quem pediu, e aqui só existe um id possível: o do próprio viewer. Não há como
+   * esta tela pedir a lista de outra pessoa, porque ela não aceita um alvo.
+   */
+  const conexoes = viewer && aba === "amigos" ? await getConexoes(viewer, viewer.id) : null;
+
+  // O convite mora aqui também, e não só no perfil: a aba de amigos é onde você pensa em
+  // quem conhece, e chamar alguém é a forma mais direta de ter um amigo aqui dentro.
+  const eu = viewer && aba === "amigos" ? await getUser(viewer.id) : null;
+  const appUrl = process.env.APP_URL ?? "";
 
   return (
     <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
@@ -80,7 +96,22 @@ export default async function Pessoas({
         </Empty>
       ) : aba === "amigos" ? (
         <>
+          {eu && (
+            <section className="surface mt-8 p-6">
+              <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+                chamar alguém
+              </h2>
+              <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
+                Mande este link para quem você quer aqui dentro. Quem entrar por ele já
+                chega vendo a sua estante, e não uma tela vazia.
+              </p>
+              <InviteLink url={inviteLink(eu.handle, appUrl)} />
+            </section>
+          )}
           <AmigosLendo amigos={lendo} />
+          {conexoes && (
+            <Conexoes seguindo={conexoes.seguindo} seguidores={conexoes.seguidores} />
+          )}
           <FeedList viewer={viewer} cursor={one(params.antes) ?? null} />
         </>
       ) : aba === "explorar" ? (

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home, Library, Users, Search, LogIn, LogOut, Info, UserRound, HeartHandshake,
-  MessagesSquare, ArrowUpRight, ChevronUp,
+  MessagesSquare, ArrowUpRight, ChevronUp, BarChart3,
 } from "lucide-react";
 import { CONVERSA } from "@/lib/onde";
 import { GlassBar } from "@/components/glass-bar";
@@ -81,12 +81,17 @@ export function Sidebar({
   shelves,
   moderador = false,
   fila = false,
+  idealizador = false,
   novidades = [],
 }: {
   shelves: Shelf[];
   moderador?: boolean;
   /** Bibliotecário ou moderador: quem cuida do acervo vê a fila de pedidos. */
   fila?: boolean;
+  /** Só o idealizador vê a porta do painel privado. Esconder o link não é a defesa
+      (quem protege é lib/authz.ts, no servidor): é não pôr na cara de todo mundo um
+      botão que dá 404 para a maioria. */
+  idealizador?: boolean;
   /** Te seguiram, seu convidado entrou, te recomendaram: o que o sino mostra. */
   novidades?: Novidade[];
 }) {
@@ -182,6 +187,14 @@ export function Sidebar({
               Esconder o link nunca protegeu nada: quem protege é lib/moderacao.ts, no
               servidor. Isto é sobre não pôr na cara de todo mundo três botões que a
               maioria não pode apertar. */}
+          {/* A porta do painel privado. Só aparece para o idealizador, pela mesma razão
+              que os links de papel: quem não pode nunca precisou ver a porta. */}
+          {idealizador && (
+            <Item href="/painel" active={aceso("/painel")} icon={<BarChart3 {...ICON} />}>
+              Painel
+            </Item>
+          )}
+
           <Item href="/sobre" active={aceso("/sobre")} icon={<Info {...ICON} />}>
             Sobre
           </Item>

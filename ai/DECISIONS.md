@@ -2140,3 +2140,87 @@ A praça (um feed cronológico de quem você ainda não segue) foi adicionada ao
 O medo original, registrado quando a praça nem existia, estava certo o tempo todo: "um feed geral de todo mundo terminou tal livro é ruído de estranho, e é onde nasce a vontade de performar". A praça foi uma tentativa de domar esse feed com travas (cronológica, sem contador, só público). A conclusão de hoje é mais simples: o lugar dela não era aqui.
 
 O código de `getPraca()` fica em lib/social.ts por enquanto, sem tela que o chame. Se a tela vazia do recém-chegado voltar a doer, a praça volta, e volta num lugar pensado para ela, não pendurada no fim do explorar.
+
+---
+
+**2026-07-20: As conexões viram tela, e ficam privadas. Sem contador, sempre.**
+
+A aba de amigos passou a mostrar duas listas, quem você segue e quem segue você, com rosto e nome, e o nome leva ao perfil. Faltava o básico: dava para seguir e não dava para ver quem.
+
+Duas travas, e as duas são o ponto:
+
+1. **A lista de conexões é privada, e a recusa é `assertOwner()`.** Só você vê a sua. `/@fulano` não mostra as conexões do fulano, e `getConexoes` recusa qualquer id que não seja o de quem pediu, ANTES de qualquer consulta. A razão não é pudor: a lista de quem alguém segue é um mapa social, e a soma de gestos privados é um retrato que não é de ninguém publicar. É tratada como uma linha com dono, porque é o que ela é. O red team prova que o usuário errado, inclusive quem SEGUE a vítima, leva Forbidden.
+
+2. **Sem contador, em lugar nenhum.** `lib/conexoes.ts` devolve gente, e nunca um total, nem no tipo de retorno. Não é esquecimento: "128 seguidores" é a linha do README, e ela não se cruza de uma vez, ela se cruza no dia em que uma função devolve `{ pessoas, quantas }` porque uma tela achou conveniente. Um teste trava o formato do retorno e proíbe o `.length` de virar texto na tela. A lista rola dentro de um teto; rolar não conta, paginar com número contaria.
+
+---
+
+**2026-07-20: O convite já existia, e o que faltava era deixá-lo achável e dar crédito a quem chegou.**
+
+O formato do convite NÃO mudou, e não se discutiu de novo: o handle é o convite, `/entrar?convite=<handle>`, sem tabela de códigos, sem expirar, como já estava decidido. A régua de segurança que o pedido trazia ("o código não pode ser enumerável para mapear usuários") já estava satisfeita por outro caminho: o handle é público de qualquer forma, e enumerar `/entrar?convite=fulano` não revela nada que `/@fulano` não revele. Não havia o que proteger, então não se construiu proteção nenhuma.
+
+O que faltava, e entrou:
+
+- **A porta saúda quem foi chamado.** `/entrar?convite=fulano` agora diz "fulano te chamou pro Gume", porque a recomendação de uma pessoa é o produto. Sem pressão, sem contagem regressiva, sem "seu amigo está esperando". Para dizer o nome, `app/entrar/invite.ts` passou a LER o banco (handle para nome de exibição), uma leitura só de dado público, e essa leitura virou o portão de sanidade do convite: handle de ninguém, ou de banido ou apagado, não saúda e não é lembrado. A razão dele na lista PUBLICO de lib/surface.test.ts foi atualizada, porque a antiga dizia "não toca no banco".
+- **Compartilhar pelo sistema.** O botão de convite ganhou a Web Share API quando o navegador suporta (no celular é a diferença entre mandar no WhatsApp e desistir). Copiar continua em todo lugar.
+- **O convite mora também na aba de amigos**, não só no perfil. A sidebar tem filosofia de uma porta e não se mexeu nela; a aba de amigos é o segundo lar óbvio, porque é onde você pensa em quem conhece.
+- **Quem entrou pelo seu link aparece no perfil.** Rostos, nunca número, e privado igual às conexões (`getConvidados`, mesma `assertOwner()`). É a procedência da conexão, e não o placar dela.
+
+**E o arauto tinha DUAS definições, que discordavam.** `lib/invite.ts` tinha uma `isHerald()` (um convidado, um livro) e `lib/badges.ts` tinha a régua de verdade (cinco leitores que ficaram, cada um com dez livros). O perfil lia a primeira e mostrava o selo; a página de insígnias lia a segunda e não reconhecia a pessoa. O mesmo leitor era arauto numa tela e não na outra. `isHerald()` foi apagada, o perfil passou a derivar o selo de `getBadges`, e um teste trava a régua única: uma honra, uma régua, um lugar.
+
+---
+
+**2026-07-20: O painel privado. Uma pessoa, os números de verdade, e a linha entre saúde e vigilância.**
+
+Uma página que só o idealizador abre, com os dados do projeto: gente (contas, crescimento, ativos, retenção, log de cadastro), uso (mediana e média de livros, contas vazias, resenhas, notas em palavra), contribuição (correções que sobreviveram, capas, obras de leitor, código, e a fatia que contribui ao menos uma vez), convite (quem veio por convite, quem já convidou, convites que vingaram) e catálogo (obras, edições sem capa, sem ano, sem editora, sem autor, e as buscas que não acharam nada).
+
+As decisões duras:
+
+- **Acesso é o idealizador, e a checagem passa por lib/authz.ts.** Não se inventou papel novo (coluna de role, lista de e-mails em env): o idealizador já existe, único no mundo por índice do banco. O que mudou é que a checagem (`ehIdealizador`, `souIdealizador`, `assertIdealizador`) MUDOU de lib/moderacao.ts para lib/authz.ts, que é onde toda autorização mora. Ela decide dois poderes (promover moderador, ver o painel), e uma pergunta de autorização respondida em dois lugares um dia diverge. authz.ts ganhou um import de db para isso, o que é novo para esse arquivo, e é aceito: a autorização mora lá, mesmo quando precisa do banco.
+
+- **404, e não 403.** A página responde "não existe" para quem não é o idealizador, porque um 403 confessa que a página existe. `souIdealizador` vira o notFound. E `getPainel` chama `assertIdealizador` por dentro: a defesa não depende de a página lembrar de checar. O red team prova as duas recusas (lib/painel.redteam.sql.test.ts).
+
+- **Retenção custou uma coluna, e ela é a única coisa do painel na fronteira da vigilância.** `users.last_seen_on`, uma DATA (não um relógio), preenchida no máximo uma vez por dia no funil por onde tudo passa (getViewer), no fuso de São Paulo. Ela responde "a pessoa voltou?" e nada mais: não guarda hora, nem página, nem o que a pessoa fez. Um histórico de presença por dia por pessoa (coorte de verdade, semana 1/2/4) foi recusado: já seria vigilância pela régua do próprio projeto. A retenção nasce subestimada (contas velhas não têm passado registrado), e o painel diz isso em vez de fingir.
+
+- **Buscas sem resultado NÃO precisaram de tabela nova.** `buscas_vazias` (a torneira, migration 0031) já registra o termo e quantas vezes, sem user_id de propósito. O painel reusa. É a lista mais valiosa da página, e ela já existia.
+
+- **Média E mediana, sempre as duas.** Se um leitor tem 142 livros e os outros têm 3, a média mente e a mediana não. E a taxa período-contra-período diz "poucos dados ainda" abaixo de um piso, em vez de mostrar "+300%" porque saiu de 1 para 4. Nada de placar: distribuição e mediana, nunca uma lista de gente ordenada por quanto leu, mesmo que só o dono veja.
+
+- **Importação e exportação ainda não são contadas**, porque não há log delas, e o painel diz isso na cara em vez de inventar um número. Medir a exportação (a promessa central) é a próxima coisa a fazer ali.
+
+- **Duas exceções nos testes estruturais, explícitas e comentadas, para a rota do painel só.** (1) lib/voice.test.ts: o painel fala com o dono e usa palavras que o resto do app não pode (retenção, coorte, mediana). `EXCECAO` virou um conjunto com a página e o componente do painel; a regra global continua valendo para todo o resto. (2) lib/contributors.sql.test.ts: o painel mostra a contagem de quem escreveu código, reusando lib/contributors.getCodigo. lib/painel.ts entrou no `permitido`. A garantia original continua: o número não viaja para tela de leitor, ele fica preso a uma página que só o idealizador abre. Se o painel um dia virar público, as duas exceções saem.
+
+---
+
+**2026-07-20: O painel virou um dashboard de dono, e ganhou uma porta para o agente ler.**
+
+O primeiro painel seguia a estética austera do app de leitor (monocromático, sem cor). O dono pediu o contrário, e tem razão: essa tela é só dele, e a régua ali é ler rápido, não ser discreto. Então o painel deixou de obedecer a identidade do app de leitor. Ele tem cor (com parcimônia, o accent verde-água do próprio app), gráfico (área com linha, SVG puro, sem biblioteca, com ponto que segue o mouse), e filtro (dia/semana/mês no crescimento, instantâneo, sem ida ao servidor). A exceção no lib/voice.test.ts continua cobrindo a tela; a regra global do app não mudou.
+
+Métricas de dono que entraram, além das anteriores: **DAU/WAU/MAU** (ativos hoje/7/30, de last_seen_on), **aderência** (DAU/MAU), **ativação** (fatia de contas com ao menos um livro), e a divisão de como as contas chegaram (convite contra sozinho). Continua sem placar: nenhuma lista de gente ordenada por quanto leu.
+
+**A saída para agente, e o e-mail que não viaja.** O dono pediu um jeito do Claude dele ler os números. Duas saídas, pela rota `/api/painel/export`:
+
+- Baixar o `.md` e copiar o `.md` para colar no Claude (botões na tela).
+- Um agente headless lê sozinho com `Authorization: Bearer $PAINEL_TOKEN`, um segredo opcional no ambiente. Sem o env, a porta do token nem existe, e só a sessão do idealizador entra. A checagem do token mora em lib/authz.ts (onde toda autorização mora), com comparação de tempo constante e piso de tamanho. A rota responde 404 (não 403) para quem não passa, igual à página.
+
+A trava que importa: **o arquivo que sai NUNCA leva e-mail**, em nenhum formato (md ou json). O e-mail existe só no log da tela, que só o dono abre. Um arquivo viaja (é anexado, colado num chat de agente, fica em disco), e e-mail é dado pessoal. O que sai leva handle, dia, método e procedência, que é o que um agente precisa e nada do que dói se vazar. Um teste prova que nenhum e-mail entra no markdown.
+
+E o link do painel passou a aparecer na barra lateral **só para o idealizador**, pela mesma lógica dos links de papel (moderação, fila): esconder não é a defesa (a defesa é o 404 no servidor), é não desenhar uma porta que dá 404 para todo mundo menos uma pessoa.
+
+---
+
+**2026-07-20: O painel ganhou backup do banco, filtros completos, metas que sobem e insights.**
+
+Cinco pedidos do dono, e as decisões que saíram deles:
+
+**Backup do banco inteiro, e por que ele é a porta mais estreita.** `/api/painel/backup` baixa TUDO: toda linha de toda tabela, inclusive e-mail e estante privada de todo mundo. Por isso ele é gated na SESSÃO do idealizador e NUNCA no token do painel. A separação é o ponto: o token abre os NÚMEROS (sem e-mail, para um agente ler); o backup abre o BANCO, e um segredo estático que baixa o banco inteiro é perigoso demais para existir. Duas formas, as duas por streaming (a tabela de edições tem 400 mil linhas, e um `json_agg` dela num tiro só derrubou a conexão, de verdade, no primeiro teste): `.ndjson` por cursor (roda em qualquer lugar, memória baixa) e `.sql` pelo pg_dump com o stdout direto na resposta (restaurável, quando o binário existe). Um teste trava que a rota de backup não conhece o token.
+
+**Filtros completos, na URL.** Período (7d/30d/90d/12m/tudo/personalizado com duas datas), granularidade (dia/semana/mês), e recorte do log (método, origem). Eles moram nos parâmetros da URL: a barra só reescreve a URL e a página busca de novo, então o estado filtrado é um link compartilhável e recarregável, e há uma fonte da verdade. O filtro vale para o gráfico, o log e o "novos no período", E para o export (o agente pode filtrar). Os KPIs de saúde (7/30/90, ativos, retenção) são janelas FIXAS de propósito: uma régua que muda de tamanho não compara nada. O catálogo é ponto no tempo e não filtra.
+
+**Metas que sobem sozinhas.** Começam onde o dono pediu (100 usuários, 5 contribuidores) e sobem em degraus redondos quando são batidas (100 vira 250; 5 vira 10). Uma meta parada depois de batida deixa de puxar; uma que sobe continua sendo horizonte. A barra enche até o alvo, e conta quantas já foram batidas.
+
+**Mais indicadores.** DAU/WAU/MAU e aderência (DAU/MAU), ativação, adormecidos (sem aparecer há 30+ dias), split de método (google contra e-mail), velocidade (resenhas e notas nos últimos 30 dias), cobertura de capa do catálogo, distribuição do tamanho das estantes (histograma), e média de convidados que vingaram por convidante (um proxy de viralidade).
+
+**Insights.** Uma seção de frases que o dono leria pensando alto, geradas por aritmética com limiar (não é IA): ativação baixa, retenção que dói, o buraco mais pedido do catálogo, quanto falta para cada meta. Cada uma aponta uma coisa que talvez mereça ação.
+
+E o painel deixou de ser monocromático: é dashboard de dono, com cor (parcimoniosa), gráfico de área, e a exceção de voz continua cobrindo a tela e o resto do app segue protegido.
