@@ -2,8 +2,8 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { getPainel } from "@/lib/painel";
-import { souIdealizador, assertIdealizador, Forbidden } from "@/lib/authz";
+import { getPainel, coletarPainel, painelEmMarkdown } from "@/lib/painel";
+import { souIdealizador, assertIdealizador, tokenDePainelValido, Forbidden } from "@/lib/authz";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -91,5 +91,53 @@ describe("o idealizador abre o painel, e as agregações rodam", () => {
     expect(painel.convite.porConvite + painel.convite.sozinhos).toBe(painel.gente.total);
     expect(painel.catalogo.obras).toBeGreaterThanOrEqual(0);
     expect(Array.isArray(painel.catalogo.buscasVazias)).toBe(true);
+    expect(painel.gente.ativos1).toBeGreaterThanOrEqual(0);
+  });
+});
+
+// ─────────────────────────────────────────── o arquivo que sai não leva e-mail
+
+describe("o markdown do painel não leva e-mail de ninguém", () => {
+  it("um arquivo que viaja não pode carregar dado pessoal", async () => {
+    const dados = await coletarPainel();
+    const md = painelEmMarkdown(dados, "20/07/2026 12:00");
+
+    // Nenhum @ de e-mail no texto. O log leva handle, dia, método e procedência, e nada
+    // do que dói se vazar. Se algum e-mail entrar aqui, este teste quebra.
+    expect(md, "um e-mail vazou para o markdown do painel").not.toMatch(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
+    // E o markdown tem substância: não é uma casca vazia que passa por acidente.
+    expect(md).toContain("# O Gume, por dentro");
+    expect(md).toContain("## Gente");
+  });
+});
+
+// ───────────────────────────────────────────────── o token da porta do agente
+
+describe("o token do painel: a segunda porta, e as travas dela", () => {
+  const ORIGINAL = process.env.PAINEL_TOKEN;
+  afterAll(() => {
+    if (ORIGINAL === undefined) delete process.env.PAINEL_TOKEN;
+    else process.env.PAINEL_TOKEN = ORIGINAL;
+  });
+
+  it("sem PAINEL_TOKEN no ambiente, a porta do token não existe", () => {
+    delete process.env.PAINEL_TOKEN;
+    expect(tokenDePainelValido("qualquer-coisa")).toBe(false);
+    expect(tokenDePainelValido("")).toBe(false);
+    expect(tokenDePainelValido(null)).toBe(false);
+  });
+
+  it("um token curto demais no ambiente é recusado: ninguém se protege com '123'", () => {
+    process.env.PAINEL_TOKEN = "curto";
+    expect(tokenDePainelValido("curto")).toBe(false);
+  });
+
+  it("com um token forte, só o valor exato passa", () => {
+    const bom = "a".repeat(40);
+    process.env.PAINEL_TOKEN = bom;
+    expect(tokenDePainelValido(bom)).toBe(true);
+    expect(tokenDePainelValido(bom + "x")).toBe(false);
+    expect(tokenDePainelValido("b".repeat(40))).toBe(false);
+    expect(tokenDePainelValido(null)).toBe(false);
   });
 });

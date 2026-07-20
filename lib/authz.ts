@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { and, eq, or, sql, type SQL } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db";
@@ -306,4 +307,41 @@ export async function assertIdealizador(viewer: Viewer): Promise<{ id: string }>
     throw new Forbidden("só quem imaginou o Gume faz isso");
   }
   return viewer;
+}
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  O TOKEN DO PAINEL. Para um AGENTE ler os números sem uma sessão.
+ *
+ *  O Claude do dono roda headless: ele não tem cookie de sessão, então não
+ *  consegue provar que É o idealizador do jeito normal. Este token é a segunda
+ *  porta da rota de export, e só dela: um segredo no ambiente (PAINEL_TOKEN),
+ *  mandado no cabeçalho Authorization, que libera SÓ a leitura dos números.
+ *
+ *  As travas, e cada uma é de propósito:
+ *   - Só existe se PAINEL_TOKEN estiver setado. Sem env, a porta do token não
+ *     existe, e só a sessão do idealizador entra.
+ *   - Comparação de tempo constante: um `===` vaza, pelo tempo de resposta, quantos
+ *     caracteres do token bateram, e aí ele se adivinha byte a byte.
+ *   - A rota que usa isto NÃO manda e-mail no que devolve (o markdown é sem e-mail):
+ *     mesmo que o token vaze, o que sai são agregados e handles, que já são públicos.
+ *   - O token vai no CABEÇALHO, nunca na URL: query string vaza para log de servidor.
+ *
+ *  Isto NÃO é um login geral e não vira um: ele abre uma porta só, de leitura, e o
+ *  resto do app continua exigindo sessão.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export function tokenDePainelValido(fornecido: string | null | undefined): boolean {
+  const esperado = process.env.PAINEL_TOKEN;
+  // Sem token no ambiente, a porta do token não existe. E um token curto demais é fraco
+  // demais: exigimos um mínimo para ninguém se proteger com "123".
+  if (!esperado || esperado.length < 24) return false;
+  if (!fornecido) return false;
+
+  const a = Buffer.from(fornecido);
+  const b = Buffer.from(esperado);
+  // timingSafeEqual exige tamanhos iguais, e a checagem de tamanho já vaza o tamanho (que
+  // não é segredo). O que não pode vazar é ONDE os bytes diferem, e é isso que ele protege.
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
 }

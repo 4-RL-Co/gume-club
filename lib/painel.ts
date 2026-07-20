@@ -68,7 +68,8 @@ export type Painel = {
     novos30: number;
     novos30Anterior: number;
     novos90: number;
-    /** Ativos: apareceram nos últimos 7 e 30 dias. */
+    /** Ativos: apareceram hoje (DAU), nos últimos 7 (WAU) e 30 dias (MAU). */
+    ativos1: number;
     ativos7: number;
     ativos30: number;
     porDia: Ponto[];
@@ -122,7 +123,15 @@ export async function getPainel(viewer: Viewer): Promise<Painel> {
   // A porta, e ela é a mesma de todo o resto: só o idealizador. Defesa em profundidade,
   // além do 404 da página: esta função não devolve dado para mais ninguém.
   await assertIdealizador(viewer);
+  return coletarPainel();
+}
 
+/**
+ * Junta os números, SEM checar quem pediu. Ela é privada por convenção, e os DOIS
+ * chamadores autorizam antes: `getPainel` (a página, pelo idealizador) e a rota de export
+ * (por sessão ou token). Nunca chame isto sem autorizar primeiro.
+ */
+export async function coletarPainel(): Promise<Painel> {
   const hojeSP = sql`(now() at time zone ${FUSO})::date`;
 
   const [gente, uso, contribuicaoBase, convite, catalogo, codigo] = await Promise.all([
@@ -142,7 +151,7 @@ export async function getPainel(viewer: Viewer): Promise<Painel> {
 async function getGente(hojeSP: ReturnType<typeof sql>): Promise<Painel["gente"]> {
   const [contagens] = await db.execute<{
     total: number; novos7: number; novos30: number; novos30_anterior: number; novos90: number;
-    ativos7: number; ativos30: number; coorte_madura: number; retidos: number;
+    ativos1: number; ativos7: number; ativos30: number; coorte_madura: number; retidos: number;
   }>(sql`
     select
       count(*) filter (where deleted_at is null)::int as total,
@@ -152,6 +161,7 @@ async function getGente(hojeSP: ReturnType<typeof sql>): Promise<Painel["gente"]
                          and created_at >= now() - interval '60 days'
                          and created_at <  now() - interval '30 days')::int as novos30_anterior,
       count(*) filter (where deleted_at is null and created_at >= now() - interval '90 days')::int as novos90,
+      count(*) filter (where deleted_at is null and last_seen_on >= ${hojeSP})::int as ativos1,
       count(*) filter (where deleted_at is null and last_seen_on >= ${hojeSP} - 7)::int as ativos7,
       count(*) filter (where deleted_at is null and last_seen_on >= ${hojeSP} - 30)::int as ativos30,
       -- COORTE MADURA: contas velhas o bastante (7+ dias) para terem tido a chance de voltar.
@@ -209,6 +219,7 @@ async function getGente(hojeSP: ReturnType<typeof sql>): Promise<Painel["gente"]
     novos30: contagens?.novos30 ?? 0,
     novos30Anterior: contagens?.novos30_anterior ?? 0,
     novos90: contagens?.novos90 ?? 0,
+    ativos1: contagens?.ativos1 ?? 0,
     ativos7: contagens?.ativos7 ?? 0,
     ativos30: contagens?.ativos30 ?? 0,
     coorteMadura: contagens?.coorte_madura ?? 0,
@@ -392,4 +403,106 @@ async function getCatalogo(): Promise<Painel["catalogo"]> {
     semAutor: c?.sem_autor ?? 0,
     buscasVazias: buscas.map((r) => ({ termo: r.texto, quantas: r.quantas })),
   };
+}
+
+// ─────────────────────────────────────────────────── O PAINEL EM MARKDOWN
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  O PAINEL EM MARKDOWN, PARA UM AGENTE LER.
+ *
+ *  É o mesmo dado da tela, em texto, para o Claude do dono ler e raciocinar
+ *  em cima. Sai pela rota de export, e serve tanto para baixar um arquivo
+ *  quanto para um agente buscar sem sessão (com token). Ver a rota.
+ *
+ *  ═══ O E-MAIL NÃO ENTRA AQUI ═══
+ *
+ *  O log de cadastro na TELA mostra o e-mail (a tela só o dono abre). O
+ *  MARKDOWN não: ele é um arquivo, e arquivo viaja, é anexado, é colado num
+ *  chat de agente, fica em disco. E-mail é dado pessoal, e dado pessoal não
+ *  viaja num arquivo. O log em markdown leva só o handle, o dia, o método e
+ *  a procedência, que é o que um agente precisa para raciocinar, e nada do
+ *  que dói se vazar.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export function painelEmMarkdown(p: Painel, geradoEm: string): string {
+  const nf = new Intl.NumberFormat("pt-BR");
+  const n = (x: number) => nf.format(x);
+  const um = (x: number) => x.toFixed(1).replace(".", ",");
+  const pct = (a: number, b: number) => (b > 0 ? `${Math.round((a / b) * 100)}%` : "sem base");
+
+  const stickiness = p.gente.ativos30 > 0
+    ? `${Math.round((p.gente.ativos1 / p.gente.ativos30) * 100)}%`
+    : "sem base";
+  const ativacao = pct(p.gente.total - p.uso.contasVazias, p.gente.total);
+  const retencao = p.gente.coorteMadura >= 20
+    ? pct(p.gente.retidos, p.gente.coorteMadura)
+    : `poucos dados (${n(p.gente.retidos)}/${n(p.gente.coorteMadura)})`;
+  const taxa = p.gente.novos30Anterior >= 10
+    ? `${p.gente.novos30 >= p.gente.novos30Anterior ? "+" : ""}${Math.round(((p.gente.novos30 - p.gente.novos30Anterior) / p.gente.novos30Anterior) * 100)}%`
+    : "poucos dados";
+
+  const linhas: string[] = [];
+  linhas.push(`# O Gume, por dentro`);
+  linhas.push("");
+  linhas.push(`Gerado em ${geradoEm}. Só o dono vê estes números. Sem e-mail e sem rastreamento de comportamento: só saúde do projeto.`);
+  linhas.push("");
+
+  linhas.push(`## Gente`);
+  linhas.push(`- Contas: **${n(p.gente.total)}**`);
+  linhas.push(`- Novos: ${n(p.gente.novos7)} em 7 dias, ${n(p.gente.novos30)} em 30 dias (${taxa} contra os 30 anteriores), ${n(p.gente.novos90)} em 90 dias`);
+  linhas.push(`- Ativos: ${n(p.gente.ativos1)} hoje (DAU), ${n(p.gente.ativos7)} em 7 dias (WAU), ${n(p.gente.ativos30)} em 30 dias (MAU)`);
+  linhas.push(`- Aderência (DAU/MAU): **${stickiness}**`);
+  linhas.push(`- Retenção (voltaram depois da primeira semana): **${retencao}**`);
+  linhas.push("");
+
+  linhas.push(`## Uso`);
+  linhas.push(`- Livros na estante por pessoa: mediana **${um(p.uso.medianaLivros)}**, média ${um(p.uso.mediaLivros)}`);
+  linhas.push(`- Lidos por pessoa: mediana **${um(p.uso.medianaLidos)}**, média ${um(p.uso.mediaLidos)}`);
+  linhas.push(`- Ativação (contas com ao menos um livro): **${ativacao}** (${n(p.uso.contasVazias)} contas vazias)`);
+  linhas.push(`- Resenhas escritas: ${n(p.uso.resenhas)}`);
+  linhas.push(`- Notas: ${p.uso.notas.map((f) => `${f.rotulo} ${n(f.n)}`).join(", ")}`);
+  linhas.push("");
+
+  linhas.push(`## Contribuição`);
+  linhas.push(`- Contribuíram ao menos uma vez: **${pct(p.contribuicao.contribuintes, p.gente.total)}** das contas (${n(p.contribuicao.contribuintes)})`);
+  linhas.push(`- Correções nos últimos 30 dias: ${n(p.contribuicao.correcoes30)}, por ${n(p.contribuicao.pessoasQueCorrigiram)} pessoas distintas`);
+  linhas.push(`- Capas: ${n(p.contribuicao.capasEnviadas)} enviadas, ${n(p.contribuicao.capasEsperando)} esperando conferência`);
+  linhas.push(`- Obras que leitores cadastraram: ${n(p.contribuicao.obrasDeLeitor)}`);
+  linhas.push(`- Escreveram código: ${p.contribuicao.codigo === null ? "sem dado (o github não respondeu)" : n(p.contribuicao.codigo)}`);
+  linhas.push("");
+
+  linhas.push(`## Convite`);
+  linhas.push(`- Chegaram por convite: ${n(p.convite.porConvite)}; sozinhos: ${n(p.convite.sozinhos)}`);
+  linhas.push(`- Já convidaram alguém: ${n(p.convite.quemJaConvidou)} pessoas`);
+  linhas.push(`- Convites que viraram conta de verdade: ${n(p.convite.convitesQueVingaram)}`);
+  linhas.push("");
+
+  linhas.push(`## Catálogo`);
+  linhas.push(`- Obras: ${n(p.catalogo.obras)}; edições: ${n(p.catalogo.edicoes)}`);
+  linhas.push(`- Edições sem capa: ${n(p.catalogo.semCapa)}; sem ano: ${n(p.catalogo.semAno)}; sem editora: ${n(p.catalogo.semEditora)}`);
+  linhas.push(`- Obras sem autor: ${n(p.catalogo.semAutor)}`);
+  linhas.push("");
+
+  linhas.push(`### Procuraram e não acharam`);
+  if (p.catalogo.buscasVazias.length === 0) {
+    linhas.push(`Nada por ora.`);
+  } else {
+    for (const b of p.catalogo.buscasVazias) {
+      linhas.push(`- ${b.termo} (${b.quantas === 1 ? "1 vez" : `${b.quantas} vezes`})`);
+    }
+  }
+  linhas.push("");
+
+  linhas.push(`### Quem chegou por último`);
+  linhas.push(`| pessoa | quando | método | procedência |`);
+  linhas.push(`| --- | --- | --- | --- |`);
+  for (const c of p.gente.log) {
+    const metodo = c.metodo === "google" ? "google" : c.metodo === "email" ? "e-mail" : "outro";
+    const proc = c.convidadoPor ? `veio por ${c.convidadoPor}` : "chegou sozinho";
+    linhas.push(`| ${c.handle} | ${c.quando} | ${metodo} | ${proc} |`);
+  }
+  linhas.push("");
+
+  return linhas.join("\n");
 }

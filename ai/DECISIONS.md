@@ -2189,3 +2189,20 @@ As decisões duras:
 - **Importação e exportação ainda não são contadas**, porque não há log delas, e o painel diz isso na cara em vez de inventar um número. Medir a exportação (a promessa central) é a próxima coisa a fazer ali.
 
 - **Duas exceções nos testes estruturais, explícitas e comentadas, para a rota do painel só.** (1) lib/voice.test.ts: o painel fala com o dono e usa palavras que o resto do app não pode (retenção, coorte, mediana). `EXCECAO` virou um conjunto com a página e o componente do painel; a regra global continua valendo para todo o resto. (2) lib/contributors.sql.test.ts: o painel mostra a contagem de quem escreveu código, reusando lib/contributors.getCodigo. lib/painel.ts entrou no `permitido`. A garantia original continua: o número não viaja para tela de leitor, ele fica preso a uma página que só o idealizador abre. Se o painel um dia virar público, as duas exceções saem.
+
+---
+
+**2026-07-20: O painel virou um dashboard de dono, e ganhou uma porta para o agente ler.**
+
+O primeiro painel seguia a estética austera do app de leitor (monocromático, sem cor). O dono pediu o contrário, e tem razão: essa tela é só dele, e a régua ali é ler rápido, não ser discreto. Então o painel deixou de obedecer a identidade do app de leitor. Ele tem cor (com parcimônia, o accent verde-água do próprio app), gráfico (área com linha, SVG puro, sem biblioteca, com ponto que segue o mouse), e filtro (dia/semana/mês no crescimento, instantâneo, sem ida ao servidor). A exceção no lib/voice.test.ts continua cobrindo a tela; a regra global do app não mudou.
+
+Métricas de dono que entraram, além das anteriores: **DAU/WAU/MAU** (ativos hoje/7/30, de last_seen_on), **aderência** (DAU/MAU), **ativação** (fatia de contas com ao menos um livro), e a divisão de como as contas chegaram (convite contra sozinho). Continua sem placar: nenhuma lista de gente ordenada por quanto leu.
+
+**A saída para agente, e o e-mail que não viaja.** O dono pediu um jeito do Claude dele ler os números. Duas saídas, pela rota `/api/painel/export`:
+
+- Baixar o `.md` e copiar o `.md` para colar no Claude (botões na tela).
+- Um agente headless lê sozinho com `Authorization: Bearer $PAINEL_TOKEN`, um segredo opcional no ambiente. Sem o env, a porta do token nem existe, e só a sessão do idealizador entra. A checagem do token mora em lib/authz.ts (onde toda autorização mora), com comparação de tempo constante e piso de tamanho. A rota responde 404 (não 403) para quem não passa, igual à página.
+
+A trava que importa: **o arquivo que sai NUNCA leva e-mail**, em nenhum formato (md ou json). O e-mail existe só no log da tela, que só o dono abre. Um arquivo viaja (é anexado, colado num chat de agente, fica em disco), e e-mail é dado pessoal. O que sai leva handle, dia, método e procedência, que é o que um agente precisa e nada do que dói se vazar. Um teste prova que nenhum e-mail entra no markdown.
+
+E o link do painel passou a aparecer na barra lateral **só para o idealizador**, pela mesma lógica dos links de papel (moderação, fila): esconder não é a defesa (a defesa é o 404 no servidor), é não desenhar uma porta que dá 404 para todo mundo menos uma pessoa.
