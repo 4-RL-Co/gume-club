@@ -2,8 +2,9 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users, follows } from "@/lib/db/schema";
-import { getConexoes } from "@/lib/conexoes";
+import { getConexoes, getConvidados } from "@/lib/conexoes";
 import { Forbidden } from "@/lib/authz";
+import { readFileSync } from "node:fs";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -27,6 +28,7 @@ let vitima: { id: string };
 let amigoDaVitima: { id: string };
 let seguidorDaVitima: { id: string };
 let banido: { id: string };
+let convidado: { id: string };
 
 const criados: string[] = [];
 const marca = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
@@ -46,6 +48,18 @@ beforeAll(async () => {
   amigoDaVitima = await mk(`conex-amigo-${marca}`);
   seguidorDaVitima = await mk(`conex-seguidor-${marca}`);
   banido = await mk(`conex-banido-${marca}`);
+
+  // Alguém que entrou pelo link da vítima.
+  const [c] = await db
+    .insert(users)
+    .values({
+      handle: `conex-convidado-${marca}`,
+      email: `conex-convidado-${marca}@conexoes.test`,
+      invitedBy: vitima.id,
+    })
+    .returning({ id: users.id });
+  criados.push(c!.id);
+  convidado = { id: c!.id };
 
   await db.insert(follows).values([
     // a vítima segue o amigo, e o banido
@@ -95,6 +109,27 @@ describe("IDOR: o atacante troca o UUID e pede a lista de conexões da vítima",
   });
 });
 
+// ──────────────────────────────────────────── IDOR: quem entrou pelo meu link
+
+describe("IDOR: o atacante tenta ler quem entrou pelo link da vítima", () => {
+  it("não lê a lista de convidados de outra pessoa", async () => {
+    await expect(getConvidados(atacante, vitima.id)).rejects.toBeInstanceOf(Forbidden);
+  });
+
+  it("um visitante sem sessão também não lê", async () => {
+    await expect(getConvidados(null, vitima.id)).rejects.toBeInstanceOf(Forbidden);
+  });
+
+  it("a dona vê quem entrou pelo link dela, com nome e sem número", async () => {
+    const convidados = await getConvidados(vitima, vitima.id);
+
+    expect(convidados.map((p) => p.handle)).toContain(`conex-convidado-${marca}`);
+    for (const p of convidados) {
+      expect(Object.keys(p).sort()).toEqual(["handle", "image", "name"]);
+    }
+  });
+});
+
 describe("um banido some das duas listas", () => {
   it("ele não aparece em quem a vítima segue, nem em quem a segue", async () => {
     const { seguindo, seguidores } = await getConexoes(vitima, vitima.id);
@@ -130,8 +165,6 @@ describe("a lista devolve gente, e nunca um total", () => {
   });
 
   it("nenhuma tela pede o tamanho das listas de conexão", async () => {
-    const { readFileSync } = await import("node:fs");
-
     const tela = readFileSync("components/conexoes.tsx", "utf8");
 
     /**
@@ -143,5 +176,39 @@ describe("a lista devolve gente, e nunca um total", () => {
       /\{[^{}]*\.length[^{}]*\}/.test(tela.replace(/\.length === 0/g, " ")),
       "components/conexoes.tsx põe o tamanho de uma lista na tela. Isso é o contador de seguidores.",
     ).toBe(false);
+  });
+});
+
+// ────────────────────────────────────────────────── uma honra, uma régua, um lugar
+
+describe("o arauto tem UMA definição, e ela mora em lib/badges.ts", () => {
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  HAVIA DUAS DEFINIÇÕES DO ARAUTO, E ELAS DISCORDAVAM.
+   *
+   *  lib/invite.ts tinha uma isHerald(): UM convidado, UM livro. lib/badges.ts
+   *  tinha a régua de verdade: CINCO leitores que ficaram, cada um com dez livros.
+   *  O perfil lia a primeira e mostrava o selo; a página de insígnias lia a segunda
+   *  e não reconhecia a pessoa. O mesmo leitor era arauto numa tela e não era na
+   *  outra.
+   *
+   *  Uma honra com duas réguas não é uma honra, são duas. Este teste trava a régua
+   *  única: só lib/badges.ts decide arauto, e isHerald() não volta.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  it("isHerald() não existe mais em lib/invite.ts", () => {
+    const invite = readFileSync("lib/invite.ts", "utf8").replace(/\/\*[\s\S]*?\*\//g, " ");
+    expect(
+      /export\s+(async\s+)?function\s+isHerald/.test(invite),
+      "isHerald() voltou. O arauto tem uma régua só, e ela mora em lib/badges.ts.",
+    ).toBe(false);
+  });
+
+  it("o perfil deriva o selo de arauto de getBadges, e não de uma segunda regra", () => {
+    const perfil = readFileSync("app/perfil/page.tsx", "utf8");
+    expect(perfil).not.toMatch(/isHerald/);
+    // O selo sai da insígnia, que é a fonte única.
+    expect(perfil).toMatch(/getBadges/);
+    expect(perfil).toMatch(/includes\(["']arauto["']\)/);
   });
 });

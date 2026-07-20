@@ -3,8 +3,11 @@ import { Download } from "lucide-react";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { getViewer } from "@/lib/viewer";
-import { getInviter, isHerald, inviteLink } from "@/lib/invite";
+import { getInviter, inviteLink } from "@/lib/invite";
+import { getBadges } from "@/lib/badges";
+import { getConvidados } from "@/lib/conexoes";
 import { InviteLink } from "@/components/invite-link";
+import { Avatar } from "@/components/avatar";
 import { CodigoPorEmail } from "@/components/codigo-email";
 import { TrocarSenha } from "@/components/trocar-senha";
 import { ProfileForm } from "@/components/profile-form";
@@ -59,10 +62,14 @@ export default async function Perfil() {
 
   if (!me) return <main className="px-6 pt-16">Leitor não encontrado.</main>;
 
-  const [inviter, herald] = await Promise.all([
+  const [inviter, insignias, convidados] = await Promise.all([
     getInviter(viewer.id),
-    isHerald(viewer.id),
+    getBadges(viewer.id),
+    getConvidados(viewer, viewer.id),
   ]);
+  // O selo de arauto vem da MESMA fonte que a insígnia, e não de uma segunda regra:
+  // duas definições da mesma honra era como uma tela mostrava o selo e a outra não.
+  const herald = insignias.includes("arauto");
   const appUrl = process.env.APP_URL ?? "";
 
   return (
@@ -127,6 +134,36 @@ export default async function Perfil() {
         </p>
         <InviteLink url={inviteLink(me.handle, appUrl)} />
 
+        {/* Quem entrou pelo seu link. Rostos, nunca um número: quem você trouxe é
+            hospitalidade, e a contagem seria o placar que o Gume recusa. Só você vê
+            esta lista, do mesmo jeito que só você vê as suas conexões. */}
+        {convidados.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+              quem entrou pelo seu link
+            </h3>
+            <ul className="mt-4 flex flex-col gap-1">
+              {convidados.map((p) => (
+                <li key={p.handle}>
+                  <Link
+                    href={`/@${p.handle}`}
+                    className="flex items-center gap-3 rounded-[var(--radius-control)] px-2 py-2 transition-colors hover:bg-white/[0.03]"
+                  >
+                    <Avatar src={p.image} name={p.name} handle={p.handle} size={32} />
+                    <span className="min-w-0">
+                      <span className="block truncate text-[14px] text-[var(--color-ink)]">
+                        {p.name ?? p.handle}
+                      </span>
+                      <span className="block truncate text-[13px] text-[var(--color-ink-faint)]">
+                        @{p.handle}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </section>
 
       {inviter && (

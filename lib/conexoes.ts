@@ -89,3 +89,34 @@ export async function getConexoes(
 
   return { seguindo: limpar(seguindo), seguidores: limpar(seguidores) };
 }
+
+/**
+ * Quem entrou pelo seu link. Nomes, nunca um número.
+ *
+ * É a procedência da conexão: quem chegou porque VOCÊ chamou. E é tão privado quanto a
+ * lista de conexões, pela mesma razão e pela mesma recusa: `assertOwner()` primeiro, e
+ * só você vê a sua. A lista de quem alguém trouxe é um mapa social igual às outras duas.
+ *
+ * O que ela devolve NÃO É A INSÍGNIA e não é o placar dela. O Arauto é uma pergunta
+ * binária respondida em lib/badges.ts (você trouxe leitores que ficaram, ou não), e ele
+ * NÃO conta quantos: contar quantos é a linha que o README recusa. Esta função mostra os
+ * ROSTOS de quem entrou, que é hospitalidade, e nunca o TOTAL, que seria um placar. Se um
+ * dia ela devolver `{ pessoas, quantas }`, o número vai para o lado do nome, e acabou.
+ *
+ * Aparece mesmo quem ainda não pôs livro nenhum na estante: entrou pelo seu link é entrou
+ * pelo seu link. A régua do Arauto (ficar, e ler) é outra pergunta, e ela mora em badges.
+ */
+export async function getConvidados(viewer: Viewer, donoId: string): Promise<Conexao[]> {
+  assertOwner(viewer, { userId: donoId });
+
+  const rows = await db.execute<Linha>(sql`
+    select u.handle, u.display_name as name, u.image
+      from users u
+     where u.invited_by = ${donoId}::uuid
+       and u.deleted_at is null
+       and u.banned_at is null
+     order by u.created_at asc
+     limit ${TETO}`);
+
+  return rows.map((r) => ({ handle: r.handle, name: r.name, image: r.image }));
+}

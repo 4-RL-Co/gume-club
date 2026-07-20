@@ -18,10 +18,24 @@ export default function Entrar() {
   const [mode, setMode] = useState<"entrar" | "criar">("entrar");
 
   // /entrar?convite=<handle>. Stored server-side in a short cookie so it survives
-  // the trip to Google and back, and read once when the account is created.
+  // the trip to Google and back, and read once when the account is created. A
+  // porta saúda quem foi chamado: `rememberInviter` devolve o nome de quem
+  // convidou, ou null se o convite for para alguém que não existe.
   const convite = params.get("convite");
+  const [quemChamou, setQuemChamou] = useState<string | null>(null);
   useEffect(() => {
-    if (convite) rememberInviter(convite);
+    if (!convite) return;
+    let vivo = true;
+    rememberInviter(convite).then((nome) => {
+      if (vivo && nome) {
+        setQuemChamou(nome);
+        // Quem chega por um convite está criando conta, não entrando numa que já tem.
+        setMode("criar");
+      }
+    });
+    return () => {
+      vivo = false;
+    };
   }, [convite]);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -62,6 +76,15 @@ export default function Entrar() {
       <p className="mt-2 text-[14px] text-[var(--color-ink-soft)]">
         Sua estante. Seus dados. Exportáveis a qualquer hora.
       </p>
+
+      {/* Quem chega por um convite chega porque alguém chamou, e a recomendação de uma
+          pessoa é o produto. Diz o nome, e para por aí: sem contagem regressiva, sem
+          "seu amigo está esperando", sem pressão nenhuma. */}
+      {quemChamou && (
+        <p className="mt-6 rounded-[var(--radius-control)] border border-[var(--color-rule)] px-4 py-3 text-[15px] leading-relaxed text-[var(--color-ink)]">
+          <span className="font-medium">{quemChamou}</span> te chamou pro Gume.
+        </p>
+      )}
 
       <form action={submit} className="mt-8 flex flex-col gap-3">
         {mode === "criar" && (

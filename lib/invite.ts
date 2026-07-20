@@ -32,31 +32,15 @@ export async function getInviter(userId: string) {
 }
 
 /**
- * A herald: someone who brought readers, and the readers stayed.
+ * ═══ O ARAUTO NÃO MORA MAIS AQUI ═══
  *
- * Returns a BOOLEAN and nothing else. Not a count, not a rank, not a tier. The
- * moment this returns a number, somebody puts the number on a profile, and the
- * moment a number sits next to a person, reading becomes standing. That is the
- * thing the README promises never to build. It is a fact about hospitality, not
- * a score. See ai/DECISIONS.md.
- *
- * "Stayed" means: the reader still exists, and they have actually shelved a book.
- * Someone who signed up and vanished was not brought, they were merely counted,
- * and counting is what we are refusing.
+ * Havia uma `isHerald()` neste arquivo, e ela era um segundo lugar que decidia quem é
+ * arauto: um convidado, um livro. A insígnia de verdade mora em lib/badges.ts, e a régua
+ * dela é outra: CINCO leitores que ficaram, cada um com dez livros (lib/regras.ts). Duas
+ * definições da mesma honra é como o perfil mostrava o selo para quem a página de
+ * insígnias não reconhecia. Uma honra, uma régua, um lugar. Quem precisa do selo pergunta
+ * a getBadges(), como toda tela que mostra insígnia. Ver lib/conexoes.sql.test.ts.
  */
-export async function isHerald(userId: string): Promise<boolean> {
-  const [row] = await db
-    .select({ any: sql<number>`1` })
-    .from(users)
-    .where(and(
-      eq(users.invitedBy, userId),
-      sql`${users.deletedAt} is null`,
-      sql`exists (select 1 from library_entries le where le.user_id = ${users.id})`,
-    ))
-    .limit(1);
-
-  return Boolean(row);
-}
 
 /**
  * Shelves worth following, for a reader who arrived alone.

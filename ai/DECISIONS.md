@@ -2140,3 +2140,30 @@ A praça (um feed cronológico de quem você ainda não segue) foi adicionada ao
 O medo original, registrado quando a praça nem existia, estava certo o tempo todo: "um feed geral de todo mundo terminou tal livro é ruído de estranho, e é onde nasce a vontade de performar". A praça foi uma tentativa de domar esse feed com travas (cronológica, sem contador, só público). A conclusão de hoje é mais simples: o lugar dela não era aqui.
 
 O código de `getPraca()` fica em lib/social.ts por enquanto, sem tela que o chame. Se a tela vazia do recém-chegado voltar a doer, a praça volta, e volta num lugar pensado para ela, não pendurada no fim do explorar.
+
+---
+
+**2026-07-20: As conexões viram tela, e ficam privadas. Sem contador, sempre.**
+
+A aba de amigos passou a mostrar duas listas, quem você segue e quem segue você, com rosto e nome, e o nome leva ao perfil. Faltava o básico: dava para seguir e não dava para ver quem.
+
+Duas travas, e as duas são o ponto:
+
+1. **A lista de conexões é privada, e a recusa é `assertOwner()`.** Só você vê a sua. `/@fulano` não mostra as conexões do fulano, e `getConexoes` recusa qualquer id que não seja o de quem pediu, ANTES de qualquer consulta. A razão não é pudor: a lista de quem alguém segue é um mapa social, e a soma de gestos privados é um retrato que não é de ninguém publicar. É tratada como uma linha com dono, porque é o que ela é. O red team prova que o usuário errado, inclusive quem SEGUE a vítima, leva Forbidden.
+
+2. **Sem contador, em lugar nenhum.** `lib/conexoes.ts` devolve gente, e nunca um total, nem no tipo de retorno. Não é esquecimento: "128 seguidores" é a linha do README, e ela não se cruza de uma vez, ela se cruza no dia em que uma função devolve `{ pessoas, quantas }` porque uma tela achou conveniente. Um teste trava o formato do retorno e proíbe o `.length` de virar texto na tela. A lista rola dentro de um teto; rolar não conta, paginar com número contaria.
+
+---
+
+**2026-07-20: O convite já existia, e o que faltava era deixá-lo achável e dar crédito a quem chegou.**
+
+O formato do convite NÃO mudou, e não se discutiu de novo: o handle é o convite, `/entrar?convite=<handle>`, sem tabela de códigos, sem expirar, como já estava decidido. A régua de segurança que o pedido trazia ("o código não pode ser enumerável para mapear usuários") já estava satisfeita por outro caminho: o handle é público de qualquer forma, e enumerar `/entrar?convite=fulano` não revela nada que `/@fulano` não revele. Não havia o que proteger, então não se construiu proteção nenhuma.
+
+O que faltava, e entrou:
+
+- **A porta saúda quem foi chamado.** `/entrar?convite=fulano` agora diz "fulano te chamou pro Gume", porque a recomendação de uma pessoa é o produto. Sem pressão, sem contagem regressiva, sem "seu amigo está esperando". Para dizer o nome, `app/entrar/invite.ts` passou a LER o banco (handle para nome de exibição), uma leitura só de dado público, e essa leitura virou o portão de sanidade do convite: handle de ninguém, ou de banido ou apagado, não saúda e não é lembrado. A razão dele na lista PUBLICO de lib/surface.test.ts foi atualizada, porque a antiga dizia "não toca no banco".
+- **Compartilhar pelo sistema.** O botão de convite ganhou a Web Share API quando o navegador suporta (no celular é a diferença entre mandar no WhatsApp e desistir). Copiar continua em todo lugar.
+- **O convite mora também na aba de amigos**, não só no perfil. A sidebar tem filosofia de uma porta e não se mexeu nela; a aba de amigos é o segundo lar óbvio, porque é onde você pensa em quem conhece.
+- **Quem entrou pelo seu link aparece no perfil.** Rostos, nunca número, e privado igual às conexões (`getConvidados`, mesma `assertOwner()`). É a procedência da conexão, e não o placar dela.
+
+**E o arauto tinha DUAS definições, que discordavam.** `lib/invite.ts` tinha uma `isHerald()` (um convidado, um livro) e `lib/badges.ts` tinha a régua de verdade (cinco leitores que ficaram, cada um com dez livros). O perfil lia a primeira e mostrava o selo; a página de insígnias lia a segunda e não reconhecia a pessoa. O mesmo leitor era arauto numa tela e não na outra. `isHerald()` foi apagada, o perfil passou a derivar o selo de `getBadges`, e um teste trava a régua única: uma honra, uma régua, um lugar.

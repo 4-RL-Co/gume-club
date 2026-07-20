@@ -27,7 +27,7 @@ const PUBLICO: Record<string, string> = {
   "app/api/buscar/route.ts":
     "buscar livro no catálogo é público, como a vitrine de uma livraria. A busca de PESSOAS que ela devolve só traz o que é público, e isso é provado em lib/redteam.sql.test.ts",
   "app/entrar/invite.ts":
-    "guarda o convite num cookie ANTES de a pessoa existir. É a única escrita que acontece sem ninguém logado, e ela não toca no banco",
+    "guarda o convite num cookie ANTES de a pessoa existir, e lê o NOME de quem convidou para a porta saudar. A leitura é só de dado público (handle e nome de exibição), nunca de linha de leitor, e não há sessão a quem perguntar porque a pessoa ainda não existe",
 
   /*
    * O CÓDIGO POR E-MAIL, no meio do login.
