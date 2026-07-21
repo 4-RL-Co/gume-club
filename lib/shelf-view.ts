@@ -99,6 +99,16 @@ export type ShelfBook = {
    * marcos. Ver lib/honras.ts.
    */
   honra: string | null;
+  /**
+   * QUEM RECOMENDOU este livro para o dono da estante, se alguém recomendou.
+   *
+   * Aparece na capa, e também para quem visita: um livro que veio de alguém é diferente
+   * de um livro que a pessoa achou sozinha. Nulo na esmagadora maioria das linhas, e é
+   * isso que faz a fotinha significar alguma coisa quando ela aparece.
+   */
+  recomendadoPor: string | null;
+  recomendadoPorNome: string | null;
+  recomendadoPorFoto: string | null;
 };
 
 /** Parses whatever came in on the query string. An unknown value falls back, never throws. */

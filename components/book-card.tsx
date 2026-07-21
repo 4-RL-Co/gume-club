@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Cover } from "@/components/cover";
 import { tintaDeHonra, nomeDaHonra } from "@/lib/honras";
 import { Verdict } from "@/components/veredito";
-import { AvatarStack } from "@/components/avatar";
+import { Avatar, AvatarStack } from "@/components/avatar";
 import { STATUS_LABEL, type ShelfBook } from "@/lib/shelf-view";
 import type { Opinion } from "@/lib/ratings";
 import { theirs } from "@/lib/veredito";
@@ -66,7 +66,41 @@ export function BookCard({
   const honra = nomeDaHonra(book.honra);
 
   return (
-    <li className="h-full" id={`livro-${book.workId}`}>
+    <li className="relative h-full" id={`livro-${book.workId}`}>
+      {/* ════════════════════════════════════════════════════════════════
+          ═══ QUEM TE DEU ESTE LIVRO, NO CANTO DA CAPA ═══
+
+          Um livro que veio de alguém é diferente de um livro que você achou sozinho, e
+          a estante não contava essa diferença: a recomendação chegava e a procedência
+          sumia. Agora o rosto de quem indicou fica na capa, e quem VISITA a estante
+          também vê — foi para isso que a recomendação nasceu pública no feed.
+
+          ═══ IRMÃO DO CARD, E NUNCA DENTRO DELE ═══
+
+          O card inteiro é um link para o LIVRO. Este rosto é um link para a PESSOA, e
+          dois destinos não cabem num link só: link dentro de link é HTML inválido, e o
+          navegador resolve o conflito do jeito dele. Então ele mora fora do card, por
+          cima, como irmão. É a mesma regra da tira de "amigos lendo".
+
+          Só aparece quando existe recomendação, que é a minoria das linhas — e é isso
+          que faz o rosto significar alguma coisa quando aparece.
+          ════════════════════════════════════════════════════════════════ */}
+      {book.recomendadoPor && (
+        <Link
+          href={`/@${book.recomendadoPor}`}
+          title={`${book.recomendadoPorNome ?? book.recomendadoPor} indicou este livro`}
+          aria-label={`${book.recomendadoPorNome ?? book.recomendadoPor} indicou este livro`}
+          className="absolute left-3 top-3 z-10 rounded-full ring-2 ring-[var(--surface-1)] transition-transform hover:scale-110"
+        >
+          <Avatar
+            src={book.recomendadoPorFoto}
+            name={book.recomendadoPorNome}
+            handle={book.recomendadoPor}
+            size={26}
+          />
+        </Link>
+      )}
+
       {/* h-full so a one-line title and a two-line title still bottom out level:
           a ragged baseline across a row reads as a bug, not as rhythm. */}
       <Link
