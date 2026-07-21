@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { dataDeLeitura, validarLeitura, DataInvalida, hoje, PRIMEIRO_ANO } from "@/lib/datas";
+import {
+  dataDeLeitura, validarLeitura, DataInvalida, hoje, PRIMEIRO_ANO, dataOuAno, anoDeLeitura,
+} from "@/lib/datas";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -88,6 +90,8 @@ describe("as três datas contam UMA história, e ela tem que fazer sentido", () 
       comecou: "2019-03-12",
       terminou: "2019-03-12",
       abandonou: null,
+      precisaoComeco: "day",
+      precisaoFim: "day",
     });
   });
 
@@ -96,11 +100,91 @@ describe("as três datas contam UMA história, e ela tem que fazer sentido", () 
       comecou: "2019-03-12",
       terminou: null,
       abandonou: null,
+      precisaoComeco: "day",
+      precisaoFim: "day",
     });
   });
 
   it("uma leitura sem nenhuma data é válida: dá para não lembrar", () => {
-    expect(validarLeitura({})).toEqual({ comecou: null, terminou: null, abandonou: null });
+    expect(validarLeitura({})).toEqual({
+      comecou: null,
+      terminou: null,
+      abandonou: null,
+      precisaoComeco: "day",
+      precisaoFim: "day",
+    });
+  });
+});
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  O ANO BASTA, E ELE NÃO VIRA UM DIA INVENTADO.
+ *
+ *  "Quando você terminou?" quase sempre se responde com um número. O campo aceita o
+ *  ano, e o app registra que foi SÓ o ano: sem isso, "li em 2019" viraria "terminei
+ *  em 1º de janeiro de 2019", uma afirmação que o leitor nunca fez, e a estatística
+ *  da paciência passaria a contar uma espera que ninguém viveu.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("o ano basta, e ele se declara como ano", () => {
+  it("um ano vira o 1º de janeiro COM a precisão dizendo que é só o ano", () => {
+    expect(dataOuAno("2019")).toEqual({ valor: "2019-01-01", precisao: "year" });
+  });
+
+  it("uma data completa continua sendo dia", () => {
+    expect(dataOuAno("2019-03-14")).toEqual({ valor: "2019-03-14", precisao: "day" });
+  });
+
+  it("vazio não é ano nenhum", () => {
+    expect(dataOuAno("")).toEqual({ valor: null, precisao: "day" });
+    expect(dataOuAno(null)).toEqual({ valor: null, precisao: "day" });
+  });
+
+  it("ano no futuro é recusado, como a data no futuro é", () => {
+    const queVem = String(Number(hoje().slice(0, 4)) + 1);
+    expect(() => anoDeLeitura(queVem)).toThrow(DataInvalida);
+  });
+
+  it("ano antes de 1900 é recusado: quase sempre é dedo escorregado", () => {
+    expect(() => anoDeLeitura("1019")).toThrow(DataInvalida);
+  });
+
+  it("o que não é um ano não passa por ano", () => {
+    expect(() => anoDeLeitura("20x9")).toThrow(DataInvalida);
+    expect(() => anoDeLeitura("19")).toThrow(DataInvalida);
+  });
+
+  it("a leitura marcada só com o ano carrega a precisão até o fim", () => {
+    expect(validarLeitura({ terminou: "2019" })).toEqual({
+      comecou: null,
+      terminou: "2019-01-01",
+      abandonou: null,
+      precisaoComeco: "day",
+      precisaoFim: "year",
+    });
+  });
+
+  it("abandonar em um ano também é só o ano", () => {
+    const r = validarLeitura({ abandonou: "2021" });
+    expect(r.abandonou).toBe("2021-01-01");
+    expect(r.precisaoFim).toBe("year");
+  });
+
+  /**
+   * Começar em março de 2019 e "terminar em 2019" NÃO é uma contradição: a pessoa
+   * disse o ano, e o ano contém março. Comparar o dia contra o 1º de janeiro que a
+   * gente pousou diria que o fim veio antes do começo, e recusaria uma história
+   * perfeitamente possível.
+   */
+  it("começar em março e terminar 'em 2019' é aceito: o ano contém o mês", () => {
+    const r = validarLeitura({ comecou: "2019-03-14", terminou: "2019" });
+    expect(r.comecou).toBe("2019-03-14");
+    expect(r.terminou).toBe("2019-01-01");
+    expect(r.precisaoFim).toBe("year");
+  });
+
+  it("mas terminar num ano ANTERIOR ao começo continua sendo recusado", () => {
+    expect(() => validarLeitura({ comecou: "2019-03-14", terminou: "2018" })).toThrow(DataInvalida);
   });
 });
 

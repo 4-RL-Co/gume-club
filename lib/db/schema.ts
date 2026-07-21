@@ -334,6 +334,21 @@ export const readings = pgTable("readings", {
   startedOn: date("started_on"),
   finishedOn: date("finished_on"),
   abandonedOn: date("abandoned_on"),
+  /**
+   * A PRECISÃO das datas acima. 'day' ou 'year', e nada mais.
+   *
+   * Quem leu em 2019 e não lembra o dia marca só o ano: a data vira 2019-01-01 e a
+   * precisão vira 'year'. Sem esta coluna, o app não saberia a diferença entre "li em
+   * 2019" e "terminei em 1º de janeiro", e a estatística da paciência (quantos dias o
+   * livro esperou na estante) contaria um dia inventado. Com ela, a conta ignora o que
+   * é só ano em vez de mentir. Ver a migration 0051 e lib/datas.ts.
+   *
+   * Duas colunas porque as duas pontas são independentes: dá para saber o dia em que
+   * começou e só o ano em que terminou. O fim é um só (terminado OU abandonado), então
+   * `endedPrecision` cobre os dois.
+   */
+  startedPrecision: text("started_precision").notNull().default("day"),
+  endedPrecision: text("ended_precision").notNull().default("day"),
   visibility: visibility("visibility").notNull().default("public"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

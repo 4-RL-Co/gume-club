@@ -28,7 +28,6 @@ let vitima: { id: string };
 let amigoDaVitima: { id: string };
 let seguidorDaVitima: { id: string };
 let banido: { id: string };
-let convidado: { id: string };
 
 const criados: string[] = [];
 const marca = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
@@ -59,7 +58,6 @@ beforeAll(async () => {
     })
     .returning({ id: users.id });
   criados.push(c!.id);
-  convidado = { id: c!.id };
 
   await db.insert(follows).values([
     // a vítima segue o amigo, e o banido

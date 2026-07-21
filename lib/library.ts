@@ -2,7 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import type { Casamento } from "@/lib/import/tipos";
 import { assertOwner, type Viewer } from "@/lib/authz";
-import { dataDeLeitura, hoje as hojeNoCalendario } from "@/lib/datas";
+import { dataOuAno, hoje as hojeNoCalendario } from "@/lib/datas";
 import { limparNomeDeAutor } from "@/lib/autores";
 import { slugify, authorSlug } from "@/lib/slug";
 import type { Hit } from "@/lib/catalog";
@@ -399,7 +399,11 @@ export async function shelveAndRead(
   // A validação mora em lib/datas.ts, e ela levanta em data futura, em data anterior a
   // 1900 e em dia que não existe no calendário. Não dá para escrever aqui uma data que
   // não passe por ela.
-  const hoje = dataDeLeitura(quando) ?? hojeNoCalendario();
+  // `quando` chega como ANO ("2019") ou como DIA ("2019-03-14"), e o formato diz a
+  // precisão: quem não lembra o dia marca só o ano, e o app não inventa um. Ver
+  // lib/datas.ts e a migration 0051.
+  const { valor, precisao } = dataOuAno(quando);
+  const hoje = valor ?? hojeNoCalendario();
 
   return db.transaction(async (tx) => {
     await tx
@@ -426,24 +430,29 @@ export async function shelveAndRead(
 
     if (status === "reading" && !aberta) {
       await tx.execute(sql`
-        insert into readings (entry_id, started_on) values (${entry.id}::uuid, ${hoje}::date)`);
+        insert into readings (entry_id, started_on, started_precision)
+        values (${entry.id}::uuid, ${hoje}::date, ${precisao})`);
     } else if (status === "read") {
       if (aberta) {
         await tx.execute(sql`
-          update readings set finished_on = ${hoje}::date where id = ${aberta.id}::uuid`);
+          update readings
+             set finished_on = ${hoje}::date, ended_precision = ${precisao}
+           where id = ${aberta.id}::uuid`);
       } else {
         // Sem leitura aberta: só nasce uma nova se ainda não houver NENHUMA
         // terminada. É o que impede o duplo clique de virar duas leituras.
         await tx.execute(sql`
-          insert into readings (entry_id, finished_on)
-          select ${entry.id}::uuid, ${hoje}::date
+          insert into readings (entry_id, finished_on, ended_precision)
+          select ${entry.id}::uuid, ${hoje}::date, ${precisao}
            where not exists (
              select 1 from readings r
               where r.entry_id = ${entry.id}::uuid and r.finished_on is not null)`);
       }
     } else if (status === "did_not_finish" && aberta) {
       await tx.execute(sql`
-        update readings set abandoned_on = ${hoje}::date where id = ${aberta.id}::uuid`);
+        update readings
+           set abandoned_on = ${hoje}::date, ended_precision = ${precisao}
+         where id = ${aberta.id}::uuid`);
     }
 
     return { entryId: entry.id, visibility: entry.visibility };

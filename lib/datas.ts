@@ -109,6 +109,78 @@ export function dataDeLeitura(bruto: unknown): string | null {
 }
 
 /**
+ * ════════════════════════════════════════════════════════════════════
+ *  O ANO BASTA, E NA MAIOR PARTE DAS VEZES ELE É TUDO QUE SE SABE.
+ *
+ *  "Quando você terminou?" quase sempre se responde com um número: 2019. Pedir dia,
+ *  mês e ano para isso obriga quem não lembra a INVENTAR um dia, e o banco passa a
+ *  guardar uma precisão que nunca existiu.
+ *
+ *  Então o campo aceita as duas formas, e o FORMATO diz qual é:
+ *
+ *      "2019"        → o ano, e só ele        → precisão 'year'
+ *      "2019-03-14"  → o dia exato            → precisão 'day'
+ *
+ *  Um ano vira 2019-01-01 no banco, porque a coluna é `date` e precisa de um dia.
+ *  Esse 1º de janeiro NÃO é uma afirmação sobre o calendário: é um lugar para pousar.
+ *  Quem sabe que ele não vale é a coluna de precisão (ver a migration 0051), e é ela
+ *  que impede a estatística da paciência de contar um dia que ninguém viveu.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export type Precisao = "day" | "year";
+
+/** Uma data de leitura com a precisão que o leitor de fato afirmou. */
+export type DataComPrecisao = { valor: string | null; precisao: Precisao };
+
+/**
+ * O ano de uma leitura, ou nada.
+ *
+ * Recusa o que `dataDeLeitura` recusa, pela mesma régua: ano no futuro (ninguém leu
+ * em 2030) e ano antes de 1900 (quase sempre dedo escorregado).
+ */
+export function anoDeLeitura(bruto: unknown): number | null {
+  if (bruto === null || bruto === undefined) return null;
+
+  const texto = String(bruto).trim();
+  if (!texto) return null;
+
+  if (!/^\d{4}$/.test(texto)) {
+    throw new DataInvalida("isso não parece um ano");
+  }
+
+  const ano = Number(texto);
+  if (ano > Number(hoje().slice(0, 4))) {
+    throw new DataInvalida("esse ano ainda não chegou");
+  }
+  if (ano < PRIMEIRO_ANO) {
+    throw new DataInvalida(`o ano parece errado (antes de ${PRIMEIRO_ANO})`);
+  }
+
+  return ano;
+}
+
+/**
+ * Uma data de leitura escrita como ANO ou como DIA, e a precisão que veio junto.
+ *
+ * É o que a tela manda: quem aceitou o padrão manda "2019"; quem abriu "quero pôr o
+ * dia" manda "2019-03-14". Nada além disso precisa viajar, porque o formato já conta.
+ */
+export function dataOuAno(bruto: unknown): DataComPrecisao {
+  if (bruto === null || bruto === undefined) return { valor: null, precisao: "day" };
+
+  const texto = String(bruto).trim();
+  if (!texto) return { valor: null, precisao: "day" };
+
+  if (/^\d{4}$/.test(texto)) {
+    const ano = anoDeLeitura(texto);
+    // O 1º de janeiro é o lugar de pousar, e a precisão é quem diz que ele não vale.
+    return { valor: ano === null ? null : `${ano}-01-01`, precisao: "year" };
+  }
+
+  return { valor: dataDeLeitura(texto), precisao: "day" };
+}
+
+/**
  * As três datas de UMA leitura, conferidas juntas.
  *
  * Porque elas não são independentes: terminar antes de começar não é uma data errada,
@@ -122,6 +194,12 @@ export type Datas = {
   comecou: string | null;
   terminou: string | null;
   abandonou: string | null;
+  /**
+   * A precisão de cada ponta. O começo tem a sua; o fim é um só (terminado OU
+   * abandonado), então uma precisão cobre os dois. Ver a migration 0051.
+   */
+  precisaoComeco: Precisao;
+  precisaoFim: Precisao;
 };
 
 export function validarLeitura(bruto: {
@@ -129,19 +207,37 @@ export function validarLeitura(bruto: {
   terminou?: unknown;
   abandonou?: unknown;
 }): Datas {
+  // Cada campo pode chegar como ano ("2019") ou como dia ("2019-03-14"). O formato diz
+  // a precisão, e nada mais precisa viajar da tela até aqui.
+  const comeco = dataOuAno(bruto.comecou);
+  const term = dataOuAno(bruto.terminou);
+  const aband = dataOuAno(bruto.abandonou);
+
   const datas: Datas = {
-    comecou: dataDeLeitura(bruto.comecou),
-    terminou: dataDeLeitura(bruto.terminou),
-    abandonou: dataDeLeitura(bruto.abandonou),
+    comecou: comeco.valor,
+    terminou: term.valor,
+    abandonou: aband.valor,
+    precisaoComeco: comeco.precisao,
+    // O fim que existe é quem dita a precisão do fim. Sem fim nenhum, 'day' é o padrão
+    // inofensivo: não há data para ele qualificar.
+    precisaoFim: term.valor ? term.precisao : aband.valor ? aband.precisao : "day",
   };
 
   if (datas.terminou && datas.abandonou) {
     throw new DataInvalida("um livro é terminado ou abandonado, e não os dois");
   }
 
+  /**
+   * O fim não vem antes do começo. Com ano, a comparação é por ANO, e não por dia: quem
+   * começou em março de 2019 e marcou "terminei em 2019" não está se contradizendo, e
+   * comparar 2019-03-14 com o 1º de janeiro que pousamos diria que sim.
+   */
   const fim = datas.terminou ?? datas.abandonou;
-  if (datas.comecou && fim && fim < datas.comecou) {
-    throw new DataInvalida("o fim não pode vir antes do começo");
+  if (datas.comecou && fim) {
+    const porAno = datas.precisaoComeco === "year" || datas.precisaoFim === "year";
+    const a = porAno ? datas.comecou.slice(0, 4) : datas.comecou;
+    const b = porAno ? fim.slice(0, 4) : fim;
+    if (b < a) throw new DataInvalida("o fim não pode vir antes do começo");
   }
 
   return datas;
