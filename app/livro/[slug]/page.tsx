@@ -7,6 +7,7 @@ import { Gaveta } from "@/components/gaveta";
 import { Share } from "@/components/share";
 import { BookPanel } from "@/components/book-panel";
 import { Leituras } from "@/components/leituras";
+import { resumoDasLeituras } from "@/lib/leituras-view";
 import { getLeituras } from "@/lib/leituras";
 import { AuthorPanel } from "@/components/author-panel";
 import { Recommend } from "@/components/recommend";
@@ -355,10 +356,17 @@ export default async function BookPage({
                 todas={todasAsEstantes.map((e) => e.name)}
               />
 
-              {/* QUANDO você leu. As datas são do leitor, e não do relógio do
-                  servidor: o app carimbava a data de hoje e não soltava mais, e a
-                  página de estatísticas inteira é construída em cima delas. */}
-              <Leituras leituras={leituras} slug={slug} />
+              {/* QUANDO você leu, numa GAVETA. As datas são do leitor, e não do relógio
+                  do servidor. Mas corrigir uma data é coisa de uma vez na vida, e mais
+                  ainda depois que marcar "lido" passou a perguntar o ano ali mesmo:
+                  aberta o tempo todo, esta seção era manutenção no meio da leitura. Vale
+                  a regra escrita logo abaixo. O resumo já diz o ano, então quase nunca
+                  há motivo para abrir. */}
+              {leituras.length > 0 && (
+                <Gaveta titulo="quando você leu" resumo={resumoDasLeituras(leituras)}>
+                  <Leituras leituras={leituras} slug={slug} />
+                </Gaveta>
+              )}
             </>
           ) : (
             <section className="surface p-6">

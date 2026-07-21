@@ -2245,3 +2245,18 @@ Então entraram **duas colunas de precisão** (`started_precision`, `ended_preci
 **O formato diz a precisão, e nada mais viaja.** A tela manda `"2019"` ou `"2019-03-14"`; `dataOuAno()` (lib/datas.ts) lê o formato e devolve a data mais a precisão. Na volta, `getLeituras` devolve `"2019"` para quem marcou só o ano, e nunca `"2019-01-01"` — mostrar o 1º de janeiro seria o app dizendo ao leitor um dia que ele não disse. Sem terceiro estado para sincronizar, e a precisão faz o round-trip inteiro (provado contra o Postgres em lib/leituras.sql.test.ts).
 
 **Uma regra que precisou afrouxar, e está certo:** "o fim não vem antes do começo" agora compara por ANO quando qualquer das pontas é ano. Começar em março de 2019 e marcar "terminei em 2019" não é contradição — o ano contém o mês —, e comparar março contra o 1º de janeiro que pousamos recusaria uma história perfeitamente possível.
+
+---
+
+**2026-07-21: "Quando você leu" desce para uma gaveta, e a regra que decidiu isso já estava escrita na página.**
+
+O dono olhou a página do livro e disse que estava com coisa demais, apontando o campo "quando você leu". A resposta não precisou de opinião nova: a própria página do livro carrega, num comentário, a regra que resolve o caso. Fica **aberto** o que a pessoa faz toda vez (prateleira, nota, resenha, quem escreveu o livro); vai para **gaveta** o que ela faz uma vez na vida (a linhagem da cópia, o registro de correções, as quarenta edições).
+
+Corrigir a data de uma leitura é uma vez na vida — e passou a ser ainda mais raro no mesmo dia em que marcar "lido" começou a perguntar o ano ali mesmo. Aberta o tempo todo, a seção era um formulário de manutenção no meio de uma página de leitura. Ela agora é uma `Gaveta`, como as outras coisas dessa natureza.
+
+**O resumo é o que faz a gaveta valer.** A `Gaveta` exige um resumo pelo motivo que está escrito nela: sem ele, a pessoa precisa abrir para descobrir se valia a pena abrir. Aqui o resumo é a própria resposta que ela buscaria dentro — "terminei em 2019", "larguei em 2021", ou "2 leituras" para quem releu. Com isso a gaveta **informa fechada**, e só se abre para corrigir.
+
+Duas decisões pequenas que vieram junto:
+
+- **O resumo mora em `lib/leituras-view.ts`, e não dentro do componente.** É texto de tela, e o texto de tela deste projeto é varrido por lib/voice.test.ts (entrou na lista `PROSA_FORA_DAS_TELAS`). Um resumo que falasse como desenvolvedor quebraria o build, que é exatamente o serviço que a varredura presta. É o mesmo padrão de `shelf-view`, `badges-view` e `corrections-view`.
+- **O resumo fala sempre em ANO, mesmo quando o dia é conhecido**, porque ele é uma etiqueta e não a ficha. E um teste trava que ele nunca deixa vazar o 1º de janeiro que a gente pousa quando a pessoa marcou só o ano: aquele dia é um lugar de pousar, e mostrá-lo seria o app dizendo ao leitor um dia que ele nunca disse.

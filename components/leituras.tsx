@@ -39,28 +39,38 @@ export type Leitura = {
   abandonou: string | null;
 };
 
+/**
+ * ═══ ISTO MORA NUMA GAVETA, E A REGRA JÁ ESTAVA ESCRITA ═══
+ *
+ * A página do livro diz, nela mesma: fica ABERTO o que a pessoa faz toda vez
+ * (prateleira, nota, resenha), e vai para a gaveta o que ela faz uma vez na vida.
+ *
+ * Corrigir a data de uma leitura é uma vez na vida, e passou a ser ainda mais raro
+ * depois que marcar "lido" passou a perguntar o ano ali mesmo (components/quando.tsx).
+ * Aberta o tempo todo, esta seção era um formulário de manutenção no meio de uma
+ * página de leitura.
+ *
+ * Por isso este componente devolve só a LISTA: o título e a casca são da gaveta que o
+ * envolve, e duas molduras em volta da mesma coisa é o peso que fez esta página já ter
+ * tido doze cartões. O resumo da gaveta (lib/leituras-view.ts) já diz o ano, então
+ * quase nunca há motivo para abrir.
+ */
 export function Leituras({ leituras, slug }: { leituras: Leitura[]; slug: string }) {
   if (leituras.length === 0) return null;
 
   return (
-    <section className="surface p-6 sm:p-7">
-      <h2 className="text-[11px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
-        quando você leu
-      </h2>
-
-      <ul className="mt-5 flex flex-col gap-5">
-        {leituras.map((l, i) => (
-          <Uma
-            key={l.id}
-            leitura={l}
-            slug={slug}
-            /* Só numera quando há mais de uma: "1ª leitura" num livro lido uma vez
-               é uma pergunta que ninguém fez. */
-            ordem={leituras.length > 1 ? i + 1 : null}
-          />
-        ))}
-      </ul>
-    </section>
+    <ul className="flex flex-col gap-5">
+      {leituras.map((l, i) => (
+        <Uma
+          key={l.id}
+          leitura={l}
+          slug={slug}
+          /* Só numera quando há mais de uma: "1ª leitura" num livro lido uma vez
+             é uma pergunta que ninguém fez. */
+          ordem={leituras.length > 1 ? i + 1 : null}
+        />
+      ))}
+    </ul>
   );
 }
 
