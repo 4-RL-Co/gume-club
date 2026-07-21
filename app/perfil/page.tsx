@@ -7,6 +7,7 @@ import { getInviter, inviteLink } from "@/lib/invite";
 import { getBadges } from "@/lib/badges";
 import { getConvidados } from "@/lib/conexoes";
 import { InviteLink } from "@/components/invite-link";
+import { ConectarGithub } from "@/components/conectar-github";
 import { Avatar } from "@/components/avatar";
 import { CodigoPorEmail } from "@/components/codigo-email";
 import { TrocarSenha } from "@/components/trocar-senha";
@@ -62,11 +63,27 @@ export default async function Perfil() {
 
   if (!me) return <main className="px-6 pt-16">Leitor não encontrado.</main>;
 
-  const [inviter, insignias, convidados] = await Promise.all([
+  const [inviter, insignias, convidados, githubLigado] = await Promise.all([
     getInviter(viewer.id),
     getBadges(viewer.id),
     getConvidados(viewer, viewer.id),
+    // O handle do GitHub já ligado, se houver. É ele que a insígnia de construtor cruza
+    // com quem tem PR mesclado. Ver lib/badges.ts.
+    db
+      .execute<{ handle: string | null }>(sql`
+        select a."accountId" as handle
+          from account a
+         where a."userId" = ${viewer.id}::uuid and a."providerId" = 'github'
+         limit 1`)
+      .then((r) => r[0]?.handle ?? null),
   ]);
+
+  /**
+   * A seção do GitHub só existe quando o servidor tem credencial para abrir a porta.
+   * Sem isso, ela seria um botão que não abre — o bug que tirou o GitHub do app da
+   * primeira vez. Ver lib/auth.ts.
+   */
+  const podeConectarGithub = Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET);
   // O selo de arauto vem da MESMA fonte que a insígnia, e não de uma segunda regra:
   // duas definições da mesma honra era como uma tela mostrava o selo e a outra não.
   const herald = insignias.includes("arauto");
@@ -113,6 +130,8 @@ export default async function Perfil() {
       <CodigoPorEmail ativo={Boolean(me.two_factor_enabled)} email={me.email} />
 
       <TrocarSenha />
+
+      {podeConectarGithub && <ConectarGithub ligado={githubLigado} />}
 
       <dl className="surface mt-6 flex flex-wrap gap-x-12 gap-y-8 p-6">
         <Stat n={me.livros} label="na estante" />

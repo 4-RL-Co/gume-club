@@ -2260,3 +2260,21 @@ Duas decisões pequenas que vieram junto:
 
 - **O resumo mora em `lib/leituras-view.ts`, e não dentro do componente.** É texto de tela, e o texto de tela deste projeto é varrido por lib/voice.test.ts (entrou na lista `PROSA_FORA_DAS_TELAS`). Um resumo que falasse como desenvolvedor quebraria o build, que é exatamente o serviço que a varredura presta. É o mesmo padrão de `shelf-view`, `badges-view` e `corrections-view`.
 - **O resumo fala sempre em ANO, mesmo quando o dia é conhecido**, porque ele é uma etiqueta e não a ficha. E um teste trava que ele nunca deixa vazar o 1º de janeiro que a gente pousa quando a pessoa marcou só o ano: aquele dia é um lugar de pousar, e mostrá-lo seria o app dizendo ao leitor um dia que ele nunca disse.
+
+---
+
+**2026-07-21: O GitHub volta, como vínculo, e o teste que o proibia fica mais apertado em vez de mais frouxo.**
+
+O dono pediu a insígnia de construtor, e ela não tinha como existir: se calcula cruzando a conta do GitHub ligada por OAuth com quem tem PR mesclado (nunca autodeclarada, por decisão registrada), e o app não tinha NENHUM jeito de ligar o GitHub — o provider foi removido do login e a tela de vínculo nunca nasceu. A insígnia era impossível até para quem escreveu o app inteiro.
+
+A saída considerada e recusada: conceder construtor à mão. Resolveria hoje e quebraria a regra "nunca autodeclarado" para sempre; o próximo que pedisse teria precedente. O dono escolheu construir o vínculo de verdade.
+
+**O que entrou:**
+- O provider do GitHub volta a `lib/auth.ts` com DUAS travas de cadastro (`disableSignUp` + `disableImplicitSignUp`, porque o Better Auth lê uma no sign-in e outra no callback): ele NUNCA cria conta, só se liga a uma que já existe. O motivo de ele ter saído do login continua válido e continua defendido: GitHub pode entregar e-mail não verificado, o vetor clássico de tomada de conta.
+- E ele SÓ é registrado quando as credenciais existem no ambiente. Sem elas, nem o provider nem a seção do perfil aparecem: uma porta que aparece e não abre é pior que porta nenhuma, que foi o bug que o tirou daqui da primeira vez.
+- "Conectar o GitHub" mora no PERFIL (components/conectar-github.tsx), para quem já está dentro. A tela de entrar continua sem GitHub, e o teste que garante isso não mudou.
+- O ícone é o `Code` genérico, não a marca do GitHub: o Google segue sendo a única marca de terceiro que o app desenha.
+
+**O teste estrutural virou, e virou para mais apertado.** `lib/auth.codigo.test.ts` proibia a palavra "github" em `socialProviders` — e o próprio comentário do teste previa este dia ("ele volta um dia como VÍNCULO... e a pessoa tem que explicar por quê"). A intenção nunca foi "a string não existe"; era "o GitHub não cria conta". O teste agora exige a coisa de verdade: se o GitHub estiver lá, tem que estar com as duas travas, senão a build cai. Antes bastava apagar a palavra; agora a garantia é sobre o comportamento.
+
+Falta do lado do dono: criar o OAuth app no GitHub (callback `<APP_URL>/api/auth/callback/github`) e pôr `GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET` no ambiente. Aí ele conecta pelo perfil e a insígnia aparece sozinha — para ele e para todo contribuidor futuro.

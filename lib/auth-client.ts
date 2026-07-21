@@ -25,4 +25,4 @@ export const authClient = createAuthClient({
   ],
 });
 
-export const { signIn, signUp, signOut, useSession, twoFactor } = authClient;
+export const { signIn, signUp, signOut, useSession, twoFactor, linkSocial } = authClient;
