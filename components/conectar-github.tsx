@@ -36,9 +36,11 @@ export function ConectarGithub({ ligado }: { ligado: string | null }) {
       </h2>
 
       {ligado ? (
+        // O que o vínculo guarda é o ID NUMÉRICO do GitHub (é por ele que a insígnia
+        // cruza com quem tem trabalho aceito), e número de conta não é nome: dizer
+        // "conectado como 132447326" pareceria um erro. Então a tela diz o estado, e só.
         <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
-          Conectado como{" "}
-          <span className="font-medium text-[var(--color-ink)]">{ligado}</span>. Se você tem
+          <span className="font-medium text-[var(--color-ink)]">Conectado.</span> Se você tem
           trabalho seu dentro do Gume, a insígnia de construtor aparece sozinha.
         </p>
       ) : (

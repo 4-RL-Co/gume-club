@@ -220,6 +220,22 @@ export const auth = betterAuth({
       enabled: true,
       trustedProviders: ["google"],
       requireLocalEmailVerified: true,
+      /**
+       * ═══ E-MAILS DIFERENTES NO VÍNCULO EXPLÍCITO, E POR QUE ISSO É SEGURO ═══
+       *
+       * Sem isto, "conectar o GitHub" falhava para quase todo mundo: o Better Auth
+       * recusa o vínculo quando o e-mail do provedor difere do e-mail da conta
+       * (email_doesn't_match), e o e-mail do GitHub de alguém quase nunca é o mesmo
+       * do Gume. A insígnia de construtor morreria na porta.
+       *
+       * A chave só afrouxa o vínculo EXPLÍCITO: a pessoa está LOGADA e clicou
+       * "conectar" (linkSocial, e o callback desse fluxo). Quem tem a sessão já é
+       * dono da conta; exigir que os e-mails coincidam ali não protege ninguém, só
+       * impede o vínculo honesto. A defesa contra roubo de conta é OUTRA: o vínculo
+       * AUTOMÁTICO no login continua atrás de requireLocalEmailVerified e do
+       * trustedProviders, que esta chave não toca. Ver lib/auth.vinculo.test.ts.
+       */
+      allowDifferentEmails: true,
     },
   },
 
