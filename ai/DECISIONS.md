@@ -2298,3 +2298,17 @@ O dono pediu listas como as do Letterboxd (que ele ama): bonitas, ranqueadas, sa
 **E a procedência da recomendação apareceu na estante** (a fatia anterior desta leva): o rosto de quem indicou fica no canto da capa, visível também para quem visita, porque a recomendação já nasce pública no feed. Red team prova que o banido some da capa sem confiscar o livro de quem recebeu.
 
 **O carrossel dos "adorei" ganhou profundidade** (components/carrossel.tsx): cover-flow com perspectiva, reflexo das capas num balcão de vidro, movido pelo scroll nativo (o 3D é maquiagem por cima do scroll, então trackpad, teclado e dedo já funcionam). Sem biblioteca. `prefers-reduced-motion` devolve a fila reta: profundidade é tempero, não enjoo. Não briga com o design: a única cor continua vindo das capas, o efeito só lhes dá palco.
+
+---
+
+**2026-07-21: A rodada de dez retornos do dono, e a fronteira do ranking dita em voz alta.**
+
+O dono usou o app de verdade e voltou com dez pontos. Os que renderam decisão:
+
+- **O ranking de LIVRO é permitido; o de GENTE continua proibido.** Nasceu `/queridinhos`: os cem livros que a comunidade mais adorou, ranking automático refeito a cada visita, com pódio estilizado no top 3. A fronteira, escrita em lib/queridinhos.ts: estatística de curadoria ordena LIVROS pelo amor recebido (fala de gosto); placar ordenaria GENTE pelo esforço (fala de produção), e esse segue proibido. Só nota PÚBLICA entra: a nota privada de alguém não vira estatística nem anônima, nem agregada. Pela mesma régua, a página do livro diz "N pessoas adoraram este livro".
+- **O pódio se diz com tamanho e tinta, nunca com metal.** Top 3 das listas numeradas e dos queridinhos: número grande na serifa da voz, tinta cheia. Ouro/prata/bronze continuam proibidos pelo design (todo mundo lê troféu); tamanho diz "primeiro" sem dizer "prêmio".
+- **As tags de uma estante são DERIVADAS, nunca digitadas**: os gêneros que mais aparecem nos próprios livros. Campo de tag livre é máquina de duplicata (o nome de estante já ensinou isso); a curadoria se descreve pelo que carrega.
+- **O perfil deixou de ser um pergaminho**: lidos/esperando/largados moravam em containers empilhados e viraram UMA parede com recortes em pílula (abre nos lidos). "Lendo agora" continua tira própria: é o presente, e o presente merece a primeira dobra.
+- **Indicar subiu do porão**: a gaveta de recomendar estava no fim da página do livro e o próprio dono não a achava. Um gesto que ninguém encontra não existe. Subiu para junto das ações de toda hora.
+- **O carrossel aprendeu com o uso real**: foco a 28% da esquerda (o foco no centro exigia meia tela vazia), SEM scroll-snap (o snap obrigatório segurava a rolagem vertical da página, um pedágio), e o reflexo mora numa janela baixa com overflow escondido (o reflexo inteiro no fluxo dobrava a altura da seção). A aura da capa virou máscara RADIAL: gradiente reto morre numa linha visível e vira bloco; a elipse morre em toda direção, névoa e não faixa.
+- **A estante inventada é um espaço de alguém**: aura da primeira capa, "montada por" com rosto, tags derivadas, descrição e o guardar no cabeçalho.

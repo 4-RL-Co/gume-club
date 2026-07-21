@@ -152,6 +152,21 @@ export async function Explore({ viewer }: { viewer: Viewer }) {
             </section>
           )}
 
+          {/* ── A CURADORIA DA CASA: a porta para os queridinhos. Um convite, e não
+              uma vitrine inteira: a lista mora na página dela. */}
+          <Link href="/queridinhos" className="surface surface-hover block p-6 sm:p-7">
+            <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+              a curadoria da comunidade
+            </span>
+            <span className="voice mt-2 block text-[20px] text-[var(--color-ink)]">
+              Os queridinhos do Gume
+            </span>
+            <span className="mt-1 block text-[13px] text-[var(--color-ink-soft)]">
+              Os cem livros que a comunidade mais adorou. A lista se refaz sozinha, a cada
+              veredito novo.
+            </span>
+          </Link>
+
           {/* ── 2. QUEM LÊ O QUE VOCÊ LÊ ─────────────────────────────── */}
           {afinidade.length > 0 && (
             <section className="surface p-7 sm:p-8">

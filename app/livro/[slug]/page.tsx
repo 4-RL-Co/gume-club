@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { sql } from "drizzle-orm";
+import { db } from "@/lib/db";
 import { ArrowLeft } from "lucide-react";
 import { Cover } from "@/components/cover";
 import { Prosa } from "@/components/prosa";
@@ -95,9 +97,26 @@ export default async function BookPage({
   // A cópia de papel saiu daqui: "de onde veio esse livro" mora numa gaveta dentro do
   // painel, e ele lê a nota direto de `book.mine`. Doar, trocar e emprestar foram
   // removidos do app (migration 0046).
-  const [correcoes, bibliotecario] = await Promise.all([
+  const [correcoes, bibliotecario, adoraram] = await Promise.all([
     getCorrecoes([book.workId, ...book.editions.map((e) => e.id)]),
     souBibliotecario(viewer),
+    /**
+     * QUANTAS PESSOAS ADORARAM este livro. Uma contagem sobre um LIVRO, e não sobre
+     * gente: é a comunidade dizendo o que ela ama, que é curadoria (fala de gosto), e
+     * não placar (falaria de esforço). Só notas PÚBLICAS entram: a nota privada de
+     * alguém não vira estatística de ninguém, nem anônima. Ver /queridinhos.
+     */
+    db
+      .execute<{ n: number }>(sql`
+        select count(*)::int as n
+          from ratings r
+          join users u on u.id = r.user_id
+         where r.work_id = ${book.workId}::uuid
+           and r.value = 5
+           and r.visibility = 'public'
+           and u.deleted_at is null
+           and u.banned_at is null`)
+      .then((r) => r[0]?.n ?? 0),
   ]);
 
   /**
@@ -306,6 +325,15 @@ export default async function BookPage({
               <Fact label="páginas" value={edition?.pageCount ?? null} />
               <Fact label="ISBN" value={edition?.isbn13 ?? null} />
             </dl>
+
+            {/* A comunidade, em uma linha baixa: quantas pessoas ADORARAM. Só aparece
+                quando alguém adorou, porque "0 pessoas adoraram" é uma lápide. */}
+            {adoraram > 0 && (
+              <p className="mt-6 border-t border-[var(--color-rule)] pt-4 text-[13px] text-[var(--color-ink-soft)]">
+                <span className="tabular font-medium text-[var(--color-ink)]">{adoraram}</span>{" "}
+                {adoraram === 1 ? "pessoa adorou este livro" : "pessoas adoraram este livro"}
+              </p>
+            )}
           </section>
 
           {recommender && (
@@ -376,6 +404,17 @@ export default async function BookPage({
                   <Leituras leituras={leituras} slug={slug} />
                 </Gaveta>
               )}
+
+              {/* INDICAR MORA AQUI EM CIMA, junto das ações de toda hora. Ele vivia
+                  lá embaixo, no porão das gavetas, e o dono não o achava: pôr um livro
+                  na mão de alguém é o gesto mais social do app, e um gesto que ninguém
+                  encontra não existe. Continua gaveta (abre num toque), mas na
+                  prateleira de cima. */}
+              {friends.length > 0 && (
+                <Gaveta titulo="indicar este livro" resumo="para alguém que você segue">
+                  <Recommend workId={book.workId} slug={slug} friends={friends} />
+                </Gaveta>
+              )}
             </>
           ) : (
             <section className="surface p-6">
@@ -395,12 +434,6 @@ export default async function BookPage({
               e quem escreveu o livro. O que ela faz uma vez na vida — a linhagem da
               cópia, o registro de correções, a lista das quarenta edições — abre com um
               toque, e diz o que tem dentro antes de abrir. Ver components/gaveta.tsx. */}
-
-          {actor && friends.length > 0 && (
-            <Gaveta titulo="passar adiante" resumo="indicar este livro para alguém que você segue">
-              <Recommend workId={book.workId} slug={slug} friends={friends} />
-            </Gaveta>
-          )}
 
           {book.author && (
             <AuthorPanel

@@ -7,7 +7,7 @@ import { getShelf, getShelfCounts } from "@/lib/shelf";
 import { getFriendRatings } from "@/lib/ratings";
 import { Share } from "@/components/share";
 import { Report } from "@/components/report";
-import { CoverWall } from "@/components/cover-wall";
+import { PerfilEstante } from "@/components/perfil-estante";
 import { Moldura, Barra } from "@/components/moldura";
 import { getEscadas } from "@/lib/escada";
 import { Empty } from "@/components/empty";
@@ -137,16 +137,10 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
   const primeiroNome = name.split(" ")[0];
   const opinions = await getFriendRatings(viewer, books.map((b) => b.workId));
 
-  // ═══ O PERFIL É AGRUPADO POR STATUS, E NÃO UMA PILHA ÚNICA ═══
-  //
-  // "Ter e ler são coisas diferentes, e aqui são contadas separadas" (/sobre). A parede
-  // antiga misturava tudo — lido, esperando, largado — numa grade só. Agora cada status
-  // tem seu lugar: os lidos são a parede principal (com o veredito de cada um), e o resto
-  // são tiras. Tudo derivado de `books` (filtro "tudo"), sem query nova.
+  // O QUE ELA ADOROU vira a vitrine em profundidade; o resto da estante mora numa
+  // parede só com recortes (components/perfil-estante.tsx), derivada de `books`
+  // (filtro "tudo") sem query nova.
   const adorou = books.filter((b) => b.rating === 5);
-  const esperando = books.filter((b) => b.status === "want_to_read");
-  const lidos = books.filter((b) => b.status === "read");
-  const largados = books.filter((b) => b.status === "did_not_finish");
 
   return (
     <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
@@ -306,8 +300,6 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
 
       {lendo.length > 0 && <Tira titulo="lendo agora" books={lendo} />}
 
-      {esperando.length > 0 && <Tira titulo="esperando pra ler" books={esperando} />}
-
       {/* ═══ AS ESTANTES QUE ELA MONTOU, COMO CARDS ═══
 
           Eram pílulas de texto com um número, e uma coleção montada com capricho merece
@@ -338,17 +330,18 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
         </section>
       )}
 
-      {/* A parede principal: os LIDOS, cada um com o que a pessoa achou. É o coração do
-          perfil, e agora ele só tem livro que aconteceu — não mais uma pilha misturada. */}
-      {lidos.length > 0 && (
-        <div className="mt-10">
-          <h2 className={EYEBROW}>lidos</h2>
-          <CoverWall books={lidos} opinions={opinions} />
-        </div>
-      )}
+      {/* ═══ A ESTANTE, EM UMA PAREDE SÓ ═══
 
-      {largados.length > 0 && (
-        <Tira titulo={mine ? "larguei no meio" : "largou no meio"} books={largados} />
+          "Lendo agora" continua sendo uma tira própria lá em cima (é o presente, e o
+          presente merece a primeira dobra). O resto (lidos, esperando, largados) morava
+          em containers empilhados, e o perfil virava um pergaminho. Agora é uma parede
+          com recortes em pílula, como a aba de estante: clica em "esperando" e a parede
+          troca. Abre nos lidos, que é o coração: livro que aconteceu, com veredito. */}
+      {books.length > 0 && (
+        <div className="mt-10">
+          <h2 className={EYEBROW}>a estante</h2>
+          <PerfilEstante books={books} opinions={opinions} />
+        </div>
       )}
 
       {books.length === 0 && (

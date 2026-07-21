@@ -74,12 +74,29 @@ export function BookCard({
 
   return (
     <li className="relative h-full" id={`livro-${book.workId}`}>
-      {/* O NÚMERO da estante numerada. Serifa da voz, discreto, fora do fluxo: ele diz
-          "3º desta curadoria" sem virar selo. Só quando quem montou escolheu numerar. */}
+      {/* O NÚMERO da estante numerada, na serifa da voz. O TOP 3 é pódio de CURADORIA
+          (livros escolhidos por uma pessoa, nunca gente ordenada), e o pódio se diz
+          com tamanho e tinta cheia, não com ouro e prata: metal é a paleta que o
+          design proíbe porque todo mundo lê troféu. O 1º é o maior, o 4º em diante
+          é uma nota de rodapé. */}
       {numero !== null && (
         <span
           aria-hidden
-          className="voice tabular pointer-events-none absolute left-4 top-3 z-10 text-[22px] leading-none text-[var(--color-ink-faint)]"
+          className={[
+            "voice pointer-events-none absolute z-10 leading-none",
+            numero === 1
+              ? "left-3 top-1.5 text-[44px] font-medium text-[var(--color-ink)]"
+              : numero === 2
+                ? "left-3.5 top-2 text-[34px] font-medium text-[var(--color-ink)]"
+                : numero === 3
+                  ? "left-3.5 top-2.5 text-[28px] font-medium text-[var(--color-ink)]"
+                  : "left-4 top-3 text-[20px] text-[var(--color-ink-faint)]",
+          ].join(" ")}
+          style={
+            numero <= 3
+              ? { textShadow: "0 1px 12px color-mix(in srgb, var(--color-canvas) 85%, transparent)" }
+              : undefined
+          }
         >
           {numero}
         </span>

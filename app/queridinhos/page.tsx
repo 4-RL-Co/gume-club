@@ -1,0 +1,106 @@
+import Link from "next/link";
+import { Cover } from "@/components/cover";
+import { ScreenHeader } from "@/components/screen-header";
+import { Empty } from "@/components/empty";
+import { getViewer } from "@/lib/viewer";
+import { getQueridinhos } from "@/lib/queridinhos";
+
+export const dynamic = "force-dynamic";
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  /queridinhos: o top 100 da comunidade, montado por ela mesma.
+ *
+ *  Uma lista curada pelo Gume no sentido exato: ninguém escolhe, os vereditos
+ *  escolhem. É ranking de LIVRO (curadoria, gosto), nunca de gente (placar,
+ *  esforço): ver lib/queridinhos.ts, onde a fronteira está escrita.
+ *
+ *  A página é pública como o catálogo é público: é a vitrine da livraria,
+ *  dizendo o que a casa mais ama.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export default async function Queridinhos() {
+  // Resolve quem olha por costume da casa (toda superfície resolve o ator), ainda
+  // que a lista seja a mesma para todo mundo: ela só carrega o que é público.
+  await getViewer();
+
+  const livros = await getQueridinhos(100);
+
+  return (
+    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+      <ScreenHeader
+        title="Os queridinhos do Gume"
+        meta={["os mais adorados", "a lista se refaz sozinha"]}
+      />
+
+      <p className="voice mt-4 max-w-2xl text-[16px] leading-relaxed text-[var(--color-ink-soft)]">
+        Os livros que a comunidade mais adorou, na ordem do amor recebido. Ninguém edita esta
+        lista: cada &quot;adorei&quot; público conta um voto, e ela se refaz a cada visita.
+      </p>
+
+      {livros.length === 0 ? (
+        <div className="mt-10">
+          <Empty>
+            Ainda não tem queridinho por aqui. Quando alguém adorar um livro, ele aparece.
+          </Empty>
+        </div>
+      ) : (
+        <ol className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
+          {livros.map((livro, i) => {
+            const n = i + 1;
+            return (
+              <li key={livro.slug} className="relative h-full">
+                {/* O PÓDIO: os três primeiros dizem a posição em voz alta, na serifa
+                    da voz e tinta cheia. Do 4º em diante o número é nota de rodapé.
+                    Pódio de LIVRO, escolhido pela comunidade: é curadoria, e a
+                    fronteira está em lib/queridinhos.ts. */}
+                <span
+                  aria-hidden
+                  className={[
+                    "voice pointer-events-none absolute z-10 leading-none",
+                    n === 1
+                      ? "left-3 top-1.5 text-[44px] font-medium text-[var(--color-ink)]"
+                      : n === 2
+                        ? "left-3.5 top-2 text-[34px] font-medium text-[var(--color-ink)]"
+                        : n === 3
+                          ? "left-3.5 top-2.5 text-[28px] font-medium text-[var(--color-ink)]"
+                          : "left-4 top-3 text-[18px] text-[var(--color-ink-faint)]",
+                  ].join(" ")}
+                  style={
+                    n <= 3
+                      ? { textShadow: "0 1px 12px color-mix(in srgb, var(--color-canvas) 85%, transparent)" }
+                      : undefined
+                  }
+                >
+                  {n}
+                </span>
+
+                <Link
+                  href={`/livro/${livro.slug}`}
+                  className="card group flex h-full flex-col items-center p-6 text-center sm:p-7"
+                >
+                  <span className="cover-lift block w-[58%]">
+                    <Cover title={livro.title} author={livro.author} src={livro.coverUrl} />
+                  </span>
+
+                  <span className="voice mt-5 line-clamp-2 text-[15px] leading-snug text-[var(--color-ink)]">
+                    {livro.title}
+                  </span>
+                  {livro.author && (
+                    <span className="mt-1 line-clamp-1 text-[12px] text-[var(--color-ink-faint)]">
+                      {livro.author}
+                    </span>
+                  )}
+
+                  <span className="tabular mt-auto pt-3 text-[12px] text-[var(--color-ink-soft)]">
+                    {livro.adoraram === 1 ? "1 pessoa adorou" : `${livro.adoraram} adoraram`}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </main>
+  );
+}

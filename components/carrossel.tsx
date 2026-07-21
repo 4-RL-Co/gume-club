@@ -53,19 +53,26 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
     setTemDireita(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
   }, []);
 
-  /** A maquiagem 3D de um quadro: distância do centro vira giro, fundo e escala. */
+  /**
+   * A maquiagem 3D de um quadro: distância do PONTO DE FOCO vira giro, fundo e escala.
+   *
+   * O foco fica a 28% da borda esquerda, e não no centro. Com o foco no centro, a
+   * primeira capa precisava de meia tela vazia à esquerda para chegar lá, e a seção
+   * abria com um buraco. Com o foco à esquerda, a fila começa quase encostada, a capa
+   * em destaque fica onde o olho ocidental começa a ler, e o resto da fila recua para
+   * a direita como uma prateleira em fuga.
+   */
   const pintar = useCallback(() => {
     const el = fila.current;
     if (!el) return;
-    const centro = el.scrollLeft + el.clientWidth / 2;
+    const foco = el.scrollLeft + el.clientWidth * 0.28;
 
     for (const li of Array.from(el.children) as HTMLElement[]) {
       const alvo = li.querySelector<HTMLElement>("[data-palco]");
       if (!alvo) continue;
 
       const meio = li.offsetLeft + li.offsetWidth / 2;
-      // -1 é meia tela à esquerda, 0 é o centro exato, +1 é meia tela à direita.
-      const d = Math.max(-1, Math.min(1, (meio - centro) / (el.clientWidth / 2)));
+      const d = Math.max(-1, Math.min(1, (meio - foco) / (el.clientWidth * 0.45)));
       const perto = 1 - Math.abs(d);
 
       alvo.style.transform =
@@ -118,24 +125,27 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
         <ul
           ref={fila}
           onScroll={aoRolar}
-          className="flex items-center gap-6 overflow-x-auto pb-1 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex items-start gap-6 overflow-x-auto pb-1 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={
             semMovimento
               ? undefined
               : {
-                  // O respiro nas pontas deixa a primeira e a última capa chegarem ao
-                  // centro do palco; o snap faz cada parada cair numa capa.
-                  paddingInline: "calc(50% - 4rem)",
-                  scrollSnapType: "x mandatory",
+                  /**
+                   * O respiro das pontas acompanha o PONTO DE FOCO (28% da esquerda):
+                   * a fila começa quase encostada, sem meia tela vazia, e a última capa
+                   * ainda alcança o foco no fim da rolagem.
+                   *
+                   * SEM scroll-snap, de propósito: o snap obrigatório brigava com a
+                   * rolagem VERTICAL da página, que ficava presa no container. Rolar a
+                   * página não pode ter pedágio; o 3D funciona contínuo do mesmo jeito.
+                   */
+                  paddingInlineStart: "calc(28% - 4rem)",
+                  paddingInlineEnd: "58%",
                 }
           }
         >
           {books.map((b) => (
-            <li
-              key={b.workId}
-              className="w-28 shrink-0 sm:w-32"
-              style={semMovimento ? undefined : { scrollSnapAlign: "center" }}
-            >
+            <li key={b.workId} className="w-28 shrink-0 sm:w-32">
               <div
                 data-palco
                 style={semMovimento ? undefined : { transformStyle: "preserve-3d", willChange: "transform" }}
@@ -143,21 +153,23 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
                 <Link href={`/livro/${b.slug}`} className="block" title={b.title}>
                   <Cover title={b.title} author={b.author} src={b.coverUrl} />
 
-                  {/* O reflexo: a própria capa, de cabeça para baixo, sumindo. É o que
-                      transforma a fila num balcão de vidro, e não custa uma imagem a
-                      mais: é o mesmo desenho, mascarado. */}
+                  {/* O reflexo: a própria capa, de cabeça para baixo, morrendo em um
+                      dedo de altura. Ele mora numa janela BAIXA (h-12) com overflow
+                      escondido: a primeira versão deixava o reflexo inteiro no fluxo, o
+                      container dobrava de altura, e a seção virava um paredão. */}
                   {!semMovimento && (
-                    <span
-                      aria-hidden
-                      className="pointer-events-none mt-0.5 block"
-                      style={{
-                        transform: "scaleY(-1)",
-                        opacity: 0.22,
-                        maskImage: "linear-gradient(to top, rgba(0,0,0,0.9), transparent 55%)",
-                        WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,0.9), transparent 55%)",
-                      }}
-                    >
-                      <Cover title={b.title} author={b.author} src={b.coverUrl} />
+                    <span aria-hidden className="pointer-events-none block h-12 overflow-hidden">
+                      <span
+                        className="block"
+                        style={{
+                          transform: "scaleY(-1)",
+                          opacity: 0.2,
+                          maskImage: "linear-gradient(to top, rgba(0,0,0,0.85), transparent 80%)",
+                          WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,0.85), transparent 80%)",
+                        }}
+                      >
+                        <Cover title={b.title} author={b.author} src={b.coverUrl} />
+                      </span>
                     </span>
                   )}
                 </Link>
