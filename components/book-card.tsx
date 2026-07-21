@@ -30,6 +30,7 @@ export function BookCard({
   opinion,
   focused = false,
   de,
+  numero = null,
 }: {
   book: ShelfBook;
   opinion?: Opinion;
@@ -43,6 +44,12 @@ export function BookCard({
    * caía na estante inteira de novo, e perdia o recorte a cada livro que abria.
    */
   de?: string;
+  /**
+   * A POSIÇÃO numa estante NUMERADA (1º, 2º, 3º). Só existe quando quem montou a
+   * estante escolheu numerar: é a ordem de UMA curadoria, sobre LIVROS, e nunca um
+   * placar de gente. Nulo em todo outro contexto.
+   */
+  numero?: number | null;
 }) {
   const status = STATUS_LABEL[book.status] ?? book.status;
 
@@ -67,6 +74,16 @@ export function BookCard({
 
   return (
     <li className="relative h-full" id={`livro-${book.workId}`}>
+      {/* O NÚMERO da estante numerada. Serifa da voz, discreto, fora do fluxo: ele diz
+          "3º desta curadoria" sem virar selo. Só quando quem montou escolheu numerar. */}
+      {numero !== null && (
+        <span
+          aria-hidden
+          className="voice tabular pointer-events-none absolute left-4 top-3 z-10 text-[22px] leading-none text-[var(--color-ink-faint)]"
+        >
+          {numero}
+        </span>
+      )}
       {/* ════════════════════════════════════════════════════════════════
           ═══ QUEM TE DEU ESTE LIVRO, NO CANTO DA CAPA ═══
 

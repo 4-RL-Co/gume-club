@@ -11,6 +11,9 @@ import { ScreenHeader } from "@/components/screen-header";
 import { CoverWall } from "@/components/cover-wall";
 import { Empty } from "@/components/empty";
 import { ShelfSettings } from "@/components/shelf-settings";
+import { GuardarEstante } from "@/components/guardar-estante";
+import { OrganizarEstante } from "@/components/organizar-estante";
+import { jaGuardei } from "@/lib/listas";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +31,8 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
       id: collections.id,
       name: collections.name,
       slug: collections.slug,
+      description: collections.description,
+      ranked: collections.ranked,
       visibility: collections.visibility,
       userId: collections.userId,
       handle: sql<string>`(select u.handle from users u where u.id = ${collections.userId})`,
@@ -42,6 +47,7 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
   if (!shelf) notFound();
 
   const mine = viewer?.id === shelf.userId;
+  const guardada = !mine && viewer ? await jaGuardei(viewer, shelf.id) : false;
 
   const books = await db
     .select({
@@ -99,18 +105,48 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
               para quem recebesse, e um botão que promete o que não cumpre é pior
               que nenhum botão. */}
           {shelf.visibility !== "private" && <Share titulo={shelf.name} />}
+          {/* GUARDAR é gesto de visita: a sua estante já é sua. E ninguém conta
+              quantos guardaram, em tela nenhuma. Ver lib/listas.ts. */}
+          {!mine && viewer && (
+            <GuardarEstante slug={shelf.slug} collectionId={shelf.id} guardada={guardada} />
+          )}
           {mine && (
-            <ShelfSettings id={shelf.id} name={shelf.name} visibility={shelf.visibility} />
+            <ShelfSettings
+              id={shelf.id}
+              slug={shelf.slug}
+              name={shelf.name}
+              visibility={shelf.visibility}
+              description={shelf.description}
+              numerada={shelf.ranked}
+            />
           )}
         </span>
       </ScreenHeader>
+
+      {/* A descrição, embaixo do nome: o recorte desta curadoria, nas palavras de quem
+          montou. É o mesmo texto do card dela no perfil e no explorar. */}
+      {shelf.description && (
+        <p className="voice mt-4 max-w-2xl text-[16px] leading-relaxed text-[var(--color-ink-soft)]">
+          {shelf.description}
+        </p>
+      )}
+
+      {mine && books.length > 1 && (
+        <div className="mt-6">
+          <OrganizarEstante
+            slug={shelf.slug}
+            collectionId={shelf.id}
+            itens={books.map((b) => ({ workId: b.workId, title: b.title }))}
+          />
+        </div>
+      )}
 
       {books.length === 0 ? (
         <Empty>
           Estante vazia. Abra um livro e coloque ele aqui.
         </Empty>
       ) : (
-        <CoverWall books={books as ShelfBook[]} opinions={opinions} />
+        <CoverWall books={books as ShelfBook[]} opinions={opinions} numerada={shelf.ranked} />
       )}
     </main>
   );

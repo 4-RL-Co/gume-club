@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getEstantes, getAfinidade, getResenhas, getLendoAgora } from "@/lib/explore";
+import { getListasParaExplorar } from "@/lib/listas";
+import { ListaGrid } from "@/components/lista-card";
 import { getCoroasPorHandle } from "@/lib/escada";
 import { Moldura } from "@/components/moldura";
 import { Empty } from "@/components/empty";
@@ -27,8 +29,11 @@ import type { Viewer } from "@/lib/authz";
  * na mesa de alguém agora. Ver ai/DECISIONS.md, a entrada que tirou a praça.
  */
 export async function Explore({ viewer }: { viewer: Viewer }) {
-  const [estantes, afinidade, resenhas, lendo] = await Promise.all([
+  const [estantes, listas, afinidade, resenhas, lendo] = await Promise.all([
     getEstantes(viewer),
+    // As estantes MONTADAS, com nome e recorte. Sorteadas como tudo aqui: "as mais
+    // guardadas" seria um ranking de popularidade, e é a coisa que esta tela recusa.
+    getListasParaExplorar(viewer),
     getAfinidade(viewer),
     getResenhas(viewer),
     getLendoAgora(viewer),
@@ -52,7 +57,8 @@ export async function Explore({ viewer }: { viewer: Viewer }) {
   ]);
 
   const vazio =
-    estantes.length === 0 && afinidade.length === 0 && resenhas.length === 0 && lendo.length === 0;
+    estantes.length === 0 && listas.length === 0 && afinidade.length === 0 &&
+    resenhas.length === 0 && lendo.length === 0;
 
   return (
     <div className="mt-8">
@@ -129,6 +135,22 @@ export async function Explore({ viewer }: { viewer: Viewer }) {
               </ul>
             )}
           </section>
+
+          {/* ── ESTANTES MONTADAS À MÃO: a curadoria de alguém, com nome e recorte.
+              Sorteadas e rotacionando, como tudo nesta tela: destacar "as mais
+              guardadas" seria um ranking de popularidade com outro chapéu. */}
+          {listas.length > 0 && (
+            <section>
+              <Titulo>estantes montadas à mão</Titulo>
+              <p className="mt-4 max-w-lg text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
+                Coleções que alguém montou com as próprias mãos. Abra uma, e se ela for boa,
+                guarde: ela fica no seu perfil, com o nome de quem fez.
+              </p>
+              <div className="mt-6">
+                <ListaGrid listas={listas} />
+              </div>
+            </section>
+          )}
 
           {/* ── 2. QUEM LÊ O QUE VOCÊ LÊ ─────────────────────────────── */}
           {afinidade.length > 0 && (

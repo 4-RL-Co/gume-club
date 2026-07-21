@@ -2278,3 +2278,23 @@ A saída considerada e recusada: conceder construtor à mão. Resolveria hoje e 
 **O teste estrutural virou, e virou para mais apertado.** `lib/auth.codigo.test.ts` proibia a palavra "github" em `socialProviders` — e o próprio comentário do teste previa este dia ("ele volta um dia como VÍNCULO... e a pessoa tem que explicar por quê"). A intenção nunca foi "a string não existe"; era "o GitHub não cria conta". O teste agora exige a coisa de verdade: se o GitHub estiver lá, tem que estar com as duas travas, senão a build cai. Antes bastava apagar a palavra; agora a garantia é sobre o comportamento.
 
 Falta do lado do dono: criar o OAuth app no GitHub (callback `<APP_URL>/api/auth/callback/github`) e pôr `GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET` no ambiente. Aí ele conecta pelo perfil e a insígnia aparece sozinha — para ele e para todo contribuidor futuro.
+
+---
+
+**2026-07-21: A estante inventada vira curadoria inteira: cards com capas, ordem numerada, e o gesto de guardar. E o rosto de quem indicou aparece na capa.**
+
+O dono pediu listas como as do Letterboxd (que ele ama): bonitas, ranqueadas, salváveis, no perfil e no explorar. E pediu sem o site virar movido a curtida, com curadoria valendo. As quatro decisões, tomadas com ele:
+
+1. **Lista E estante inventada são a MESMA coisa.** `collections` já tinha nome, descrição e visibilidade, e `collection_items` tinha `position` que nenhuma tela usava. Um conceito, um nome: o repo já se queimou com dois nomes para a mesma coisa (elo/honra). O que faltava entrou nela, em vez de nascer uma segunda coleção.
+
+2. **Numerada é escolha POR estante** (`collections.ranked`, migration 0052). "Meus dez favoritos" tem 1º e 2º; "terror brasileiro" é um conjunto. Obrigar toda estante a ter números faria de toda coleção um pódio. Reordenar é por setas (components/organizar-estante.tsx), não arrasto: funciona no celular, sem biblioteca, e grava a cada toque.
+
+3. **Guardar existe, e NUNCA conta** (`collection_saves`). Guardar é endosso; endosso contado é curtida com outro nome, a linha que o README não cruza. A estante guardada aparece no perfil de quem guardou COM o crédito de quem montou (nome e rosto no card), e "quantas pessoas guardaram" não existe em tela nenhuma, nem para o dono. A trava é estrutural: um teste varre lib/listas.ts e quebra o build se alguma consulta contar collection_saves. O insert de guardar carrega a visibilidade DENTRO (guardar estante privada não insere nada), e uma estante que ficou privada depois some da tela de quem guardou, porque o filtro roda de novo a cada leitura.
+
+4. **No explorar, sorteio rotativo**, como as estantes de gente e pelo motivo já escrito lá: dar vez a todo mundo sem inventar critério de mérito. "As mais guardadas" seria ranking de popularidade com outro chapéu.
+
+**O card** (components/lista-card.tsx) é a cara do Letterboxd traduzida para a casa: leque de capas sobrepostas, nome em serifa, descrição em duas linhas, e quem fez com rosto. Dois links irmãos (card → estante, rodapé → pessoa), nunca aninhados. A descrição e a numeração se editam em "ajustar esta estante".
+
+**E a procedência da recomendação apareceu na estante** (a fatia anterior desta leva): o rosto de quem indicou fica no canto da capa, visível também para quem visita, porque a recomendação já nasce pública no feed. Red team prova que o banido some da capa sem confiscar o livro de quem recebeu.
+
+**O carrossel dos "adorei" ganhou profundidade** (components/carrossel.tsx): cover-flow com perspectiva, reflexo das capas num balcão de vidro, movido pelo scroll nativo (o 3D é maquiagem por cima do scroll, então trackpad, teclado e dedo já funcionam). Sem biblioteca. `prefers-reduced-motion` devolve a fila reta: profundidade é tempero, não enjoo. Não briga com o design: a única cor continua vindo das capas, o efeito só lhes dá palco.
