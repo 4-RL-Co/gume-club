@@ -39,7 +39,9 @@ export function ListaCardVis({ lista, mostrarDono = true }: { lista: Lista; most
         {/* O leque. As capas se sobrepõem da esquerda para a direita, a primeira por
             cima: é a primeira que define a cara da estante, como no cartaz de um
             cinema. Altura fixa para os cards baterem na grade. */}
-        <span className="flex h-32 items-stretch overflow-hidden rounded-[var(--radius-cover)]">
+        {/* .leque: no hover do card as capas se afastam um dedo, como quem folheia.
+            Ver globals.css. */}
+        <span className="leque flex h-32 items-stretch overflow-hidden rounded-[var(--radius-cover)]">
           {lista.capas.map((capa, i) => (
             <span
               key={i}

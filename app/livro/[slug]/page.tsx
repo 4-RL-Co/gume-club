@@ -173,7 +173,16 @@ export default async function BookPage({
   const capaEmprestada = Boolean(minha && !minha.coverUrl && cover?.coverUrl);
 
   return (
-    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+    <main className="relative mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+      {/* A AURA: a própria capa, estourada de desfoque, banhando o topo da página com a
+          paleta DESTE livro. Clima, e não conteúdo: o texto passa por cima com o
+          contraste de sempre. Ver .aura-capa em globals.css. */}
+      {cover?.coverUrl && (
+        <div className="aura-capa" aria-hidden>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={cover.coverUrl} alt="" loading="lazy" decoding="async" />
+        </div>
+      )}
       {volta && (
         <Link
           href={volta}
