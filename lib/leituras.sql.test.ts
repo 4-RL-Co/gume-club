@@ -198,3 +198,76 @@ describe("releitura: cada leitura tem as SUAS datas", () => {
     expect(entry!.n, "apagar a leitura apagou o livro da estante").toBe(1);
   });
 });
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  O ANO BASTA, E ELE SOBREVIVE À VOLTA DO BANCO.
+ *
+ *  Quem leu em 2019 e não lembra o dia marca só o ano. O banco guarda o 1º de
+ *  janeiro (a coluna é `date` e precisa de um dia) MAIS a precisão dizendo que
+ *  aquele dia é um lugar de pousar, e não uma afirmação.
+ *
+ *  A prova que importa é o ROUND-TRIP: se a precisão se perdesse na volta, a tela
+ *  mostraria "1º de janeiro" para quem só disse "2019", e o app estaria inventando
+ *  um dia — exatamente o que a coluna existe para impedir.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("marcar só o ano, e o app não inventa um dia", () => {
+  let soAno: string;
+
+  beforeAll(async () => {
+    const leitorAno = await criar("data-ano");
+    soAno = leitorAno.id;
+    // A tela manda "2019" quando a pessoa não abre "quero pôr o dia".
+    await shelveAndRead({ id: soAno }, obra, "read", "2019");
+  });
+
+  it("o banco guarda a precisão do ano, e não um dia qualquer", async () => {
+    const [linha] = await db.execute<{ finished_on: string; ended_precision: string }>(sql`
+      select to_char(r.finished_on, 'YYYY-MM-DD') as finished_on, r.ended_precision
+        from readings r
+        join library_entries le on le.id = r.entry_id
+       where le.user_id = ${soAno}::uuid and le.work_id = ${obra}::uuid`);
+
+    expect(linha!.finished_on).toBe("2019-01-01");
+    expect(linha!.ended_precision, "a precisão do ano não foi guardada").toBe("year");
+  });
+
+  it("na volta, a tela recebe '2019', e nunca '2019-01-01'", async () => {
+    const leituras = await getLeituras({ id: soAno }, soAno, obra);
+    expect(
+      leituras[0]!.terminou,
+      "o app devolveu um dia que o leitor nunca disse",
+    ).toBe("2019");
+  });
+
+  it("trocar para uma data completa volta a precisão para o dia", async () => {
+    const leituras = await getLeituras({ id: soAno }, soAno, obra);
+    await editarLeitura({ id: soAno }, leituras[0]!.id, { terminou: "2019-03-14" });
+
+    const depois = await getLeituras({ id: soAno }, soAno, obra);
+    expect(depois[0]!.terminou).toBe("2019-03-14");
+
+    const [linha] = await db.execute<{ ended_precision: string }>(sql`
+      select r.ended_precision from readings r
+        join library_entries le on le.id = r.entry_id
+       where le.user_id = ${soAno}::uuid and le.work_id = ${obra}::uuid`);
+    expect(linha!.ended_precision).toBe("day");
+  });
+
+  it("e voltar para só o ano volta a precisão para o ano", async () => {
+    const leituras = await getLeituras({ id: soAno }, soAno, obra);
+    await editarLeitura({ id: soAno }, leituras[0]!.id, { terminou: "2021" });
+
+    const depois = await getLeituras({ id: soAno }, soAno, obra);
+    expect(depois[0]!.terminou).toBe("2021");
+  });
+
+  it("um ano no futuro não entra, como a data no futuro não entra", async () => {
+    const leituras = await getLeituras({ id: soAno }, soAno, obra);
+    const queVem = String(new Date().getFullYear() + 1);
+    await expect(
+      editarLeitura({ id: soAno }, leituras[0]!.id, { terminou: queVem }),
+    ).rejects.toBeInstanceOf(DataInvalida);
+  });
+});

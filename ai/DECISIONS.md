@@ -2224,3 +2224,24 @@ Cinco pedidos do dono, e as decisões que saíram deles:
 **Insights.** Uma seção de frases que o dono leria pensando alto, geradas por aritmética com limiar (não é IA): ativação baixa, retenção que dói, o buraco mais pedido do catálogo, quanto falta para cada meta. Cada uma aponta uma coisa que talvez mereça ação.
 
 E o painel deixou de ser monocromático: é dashboard de dono, com cor (parcimoniosa), gráfico de área, e a exceção de voz continua cobrindo a tela e o resto do app segue protegido.
+
+---
+
+**2026-07-21: O ano basta. A data de leitura para de exigir um dia que ninguém lembra.**
+
+O campo de "quando você terminou/largou" pedia dia, mês e ano. Mas a pergunta quase sempre se responde com um número ("li em 2019"), e quem não lembrava o dia era obrigado a **inventar um**. O banco passava a guardar uma precisão que nunca existiu.
+
+Agora o campo **abre pedindo o ano**, já preenchido com o ano corrente, e quem lembra o dia abre "quero pôr o dia" e ganha o calendário. Vale nos dois lugares: no `Quando` (ao marcar lido/abandonado) e no editor de leituras.
+
+**A decisão dura foi como GUARDAR isso**, e ela não é óbvia:
+
+- Guardar "2019" como `2019-01-01` e mais nada faria o app perder a diferença entre **quem leu em 2019** e **quem terminou no dia 1º de janeiro**. A segunda é uma afirmação que o leitor nunca fez, e o app estaria inventando um dia, exatamente o que a entrada das datas de leitura existe para impedir.
+- Trocar a coluna para só o ano jogaria fora o dia e o mês que o importador traz do Goodreads e do StoryGraph, e o README promete importar **sem perdas**.
+
+Então entraram **duas colunas de precisão** (`started_precision`, `ended_precision`, migration 0051), com `check` no banco aceitando só `day` ou `year`. O ano vira `2019-01-01` mais a precisão dizendo que aquele 1º de janeiro é **um lugar de pousar, e não uma afirmação**. Duas colunas porque as pontas são independentes (dá para saber o dia em que começou e só o ano em que terminou); o fim é um só, garantido pelo check `readings_one_ending`.
+
+**A conta que isso salvou:** "a paciência" (lib/stats.ts) mede quantos dias um livro esperou na estante antes de ser lido, e é a **única** estatística que faz conta com dia. Com um 1º de janeiro inventado ela contaria uma espera de meses que ninguém viveu, e erraria **em silêncio**. Agora ela ignora as leituras marcadas só com o ano, em vez de mentir.
+
+**O formato diz a precisão, e nada mais viaja.** A tela manda `"2019"` ou `"2019-03-14"`; `dataOuAno()` (lib/datas.ts) lê o formato e devolve a data mais a precisão. Na volta, `getLeituras` devolve `"2019"` para quem marcou só o ano, e nunca `"2019-01-01"` — mostrar o 1º de janeiro seria o app dizendo ao leitor um dia que ele não disse. Sem terceiro estado para sincronizar, e a precisão faz o round-trip inteiro (provado contra o Postgres em lib/leituras.sql.test.ts).
+
+**Uma regra que precisou afrouxar, e está certo:** "o fim não vem antes do começo" agora compara por ANO quando qualquer das pontas é ano. Começar em março de 2019 e marcar "terminei em 2019" não é contradição — o ano contém o mês —, e comparar março contra o 1º de janeiro que pousamos recusaria uma história perfeitamente possível.

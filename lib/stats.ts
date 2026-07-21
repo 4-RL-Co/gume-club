@@ -326,6 +326,14 @@ export async function getStats(
    * A PACIÊNCIA. Quanto tempo um livro fica na estante antes de ser lido.
    * Não é cobrança: é autoconhecimento. Ninguém mais mede isso porque ninguém mais
    * guarda quando o livro entrou E quando ele foi terminado.
+   *
+   * ═══ QUEM MARCOU SÓ O ANO NÃO ENTRA NESTA CONTA ═══
+   *
+   * Esta é a ÚNICA estatística que faz conta com DIA, e é por isso que a precisão
+   * existe. Quem marcou "li em 2019" tem 1º de janeiro no banco, e esse dia é um lugar
+   * de pousar, não uma afirmação: usá-lo aqui inventaria uma espera de meses que
+   * ninguém viveu. Então a leitura marcada só com o ano fica de fora, e a conta
+   * continua dizendo a verdade sobre as que sobraram. Ver a migration 0051.
    */
   const [patience] = await db.execute<{ days: number | null }>(sql`
     select avg(r.finished_on - library_entries.added_at::date)::float as days
@@ -334,6 +342,7 @@ export async function getStats(
     where library_entries.user_id = ${ownerId}::uuid
       and ${visible}
       and r.finished_on is not null
+      and r.ended_precision = 'day'
       and r.finished_on >= library_entries.added_at::date
       ${year === null ? sql`` : sql`and extract(year from r.finished_on) = ${year}`}`);
 

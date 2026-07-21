@@ -25,8 +25,16 @@ import { hoje } from "@/lib/datas";
  *  memória da coleção existir ("do volume 1, em março de 2022, ao volume 41, em agosto
  *  de 2025"), e nada disso funciona com uma data inventada.
  *
- *  O padrão continua sendo HOJE, e quem aceita hoje não paga nada: aperta "guardar" e
- *  acabou. Quem leu em 2019 troca a data e o Gume acredita.
+ *  ═══ O ANO BASTA, E É O QUE ELE PEDE ═══
+ *
+ *  A pergunta "quando você terminou?" quase sempre se responde com um número: 2019.
+ *  Pedir dia, mês e ano obrigava quem não lembra a INVENTAR um dia, e o app passava a
+ *  guardar uma precisão que nunca existiu.
+ *
+ *  Então ele abre pedindo o ANO, já preenchido com o ano corrente: quem terminou este
+ *  ano aperta "guardar" e acabou. Quem lembra o dia exato abre "quero pôr o dia" e
+ *  ganha o calendário. O formato do que sai daqui ("2019" ou "2019-03-14") é o que diz
+ *  ao servidor qual foi a precisão. Ver lib/datas.ts.
  * ════════════════════════════════════════════════════════════════════
  */
 export function Quando({
@@ -41,36 +49,66 @@ export function Quando({
   onCancelar: () => void;
   pending: boolean;
 }) {
-  const [quando, setQuando] = useState(hoje());
+  const anoDeHoje = hoje().slice(0, 4);
+  const [ano, setAno] = useState(anoDeHoje);
+  const [dia, setDia] = useState(hoje());
+  const [comDia, setComDia] = useState(false);
 
-  const frase = status === "read" ? "Quando você terminou?" : "Quando você largou?";
+  const frase = status === "read" ? "Em que ano você terminou?" : "Em que ano você largou?";
 
   return (
     <div className="surface-2 mt-3 p-4">
-      <p className="text-[14px] text-[var(--color-ink)]">{frase}</p>
+      <p className="text-[14px] text-[var(--color-ink)]">
+        {comDia ? (status === "read" ? "Quando você terminou?" : "Quando você largou?") : frase}
+      </p>
 
       <p className="mt-1 text-[12px] text-[var(--color-ink-faint)]">
-        Já vem com a data de hoje. Se foi noutro dia, troque.
+        {comDia
+          ? "Se não lembrar o dia, o ano já serve."
+          : "O ano basta. Já vem com o de agora."}
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <input
-          type="date"
-          value={quando}
-          // Ninguém termina um livro amanhã. O servidor recusa de novo, e é lá que a
-          // regra mora de verdade (lib/datas.ts) — isto aqui só evita o vaivém.
-          max={hoje()}
-          onChange={(e) => setQuando(e.target.value)}
-          className="rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[14px] outline-none focus:border-[var(--color-ink)]"
-        />
+        {comDia ? (
+          <input
+            type="date"
+            value={dia}
+            // Ninguém termina um livro amanhã. O servidor recusa de novo, e é lá que a
+            // regra mora de verdade (lib/datas.ts) — isto aqui só evita o vaivém.
+            max={hoje()}
+            onChange={(e) => setDia(e.target.value)}
+            className="rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[14px] outline-none focus:border-[var(--color-ink)]"
+          />
+        ) : (
+          <input
+            type="number"
+            inputMode="numeric"
+            value={ano}
+            min={1900}
+            max={anoDeHoje}
+            step={1}
+            aria-label="ano"
+            onChange={(e) => setAno(e.target.value)}
+            className="w-28 rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[14px] outline-none focus:border-[var(--color-ink)]"
+          />
+        )}
 
         <button
           type="button"
           disabled={pending}
-          onClick={() => onConfirmar(quando)}
+          onClick={() => onConfirmar(comDia ? dia : ano)}
           className="rounded-[var(--radius-control)] bg-[var(--color-ink)] px-4 py-2 text-[13px] font-medium text-[var(--color-canvas)] disabled:opacity-40"
         >
           {pending ? "Guardando" : "Guardar"}
+        </button>
+
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => setComDia(!comDia)}
+          className="text-[12px] text-[var(--color-ink-faint)] underline underline-offset-4 hover:text-[var(--color-ink)]"
+        >
+          {comDia ? "só o ano" : "quero pôr o dia"}
         </button>
 
         <button

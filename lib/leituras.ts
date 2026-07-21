@@ -47,10 +47,18 @@ export async function getLeituras(
   const rows = await db.execute<{
     id: string; started_on: string | null; finished_on: string | null; abandoned_on: string | null;
   }>(sql`
+    -- O FORMATO DIZ A PRECISÃO, aqui e na volta. Quem marcou só o ano recebe "2019", e
+    -- não "2019-01-01": aquele 1º de janeiro é um lugar de pousar, não uma afirmação, e
+    -- mostrá-lo ao leitor seria o app inventando um dia que ele nunca disse. A tela lê o
+    -- formato para decidir como desenhar o campo, e devolve no mesmo formato, então a
+    -- precisão volta inteira sem nada além da data precisar viajar. Ver lib/datas.ts.
     select r.id,
-           to_char(r.started_on,   'YYYY-MM-DD') as started_on,
-           to_char(r.finished_on,  'YYYY-MM-DD') as finished_on,
-           to_char(r.abandoned_on, 'YYYY-MM-DD') as abandoned_on
+           case when r.started_precision = 'year' then to_char(r.started_on, 'YYYY')
+                else to_char(r.started_on, 'YYYY-MM-DD') end as started_on,
+           case when r.ended_precision = 'year' then to_char(r.finished_on, 'YYYY')
+                else to_char(r.finished_on, 'YYYY-MM-DD') end as finished_on,
+           case when r.ended_precision = 'year' then to_char(r.abandoned_on, 'YYYY')
+                else to_char(r.abandoned_on, 'YYYY-MM-DD') end as abandoned_on
       from readings r
       -- SEM APELIDO na library_entries, e isso não é estilo: visibleTo() monta o
       -- filtro a partir das COLUNAS do Drizzle, e elas se escrevem com o nome real da
@@ -118,13 +126,17 @@ export async function editarLeitura(
 ): Promise<void> {
   await assertDonoDaLeitura(viewer, readingId);
 
-  const { comecou, terminou, abandonou } = validarLeitura(datas);
+  const { comecou, terminou, abandonou, precisaoComeco, precisaoFim } = validarLeitura(datas);
 
+  // A precisão viaja junto com a data, sempre: uma sem a outra é uma data que o app não
+  // sabe mais como ler. Ver lib/datas.ts e a migration 0051.
   await db.execute(sql`
     update readings
-       set started_on   = ${comecou}::date,
-           finished_on  = ${terminou}::date,
-           abandoned_on = ${abandonou}::date
+       set started_on        = ${comecou}::date,
+           finished_on       = ${terminou}::date,
+           abandoned_on      = ${abandonou}::date,
+           started_precision = ${precisaoComeco},
+           ended_precision   = ${precisaoFim}
      where id = ${readingId}::uuid`);
 }
 
