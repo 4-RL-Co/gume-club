@@ -372,6 +372,13 @@
       "when": 1784700817005,
       "tag": "0052_a_estante_com_capricho",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1784700817006,
+      "tag": "0053_a_cara_da_estante",
+      "breakpoints": true
     }
   ]
 }

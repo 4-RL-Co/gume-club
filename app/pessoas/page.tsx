@@ -1,9 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getViewer, getUser } from "@/lib/viewer";
 import { ScreenHeader } from "@/components/screen-header";
 import { Empty } from "@/components/empty";
 import { FeedList } from "@/components/feed-list";
-import { Explore } from "@/components/explore";
 import { Recomendacoes } from "@/components/recomendacoes";
 import { AmigosLendo } from "@/components/amigos-lendo";
 import { Conexoes } from "@/components/conexoes";
@@ -15,19 +15,15 @@ import { inviteLink } from "@/lib/invite";
 export const dynamic = "force-dynamic";
 
 /**
- * PESSOAS. Três abas: Amigos, Explorar, Recomendações.
+ * AMIGOS. Duas abas: o feed de quem você segue, e as recomendações entre vocês.
  *
- * Eram três itens de barra lateral, e eram a mesma pergunta feita de três jeitos:
- * "o que a gente está fazendo com livros". Amigos é quem você já escolheu;
- * Explorar é como você escolhe; Recomendações é o que passou de mão em mão. Três
- * abas de uma tela, e não três destinos.
- *
- * A barra lateral responde ONDE ESTOU. Ela não responde "que recorte eu estou
- * olhando": isso é filtro, e filtro mora na tela que ele filtra.
+ * O EXPLORAR morou aqui como terceira aba por um tempo, e SAIU de volta para a
+ * barra (ver app/explorar/page.tsx e o ai/DECISIONS.md): ele cresceu até virar
+ * uma galeria, e galeria é destino. O que fica nesta tela é o que acontece ENTRE
+ * amigos: quem você já escolheu, e o que passou de mão em mão entre vocês.
  */
 const ABAS = [
   { key: "amigos", label: "Amigos" },
-  { key: "explorar", label: "Explorar" },
   { key: "recomendacoes", label: "Recomendações" },
 ] as const;
 
@@ -40,6 +36,10 @@ export default async function Pessoas({
 }) {
   const params = await searchParams;
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+
+  // O link antigo da aba de explorar continua vivo: link salvo que quebra é o app
+  // dizendo que o que a pessoa guardou não valia nada.
+  if (one(params.aba) === "explorar") redirect("/explorar");
 
   const aba: Aba = ABAS.find((a) => a.key === one(params.aba))?.key ?? "amigos";
   const viewer = await getViewer();
@@ -62,7 +62,7 @@ export default async function Pessoas({
   return (
     <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
       <ScreenHeader
-        title="Pessoas"
+        title="Amigos"
         meta={aba === "amigos" ? ["cronológico", "sem algoritmo"] : undefined}
       />
 
@@ -114,8 +114,6 @@ export default async function Pessoas({
           )}
           <FeedList viewer={viewer} cursor={one(params.antes) ?? null} />
         </>
-      ) : aba === "explorar" ? (
-        <Explore viewer={viewer} />
       ) : (
         <Recomendacoes viewerId={viewer.id} track={one(params.trilha)} />
       )}

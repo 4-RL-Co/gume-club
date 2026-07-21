@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 /**
  * A cover. When Open Library has no image we draw a typographic one instead of
  * a gray box: an empty slot on the wall is worse than an honest one.
@@ -31,6 +35,20 @@ const PAPER = "240 236 228";
 export function Cover({
   title, author, src,
 }: { title: string; author?: string | null; src?: string | null }) {
+  /**
+   * ═══ A IMAGEM QUE MORREU VIRA A CAPA TIPOGRÁFICA, e não um ícone quebrado ═══
+   *
+   * Uma URL de capa aponta para um servidor de terceiro (Open Library, Google), e
+   * servidor de terceiro some: a imagem voltava 404 e a estante mostrava o ícone
+   * quebrado do navegador com o texto alternativo vazando por cima do bloco de
+   * tinta. Pior que lombada em branco: lombada QUEBRADA.
+   *
+   * Com o erro capturado, a capa que morreu cai para a mesma capa tipográfica de
+   * quem nunca teve imagem, que é honesta e bonita. É o motivo de este componente
+   * ser client: o `onError` é do navegador, e só ele sabe que a imagem morreu.
+   */
+  const [morreu, setMorreu] = useState(false);
+
   // A 32-bit accumulation, reduced once at the end. Taking the modulo on every
   // character (the obvious version) collapses the distribution and lands half a
   // shelf on the same ink, which is what turns the wall brown.
@@ -38,7 +56,7 @@ export function Cover({
   for (const c of title) h = (Math.imul(h, 31) + c.charCodeAt(0)) | 0;
   const ink = INKS[Math.abs(h) % INKS.length];
 
-  if (src) {
+  if (src && !morreu) {
     // The ink block sits UNDER the jacket while it loads. A wall of forty covers
     // that flashes gray and then fills in reads as a page that is broken and then
     // recovers; a wall that starts as ink and resolves into jackets reads as a
@@ -54,6 +72,7 @@ export function Cover({
           alt={title}
           loading="lazy"
           decoding="async"
+          onError={() => setMorreu(true)}
           className="h-full w-full object-cover"
           style={{ borderRadius: "var(--radius-cover)" }}
         />

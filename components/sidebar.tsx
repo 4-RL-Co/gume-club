@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home, Library, Users, Search, LogIn, LogOut, Info, UserRound, HeartHandshake,
-  MessagesSquare, ArrowUpRight, ChevronUp, BarChart3,
+  MessagesSquare, ArrowUpRight, ChevronUp, BarChart3, Compass,
 } from "lucide-react";
 import { CONVERSA } from "@/lib/onde";
 import { GlassBar } from "@/components/glass-bar";
@@ -29,19 +29,27 @@ import { useSession, signOut } from "@/lib/auth-client";
  *   - tudo / lendo / lidos / esperando / abandonados → abas dentro de /estante
  *   - Estatísticas → aba dentro de /estante: é uma VISTA dos seus livros, e
  *     não um destino paralelo
- *   - Amigos + Explorar + Recomendações → /pessoas, com três abas
+ *   - Amigos + Recomendações → /pessoas, com duas abas (o Explorar voltou à barra
+ *     quando cresceu em galeria; ver a nota abaixo)
  *   - Buscar → campo aqui em cima, e ⌘K de qualquer tela. Busca é AÇÃO, e
  *     ação não é item de menu.
  *
- *  O que ficou: três destinos, as estantes que VOCÊ inventou (a única lista
+ *  O que ficou: quatro destinos, as estantes que VOCÊ inventou (a única lista
  *  daqui que você criou com as próprias mãos, e a única que você quer alcançar
  *  de qualquer tela), e a sua cara no rodapé. Ver ai/DECISIONS.md.
  * ════════════════════════════════════════════════════════════════════
  */
+/**
+ * AMIGOS e EXPLORAR são dois lugares, e a divisão é a frase que sempre esteve no
+ * código: amigos é quem você já escolheu; explorar é como você escolhe. O explorar
+ * saiu da barra uma vez (virou aba de /pessoas) e voltou quando cresceu em galeria:
+ * estantes montadas, queridinhos, curadores. Ver ai/DECISIONS.md.
+ */
 const LUGARES = [
   { href: "/", label: "Início", Icon: Home },
   { href: "/estante", label: "Estante", Icon: Library },
-  { href: "/pessoas", label: "Pessoas", Icon: Users },
+  { href: "/pessoas", label: "Amigos", Icon: Users },
+  { href: "/explorar", label: "Explorar", Icon: Compass },
 ];
 
 /**

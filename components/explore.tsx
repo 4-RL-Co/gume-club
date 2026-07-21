@@ -65,7 +65,9 @@ export async function Explore({ viewer }: { viewer: Viewer }) {
       {/* ── BUSCAR UMA PESSOA: fica no topo, e sempre, mesmo quando não há estante
           pública para descobrir. Achar quem você já conhece não depende de ter gente
           nova para conhecer. Ver components/busca-pessoas.tsx. */}
-      <BuscaPessoas />
+      {/* A busca de pessoas exige sessão (o servidor recusa anônimo): para quem não
+          entrou, a galeria continua inteira, só sem o campo. */}
+      {viewer && <BuscaPessoas />}
 
       {vazio ? (
         <div className="mt-10">

@@ -80,7 +80,9 @@ function cardSelect(viewer: Viewer) {
                    join works w on w.id = ci.work_id
                    left join authors a on a.id = w.author_id
                   where ci.collection_id = collections.id
-                  order by ci.position asc, ci.added_at asc
+                  -- A capa ESCOLHIDA lidera o leque; sem escolha, vale a ordem da estante.
+                  order by (ci.work_id = collections.cover_work_id) desc nulls last,
+                           ci.position asc, ci.added_at asc
                   limit ${CAPAS_NO_LEQUE}
                ) c), '[]'::json) as capas
       from collections
@@ -235,6 +237,36 @@ export async function numerarLista(
     .update(collections)
     .set({ ranked: numerada })
     .where(and(eq(collections.id, collectionId), eq(collections.userId, actor.id)));
+}
+
+/**
+ * A CARA da estante: qual livro DELA a representa no card e na aura. `null` volta ao
+ * padrão (o primeiro da ordem). O livro tem que estar NA estante: a cara de uma
+ * coleção é um dos livros dela, e não um pôster alheio.
+ */
+export async function escolherCapaDaLista(
+  actor: { id: string },
+  collectionId: string,
+  workId: string | null,
+): Promise<void> {
+  assertOwner(actor as Viewer, { userId: actor.id });
+
+  if (workId === null) {
+    await db.execute(sql`
+      update collections set cover_work_id = null
+       where id = ${collectionId}::uuid and user_id = ${actor.id}::uuid`);
+    return;
+  }
+
+  await db.execute(sql`
+    update collections
+       set cover_work_id = ${workId}::uuid
+     where id = ${collectionId}::uuid
+       and user_id = ${actor.id}::uuid
+       and exists (
+         select 1 from collection_items ci
+          where ci.collection_id = ${collectionId}::uuid
+            and ci.work_id = ${workId}::uuid)`);
 }
 
 /** A descrição: o que esta estante é, dito por quem montou. */

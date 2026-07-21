@@ -2312,3 +2312,17 @@ O dono usou o app de verdade e voltou com dez pontos. Os que renderam decisão:
 - **Indicar subiu do porão**: a gaveta de recomendar estava no fim da página do livro e o próprio dono não a achava. Um gesto que ninguém encontra não existe. Subiu para junto das ações de toda hora.
 - **O carrossel aprendeu com o uso real**: foco a 28% da esquerda (o foco no centro exigia meia tela vazia), SEM scroll-snap (o snap obrigatório segurava a rolagem vertical da página, um pedágio), e o reflexo mora numa janela baixa com overflow escondido (o reflexo inteiro no fluxo dobrava a altura da seção). A aura da capa virou máscara RADIAL: gradiente reto morre numa linha visível e vira bloco; a elipse morre em toda direção, névoa e não faixa.
 - **A estante inventada é um espaço de alguém**: aura da primeira capa, "montada por" com rosto, tags derivadas, descrição e o guardar no cabeçalho.
+
+---
+
+**2026-07-21: O Explorar volta à barra (reversão registrada), a capa da estante é um livro dela, e o foco do carrossel deixou de ser adivinhação.**
+
+Quatro retornos do dono, e uma reversão feita de olhos abertos:
+
+- **Amigos e Explorar viraram dois lugares na barra.** A decisão de 2026-07-14 tinha fundido Amigos + Explorar + Recomendações em /pessoas com três abas, e ela fazia sentido quando o Explorar era um recorte. Ele cresceu: estantes de gente, estantes montadas à mão, os queridinhos, afinidade, resenhas. Virou uma galeria de curadores, e galeria é destino, não aba. A divisão é a frase que sempre esteve no código: **amigos é quem você já escolheu; explorar é como você escolhe**. /pessoas ficou com duas abas (Amigos, Recomendações) e o título "Amigos"; /explorar é página própria, aberta inclusive para quem não entrou (tudo ali já é público por construção, e é a melhor vitrine para quem chega por link). O link antigo (?aba=explorar) redireciona. É também onde os queridinhos ficam visíveis: barra → Explorar → o card da curadoria da casa.
+
+- **A capa da estante é um livro DELA, escolhido por quem montou** (collections.cover_work_id, migration 0053). Nunca upload solto: uma imagem livre na vitrine do explorar seria a única superfície onde qualquer um põe qualquer coisa na tela de todo mundo sem passar por bibliotecário. A capa de catálogo já foi curada; apontar para ela é seguro. A escolhida lidera o leque do card e vira a aura da página; clicar de novo desfaz e volta ao primeiro da ordem.
+
+- **O foco do carrossel era tímido demais, e virou inconfundível**: escala de 0,78 a 1,12 (era 0,92 a 1,06), opacidade de 0,30 a 1,00 (era 0,55), e uma LEGENDA embaixo dizendo o título do livro aceso. Foco que precisa de adivinhação não é foco.
+
+- **A capa que morreu vira a capa tipográfica.** URLs de capa apontam para servidor de terceiro, e servidor de terceiro some: a imagem 404 mostrava o ícone quebrado do navegador com texto vazando. O Cover virou client component por UM motivo: o onError é do navegador, e só ele sabe que a imagem morreu. O fallback é a mesma capa desenhada de quem nunca teve imagem.

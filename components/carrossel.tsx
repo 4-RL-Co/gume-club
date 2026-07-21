@@ -44,6 +44,8 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
   const [temEsquerda, setTemEsquerda] = useState(false);
   const [temDireita, setTemDireita] = useState(true);
   const [semMovimento, setSemMovimento] = useState(false);
+  const [emFoco, setEmFoco] = useState(0);
+  const focoRef = useRef(0);
   const quadro = useRef<number>(0);
 
   const medir = useCallback(() => {
@@ -67,20 +69,41 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
     if (!el) return;
     const foco = el.scrollLeft + el.clientWidth * 0.28;
 
-    for (const li of Array.from(el.children) as HTMLElement[]) {
+    /**
+     * ═══ O FOCO TEM QUE SER INCONFUNDÍVEL ═══
+     *
+     * A primeira régua (escala 0,92 a 1,06 e opacidade a partir de 0,55) era tímida:
+     * com três capas quase do mesmo tamanho e quase do mesmo brilho, ninguém sabia
+     * qual estava em foco. Agora a diferença é gritada: a capa em foco fica em
+     * tamanho cheio e acesa; as vizinhas caem para 78% e escurecem até 30%. E a
+     * legenda embaixo diz o título, porque foco que precisa de adivinhação não é foco.
+     */
+    let melhor = 0;
+    let melhorPerto = -1;
+
+    (Array.from(el.children) as HTMLElement[]).forEach((li, i) => {
       const alvo = li.querySelector<HTMLElement>("[data-palco]");
-      if (!alvo) continue;
+      if (!alvo) return;
 
       const meio = li.offsetLeft + li.offsetWidth / 2;
       const d = Math.max(-1, Math.min(1, (meio - foco) / (el.clientWidth * 0.45)));
       const perto = 1 - Math.abs(d);
+      if (perto > melhorPerto) {
+        melhorPerto = perto;
+        melhor = i;
+      }
 
       alvo.style.transform =
         `perspective(900px) rotateY(${(-d * GIRO_MAX).toFixed(2)}deg) ` +
         `translateZ(${(-FUNDO_MAX * Math.abs(d)).toFixed(1)}px) ` +
-        `scale(${(0.92 + perto * 0.14).toFixed(3)})`;
-      alvo.style.opacity = String(0.55 + perto * 0.45);
+        `scale(${(0.78 + perto * 0.34).toFixed(3)})`;
+      alvo.style.opacity = String(0.3 + perto * 0.7);
       li.style.zIndex = String(Math.round(perto * 100));
+    });
+
+    if (focoRef.current !== melhor) {
+      focoRef.current = melhor;
+      setEmFoco(melhor);
     }
   }, []);
 
@@ -180,6 +203,15 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
 
         {temDireita && <Seta sentido={1} onClick={() => rolar(1)} />}
       </div>
+
+      {/* A LEGENDA DO FOCO: o título do livro aceso, dito por extenso. O 3D aponta,
+          a legenda confirma, e ninguém precisa adivinhar qual capa está na frente. */}
+      {!semMovimento && books[emFoco] && (
+        <p className="mt-3 min-h-[1.5rem] text-[14px] text-[var(--color-ink-soft)]" aria-live="polite">
+          <span className="voice text-[16px] text-[var(--color-ink)]">{books[emFoco].title}</span>
+          {books[emFoco].author && <span className="text-[var(--color-ink-faint)]"> · {books[emFoco].author}</span>}
+        </p>
+      )}
     </section>
   );
 }

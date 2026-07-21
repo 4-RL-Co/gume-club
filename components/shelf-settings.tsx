@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { LIMITS } from "@/lib/limits";
 import { renomearEstante, apagarEstante, visibilidadeEstante } from "@/app/livro/[slug]/curation-actions";
-import { descreverEstante, numerarEstante } from "@/app/estante/[slug]/actions";
+import { descreverEstante, numerarEstante, escolherCapaEstante } from "@/app/estante/[slug]/actions";
 import type { Visibility } from "@/lib/authz";
 
 /**
@@ -16,7 +16,7 @@ import type { Visibility } from "@/lib/authz";
  * toda coleção a ter números faria de toda coleção um pódio. Ver lib/listas.ts.
  */
 export function ShelfSettings({
-  id, slug, name, visibility, description = null, numerada = false,
+  id, slug, name, visibility, description = null, numerada = false, capaWorkId = null, capas = [],
 }: {
   id: string;
   slug: string;
@@ -24,11 +24,16 @@ export function ShelfSettings({
   visibility: string;
   description?: string | null;
   numerada?: boolean;
+  /** O livro que é a CARA da estante hoje, se houver escolha. */
+  capaWorkId?: string | null;
+  /** Os livros com capa desta estante, para escolher a cara dela. */
+  capas?: { workId: string; title: string; coverUrl: string }[];
 }) {
   const [open, setOpen] = useState(false);
   const [armed, setArmed] = useState(false);
   const [vis, setVis] = useState(visibility);
   const [comNumeros, setComNumeros] = useState(numerada);
+  const [capa, setCapa] = useState(capaWorkId);
   const [descrito, setDescrito] = useState(false);
   const [pending, start] = useTransition();
 
@@ -97,6 +102,46 @@ export function ShelfSettings({
           {descrito ? "guardado" : "guardar a descrição"}
         </button>
       </form>
+
+      {/* A CARA DA ESTANTE: qual capa a representa no card, no explorar e na aura.
+          A escolha é entre os livros DELA (referência ao catálogo, nunca upload solto):
+          a cara de uma coleção é um dos livros dela. Clicar de novo desfaz a escolha
+          e volta ao primeiro da ordem. */}
+      {capas.length > 1 && (
+        <div className="mt-4">
+          <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+            a capa da estante
+          </span>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {capas.map((c) => {
+              const escolhida = capa === c.workId;
+              return (
+                <button
+                  key={c.workId}
+                  type="button"
+                  disabled={pending}
+                  title={c.title}
+                  aria-pressed={escolhida}
+                  onClick={() => {
+                    const proxima = escolhida ? null : c.workId;
+                    setCapa(proxima);
+                    start(() => escolherCapaEstante(slug, id, proxima));
+                  }}
+                  className={[
+                    "w-10 overflow-hidden rounded-[var(--radius-cover)] transition-all disabled:opacity-40",
+                    escolhida
+                      ? "ring-2 ring-[var(--color-ink)] ring-offset-2 ring-offset-[var(--surface-1)]"
+                      : "opacity-70 hover:opacity-100",
+                  ].join(" ")}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={c.coverUrl} alt={c.title} className="aspect-2/3 w-full object-cover" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* NUMERADA: 1º, 2º, 3º. Uma escolha por estante, e não uma regra da casa. */}
       <label className="mt-4 flex cursor-pointer items-center gap-2.5 text-[13px] text-[var(--color-ink-soft)]">

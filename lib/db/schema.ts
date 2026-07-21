@@ -499,6 +499,12 @@ export const collections = pgTable("collections", {
    * estante a ter números faria de toda coleção um pódio. Ver a migration 0052.
    */
   ranked: boolean("ranked").notNull().default(false),
+  /**
+   * A CARA da estante: um livro DELA, escolhido por quem montou, por referência ao
+   * catálogo. Nunca upload solto: a capa de catálogo já foi curada, e apontar para
+   * ela não abre superfície de vandalismo na vitrine. Ver a migration 0053.
+   */
+  coverWorkId: uuid("cover_work_id").references(() => works.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex("collections_user_slug").on(t.userId, t.slug)]);
 

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getActor } from "@/lib/actor";
 import {
-  moverNaLista, numerarLista, descreverLista, guardarLista, esquecerLista,
+  moverNaLista, numerarLista, descreverLista, guardarLista, esquecerLista, escolherCapaDaLista,
 } from "@/lib/listas";
 
 /**
@@ -45,5 +45,11 @@ export async function guardarEstante(slug: string, collectionId: string) {
 export async function esquecerEstante(slug: string, collectionId: string) {
   const actor = await getActor();
   await esquecerLista(actor, collectionId);
+  revalidatePath(`/estante/${slug}`);
+}
+
+export async function escolherCapaEstante(slug: string, collectionId: string, workId: string | null) {
+  const actor = await getActor();
+  await escolherCapaDaLista(actor, collectionId, workId);
   revalidatePath(`/estante/${slug}`);
 }

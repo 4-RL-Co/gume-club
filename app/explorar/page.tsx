@@ -1,24 +1,35 @@
-import { redirect } from "next/navigation";
+import { getViewer } from "@/lib/viewer";
+import { ScreenHeader } from "@/components/screen-header";
+import { Explore } from "@/components/explore";
+
+export const dynamic = "force-dynamic";
 
 /**
- * Esta tela virou uma aba de /pessoas.
+ * ════════════════════════════════════════════════════════════════════
+ *  EXPLORAR, DE VOLTA COMO UM LUGAR. A galeria dos curadores.
  *
- * A rota antiga continua viva e redireciona: alguém pode ter salvo o link, e
- * link salvo que quebra é o app dizendo que o que a pessoa guardou não valia
- * nada. Ela some no dia em que ninguém mais chegar por aqui.
+ *  Esta rota já foi uma tela, virou aba de /pessoas, e voltou a ser tela, e a
+ *  reversão está registrada no ai/DECISIONS.md. O motivo de hoje: o explorar
+ *  CRESCEU. Estantes de gente, estantes montadas à mão, os queridinhos, quem lê
+ *  o que você lê, resenhas, o que está aberto agora. Isso deixou de ser um
+ *  recorte de "pessoas" e virou uma galeria, e galeria é destino, não aba.
+ *
+ *  A divisão que ficou: AMIGOS é quem você já escolheu (o feed, as conexões, as
+ *  recomendações entre vocês). EXPLORAR é como você escolhe. As duas frases
+ *  sempre estiveram no código; agora a navegação diz o mesmo.
+ *
+ *  Aberta também para quem não entrou: tudo aqui já é público por construção
+ *  (visibleTo com estranho no lugar do leitor), e a galeria é a melhor vitrine
+ *  que o app tem para quem chegou por um link.
+ * ════════════════════════════════════════════════════════════════════
  */
-export default async function Redirecionar({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const p = await searchParams;
-  const extra = new URLSearchParams({ aba: "explorar" });
+export default async function Explorar() {
+  const viewer = await getViewer();
 
-  for (const [k, v] of Object.entries(p)) {
-    const one = Array.isArray(v) ? v[0] : v;
-    if (one) extra.set(k, one);
-  }
-
-  redirect(`/pessoas?${extra}`);
+  return (
+    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+      <ScreenHeader title="Explorar" meta={["sorteado", "sem algoritmo"]} />
+      <Explore viewer={viewer} />
+    </main>
+  );
 }

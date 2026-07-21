@@ -35,6 +35,7 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
       slug: collections.slug,
       description: collections.description,
       ranked: collections.ranked,
+      coverWorkId: collections.coverWorkId,
       visibility: collections.visibility,
       userId: collections.userId,
       handle: sql<string>`(select u.handle from users u where u.id = ${collections.userId})`,
@@ -109,9 +110,11 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
     .slice(0, 3)
     .map(([g]) => g);
 
-  /** A capa da estante é a do primeiro livro: quem monta escolhe a ordem, e a ordem
-      escolhe a cara. Ela vira a aura do topo, como na página do livro. */
-  const capaDaEstante = books.find((b) => b.coverUrl)?.coverUrl ?? null;
+  /** A capa da estante: a ESCOLHIDA por quem montou, ou a do primeiro livro com capa.
+      Ela vira a aura do topo, como na página do livro. Ver a migration 0053. */
+  const capaDaEstante =
+    books.find((b) => b.workId === shelf.coverWorkId)?.coverUrl ??
+    books.find((b) => b.coverUrl)?.coverUrl ?? null;
 
   return (
     <main className="relative mx-auto max-w-6xl px-6 pb-32 sm:px-10">
@@ -147,6 +150,11 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
               visibility={shelf.visibility}
               description={shelf.description}
               numerada={shelf.ranked}
+              capaWorkId={shelf.coverWorkId}
+              capas={books
+                .filter((b) => b.coverUrl)
+                .slice(0, 12)
+                .map((b) => ({ workId: b.workId, title: b.title, coverUrl: b.coverUrl! }))}
             />
           )}
         </span>
