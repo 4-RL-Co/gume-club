@@ -34,23 +34,23 @@
     "drizzle-orm": "^0.45.2",
     "heic2any": "^0.0.4",
     "lucide-react": "^1.24.0",
-    "next": "^15.1.0",
+    "next": "^15.5.21",
     "pg": "^8.22.0",
     "postgres": "^3.4.5",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.0.0",
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^22.10.0",
     "@types/pg": "^8.20.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.17.0",
-    "eslint-config-next": "^15.1.0",
+    "eslint-config-next": "^15.5.21",
     "sharp": "^0.34.5",
-    "tailwindcss": "^4.0.0",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5.7.0",
     "vitest": "^3.2.7"
   }
