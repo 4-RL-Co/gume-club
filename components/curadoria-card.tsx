@@ -12,7 +12,7 @@ import { getQueridinhos } from "@/lib/queridinhos";
  * Só existe quando já existe queridinho: cartão de vitrine vazio é promessa quebrada.
  */
 export async function CuradoriaCard({ compacto = false }: { compacto?: boolean }) {
-  const queridinhos = await getQueridinhos(5);
+  const queridinhos = await getQueridinhos(8);
   if (queridinhos.length === 0) return null;
 
   return (
@@ -36,12 +36,21 @@ export async function CuradoriaCard({ compacto = false }: { compacto?: boolean }
         </span>
       )}
 
-      <span className={`flex items-end gap-3 ${compacto ? "mt-4" : "mt-6"}`}>
+      {/* A FAIXA de capas, contígua e cheia, como as listas em destaque do
+          Letterboxd: o card é a vitrine, e a vitrine se enche de livro. Cada capa
+          se sobrepõe um dedo na anterior; a 1ª (o queridinho-mor) fica por cima. */}
+      <span className={`flex items-stretch overflow-hidden rounded-[var(--radius-cover)] ${compacto ? "mt-4" : "mt-6"}`}>
         {queridinhos.map((q, i) => (
           <span
             key={q.slug}
-            className="cover-lift block shrink-0"
-            style={{ width: `${i === 0 ? 21 : 16 - i}%`, zIndex: 10 - i }}
+            className="relative block shrink-0 overflow-hidden"
+            style={{
+              width: `${(100 + (queridinhos.length - 1) * 2) / queridinhos.length}%`,
+              marginLeft: i === 0 ? 0 : "-2%",
+              zIndex: queridinhos.length - i,
+              borderRadius: "var(--radius-cover)",
+              boxShadow: "3px 0 10px rgba(0,0,0,0.35)",
+            }}
           >
             <Cover title={q.title} author={q.author} src={q.coverUrl} />
           </span>

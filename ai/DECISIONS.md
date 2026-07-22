@@ -2380,3 +2380,15 @@ Mais três da mesma rodada: a fila de ícones aparece SEMPRE (zero incluso), por
 - **Voltar ao topo**: o elevador aparece depois de duas telas de rolagem (antes disso é um botão para ir aonde a pessoa já está), em vidro, acima da barra do celular.
 
 - **E a operação mais capas entrou no repertório**: scripts/operacao-mais-capas.mjs lê a planilha de pesquisa do dono (H1, Clube de Literatura Clássica, Bravo, Jabuti e afins) e aplica no catálogo REUSANDO as funções do app (findOrCreateWork casa por ISBN e título sem duplicar e passa pelo portão de autores; enriquecer completa ficha com a desconfiança da casa). Para isso nasceu o scripts/alias/ (resolvedor de "@/" e de import sem extensão fora do Next). A CDN da H1 entrou nas origens de imagem aceitas: capa POR REFERÊNCIA, como a política manda. Rodar duas vezes não duplica nada.
+
+---
+
+**2026-07-21: O Explorar ganhou corredores, o card da casa se encheu de capas, e a operação mais capas fechou a primeira volta.**
+
+- **O Explorar virou seis vitrines com um menu de pílulas**: tudo, pessoas, coleções, autores, gêneros e editoras. As três últimas são CATÁLOGO puro (a vitrine da livraria, sem linha de leitor, então sem visibleTo por construção), com as obras sorteando como sempre. Gêneros e editoras são um mapa de rótulos com contagem de LIVRO; escolhido um, a vitrine de obras dele. Ver lib/explorar-catalogo.ts.
+
+- **O card da curadoria encheu**: a faixa de capas virou contígua e cheia (oito capas sobrepostas um dedo), como as listas em destaque do Letterboxd que o dono mandou de referência. O pódio decrescente anterior deixava um terço do card vazio.
+
+- **"Os nomes, pelo rosto" morreu**: o resumo das gavetas de conexões virou "abra para ver as pessoas". Resumo de gaveta diz o que acontece ao abrir, não poesia.
+
+- **A operação mais capas, primeira volta**: 405 linhas, 0 falhas, nenhuma duplicata criada (o catálogo já tinha as 405 obras, e o casamento provou seu valor), 290 fichas enriquecidas pela máquina, 27 da H1 com capa em alta por referência, e 94 sem ISBN nem capa mesmo depois da busca (lista para conferência à mão). O material bruto (imagens, rascunhos) saiu do disco; ficou o que é terminantemente útil: a planilha em seed/operacao-mais-capas.csv (dado de catálogo, reaplicável em produção) e os marks da 4/RL em public/logo/ (o README agora dá o crédito com a marca). E um teste de exportação foi CONSERTADO no processo: ele fatiava CSV com split ingênuo e quebrou quando a obra sorteada veio com vírgula no título; o CSV sempre esteve certo, e agora a conferência fatia com as mesmas regras de quem escreve.

@@ -81,6 +81,13 @@ As estatísticas dizem quem você é (a idade das obras que você lê, os paíse
 
 ## Como isso se paga
 
+<a href="https://github.com/4-RL-Co">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./public/logo/4rl-mark-dark.svg">
+    <img src="./public/logo/4rl-mark.svg" alt="4/RL Co." width="44" align="left">
+  </picture>
+</a>
+
 O `gume.club` é hospedado e pago pela [4/RL Co.](https://github.com/4-RL-Co). Um dia vai existir um jeito de apoiar o projeto, e ele vai ser opcional e **cosmético**: um selo no perfil, e nada além disso. Apoio não destrava função: quem paga e quem não paga usam exatamente o mesmo Gume. Isso está escrito aqui de propósito, porque é uma promessa.
 
 A licença é a garantia. Se a instância hospedada um dia deixar de honrar a lista acima, você pode pegar o código, pegar os seus dados e rodar por conta própria. A saída é o ponto: é ela que torna as promessas reais, em vez de só bonitas.

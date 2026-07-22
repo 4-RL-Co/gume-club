@@ -271,8 +271,34 @@ describe("a porta de saída", () => {
     expect(iPalavra).toBeGreaterThanOrEqual(0);
 
     // A obra com nota 5 tem que carregar o "5" E o "adorei".
+    //
+    // ═══ E A CONFERÊNCIA FATIA O CSV DE VERDADE ═══
+    //
+    // Isto era `l.split(",")[iNumero]`, e quebrou no dia em que a obra sorteada do
+    // catálogo veio com vírgula no título: o split ingênuo desloca as colunas, e o
+    // teste acusava o EXPORTADOR por um defeito do próprio teste. O CSV sempre esteve
+    // certo (o teste de ida e volta acima prova); quem não sabia ler aspas era esta
+    // linha. Agora ela fatia com as mesmas regras de quem escreve.
+    const fatiar = (l: string): string[] => {
+      const campos: string[] = [];
+      let atual = "";
+      let dentro = false;
+      for (let i = 0; i < l.length; i++) {
+        const c = l[i]!;
+        if (dentro) {
+          if (c === '"' && l[i + 1] === '"') { atual += '"'; i++; }
+          else if (c === '"') dentro = false;
+          else atual += c;
+        } else if (c === '"') dentro = true;
+        else if (c === ",") { campos.push(atual); atual = ""; }
+        else atual += c;
+      }
+      campos.push(atual);
+      return campos;
+    };
+
     expect(csv).toContain("adorei");
-    expect(csv.split("\r\n").some((l) => l.split(",")[iNumero] === "5")).toBe(true);
+    expect(csv.split("\r\n").some((l) => fatiar(l)[iNumero] === "5")).toBe(true);
   });
 
   /**

@@ -3,7 +3,7 @@
  * ════════════════════════════════════════════════════════════════════
  *  OPERAÇÃO MAIS CAPAS. A planilha de pesquisa vira catálogo.
  *
- *  Lê `operaçãomaiscapas/Gume - Capas e Livros/gume_livros_para_criar.csv`
+ *  Lê `seed/operacao-mais-capas.csv`
  *  (categoria, ordem, isbn, titulo, autor, editora, cover_url, origem_url) e:
  *
  *   - H1 EDITORA (completa: ISBN + capa exata): cria ou casa cada edição pelo
@@ -46,7 +46,9 @@ const { db } = await import("../lib/db/index.ts");
 const { sql } = await import("drizzle-orm");
 
 const SO_H1 = process.argv.includes("--so-h1");
-const CSV = "operaçãomaiscapas/Gume - Capas e Livros/gume_livros_para_criar.csv";
+// A planilha da pesquisa mora em seed/: ela é dado de catálogo, e o material
+// bruto da operação (imagens, rascunhos) não entra no repositório.
+const CSV = "seed/operacao-mais-capas.csv";
 
 /** Um parser de CSV pequeno e correto para aspas: vírgula dentro de aspas não separa. */
 function parseCsv(texto) {
@@ -161,7 +163,7 @@ const resumo = [
   `## Falhas`, ...relatorio.falhas.map((x) => `- ${x}`),
 ].join("\n");
 
-writeFileSync("operaçãomaiscapas/relatorio.md", resumo);
+writeFileSync("/tmp/operacao-mais-capas-relatorio.md", resumo);
 console.log(resumo.split("\n").slice(0, 8).join("\n"));
-console.log(`\nRelatório completo em operaçãomaiscapas/relatorio.md`);
+console.log(`\nRelatório completo em /tmp/operacao-mais-capas-relatorio.md`);
 process.exit(0);

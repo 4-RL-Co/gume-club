@@ -75,13 +75,13 @@ export function Conexoes({
 }) {
   return (
     <div className="mt-8 grid gap-4 sm:grid-cols-2 sm:items-start">
-      <Gaveta titulo="quem você segue" resumo="os nomes, pelo rosto">
+      <Gaveta titulo="quem você segue" resumo="abra para ver as pessoas">
         <Lista
           vazio="você ainda não segue ninguém. Procure alguém em Explorar."
           pessoas={seguindo}
         />
       </Gaveta>
-      <Gaveta titulo="quem segue você" resumo="os nomes, pelo rosto">
+      <Gaveta titulo="quem segue você" resumo="abra para ver as pessoas">
         <Lista
           vazio="ninguém ainda. Chame quem você conhece pelo seu link."
           pessoas={seguidores}
