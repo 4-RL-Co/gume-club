@@ -289,13 +289,37 @@ function Review({
    * para as outras pessoas. Editar é um clique, e é raro: a resenha é a coisa mais
    * demorada que alguém escreve aqui, e não é uma coisa que se ajusta toda hora.
    */
-  const [editando, setEditando] = useState(!(mine.review?.body ?? "").trim());
+  /**
+   * ═══ E A CAIXA NASCE FECHADA ═══
+   *
+   * Quem NÃO tem resenha via um campo de texto aberto ocupando meio painel, toda
+   * visita, em todo livro. A maioria das visitas a um livro não é para escrever: a
+   * caixa aberta era um formulário cobrando texto de quem só veio olhar. Agora ela
+   * nasce fechada, com um convite de uma linha; quem quer escrever clica, e a caixa
+   * abre. Quem JÁ escreveu continua vendo o texto como texto, na serifa.
+   */
+  const [editando, setEditando] = useState(false);
 
   const ROTULO: Record<Visibility, string> = {
     private: "só para você",
     followers: "para quem te segue",
     public: "pública",
   };
+
+  // Sem resenha e sem estar escrevendo: só o convite, em uma linha.
+  if (!editando && !(mine.review?.body ?? "").trim() && !texto.trim()) {
+    return (
+      <Section label="resenha">
+        <button
+          type="button"
+          onClick={() => setEditando(true)}
+          className="text-[14px] text-[var(--color-ink-soft)] underline decoration-[var(--color-rule)] underline-offset-4 transition-colors hover:text-[var(--color-ink)]"
+        >
+          escrever uma resenha
+        </button>
+      </Section>
+    );
+  }
 
   if (!editando) {
     return (

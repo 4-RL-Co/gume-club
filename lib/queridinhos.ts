@@ -30,6 +30,13 @@ export type Queridinho = {
   coverUrl: string | null;
   /** Quantas pessoas adoraram. Contagem sobre um LIVRO, nunca sobre gente. */
   adoraram: number;
+  /** Quantas leram (status lido, público). */
+  leram: number;
+  /** Gostaram OU adoraram (veredito 4 ou 5, público). */
+  gostaram: number;
+  /** Em quantas estantes ele mora: gente com o livro na própria estante (qualquer
+      status) ou numa estante montada, tudo público. */
+  estantes: number;
 };
 
 export async function getQueridinhos(limite = 100): Promise<Queridinho[]> {
@@ -40,7 +47,29 @@ export async function getQueridinhos(limite = 100): Promise<Queridinho[]> {
            (select e.cover_url from editions e
              where e.work_id = w.id and e.cover_url is not null
              order by e.created_at asc limit 1) as "coverUrl",
-           count(*)::int as adoraram
+           count(*)::int as adoraram,
+           -- Os números do card, como a referência do dono: leram, gostaram ou
+           -- adoraram, e em quantas estantes mora. Tudo público, tudo sobre o LIVRO.
+           (select count(*)::int from library_entries le
+              join users u2 on u2.id = le.user_id
+             where le.work_id = w.id and le.status = 'read' and le.visibility = 'public'
+               and u2.deleted_at is null and u2.banned_at is null) as leram,
+           (select count(*)::int from ratings r2
+              join users u3 on u3.id = r2.user_id
+             where r2.work_id = w.id and r2.value >= 4 and r2.visibility = 'public'
+               and u3.deleted_at is null and u3.banned_at is null) as gostaram,
+           (select count(distinct dono)::int from (
+              select le2.user_id as dono from library_entries le2
+                join users u4 on u4.id = le2.user_id
+               where le2.work_id = w.id and le2.visibility = 'public'
+                 and u4.deleted_at is null and u4.banned_at is null
+              union
+              select c.user_id from collection_items ci
+                join collections c on c.id = ci.collection_id
+                join users u5 on u5.id = c.user_id
+               where ci.work_id = w.id and c.visibility = 'public'
+                 and u5.deleted_at is null and u5.banned_at is null
+            ) donos) as estantes
       from ratings r
       join users u on u.id = r.user_id
       join works w on w.id = r.work_id
@@ -61,5 +90,8 @@ export async function getQueridinhos(limite = 100): Promise<Queridinho[]> {
     author: r.author,
     coverUrl: r.coverUrl,
     adoraram: r.adoraram,
+    leram: r.leram,
+    gostaram: r.gostaram,
+    estantes: r.estantes,
   }));
 }

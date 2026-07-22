@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { BookOpen, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { takeOffShelf, escolherEdicao } from "@/app/livro/[slug]/curation-actions";
 
 const ICON = { size: 16, strokeWidth: 1.25 } as const;
@@ -25,39 +25,23 @@ export type Tool = {
  * e ninguém sabia qual usar. Agora existe um lugar só para arrumar um livro, dentro da
  * gaveta "correções", e a capa é um campo como os outros. Ver components/correction.tsx.
  */
-export function BookTools(t: Tool) {
-  const [open, setOpen] = useState<"edicao" | null>(null);
-
+/**
+ * ═══ "QUAL EDIÇÃO É A MINHA" SAIU DAQUI ═══
+ *
+ * Havia a gaveta "edições" (a lista) e, noutro cartão, o seletor "qual edição é a
+ * minha". Duas moradas para o MESMO assunto: a pessoa abria a lista, via a dela
+ * marcada, e não entendia onde se trocava. Agora o seletor mora DENTRO da gaveta
+ * de edições (EscolherEdicao, usada pela página), e este cartão ficou com a única
+ * coisa que restou: tirar o livro da estante.
+ */
+export function BookTools(t: { workId: string; onShelf: boolean }) {
+  if (!t.onShelf) return null;
   return (
     <section className="surface p-6">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-        {t.onShelf && t.editions.length > 1 && (
-          <Toggle icon={<BookOpen {...ICON} />} on={open === "edicao"} onClick={() => setOpen(open === "edicao" ? null : "edicao")}>
-            qual edição é a minha
-          </Toggle>
-        )}
-        {t.onShelf && <Remove workId={t.workId} />}
+        <Remove workId={t.workId} />
       </div>
-
-      {open === "edicao" && <Edicao {...t} />}
     </section>
-  );
-}
-
-function Toggle({
-  icon, on, onClick, children,
-}: { icon: React.ReactNode; on: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={[
-        "flex items-center gap-2 text-[13px] transition-colors",
-        on ? "text-[var(--color-ink)]" : "text-[var(--color-ink-faint)] hover:text-[var(--color-ink)]",
-      ].join(" ")}
-    >
-      {icon}
-      {children}
-    </button>
   );
 }
 
@@ -102,7 +86,7 @@ function Remove({ workId }: { workId: string }) {
  * existed the app simply picked one for you. Page counts differ between editions
  * and so does the cover on your shelf, so guessing was never good enough.
  */
-function Edicao(t: Tool) {
+export function EscolherEdicao(t: Tool) {
   const [pending, start] = useTransition();
   const [mine, setMine] = useState(t.myEditionId);
 

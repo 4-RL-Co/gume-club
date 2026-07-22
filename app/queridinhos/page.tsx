@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Crown } from "lucide-react";
+import { Crown, BookOpenCheck, Bookmark, Heart } from "lucide-react";
 import { Cover } from "@/components/cover";
 import { Empty } from "@/components/empty";
 import { getViewer } from "@/lib/viewer";
@@ -110,8 +110,21 @@ export default async function Queridinhos() {
                     </span>
                   )}
 
-                  <span className="tabular mt-auto pt-3 text-[12px] text-[var(--color-ink-soft)]">
-                    {livro.adoraram === 1 ? "1 pessoa adorou" : `${livro.adoraram} adoraram`}
+                  {/* Os números do card, com as cores da fila da comunidade (exceção
+                      dirigida pelo dono: a cor mora no ícone, o número fica tinta). */}
+                  <span className="mt-auto flex items-center gap-3.5 pt-3 text-[12px] text-[var(--color-ink-soft)]">
+                    <span className="inline-flex items-center gap-1" title={`${livro.leram} leram`}>
+                      <BookOpenCheck size={13} strokeWidth={1.75} aria-hidden style={{ color: "#4da76a" }} />
+                      <span className="tabular">{livro.leram}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1" title={`${livro.gostaram} gostaram ou adoraram`}>
+                      <Heart size={13} strokeWidth={1.75} aria-hidden style={{ color: "#e8843c" }} />
+                      <span className="tabular">{livro.gostaram}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1" title={`em ${livro.estantes} ${livro.estantes === 1 ? "estante" : "estantes"}`}>
+                      <Bookmark size={13} strokeWidth={1.75} aria-hidden style={{ color: "#4a9dc9" }} />
+                      <span className="tabular">{livro.estantes}</span>
+                    </span>
                   </span>
                 </Link>
               </li>

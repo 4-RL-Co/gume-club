@@ -1,0 +1,18 @@
+COMO ENCHER A PASTA DE CAPAS (todas nomeadas por ISBN)
+
+O ambiente onde este material foi gerado NÃO tem internet livre nem deixa
+baixar em lote (o Chrome bloqueia). Por isso as capas saem de um script que
+você roda no Claude Code, que tem rede de verdade.
+
+1) Abra o Claude Code na pasta "Gume - Capas e Livros".
+2) Rode:
+       pip install requests
+       python3 baixar_capas.py
+3) O script lê gume_livros_para_criar.csv, e para CADA livro:
+     - se já tem ISBN + cover_url (caso da H1), baixa a capa direto;
+     - se falta, busca ISBN + capa no Google Books / Open Library;
+     - salva em  capas/<categoria>/<ISBN>.jpg  e grava o ISBN no CSV.
+4) No fim ele diz quantas capas entraram e quais não casaram (pra conferir na mão).
+
+Obs.: as capas da H1 (27) já vêm com a URL exata no CSV, então saem na hora.
+As das listas de clássicos dependem da busca; as que não casarem ficam logadas.

@@ -2348,3 +2348,19 @@ O design da casa era monocromático com a cor vindo só das capas, e o dono já 
 A fronteira registrada: **a cor mora no ÍCONE, nunca no texto nem no número.** O texto continua tinta, e a paleta é fixa e pequena (quatro tons, escolhidos para funcionar no claro e no escuro). Se um dia a cor escorrer do ícone para rótulo, fundo ou número, passou da fronteira.
 
 Mais três da mesma rodada: a fila de ícones aparece SEMPRE (zero incluso), porque uma fila que some e volta conforme os números parece bug; o carrossel ganhou o giro SATURADO (flanco esquerdo inteiro num ângulo, direito noutro, só o trono de frente, como o expositor da referência que o dono mandou), sem translateY, com a escala desenhando o arco sozinha; e a lista da casa se chama "Top 100: os queridinhos do Gume", com página editorial: aura do 1º colocado, coroa dourada e título grande na serifa.
+
+---
+
+**2026-07-21: "Estar na estante" é estar na estante, a luz que não pode ser serrada, e a página do livro emagrece.**
+
+- **"Em N estantes" conta GENTE, e qualquer status conta.** A primeira versão contava só as estantes montadas; o dono corrigiu: lido, lendo, esperando e largado são todos "está na estante de alguém". A conta virou pessoas distintas com o livro na própria estante (qualquer status, público) ou numa estante montada pública. A mesma definição vale na ficha do livro e nos cards do Top 100, que ganharam a fila de ícones coloridos (leram, gostaram ou adoraram, estantes).
+
+- **A luz termina sozinha, nunca serrada.** A aura tinha a máscara ainda viva na borda da caixa, e o overflow serrava o brilho num fio reto: o "bloco" que o dono apontou. A elipse da máscara agora morre bem antes das bordas (fade completo a ~37% do centro): não existe borda para cortá-la. Luz que termina sozinha é névoa; luz serrada é caixa.
+
+- **A página do livro emagreceu quatro móveis, cada um para o lugar onde já era usado:**
+  1. A gaveta "edições" e o seletor "qual edição é a minha" eram duas moradas do mesmo assunto; viraram uma: com o livro na sua estante, a gaveta É o seletor. O cartão de ferramentas ficou só com "tirar da estante".
+  2. "Arrumar este livro" saiu do porão e virou um LÁPIS no canto do cartão de informações: erro de ficha se vê na ficha, e é nela que se conserta. O histórico continua público.
+  3. "Quando você leu" virou uma linha em itálico encostada no painel ("terminei em 2019 · ajustar"), com o editor abrindo ali mesmo. Já foi cartão, já foi gaveta; a resposta cabe em meia frase, e meia frase com moldura própria ocupava uma seção.
+  4. A caixa de resenha nasce FECHADA, com um convite de uma linha ("escrever uma resenha"). A maioria das visitas a um livro não é para escrever, e a caixa aberta era um formulário cobrando texto de quem só veio olhar. Quem já escreveu segue vendo o texto como texto.
+
+- **"De onde veio" já conta nas estatísticas** (o card "de onde vieram os seus livros" existia). O filtro por procedência na estante ficou em aberto de propósito: o campo é texto livre por decisão antiga (a procedência é história, não formulário), e filtrar texto livre exige escolher entre busca ou normalização. Vai ao dono como pergunta, não como surpresa.

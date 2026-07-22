@@ -664,16 +664,22 @@
   /* A máscara é RADIAL, e não uma faixa: um gradiente reto morria numa linha
      visível e a aura virava um bloco com fim. A elipse morre em toda direção ao
      mesmo tempo, sem borda em lugar nenhum: névoa, e não faixa. */
+  /* A elipse da máscara morre BEM ANTES das bordas da caixa (a 62% de uma elipse
+     de 60% da largura, o fade completa a ~37% do centro): a luz nunca alcança a
+     borda, então não existe borda para cortá-la. A primeira versão deixava a
+     máscara viva na beirada e o overflow serrava a luz num fio reto, que era
+     exatamente o "bloco" que o dono apontou. Luz que termina sozinha é névoa;
+     luz serrada é caixa. */
   .aura-capa {
     position: absolute;
     inset: -40px 0 auto 0;
-    height: 480px;
+    height: 520px;
     overflow: hidden;
     pointer-events: none;
     z-index: -1;
     opacity: 0.13;
-    mask-image: radial-gradient(ellipse 75% 85% at 50% 0%, black, transparent 72%);
-    -webkit-mask-image: radial-gradient(ellipse 75% 85% at 50% 0%, black, transparent 72%);
+    mask-image: radial-gradient(ellipse 60% 85% at 50% 0%, black, transparent 62%);
+    -webkit-mask-image: radial-gradient(ellipse 60% 85% at 50% 0%, black, transparent 62%);
   }
 
   .aura-capa img {

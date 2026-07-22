@@ -13,7 +13,9 @@ import { resumoDasLeituras } from "@/lib/leituras-view";
 import { getLeituras } from "@/lib/leituras";
 import { AuthorPanel } from "@/components/author-panel";
 import { Recommend } from "@/components/recommend";
-import { BookTools } from "@/components/book-tools";
+import { BookTools, EscolherEdicao } from "@/components/book-tools";
+import { Arrumar } from "@/components/arrumar";
+import { QuandoLeu } from "@/components/quando-leu";
 import { Correcao } from "@/components/correction";
 import { CorrectionsLog } from "@/components/corrections-log";
 import { getCorrecoes, souBibliotecario } from "@/lib/corrections";
@@ -127,12 +129,23 @@ export default async function BookPage({
               and le.status = 'read'
               and le.visibility = 'public'
               and u.deleted_at is null and u.banned_at is null) as leram,
-          (select count(distinct ci.collection_id)::int from collection_items ci
-             join collections c on c.id = ci.collection_id
-             join users u on u.id = c.user_id
-            where ci.work_id = ${book.workId}::uuid
-              and c.visibility = 'public'
-              and u.deleted_at is null and u.banned_at is null) as estantes,
+          -- EM QUANTAS ESTANTES: gente com o livro na PRÓPRIA estante (qualquer
+          -- status: lido, lendo, esperando, largado) mais quem o pôs numa estante
+          -- montada. Estar na estante é estar na estante, e o status é detalhe.
+          (select count(distinct dono)::int from (
+             select le.user_id as dono from library_entries le
+               join users u on u.id = le.user_id
+              where le.work_id = ${book.workId}::uuid
+                and le.visibility = 'public'
+                and u.deleted_at is null and u.banned_at is null
+             union
+             select c.user_id from collection_items ci
+               join collections c on c.id = ci.collection_id
+               join users u on u.id = c.user_id
+              where ci.work_id = ${book.workId}::uuid
+                and c.visibility = 'public'
+                and u.deleted_at is null and u.banned_at is null
+           ) donos) as estantes,
           (select count(*)::int from ratings r
              join users u on u.id = r.user_id
             where r.work_id = ${book.workId}::uuid
@@ -301,7 +314,7 @@ export default async function BookPage({
 
         {/* ── right: a stack of cards, one subject each ─────────────── */}
         <div className="flex flex-col gap-5 sm:col-span-8 lg:col-span-9">
-          <section className="surface p-6 sm:p-8">
+          <section className="surface relative p-6 sm:p-8">
             <h1 className="voice text-[34px] leading-[1.05] tracking-[-0.015em] sm:text-[44px]">
               {book.title}
             </h1>
@@ -393,6 +406,43 @@ export default async function BookPage({
                 </Link>
               )}
             </p>
+
+            {/* ═══ O LÁPIS: arrumar este livro mora AQUI, no cartão onde o erro
+                aparece. Era uma gaveta no porão da página com título e resumo; um
+                erro de ficha se vê NA ficha, e é nela que se conserta. O histórico
+                continua público (é ele que torna vandalismo caro). ═══ */}
+            <Arrumar>
+            {actor && edition ? (
+              <>
+                <Correcao
+                  slug={slug}
+                  workId={book.workId}
+                  editionId={edition.id}
+                  temOutrasEdicoes={book.editions.length > 1}
+                  livro={{
+                    title: book.title,
+                    author: book.author,
+                    publisher: edition.publisher,
+                    firstPublished: book.firstPublished,
+                    publishedYear: edition.publishedYear,
+                    pageCount: edition.pageCount,
+                    format: edition.format,
+                    isbn13: edition.isbn13,
+                    coverUrl: edition.coverUrl,
+                  }}
+                />
+
+                <div id="ficha" className="mt-8 scroll-mt-6 border-t border-[var(--color-rule)] pt-6">
+                  <Label>o que já foi arrumado</Label>
+                  <div className="mt-4">
+                    <CorrectionsLog slug={slug} correcoes={correcoes} souBibliotecario={bibliotecario} />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <CorrectionsLog slug={slug} correcoes={correcoes} souBibliotecario={bibliotecario} />
+            )}
+            </Arrumar>
           </section>
 
           {recommender && (
@@ -452,16 +502,14 @@ export default async function BookPage({
                 todas={todasAsEstantes.map((e) => e.name)}
               />
 
-              {/* QUANDO você leu, numa GAVETA. As datas são do leitor, e não do relógio
-                  do servidor. Mas corrigir uma data é coisa de uma vez na vida, e mais
-                  ainda depois que marcar "lido" passou a perguntar o ano ali mesmo:
-                  aberta o tempo todo, esta seção era manutenção no meio da leitura. Vale
-                  a regra escrita logo abaixo. O resumo já diz o ano, então quase nunca
-                  há motivo para abrir. */}
+              {/* QUANDO você leu, em UMA LINHA discreta, encostada no painel: o resumo
+                  em itálico e um "ajustar" que abre o editor ali mesmo. Já foi cartão e
+                  já foi gaveta; a resposta cabe em meia frase, e meia frase com moldura
+                  própria ocupava o lugar de uma seção. */}
               {leituras.length > 0 && (
-                <Gaveta titulo="quando você leu" resumo={resumoDasLeituras(leituras)}>
+                <QuandoLeu resumo={resumoDasLeituras(leituras)}>
                   <Leituras leituras={leituras} slug={slug} />
-                </Gaveta>
+                </QuandoLeu>
               )}
 
               {/* INDICAR MORA AQUI EM CIMA, junto das ações de toda hora. Ele vivia
@@ -514,100 +562,73 @@ export default async function BookPage({
               O que sobrou é "de onde veio esse livro", que é a HISTÓRIA de um exemplar, e
               não um anúncio. Ela mora numa gaveta dentro do painel. Ver lib/copies.ts. */}
 
-          {/* ── ARRUMAR ESTE LIVRO: a ficha, e o histórico de quem a arrumou. ── */}
-          <Gaveta
-            titulo="arrumar este livro"
-            resumo={
-              correcoes.length > 0
-                ? `${correcoes.length} ${correcoes.length === 1 ? "conserto" : "consertos"} já nesta ficha`
-                : "faltou capa, ou tem algum dado errado? você mesmo ajeita"
-            }
-          >
-            {actor && edition ? (
-              <>
-                <Correcao
-                  slug={slug}
-                  workId={book.workId}
-                  editionId={edition.id}
-                  temOutrasEdicoes={book.editions.length > 1}
-                  livro={{
-                    title: book.title,
-                    author: book.author,
-                    publisher: edition.publisher,
-                    firstPublished: book.firstPublished,
-                    publishedYear: edition.publishedYear,
-                    pageCount: edition.pageCount,
-                    format: edition.format,
-                    isbn13: edition.isbn13,
-                    coverUrl: edition.coverUrl,
-                  }}
-                />
 
-                <div id="ficha" className="mt-8 scroll-mt-6 border-t border-[var(--color-rule)] pt-6">
-                  <Label>o que já foi arrumado</Label>
-                  <div className="mt-4">
-                    <CorrectionsLog slug={slug} correcoes={correcoes} souBibliotecario={bibliotecario} />
-                  </div>
-                </div>
-              </>
-            ) : (
-              <CorrectionsLog slug={slug} correcoes={correcoes} souBibliotecario={bibliotecario} />
-            )}
-          </Gaveta>
+          {/* ═══ AS EDIÇÕES E "QUAL É A MINHA" VIRARAM UMA COISA SÓ ═══
 
+              Eram duas moradas para o mesmo assunto: a gaveta com a LISTA e, noutro
+              cartão, o seletor. A pessoa abria a lista, via a dela marcada, e não
+              entendia onde se trocava. Agora: com o livro na SUA estante, a gaveta É o
+              seletor; de visita, ela é a lista. */}
           {book.editions.length > 1 && (
             <div id="edicoes" className="scroll-mt-6">
             <Gaveta
               titulo="edições"
-              resumo={`${book.editions.length} edições desta obra`}
+              resumo={
+                actor && book.mine?.status
+                  ? `${book.editions.length} desta obra, e qual é a sua`
+                  : `${book.editions.length} edições desta obra`
+              }
             >
-              <ul className="flex flex-col gap-1">
-                {book.editions.slice(0, 8).map((e) => (
-                  <li
-                    key={e.id}
-                    className={[
-                      "tabular flex flex-wrap items-center gap-x-3 px-3 py-2 text-[14px]",
-                      e.id === book.mine?.editionId
-                        ? "surface-2 text-[var(--color-ink)]"
-                        : "text-[var(--color-ink-soft)]",
-                    ].join(" ")}
-                  >
-                    <span className="min-w-0 flex-1 truncate">
-                      {e.publisher ?? "editora desconhecida"}
-                      {e.publishedYear ? `, ${e.publishedYear}` : ""}
-                    </span>
-                    {e.pageCount && (
-                      <span className="text-[var(--color-ink-faint)]">{e.pageCount} p.</span>
-                    )}
-                    {e.id === book.mine?.editionId && (
-                      <span className="text-[11px] uppercase tracking-[0.12em]">a minha</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-              {book.editions.length > 8 && (
-                <p className="mt-3 text-[13px] text-[var(--color-ink-faint)]">
-                  e mais {book.editions.length - 8}.
-                </p>
+              {actor && book.mine?.status ? (
+                <EscolherEdicao
+                  slug={slug}
+                  workId={book.workId}
+                  onShelf
+                  myEditionId={book.mine?.editionId ?? null}
+                  editions={book.editions.map((e) => ({
+                    id: e.id,
+                    publisher: e.publisher,
+                    year: e.publishedYear,
+                    pages: e.pageCount,
+                    isbn: e.isbn13,
+                  }))}
+                />
+              ) : (
+                <>
+                  <ul className="flex flex-col gap-1">
+                    {book.editions.slice(0, 8).map((e) => (
+                      <li
+                        key={e.id}
+                        className={[
+                          "tabular flex flex-wrap items-center gap-x-3 px-3 py-2 text-[14px]",
+                          e.id === book.mine?.editionId
+                            ? "surface-2 text-[var(--color-ink)]"
+                            : "text-[var(--color-ink-soft)]",
+                        ].join(" ")}
+                      >
+                        <span className="min-w-0 flex-1 truncate">
+                          {e.publisher ?? "editora desconhecida"}
+                          {e.publishedYear ? `, ${e.publishedYear}` : ""}
+                        </span>
+                        {e.pageCount && (
+                          <span className="text-[var(--color-ink-faint)]">{e.pageCount} p.</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  {book.editions.length > 8 && (
+                    <p className="mt-3 text-[13px] text-[var(--color-ink-faint)]">
+                      e mais {book.editions.length - 8}.
+                    </p>
+                  )}
+                </>
               )}
             </Gaveta>
             </div>
           )}
 
           {actor && book.mine?.status && (
-            <BookTools
-              slug={slug}
-              workId={book.workId}
-              onShelf={Boolean(book.mine?.status)}
-              myEditionId={book.mine?.editionId ?? null}
-              editions={book.editions.map((e) => ({
-                id: e.id,
-                publisher: e.publisher,
-                year: e.publishedYear,
-                pages: e.pageCount,
-                isbn: e.isbn13,
-              }))}
-            />
+            <BookTools workId={book.workId} onShelf={Boolean(book.mine?.status)} />
           )}
         </div>
       </div>
