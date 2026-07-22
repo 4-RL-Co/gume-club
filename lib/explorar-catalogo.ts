@@ -11,8 +11,10 @@ import { db } from "@/lib/db";
  *  devolve é gente: leitor mora nas outras abas, com as regras de leitor.
  *
  *  As contagens são de LIVRO (quantas obras tem um gênero, quantas edições tem
- *  uma editora): curadoria, não placar. E as vitrines de obra SORTEIAM, como
- *  todo o explorar: sem "em alta", sem mérito inventado.
+ *  uma editora): curadoria, não placar. Autores, gêneros e editoras vêm DOS MAIS
+ *  POPULARES para baixo, porque popularidade de catálogo é gosto da comunidade
+ *  (a família dos queridinhos); as vitrines de OBRA dentro de um rótulo seguem
+ *  sorteando, e GENTE segue sorteada nas outras abas.
  * ════════════════════════════════════════════════════════════════════
  */
 
@@ -25,17 +27,28 @@ export type AutorVitrine = {
   obras: number;
 };
 
-/** Autores para descobrir: só quem tem obra no acervo, sorteados a cada visita. */
+/**
+ * Autores para descobrir, DOS MAIS LIDOS para baixo.
+ *
+ * A régua da popularidade: quantos leitores têm obra dele na estante (pública, de
+ * gente viva). É a mesma família dos queridinhos: ordenar AUTOR pelo amor recebido é
+ * curadoria e fala de gosto; o que continua sorteado é GENTE, nas outras vitrines,
+ * porque gente ordenada é pódio. O desempate é o tamanho no acervo, e depois o nome:
+ * um catálogo novo, ainda sem leitores, mostra os autores mais presentes.
+ */
 export async function getAutoresParaExplorar(limite = 18): Promise<AutorVitrine[]> {
   const rows = await db.execute<AutorVitrine>(sql`
     select a.slug,
            a.name,
            a.nationality,
            a.image_url as "imageUrl",
-           (select count(*)::int from works w where w.author_id = a.id) as obras
+           count(distinct w.id)::int as obras
       from authors a
-     where exists (select 1 from works w where w.author_id = a.id)
-     order by random()
+      join works w on w.author_id = a.id
+      left join library_entries le on le.work_id = w.id and le.visibility = 'public'
+      left join users u on u.id = le.user_id and u.deleted_at is null and u.banned_at is null
+     group by a.id, a.slug, a.name, a.nationality, a.image_url
+     order by count(distinct u.id) desc, count(distinct w.id) desc, a.name asc
      limit ${limite}`);
   return rows;
 }
