@@ -187,8 +187,19 @@ export async function getCodigo(): Promise<DoCodigo[]> {
       contributions: number; type: string;
     }[];
 
+    /**
+     * ═══ ROBÔ NÃO É CONTRIBUIDOR ═══
+     *
+     * O `type === "User"` já barra os bots declarados do GitHub, mas as contas de
+     * serviço (o deploy da Railway, o agente da Anthropic) às vezes chegam com cara
+     * de usuário — e aí o painel dizia que "3 escreveram código" quando era um humano
+     * e dois robôs. Contribuidor é GENTE: máquina que empurra commit é ferramenta de
+     * alguém, e a ferramenta não ganha crédito nem conta em meta.
+     */
+    const ROBOS = /\[bot\]$|^(claude|railway|github-actions|dependabot|renovate)([-_].*)?$/i;
+
     return json
-      .filter((c) => c.type === "User")
+      .filter((c) => c.type === "User" && !ROBOS.test(c.login))
       .map((c) => ({
         id: c.id,
         login: c.login,

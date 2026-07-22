@@ -49,7 +49,8 @@ Então: Gume. A parte interessante não é o registro. É o "nós".
 ## O que é
 
 - **Uma estante.** Quero ler, lendo, lido, abandonado. Releituras. Físico e digital, no mesmo lugar. A nota é uma **palavra** (adorei, gostei, achei ok, não gostei, não terminei), e nunca um número: estrela é escala, escala vira média, média vira placar.
-- **Um feed de amigos, e uma aba para descobrir.** O feed é cronológico e só de quem você segue: o que os seus amigos leram, sem nada injetado no meio. E há uma aba de explorar, com estantes de gente que você ainda não segue, sorteadas e não ordenadas. Você entra nela quando quer, em vez de ela entrar em você.
+- **Um feed de amigos, e uma galeria para descobrir.** O feed é cronológico e só de quem você segue: o que os seus amigos leram, sem nada injetado no meio. E há o Explorar, uma galeria de curadores: estantes de gente que você ainda não segue e coleções montadas à mão, sorteadas e não ordenadas. Você entra nela quando quer, em vez de ela entrar em você.
+- **Coleções, montadas à mão.** Você monta uma coleção com capa, descrição e, se a ordem for o ponto, com 1º, 2º e 3º. A coleção boa de outra pessoa você **guarda**: ela aparece no seu perfil com o crédito de quem fez, e ninguém conta quantos guardaram, porque endosso contado é curtida com outro nome. E existe uma lista que ninguém edita: o **Top 100 dos queridinhos**, os livros que a comunidade mais adorou, refeito a cada veredito. É ranking de livro, e nunca de gente: livro no pódio é curadoria; gente no pódio é a corrida que a gente recusou.
 - **Um grafo aberto de livros.** Dados de livros contribuídos por leitores, e a intenção declarada de publicá-los de volta como um dataset aberto, para que, se este projeto um dia acabar, os dados sobrevivam a ele. A parte do leitor corrigir o catálogo já funciona; a publicação do dump é um passo ainda por vir.
 - **Arquivos que você pode levar embora.** Um clique, e o arquivo desce: JSON e CSV, com a estante, as datas de leitura, as notas, as resenhas (inclusive as privadas) e as correções que você fez no catálogo. Sem fila, sem e-mail, sem "estamos preparando o seu arquivo", que é atrito disfarçado de cuidado. **E o CSV usa as colunas do export do Goodreads**, que é o formato que o Skoob, o StoryGraph, o Oku e o Fable sabem importar: *uma exportação só é uma saída se outro app conseguir ler*. Um JSON proprietário que ninguém importa é um bilhete de sequestro em fonte bonita. Sair deveria ser fácil. É isso que faz ficar significar alguma coisa.
 
@@ -155,13 +156,13 @@ O modelo:
 
 ## Status
 
-**Funciona.** O produto está de pé e é usado todo dia por quem o mantém: estante, busca sobre um catálogo em português de quase 300 mil edições, feed cronológico, recomendação de pessoa para pessoa, estatísticas de curadoria, correções do catálogo, importação e exportação sem perdas.
+**Funciona.** O produto está de pé e é usado todo dia por quem o mantém: estante, busca sobre um catálogo em português de centenas de milhares de edições, feed cronológico, recomendação de pessoa para pessoa (com o rosto de quem indicou na capa), coleções com ordem e capa, o Top 100 da comunidade, estatísticas de curadoria, correções do catálogo, convite com procedência, importação e exportação sem perdas.
 
 **Está no ar em [gume.club](https://gume.club).** A instância oficial roda no [Railway](https://railway.app) (o app Next.js e o Postgres, na mesma rede privada), com [Vercel Blob](https://vercel.com/storage/blob) para as imagens que o leitor sobe. Nada disso é obrigatório: sendo auto-hospedável, você roda a sua com um Postgres e um lugar qualquer para as imagens.
 
 O schema, o plano e o sistema de design são públicos de propósito, porque são as decisões caras de mudar depois e baratas de discutir agora. Se você acha que uma delas está errada, abra uma issue. Isso não é formalidade.
 
-**O que segura a qualidade, já que o mantenedor não é programador de formação:** o repositório se defende sozinho. Mais de 700 testes, e os mais importantes não testam funções: eles **varrem o próprio código** e quebram o build se uma regra for violada. Um teste impede um número de contribuição de vazar para fora da página de contribuidores. Outro impede uma insígnia de ser ganha por ler. Outro impede uma rota de nascer pública sem ninguém decidir. E um "red team" ataca o próprio sistema, trocando UUIDs para tentar ler e escrever nas linhas de outra pessoa.
+**O que segura a qualidade, já que o mantenedor não é programador de formação:** o repositório se defende sozinho. Mais de 850 testes, e os mais importantes não testam funções: eles **varrem o próprio código** e quebram o build se uma regra for violada. Um teste impede um número de contribuição de vazar para fora da página de contribuidores. Outro impede uma insígnia de ser ganha por ler. Outro impede uma rota de nascer pública sem ninguém decidir. E um "red team" ataca o próprio sistema, trocando UUIDs para tentar ler e escrever nas linhas de outra pessoa.
 
 ## Stack
 
