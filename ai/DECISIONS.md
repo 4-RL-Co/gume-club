@@ -2338,3 +2338,13 @@ Quatro retornos do dono, e uma reversão feita de olhos abertos:
 - **O livro mostra a comunidade numa fila de ícones**: quantos leram, em quantas estantes montadas mora, quantos gostaram ou adoraram, e a COROA com a posição quando está no top 100 dos queridinhos. A posição usa o MESMO desempate de lib/queridinhos.ts, senão a coroa da ficha discordaria da lista. Tudo contagem sobre LIVRO e só do que é público, como sempre. O que é zero não aparece: lápide não é ficha.
 
 - **A curadoria do Gume em destaque no explorar**: o cartão da casa cresceu, com o pódio de verdade dentro (as cinco capas mais adoradas, a 1ª no trono). É a lista da instituição, montada pela comunidade inteira, e agora parece isso.
+
+---
+
+**2026-07-21: A cor entrou nos ícones da comunidade, por decisão do dono, e a fronteira dela é o ícone.**
+
+O design da casa era monocromático com a cor vindo só das capas, e o dono já tinha rejeitado laranja uma vez (na página de estatísticas). Desta vez ele PEDIU cor, apontando o Letterboxd: os ícones da fila da comunidade na ficha do livro (verde para leram, azul para estantes, laranja para o coração de gostaram ou adoraram) e a coroa DOURADA da curadoria da casa, que assina também o cartão do explorar e o cabeçalho do /queridinhos.
+
+A fronteira registrada: **a cor mora no ÍCONE, nunca no texto nem no número.** O texto continua tinta, e a paleta é fixa e pequena (quatro tons, escolhidos para funcionar no claro e no escuro). Se um dia a cor escorrer do ícone para rótulo, fundo ou número, passou da fronteira.
+
+Mais três da mesma rodada: a fila de ícones aparece SEMPRE (zero incluso), porque uma fila que some e volta conforme os números parece bug; o carrossel ganhou o giro SATURADO (flanco esquerdo inteiro num ângulo, direito noutro, só o trono de frente, como o expositor da referência que o dono mandou), sem translateY, com a escala desenhando o arco sozinha; e a lista da casa se chama "Top 100: os queridinhos do Gume", com página editorial: aura do 1º colocado, coroa dourada e título grande na serifa.

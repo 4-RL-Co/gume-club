@@ -169,12 +169,14 @@ export async function Explore({ viewer }: { viewer: Viewer }) {
               href="/queridinhos"
               className="surface surface-hover block overflow-hidden p-7 sm:p-9"
             >
-              <span className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
-                <Crown size={13} strokeWidth={1.5} aria-hidden />
+              {/* Dourado, como a coroa do Letterboxd: exceção de cor dirigida pelo
+                  dono (ai/DECISIONS.md). É a assinatura da curadoria da casa. */}
+              <span className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em]" style={{ color: "#d9a520" }}>
+                <Crown size={13} strokeWidth={1.75} aria-hidden />
                 a curadoria do Gume
               </span>
               <span className="voice mt-2 block text-[26px] leading-tight text-[var(--color-ink)] sm:text-[30px]">
-                Os queridinhos do Gume
+                Top 100: os queridinhos do Gume
               </span>
               <span className="mt-2 block max-w-lg text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
                 Os cem livros que a comunidade mais adorou, na ordem do amor recebido.

@@ -1,6 +1,6 @@
 import Link from "next/link";
+import { Crown } from "lucide-react";
 import { Cover } from "@/components/cover";
-import { ScreenHeader } from "@/components/screen-header";
 import { Empty } from "@/components/empty";
 import { getViewer } from "@/lib/viewer";
 import { getQueridinhos } from "@/lib/queridinhos";
@@ -27,16 +27,34 @@ export default async function Queridinhos() {
   const livros = await getQueridinhos(100);
 
   return (
-    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
-      <ScreenHeader
-        title="Os queridinhos do Gume"
-        meta={["os mais adorados", "a lista se refaz sozinha"]}
-      />
+    <main className="relative mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+      {/* A aura do 1º colocado banha o topo: a lista editorial abre com a cara do
+          livro que a comunidade mais ama hoje. Ver .aura-capa em globals.css. */}
+      {livros[0]?.coverUrl && (
+        <div className="aura-capa" aria-hidden>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={livros[0].coverUrl} alt="" loading="lazy" decoding="async" />
+        </div>
+      )}
 
-      <p className="voice mt-4 max-w-2xl text-[16px] leading-relaxed text-[var(--color-ink-soft)]">
-        Os livros que a comunidade mais adorou, na ordem do amor recebido. Ninguém edita esta
-        lista: cada &quot;adorei&quot; público conta um voto, e ela se refaz a cada visita.
-      </p>
+      {/* ═══ O CABEÇALHO EDITORIAL ═══
+
+          É a lista da CASA, e abre como capa de revista: a coroa dourada (exceção de
+          cor dirigida pelo dono, ver ai/DECISIONS.md), o título grande na serifa da
+          voz, e a regra da lista dita em uma frase. */}
+      <header className="mt-16 sm:mt-24">
+        <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em]" style={{ color: "#d9a520" }}>
+          <Crown size={14} strokeWidth={1.75} aria-hidden />
+          a curadoria do Gume
+        </p>
+        <h1 className="voice mt-3 max-w-3xl text-[40px] leading-[1.04] tracking-[-0.015em] sm:text-[52px]">
+          Top 100: os queridinhos do Gume
+        </h1>
+        <p className="voice mt-5 max-w-2xl text-[17px] leading-relaxed text-[var(--color-ink-soft)]">
+          Os livros que a comunidade mais adorou, na ordem do amor recebido. Ninguém edita esta
+          lista: cada &quot;adorei&quot; público conta um voto, e ela se refaz a cada visita.
+        </p>
+      </header>
 
       {livros.length === 0 ? (
         <div className="mt-10">

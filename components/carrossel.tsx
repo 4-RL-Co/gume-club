@@ -34,10 +34,16 @@ import type { ShelfBook } from "@/lib/shelf-view";
  * ════════════════════════════════════════════════════════════════════
  */
 
-const GIRO_MAX = 38;
+const GIRO_MAX = 35;
 const FUNDO_MAX = 110;
-/** O quanto as pontas do arco descem (px) em relação ao trono do centro. */
-const ARCO = 34;
+/**
+ * A rampa da rotação. O giro SATURA rápido (a um terço do meio-palco a capa já está
+ * no ângulo cheio), e é isso que dá o anfiteatro da referência: o flanco esquerdo
+ * INTEIRO olha para o trono num ângulo só, o direito idem, e apenas o trono fica de
+ * frente. Sem a rampa, cada capa tinha um ângulo diferente conforme a distância, e a
+ * fila parecia desarrumada: um livro de frente aqui, um meio torto ali.
+ */
+const RAMPA = 0.32;
 
 export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[] }) {
   const fila = useRef<HTMLUListElement>(null);
@@ -81,12 +87,16 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
         melhor = i;
       }
 
+      // O giro saturado: sinal diz o lado, a rampa leva ao ângulo cheio bem rápido.
+      const giro = -Math.sign(d) * GIRO_MAX * Math.min(1, Math.abs(d) / RAMPA);
+
+      // Sem translateY: a escala encolhe a capa em torno do próprio centro, e é isso
+      // que desenha o arco sozinho (os flancos flutuam alinhados pelo meio do trono).
       alvo.style.transform =
-        `perspective(900px) rotateY(${(-d * GIRO_MAX).toFixed(2)}deg) ` +
-        `translateY(${(ARCO * d * d).toFixed(1)}px) ` +
+        `perspective(900px) rotateY(${giro.toFixed(2)}deg) ` +
         `translateZ(${(-FUNDO_MAX * Math.abs(d)).toFixed(1)}px) ` +
-        `scale(${(0.78 + perto * 0.34).toFixed(3)})`;
-      alvo.style.opacity = String(0.3 + perto * 0.7);
+        `scale(${(0.8 + perto * 0.3).toFixed(3)})`;
+      alvo.style.opacity = String(0.35 + perto * 0.65);
       li.style.zIndex = String(Math.round(perto * 100));
     });
 
@@ -148,7 +158,7 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
           ref={fila}
           onScroll={aoRolar}
           className={[
-            "flex items-start gap-6 overflow-x-auto pb-1 pt-4",
+            "flex items-center gap-6 overflow-x-auto pb-1 pt-4",
             "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
             !anel && !semMovimento ? "justify-center" : "",
           ].join(" ")}

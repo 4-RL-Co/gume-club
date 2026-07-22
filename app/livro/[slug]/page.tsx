@@ -358,44 +358,41 @@ export default async function BookPage({
               <Fact label="ISBN" value={edition?.isbn13 ?? null} />
             </dl>
 
-            {/* ═══ O LIVRO NA COMUNIDADE, numa fila de ícones baixa ═══
+            {/* ═══ O LIVRO NA COMUNIDADE, numa fila de ícones com cor ═══
 
                 Quantos leram, em quantas estantes montadas ele mora, quantos gostaram
-                ou adoraram, e a COROA quando ele está no top 100 dos queridinhos. Só
-                aparece o que existe: "0 leram" é uma lápide, e lápide não é ficha. */}
-            {(comunidade.leram > 0 || comunidade.estantes > 0 || comunidade.gostaram > 0) && (
-              <p className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[var(--color-rule)] pt-4 text-[13px] text-[var(--color-ink-soft)]">
-                {comunidade.leram > 0 && (
-                  <span className="inline-flex items-center gap-1.5" title={`${comunidade.leram} ${comunidade.leram === 1 ? "pessoa leu" : "pessoas leram"}`}>
-                    <BookOpenCheck size={14} strokeWidth={1.5} aria-hidden />
-                    <span className="tabular font-medium text-[var(--color-ink)]">{comunidade.leram}</span> leram
-                  </span>
-                )}
-                {comunidade.estantes > 0 && (
-                  <span className="inline-flex items-center gap-1.5" title="em quantas estantes montadas este livro está">
-                    <Bookmark size={14} strokeWidth={1.5} aria-hidden />
-                    em <span className="tabular font-medium text-[var(--color-ink)]">{comunidade.estantes}</span>{" "}
-                    {comunidade.estantes === 1 ? "estante" : "estantes"}
-                  </span>
-                )}
-                {comunidade.gostaram > 0 && (
-                  <span className="inline-flex items-center gap-1.5" title={`${comunidade.gostaram} gostaram ou adoraram`}>
-                    <Heart size={14} strokeWidth={1.5} aria-hidden />
-                    <span className="tabular font-medium text-[var(--color-ink)]">{comunidade.gostaram}</span> gostaram
-                  </span>
-                )}
-                {comunidade.posicao !== null && comunidade.posicao <= 100 && (
-                  <Link
-                    href="/queridinhos"
-                    className="inline-flex items-center gap-1.5 text-[var(--color-ink)] underline decoration-[var(--color-rule)] underline-offset-4 hover:decoration-[var(--color-ink)]"
-                    title="entre os cem que a comunidade mais adorou"
-                  >
-                    <Crown size={14} strokeWidth={1.5} aria-hidden />
-                    <span className="tabular font-medium">{comunidade.posicao}º</span> dos queridinhos
-                  </Link>
-                )}
-              </p>
-            )}
+                ou adoraram, e a COROA quando ele está no top 100 dos queridinhos.
+
+                As CORES nos ícones são exceção dirigida pelo dono (registrada no
+                ai/DECISIONS.md), no espírito do Letterboxd: verde para leram, azul para
+                estantes, laranja para o coração, dourado para a coroa. SÓ o ícone leva
+                cor; o texto continua tinta. E a fila aparece sempre, com zero incluso:
+                uma fila que some e volta conforme os números parece bug, não recusa. */}
+            <p className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[var(--color-rule)] pt-4 text-[13px] text-[var(--color-ink-soft)]">
+              <span className="inline-flex items-center gap-1.5" title={`${comunidade.leram} ${comunidade.leram === 1 ? "pessoa leu" : "pessoas leram"}`}>
+                <BookOpenCheck size={14} strokeWidth={1.75} aria-hidden style={{ color: "#4da76a" }} />
+                <span className="tabular font-medium text-[var(--color-ink)]">{comunidade.leram}</span> leram
+              </span>
+              <span className="inline-flex items-center gap-1.5" title="em quantas estantes montadas este livro está">
+                <Bookmark size={14} strokeWidth={1.75} aria-hidden style={{ color: "#4a9dc9" }} />
+                em <span className="tabular font-medium text-[var(--color-ink)]">{comunidade.estantes}</span>{" "}
+                {comunidade.estantes === 1 ? "estante" : "estantes"}
+              </span>
+              <span className="inline-flex items-center gap-1.5" title={`${comunidade.gostaram} gostaram ou adoraram este livro`}>
+                <Heart size={14} strokeWidth={1.75} aria-hidden style={{ color: "#e8843c" }} />
+                <span className="tabular font-medium text-[var(--color-ink)]">{comunidade.gostaram}</span> gostaram ou adoraram
+              </span>
+              {comunidade.posicao !== null && comunidade.posicao <= 100 && (
+                <Link
+                  href="/queridinhos"
+                  className="inline-flex items-center gap-1.5 text-[var(--color-ink)] underline decoration-[var(--color-rule)] underline-offset-4 hover:decoration-[var(--color-ink)]"
+                  title="entre os cem que a comunidade mais adorou"
+                >
+                  <Crown size={14} strokeWidth={1.75} aria-hidden style={{ color: "#d9a520" }} />
+                  <span className="tabular font-medium">{comunidade.posicao}º</span> dos queridinhos
+                </Link>
+              )}
+            </p>
           </section>
 
           {recommender && (
