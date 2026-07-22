@@ -91,7 +91,7 @@ export function Tema() {
             className={[
               "flex h-7 w-7 items-center justify-center rounded-[var(--radius-2)] transition-colors",
               on
-                ? "bg-white/[0.06] text-[var(--color-ink)]"
+                ? "bg-[color-mix(in_srgb,var(--color-ink)_7%,transparent)] text-[var(--color-ink)]"
                 : "text-[var(--color-ink-faint)] hover:text-[var(--color-ink)]",
             ].join(" ")}
           >

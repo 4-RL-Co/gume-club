@@ -223,7 +223,7 @@ Sem foto não é erro e não é uma silhueta cinza: é a inicial da pessoa sobre
 
 ## Nota é PALAVRA, e não estrela
 
-Não existe estrela em lugar nenhum do produto, nem meia estrela, nem "4,5". A nota é uma de cinco frases, em versalete, discreta: **não terminei · não gostei · achei ok · gostei · adorei**.
+Não existe estrela em lugar nenhum do produto, nem meia estrela, nem "4,5". A nota é uma de cinco frases, em versalete, discreta: **detestei · não gostei · achei ok · gostei · adorei**.
 
 Estrela é escala, escala vira média, média vira placar. **Palavra não soma.** Era o último número do app, e ele saiu. Ver `lib/veredito.ts` e a entrada em [ai/DECISIONS.md](../ai/DECISIONS.md).
 

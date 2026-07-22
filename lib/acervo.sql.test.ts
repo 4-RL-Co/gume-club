@@ -57,7 +57,7 @@ const NAO_SAO_PESSOAS = [
 ];
 
 describe("o acervo tem autor", () => {
-  it(`pelo menos ${PISO_COM_AUTOR * 100}% das obras têm um autor que é uma pessoa`, async () => {
+  it(`pelo menos ${PISO_COM_AUTOR * 100}% das obras têm um autor que é uma pessoa`, async (ctx) => {
     const [r] = await db.execute<{ total: number; com_autor: number }>(sql`
       select count(*)::int as total,
              count(*) filter (
@@ -70,7 +70,7 @@ describe("o acervo tem autor", () => {
         from works w`);
 
     // Um banco vazio (CI recém-migrado) não tem o que medir, e não é um erro.
-    if (!r || r.total < 1000) return;
+    if (!r || r.total < 1000) return ctx.skip();
 
     const fracao = r.com_autor / r.total;
     const orfas = r.total - r.com_autor;

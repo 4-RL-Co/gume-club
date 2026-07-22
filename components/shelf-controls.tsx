@@ -95,7 +95,7 @@ export function ShelfControls(props: Props) {
               "pill flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2 text-[14px] transition-colors",
               f.key === filter
                 ? "afiado font-medium text-[var(--color-ink)]"
-                : "text-[var(--color-ink-soft)] hover:bg-white/[0.03] hover:text-[var(--color-ink)]",
+                : "text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)] hover:text-[var(--color-ink)]",
             ].join(" ")}
           >
             {f.label}

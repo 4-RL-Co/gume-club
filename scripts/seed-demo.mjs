@@ -203,7 +203,7 @@ console.log(`  ${leitores.length} leitores, e você segue 3 deles (os outros 2 s
  */
 const livros = await sql`
   -- Primeiro, os livros que alguém de verdade já pôs numa estante: são os que o
-  -- Gabriel curou, e são reconhecíveis. Sortear no meio das 373 mil obras do dump
+  -- dono curou, e são reconhecíveis. Sortear no meio das 373 mil obras do dump
   -- devolve anais de congresso e digitalização com acento quebrado, e aí a tela
   -- passa a ser julgada pelo título estranho em vez de pelo desenho.
   with curados as (
@@ -477,7 +477,7 @@ if (dono) {
   await sql`
     update users set
       bio = coalesce(bio, ${"Publicitário. Não sou programador, e mesmo assim isto aqui existe: leia o que falta, e conserte um livro."}),
-      image = coalesce(image, ${avatar("Gabriel Olegário", 5)}),
+      image = coalesce(image, ${avatar(dono.handle, 5)}),
       contact_kind = coalesce(contact_kind, 'instagram'),
       contact_value = coalesce(contact_value, ${"@" + dono.handle})
     where id = ${dono.id}`;

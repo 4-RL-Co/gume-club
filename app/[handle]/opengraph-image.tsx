@@ -30,7 +30,10 @@ export default async function Image({ params }: { params: Promise<{ handle: stri
   const [dono] = await db
     .select({ id: users.id, handle: users.handle, name: users.displayName })
     .from(users)
-    .where(and(eq(users.handle, limpo), sql`${users.deletedAt} is null`))
+    // Banido também some daqui: o pôster é a superfície MAIS pública do app, e
+    // era a única que ainda confirmava nome e @ de uma conta banida. A página
+    // já dava 404 (getProfile); o cabeçalho dela tem que contar a mesma história.
+    .where(and(eq(users.handle, limpo), sql`${users.deletedAt} is null`, sql`${users.bannedAt} is null`))
     .limit(1);
 
   if (!dono) {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getViewer } from "@/lib/viewer";
 import { guardarImagem } from "@/lib/guardar";
+import { RATES, limitar, varrer } from "@/lib/rate-limit";
 
 /** Node, e não Edge: guardar um arquivo e falar com o banco não existem no Edge. */
 export const runtime = "nodejs";
@@ -54,6 +55,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "entre para enviar uma foto" }, { status: 401 });
   }
 
+  // A ÚNICA escrita do app que vivia fora do balde, e era justamente a paga (o
+  // blob cobra por upload). Por pessoa, como toda escrita. Ver lib/rate-limit.ts.
+  const veredito = await limitar(`upload:${viewer.id}`, RATES.upload);
+  void varrer();
+  if (!veredito.ok) {
+    return NextResponse.json(
+      { error: "Muitas fotos em pouco tempo. Espere um minuto e tente de novo." },
+      { status: 429 },
+    );
+  }
+
   const length = Number(req.headers.get("content-length") ?? 0);
   if (length > MAX_BYTES) {
     return NextResponse.json({ error: "imagem grande demais" }, { status: 413 });
@@ -68,7 +80,14 @@ export async function POST(req: Request) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const kind = sniff(bytes);
   if (!kind) {
-    return NextResponse.json({ error: "isso não é uma imagem" }, { status: 415 });
+    // A recusa diz o CAMINHO, não só o não: quem manda foto de iPhone (HEIC) pelos
+    // formulários sem conversão no cliente (capa, retrato de autor) caía num "isso
+    // não é uma imagem" sem saída. O formato mais comum de foto do mundo merece uma
+    // frase que explica o que fazer.
+    return NextResponse.json(
+      { error: "Esse formato eu não abro. Se for foto de iPhone (HEIC), exporte como JPG ou PNG e mande de novo." },
+      { status: 415 },
+    );
   }
 
   /**

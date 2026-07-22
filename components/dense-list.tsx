@@ -126,7 +126,7 @@ function Row({
       id={`livro-${book.workId}`}
       className={[
         "group border-b border-[var(--color-rule)] last:border-b-0",
-        focused ? "bg-white/[0.04]" : "",
+        focused ? "bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)]" : "",
         pending ? "opacity-60" : "",
       ].join(" ")}
     >

@@ -73,6 +73,14 @@ export type Stats = {
   /** Físico ou digital. */
   formats: Slice[];
 
+  /**
+   * O QUE VOCÊ ACHOU: quantos livros ganharam cada palavra, do "adorei" ao
+   * "detestei". São os cinco degraus SEMPRE, com os zeros dentro: sumir com a
+   * palavra que ninguém usou é a mentira mais fácil de um gráfico. É contagem
+   * por palavra, e nunca média: palavra não soma. Ver lib/veredito.ts.
+   */
+  verdicts: { value: number; n: number }[];
+
   /** As pontas da sua leitura. */
   oldest: Extremo | null;
   newest: Extremo | null;
@@ -277,6 +285,22 @@ export async function getStats(
     group by 1
     order by n desc`);
 
+  /**
+   * A palavra de cada livro. No recorte de um ano, contam os livros TERMINADOS
+   * naquele ano (a palavra é a de hoje: nota substituída é nota substituída).
+   * Na vida inteira, conta todo livro julgado, terminado ou não: um "detestei"
+   * num livro largado é um julgamento inteiro, e ele aparece.
+   */
+  const verdicts = await db.execute<{ value: number; n: number }>(sql`
+    select rt.value::int as value, count(*)::int as n
+    from library_entries
+    join ratings rt
+      on rt.work_id = library_entries.work_id and rt.user_id = library_entries.user_id
+    where library_entries.user_id = ${ownerId}::uuid
+      and ${visible}
+      and ${year === null ? sql`true` : finished(year)}
+    group by rt.value`);
+
   const pontas = await db.execute<{
     slug: string; title: string; author: string | null; year: number; ponta: string;
   }>(sql`
@@ -378,6 +402,11 @@ export async function getStats(
     publishers: publishers.map((r) => ({ label: r.label, n: r.n })),
     origins: origins.map((r) => ({ label: r.label, n: r.n })),
     formats: formats.map((r) => ({ label: r.label, n: r.n })),
+    // Do "adorei" para baixo, e os cinco degraus sempre: o zero aparece.
+    verdicts: [5, 4, 3, 2, 1].map((value) => ({
+      value,
+      n: verdicts.find((r) => r.value === value)?.n ?? 0,
+    })),
     oldest: ponta("antiga"),
     newest: ponta("nova"),
     reread: reread.map((r) => ({ slug: r.slug, title: r.title, author: r.author, times: r.times })),

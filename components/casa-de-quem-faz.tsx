@@ -171,7 +171,7 @@ export function Portas({ aqui }: { aqui: "quem-faz" | "o-que-falta" | "insignias
           );
 
           const classe =
-            "surface group flex flex-1 items-center gap-4 p-5 transition-colors hover:bg-white/[0.03]";
+            "surface group flex flex-1 items-center gap-4 p-5 transition-colors hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)]";
 
           return p.fora ? (
             <a key={p.key} href={p.href} target="_blank" rel="noreferrer" className={classe}>

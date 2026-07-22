@@ -79,6 +79,28 @@
      volta.** É semântica, e semântica não é marca. */
   --color-perigo: #c2503a;
 
+  /* ── AS CORES DOS GRÁFICOS ────────────────────────────────────────
+     Uma cor POR ASSUNTO, fixa, na página de estatísticas — e só nela.
+
+     A regra "a única cor é a capa" protege a capa, e a página de
+     estatísticas é a única tela do app SEM capa nenhuma: lá o gráfico É o
+     conteúdo, e um gráfico inteiro em cinza era ilegível de tão discreto
+     (reclamação do dono, 2026-07-22). A cor segue o ASSUNTO, nunca o
+     valor: todas as barras de um mesmo gráfico têm a mesma cor, porque
+     dentro de um gráfico quem fala é o comprimento.
+
+     Tons rebaixados, de papel, validados (dataviz: banda de luminância,
+     croma mínimo, separação para daltonismo, contraste sobre o papel e
+     sobre o card escuro). Fora da página de estatísticas, nada muda. */
+  --grafico-tempo: #2565a3;      /* os séculos. azul: o tempo, a distância. */
+  --grafico-paises: #1d6b33;     /* nacionalidades. verde: o mapa. */
+  --grafico-editoras: #b8860e;   /* editoras. ocre: a lombada, o selo. */
+  --grafico-origens: #ab3d68;    /* procedência. vinho: o sebo, a feira. */
+  --grafico-formatos: #0e93ad;   /* papel ou tela. */
+  --grafico-veredito: #7b4fc0;   /* o julgamento. roxo: nenhum dos cinco
+                                    vereditos é "verde = bom, vermelho = ruim";
+                                    a cor é do assunto, não da nota. */
+
   /* ── THE SURFACE SYSTEM ───────────────────────────────────────────
      Harmony comes from repetition, not from taste applied case by case.
      Four levels, and NOTHING is allowed to float loose on level 0. If a block
@@ -196,6 +218,15 @@
     --color-perigo: #e8705a;
     --color-colaborar: #f087b1;
 
+    /* As cores dos gráficos, um degrau mais claras: os mesmos matizes sobre o
+       card escuro leriam apagados. Validadas sobre #111111 (o card). */
+    --grafico-tempo: #3d7dbd;
+    --grafico-paises: #3d8a4c;
+    --grafico-editoras: #bb8a1c;
+    --grafico-origens: #bd5484;
+    --grafico-formatos: #1e97ab;
+    --grafico-veredito: #8a68cf;
+
     --glass-tint: 48%;
     --glass-edge: 14%;
     --glass-border: 12%;
@@ -239,6 +270,15 @@
     /* E o vermelho clareia: #c2503a sobre preto vira uma mancha marrom. */
     --color-perigo: #e8705a;
     --color-colaborar: #f087b1;
+
+    /* As cores dos gráficos, um degrau mais claras: os mesmos matizes sobre o
+       card escuro leriam apagados. Validadas sobre #111111 (o card). */
+    --grafico-tempo: #3d7dbd;
+    --grafico-paises: #3d8a4c;
+    --grafico-editoras: #bb8a1c;
+    --grafico-origens: #bd5484;
+    --grafico-formatos: #1e97ab;
+    --grafico-veredito: #8a68cf;
 
     --glass-tint: 48%;
     --glass-edge: 14%;
@@ -560,23 +600,21 @@
 
   /**
    * ════════════════════════════════════════════════════════════════
-   *  O GRÁFICO É MONOCROMÁTICO. Sem exceção, e em toda a página.
+   *  O GRÁFICO TEM A COR DO ASSUNTO. Uma por gráfico, e nunca por valor.
    *
-   *  A ÚNICA COISA COLORIDA NO GUME É A CAPA DE UM LIVRO. Gráfico,
-   *  insígnia, botão e acento nunca competem com uma capa: no dia em
-   *  que uma barra laranja divide a tela com uma capa, a capa perde, e
-   *  a capa é o conteúdo.
+   *  O gráfico já foi monocromático ("a única cor é a capa"), e o dono
+   *  vetou: tudo cinza era desinteressante e difícil de ler. A regra
+   *  antiga protegia a capa, e a página de estatísticas é a única tela
+   *  sem capa nenhuma — lá o gráfico é o conteúdo. Então cada ASSUNTO
+   *  tem uma cor fixa (--grafico-*, definidas em :root), e dentro de um
+   *  gráfico todas as barras são iguais: quem compara é o comprimento,
+   *  e cor por valor viraria ranking pintado.
    *
-   *  O acento saiu daqui. Ele era a única cor da tela e não pertencia a
-   *  lugar nenhum do sistema.
+   *  ═══ A BARRA CONTINUA SENDO LUZ, E NÃO UM BLOCO ═══
    *
-   *  ═══ A BARRA É LUZ, E NÃO UM BLOCO ═══
-   *
-   *  Preenchimento a 14%: um volume de luz baixa, e não um retângulo
-   *  cinza chapado. E a ARESTA SUPERIOR acesa, 1px a 100%.
-   *
-   *  O topo aceso é o que dá borda, contraste e vida a um gráfico sem
-   *  cor. E ele É A MARCA: o fio é onde a luz bate. A mesma ideia que
+   *  Preenchimento translúcido (a cor rebaixada no papel), e a ARESTA
+   *  SUPERIOR acesa, 1px na cor cheia. O topo aceso é o que dá borda e
+   *  vida, e ele É A MARCA: o fio é onde a luz bate. A mesma ideia que
    *  desenha o símbolo desenha o gráfico.
    *
    *  Sem contorno nos outros três lados, sem sombra, sem gradiente, sem
@@ -597,11 +635,11 @@
    * ganhar do inline (o que ele nunca ganharia).
    */
   .barra-item {
-    --barra-luz: 14%;
+    --barra-luz: 30%;
   }
 
   .barra-item:hover {
-    --barra-luz: 22%;
+    --barra-luz: 44%;
   }
 }
 

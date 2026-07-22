@@ -37,6 +37,8 @@ export function LiveSearch({ initial }: { initial: string }) {
   /** A segunda chamada, a que sai para a internet, depois de a tela já ter o nosso. */
   const [foraEmCurso, setForaEmCurso] = useState(false);
   const [asked, setAsked] = useState(false);
+  /** "Buscou demais" e "caiu" são fatos sobre o app e a rede, nunca sobre o catálogo. */
+  const [falha, setFalha] = useState<"demais" | "caiu" | null>(null);
 
   const aborter = useRef<AbortController | null>(null);
 
@@ -56,11 +58,28 @@ export function LiveSearch({ initial }: { initial: string }) {
       aborter.current = ctrl;
 
       setBusy(true);
+      setFalha(null);
       try {
         // 1. o NOSSO catálogo, que responde em milissegundos e aparece agora.
         const res = await fetch(`/api/buscar?q=${encodeURIComponent(query)}`, {
           signal: ctrl.signal,
         });
+        /**
+         * A lei do AGENTS.md: nunca traduza falha de comunicação em ausência de
+         * dado. O ⌘K aprendeu isso primeiro (ver components/command.tsx) e esta
+         * tela ficou para trás — um 429 aqui virava "Não achamos nada", e o
+         * formulário de cadastro manual logo abaixo ainda convidava a criar a
+         * duplicata de um livro que existe.
+         */
+        if (!res.ok) {
+          if (ctrl.signal.aborted) return;
+          setAutores([]);
+          setLivros([]);
+          setPessoas([]);
+          setAsked(false);
+          setFalha(res.status === 429 ? "demais" : "caiu");
+          return;
+        }
         const json = await res.json();
         setAutores(json.autores ?? []);
         setLivros(json.livros ?? []);
@@ -192,6 +211,21 @@ export function LiveSearch({ initial }: { initial: string }) {
           <SearchResults hits={livros} />
           <ManualBookForm initialTitle={q} />
         </section>
+      )}
+
+      {/* As duas falhas falam ANTES do "não achei": errar isso convidava a
+          cadastrar a duplicata de um livro que existe. Ver components/command.tsx. */}
+      {falha === "demais" && (
+        <p className="mt-12 max-w-xl text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
+          Você buscou muita coisa em pouco tempo, e o Gume pediu um respiro. Espere alguns
+          segundos e digite de novo: não é você, e não sumiu nada.
+        </p>
+      )}
+
+      {falha === "caiu" && (
+        <p className="mt-12 max-w-xl text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
+          Não deu para buscar agora, e o problema é nosso. Tente de novo em um instante.
+        </p>
       )}
 
       {asked && !busy && !foraEmCurso && livros.length === 0 && pessoas.length === 0 && (

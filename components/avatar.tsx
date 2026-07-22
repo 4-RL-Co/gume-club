@@ -30,7 +30,7 @@ export function Avatar({
 
   return (
     <span
-      className="relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--surface-2)] ring-1 ring-white/[0.08]"
+      className="relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--surface-2)] ring-1 ring-[color-mix(in_srgb,var(--color-ink)_10%,transparent)]"
       style={{ width: size, height: size }}
       aria-hidden
     >

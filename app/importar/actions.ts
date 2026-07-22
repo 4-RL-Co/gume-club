@@ -34,13 +34,9 @@ export async function ler(texto: string): Promise<Previa> {
   const livros = parse(texto);
   const avisos: string[] = [];
 
-  const notas = livros.filter((l) => l.estrelas !== null && l.estrelas <= 2).length;
-  if (notas > 0) {
-    avisos.push(
-      `${notas} ${notas === 1 ? "nota vai virar" : "notas vão virar"} palavra: aqui, uma e duas estrelas são as duas "não gostei".`,
-    );
-  }
-
+  // O aviso de perda ("uma e duas estrelas caem na mesma palavra") morava aqui e
+  // saiu: desde que o degrau 1 virou julgamento ("detestei"), cada estrela tem a
+  // sua palavra e não há perda a declarar. Ver lib/veredito.ts.
   const semData = livros.filter(
     (l) => l.status === "read" && l.leituras.every((r) => !r.terminou),
   ).length;

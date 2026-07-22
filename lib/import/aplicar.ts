@@ -49,7 +49,6 @@ export async function aplicar(
   /** As estantes inventadas, criadas uma vez só e reusadas. */
   const estantes = new Map<string, string>();
 
-  let notasAchatadas = 0;
   let semData = 0;
 
   for (const livro of livros.slice(0, LIMITS.importLinhas)) {
@@ -102,13 +101,10 @@ export async function aplicar(
         }
       }
 
-      // ── a nota. Estrela vira PALAVRA, e a perda é declarada. ───────
+      // ── a nota. Estrela vira PALAVRA, degrau por degrau. ───────────
       if (livro.estrelas !== null) {
         const palavra = fromStars(livro.estrelas);
         if (palavra !== null) {
-          // 1 e 2 estrelas caem na MESMA palavra ("não gostei"). Isso é perda, e
-          // a pessoa fica sabendo na tela. Ver lib/veredito.ts.
-          if (livro.estrelas <= 2) notasAchatadas++;
           await db.execute(sql`
             insert into ratings (user_id, work_id, value)
             values (${actor.id}::uuid, ${workId}::uuid, ${palavra})
@@ -175,11 +171,6 @@ export async function aplicar(
   if (livros.length > LIMITS.importLinhas) {
     relatorio.avisos.push(
       `O arquivo tinha ${livros.length} livros, e entraram os primeiros ${LIMITS.importLinhas}. Importe de novo para trazer o resto.`,
-    );
-  }
-  if (notasAchatadas > 0) {
-    relatorio.avisos.push(
-      `${notasAchatadas} ${notasAchatadas === 1 ? "nota virou" : "notas viraram"} palavra: aqui, uma e duas estrelas são as duas "não gostei".`,
     );
   }
   if (semData > 0) {

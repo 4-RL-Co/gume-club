@@ -2,7 +2,7 @@
 
 **Isto é uma proposta, e nada foi renomeado.** Renomear é a única arrumação deste repositório
 que é barata hoje e cara depois: hoje é um `git mv` e um substituir-tudo; com trinta
-contribuidores e cem PRs abertos, é um campo minado de conflitos. Então a decisão é do Gabriel,
+contribuidores e cem PRs abertos, é um campo minado de conflitos. Então a decisão é do dono,
 tomada acordado. Este arquivo existe para que ela seja tomada com os fatos na mesa.
 
 ## O problema, medido

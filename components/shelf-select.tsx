@@ -290,7 +290,7 @@ export function ShelfSelect({
                                   router.refresh();
                                 })
                               }
-                              className="w-full truncate rounded-[var(--radius-2)] px-3 py-2 text-left text-[14px] text-[var(--color-ink-soft)] hover:bg-white/[0.04] hover:text-[var(--color-ink)]"
+                              className="w-full truncate rounded-[var(--radius-2)] px-3 py-2 text-left text-[14px] text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)] hover:text-[var(--color-ink)]"
                             >
                               {s.name}
                             </button>

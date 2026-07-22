@@ -42,8 +42,8 @@ async function acervoCheio(): Promise<boolean> {
 }
 
 describe("a busca põe em primeiro o que a pessoa pediu", () => {
-  it("'dom casmurro' devolve Dom Casmurro, e não um livro SOBRE Dom Casmurro", async () => {
-    if (!(await acervoCheio())) return;
+  it("'dom casmurro' devolve Dom Casmurro, e não um livro SOBRE Dom Casmurro", async (ctx) => {
+    if (!(await acervoCheio())) return ctx.skip();
 
     const [primeiro] = await searchLocal("dom casmurro");
     expect(primeiro).toBeDefined();
@@ -59,8 +59,8 @@ describe("a busca põe em primeiro o que a pessoa pediu", () => {
     expect(antesDosDoisPontos).toBe("dom casmurro");
   }, 30_000);
 
-  it("nomear a editora traz a edição DAQUELA editora, e não uma qualquer", async () => {
-    if (!(await acervoCheio())) return;
+  it("nomear a editora traz a edição DAQUELA editora, e não uma qualquer", async (ctx) => {
+    if (!(await acervoCheio())) return ctx.skip();
 
     // O acervo tem que ter a editora, senão o teste não está medindo nada — ele estaria
     // passando por ausência, e um teste que passa por ausência é pior do que teste nenhum.
@@ -78,8 +78,8 @@ describe("a busca põe em primeiro o que a pessoa pediu", () => {
     expect(primeiro?.title.toLowerCase()).toContain("brás cubas");
   }, 30_000);
 
-  it("sem editora na frase, a busca continua sendo a que era", async () => {
-    if (!(await acervoCheio())) return;
+  it("sem editora na frase, a busca continua sendo a que era", async (ctx) => {
+    if (!(await acervoCheio())) return ctx.skip();
 
     // A separação de editora é um DESEMPATE, e não um peso: quando ninguém nomeou uma
     // editora, ela não pode mudar coisa nenhuma. Este teste é o que garante que o

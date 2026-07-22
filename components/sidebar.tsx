@@ -272,26 +272,33 @@ export function Sidebar({
           <span className="text-[10px] uppercase tracking-[0.12em]">Buscar</span>
         </button>
 
-        {(() => {
-          const eu = session
-            ? { href: "/eu", label: "Perfil", Icon: UserRound }
-            : { href: "/entrar", label: "Entrar", Icon: LogIn };
+        {/* ═══ O PERFIL DO CELULAR ABRE UM MENU, e não só uma página ═══
 
-          return (
-            <Link
-              href={eu.href}
-              aria-current={aceso(eu.href) ? "page" : undefined}
-              aria-label={eu.label}
-              className={[
-                "flex flex-col items-center gap-1 rounded-[var(--radius-control)] px-3 py-2 transition-colors",
-                aceso(eu.href) ? "text-[var(--color-ink)]" : "text-[var(--color-ink-faint)]",
-              ].join(" ")}
-            >
-              <eu.Icon size={20} strokeWidth={1.5} />
-              <span className="text-[10px] uppercase tracking-[0.12em]">{eu.label}</span>
-            </Link>
-          );
-        })()}
+            Sair, o tema, o Sobre e o "cuidar do acervo" moravam SÓ na coluna do
+            desktop. No telefone, que é metade das pessoas, não existia caminho:
+            quem entrou no celular de outra pessoa ficava logado para sempre, e um
+            bibliotecário não chegava na própria sala. O menu é o MESMO do rodapé
+            do desktop (ver Eu, abaixo), servido pelo único item que já era seu. */}
+        {session ? (
+          <EuCelular
+            aceso={aceso("/eu") || aceso("/perfil")}
+            cuidar={fila || moderador}
+            onSair={() => signOut().then(() => { router.push("/"); router.refresh(); })}
+          />
+        ) : (
+          <Link
+            href="/entrar"
+            aria-current={aceso("/entrar") ? "page" : undefined}
+            aria-label="Entrar"
+            className={[
+              "flex flex-col items-center gap-1 rounded-[var(--radius-control)] px-3 py-2 transition-colors",
+              aceso("/entrar") ? "text-[var(--color-ink)]" : "text-[var(--color-ink-faint)]",
+            ].join(" ")}
+          >
+            <LogIn size={20} strokeWidth={1.5} />
+            <span className="text-[10px] uppercase tracking-[0.12em]">Entrar</span>
+          </Link>
+        )}
       </GlassBar>
 
       {/* o fio no topo, para o celular saber de quem é o app, e o sino ao lado */}
@@ -330,7 +337,7 @@ function BuscaFalsa() {
   return (
     <button
       onClick={abrirBusca}
-      className="surface-2 mt-6 flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:ring-1 hover:ring-white/[0.10]"
+      className="surface-2 mt-6 flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:ring-1 hover:ring-[color-mix(in_srgb,var(--color-ink)_12%,transparent)]"
     >
       <Search size={16} strokeWidth={1.5} className="shrink-0 text-[var(--color-ink-faint)]" />
       <span className="flex-1 text-[14px] text-[var(--color-ink-faint)]">Buscar</span>
@@ -362,7 +369,7 @@ function Eu({
           <Link
             href="/eu"
             onClick={() => setAberto(false)}
-            className="block rounded-[var(--radius-2)] px-3 py-2 text-[14px] text-[var(--color-ink-soft)] hover:bg-white/[0.04] hover:text-[var(--color-ink)]"
+            className="block rounded-[var(--radius-2)] px-3 py-2 text-[14px] text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)] hover:text-[var(--color-ink)]"
           >
             Perfil
           </Link>
@@ -374,7 +381,7 @@ function Eu({
             <Link
               href="/cuidar"
               onClick={() => setAberto(false)}
-              className="block rounded-[var(--radius-2)] px-3 py-2 text-[14px] text-[var(--color-ink-soft)] hover:bg-white/[0.04] hover:text-[var(--color-ink)]"
+              className="block rounded-[var(--radius-2)] px-3 py-2 text-[14px] text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)] hover:text-[var(--color-ink)]"
             >
               Cuidar do acervo
             </Link>
@@ -382,7 +389,7 @@ function Eu({
 
           <button
             onClick={onSair}
-            className="flex w-full items-center gap-2 rounded-[var(--radius-2)] px-3 py-2 text-left text-[14px] text-[var(--color-ink-soft)] hover:bg-white/[0.04] hover:text-[var(--color-ink)]"
+            className="flex w-full items-center gap-2 rounded-[var(--radius-2)] px-3 py-2 text-left text-[14px] text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)] hover:text-[var(--color-ink)]"
           >
             <LogOut size={15} strokeWidth={1.5} />
             Sair
@@ -397,7 +404,7 @@ function Eu({
           "pill mt-1 flex w-full items-center gap-2.5 px-2 py-2 text-left text-[14px] transition-colors",
           path.startsWith("/perfil") || path.startsWith("/eu")
             ? "afiado font-medium text-[var(--color-ink)]"
-            : "text-[var(--color-ink-soft)] hover:bg-white/[0.03] hover:text-[var(--color-ink)]",
+            : "text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)] hover:text-[var(--color-ink)]",
         ].join(" ")}
       >
         <Avatar src={image} name={name} handle={name ?? "eu"} size={26} />
@@ -420,6 +427,72 @@ function Eu({
             aberto ? "rotate-180" : "",
           ].join(" ")}
         />
+      </button>
+    </div>
+  );
+}
+
+/**
+ * O MESMO menu do Eu, no celular: sobe de cima do item "Perfil" da barra de baixo.
+ *
+ * Ele tem duas portas a mais que o do desktop (Sobre e o Tema), porque no desktop
+ * elas são itens da coluna, e no celular a coluna não existe: este menu é o único
+ * teto que sobrou para elas. O rodapé da barra de baixo é apertado demais para
+ * itens novos, e cada ícone a mais ali rouba área de toque de todos os outros.
+ */
+function EuCelular({
+  aceso, cuidar, onSair,
+}: {
+  aceso: boolean;
+  cuidar: boolean;
+  onSair: () => void;
+}) {
+  const [aberto, setAberto] = useState(false);
+  const fecha = () => setAberto(false);
+  const linha =
+    "block rounded-[var(--radius-2)] px-3 py-2.5 text-[14px] text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)] hover:text-[var(--color-ink)]";
+
+  return (
+    <div className="relative">
+      {aberto && (
+        <div className="surface absolute bottom-full right-0 z-50 mb-3 w-56 overflow-hidden p-2">
+          <Link href="/eu" onClick={fecha} className={linha}>
+            Perfil
+          </Link>
+
+          {cuidar && (
+            <Link href="/cuidar" onClick={fecha} className={linha}>
+              Cuidar do acervo
+            </Link>
+          )}
+
+          <Link href="/sobre" onClick={fecha} className={linha}>
+            Sobre
+          </Link>
+
+          <Tema />
+
+          <button
+            onClick={onSair}
+            className="flex w-full items-center gap-2 rounded-[var(--radius-2)] px-3 py-2.5 text-left text-[14px] text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)] hover:text-[var(--color-ink)]"
+          >
+            <LogOut size={15} strokeWidth={1.5} />
+            Sair
+          </button>
+        </div>
+      )}
+
+      <button
+        onClick={() => setAberto((v) => !v)}
+        aria-expanded={aberto}
+        aria-label="Perfil"
+        className={[
+          "flex flex-col items-center gap-1 rounded-[var(--radius-control)] px-3 py-2 transition-colors",
+          aceso || aberto ? "text-[var(--color-ink)]" : "text-[var(--color-ink-faint)]",
+        ].join(" ")}
+      >
+        <UserRound size={20} strokeWidth={1.5} />
+        <span className="text-[10px] uppercase tracking-[0.12em]">Perfil</span>
       </button>
     </div>
   );
@@ -452,7 +525,7 @@ function Fora({
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="pill group flex items-center gap-2.5 px-3 py-2 text-[14px] text-[var(--color-ink-soft)] transition-colors duration-150 hover:bg-white/[0.03] hover:text-[var(--color-ink)]"
+      className="pill group flex items-center gap-2.5 px-3 py-2 text-[14px] text-[var(--color-ink-soft)] transition-colors duration-150 hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)] hover:text-[var(--color-ink)]"
     >
       {icon}
       <span className="truncate">{children}</span>
@@ -482,7 +555,7 @@ function Item({
         "pill flex items-center gap-2.5 px-3 py-2 text-[14px] transition-colors duration-150",
         active
           ? "afiado font-medium text-[var(--color-ink)]"
-          : "text-[var(--color-ink-soft)] hover:bg-white/[0.03] hover:text-[var(--color-ink)]",
+          : "text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)] hover:text-[var(--color-ink)]",
       ].join(" ")}
     >
       {icon}

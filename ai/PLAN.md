@@ -1,6 +1,6 @@
 # Plano
 
-**Este é um projeto de fim de semana.** O Gabriel tem outros projetos. O escopo abaixo é implacável de propósito: tudo que não é necessário para dez amigos usarem felizes foi empurrado para fora.
+**Este é um projeto de fim de semana.** O dono tem outros projetos. O escopo abaixo é implacável de propósito: tudo que não é necessário para dez amigos usarem felizes foi empurrado para fora.
 
 Cada fase é uma **fatia vertical**: migration → server → UI → teste. Ela sobe, é demonstrável, é commitada. Nunca "constrói todos os models primeiro".
 

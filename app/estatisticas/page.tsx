@@ -7,6 +7,8 @@ import {
 import { ScreenHeader } from "@/components/screen-header";
 import { Empty } from "@/components/empty";
 import { ShelfTabs } from "@/components/shelf-tabs";
+import { GLIFO } from "@/components/veredito";
+import { mine } from "@/lib/veredito";
 
 export const dynamic = "force-dynamic";
 
@@ -104,7 +106,7 @@ export default async function Estatisticas({
                 "pill px-4 py-2 text-[14px] transition-colors",
                 on
                   ? "afiado font-medium text-[var(--color-ink)]"
-                  : "text-[var(--color-ink-soft)] hover:bg-white/[0.03] hover:text-[var(--color-ink)]",
+                  : "text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)] hover:text-[var(--color-ink)]",
               ].join(" ")}
             >
               <span className="tabular">{y}</span>
@@ -121,6 +123,30 @@ export default async function Estatisticas({
           Estava com entrelinha 0.85, que é menor que o próprio glifo: a caixa de
           linha cortava o algarismo em cima e embaixo, e o número parecia espremido
           no enquadramento. Entrelinha 1 e ar em volta. */}
+      {/* A home tem a regra escrita: "a big zero is an accusation". Esta tela imprimia
+          um 0 de 132px para quem importou a estante e ainda não terminou nada NO ANO
+          (que é o recorte padrão). Zero no recorte vira frase, e a frase aponta a
+          lente da vida inteira. Ver app/page.tsx. */}
+      {s.books === 0 ? (
+        <section className="mt-16 sm:mt-20">
+          <p className="voice max-w-2xl text-[28px] leading-snug sm:text-[36px]">
+            Nada terminado {year === null ? "ainda" : `em ${year}`}. O ano é longo.
+          </p>
+          <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
+            <span className="tabular text-[var(--color-ink)]">{s.shelf}</span>{" "}
+            {s.shelf === 1 ? "livro espera" : "livros esperam"} na estante.
+            {year !== null && (
+              <>
+                {" "}
+                <Link href="/estatisticas?ano=sempre" className="underline decoration-[var(--color-rule)] underline-offset-4 hover:decoration-[var(--color-ink)]">
+                  Ver a vida inteira
+                </Link>
+                .
+              </>
+            )}
+          </p>
+        </section>
+      ) : (
       <section className="mt-16 flex flex-wrap items-end gap-x-12 gap-y-6 sm:mt-20">
         <div>
           <span className="voice tabular block text-[96px] leading-none sm:text-[132px]">
@@ -154,6 +180,7 @@ export default async function Estatisticas({
           </span>
         </div>
       </section>
+      )}
 
       {/* A frase-resumo. Determinística, e calada quando não sabe. */}
       {frase ? (
@@ -230,28 +257,36 @@ export default async function Estatisticas({
 
         {/* ══ 3. A GRADE ════════════════════════════════════════════════ */}
         <div className="grid gap-4 sm:grid-cols-2">
+          {/* O que você achou do que leu. Pedido do dono: as palavras que você
+              dá também são um retrato, e elas não apareciam em lugar nenhum. */}
+          {s.verdicts.some((v) => v.n > 0) && (
+            <Card titulo="o que você achou" frase={fraseVeredito(s.verdicts)}>
+              <Vereditos dados={s.verdicts} />
+            </Card>
+          )}
+
           {s.nationalities.length > 0 && (
             <Card titulo="de onde vêm os seus autores" frase={fraseNacoes(s.nationalities)}>
-              <Barras dados={s.nationalities} />
+              <Barras dados={s.nationalities} cor="--grafico-paises" />
             </Card>
           )}
 
           {s.publishers.length > 0 && (
             <Card titulo="quem publica o que você lê" frase={fraseEditoras(s.publishers)}>
-              <Barras dados={s.publishers} />
+              <Barras dados={s.publishers} cor="--grafico-editoras" />
             </Card>
           )}
 
           {/* Ninguém tem esse dado. É o mais bonito da página. */}
           {s.origins.length > 0 && (
             <Card titulo="de onde vieram os seus livros" frase={fraseOrigens(s.origins)}>
-              <Barras dados={s.origins} />
+              <Barras dados={s.origins} cor="--grafico-origens" />
             </Card>
           )}
 
           {s.formats.length > 0 && (
             <Card titulo="papel ou tela" frase={fraseFormato(s.formats)}>
-              <Barras dados={s.formats} />
+              <Barras dados={s.formats} cor="--grafico-formatos" />
             </Card>
           )}
 
@@ -430,7 +465,7 @@ function Comunidade({ c, s }: { c: Community; s: Stats }) {
               as editoras das estantes
             </h3>
             <div className="mt-5">
-              <Barras dados={c.publishers} />
+              <Barras dados={c.publishers} cor="--grafico-editoras" />
             </div>
           </div>
         )}
@@ -469,17 +504,21 @@ function Card({
 
 /**
  * ════════════════════════════════════════════════════════════════════
- *  OS GRÁFICOS. Uma linguagem só, e ela é MONOCROMÁTICA.
+ *  OS GRÁFICOS. Uma linguagem só, e cada assunto tem a SUA COR.
  *
- *  A única coisa colorida no Gume é a capa de um livro. O acento saiu
- *  daqui: ele era a única cor da tela e não pertencia a lugar nenhum do
- *  sistema, e uma barra colorida ao lado de uma parede de capas rouba
- *  exatamente a atenção que é da capa.
+ *  Já foi tudo monocromático ("a única cor é a capa"), e o dono vetou:
+ *  cinza sobre cinza era desinteressante e difícil de ler. A regra
+ *  antiga protegia a capa, e esta é a única tela do app sem capa
+ *  nenhuma; aqui o gráfico é o conteúdo. Então cada ASSUNTO tem uma cor
+ *  fixa (--grafico-*, em globals.css, validadas para daltonismo e
+ *  contraste nos dois temas), e dentro de um gráfico todas as barras
+ *  são IGUAIS: quem compara é o comprimento, e cor por valor seria um
+ *  ranking pintado. Ver ai/DECISIONS.md.
  *
- *  O contraste não vem de cor: vem da ARESTA SUPERIOR ACESA. A barra é
- *  um volume de luz baixa (14%) com um filete de 1px a 100% no topo. E
- *  isso é a marca: o fio é onde a luz bate. A mesma ideia que desenha o
- *  símbolo desenha o gráfico. Ver .barra em globals.css.
+ *  O resto do contraste vem da ARESTA SUPERIOR ACESA: a barra é um
+ *  volume translúcido da cor com um filete de 1px na cor cheia no topo.
+ *  E isso é a marca: o fio é onde a luz bate. A mesma ideia que desenha
+ *  o símbolo desenha o gráfico. Ver .barra-item em globals.css.
  *
  *  Duas orientações, um material só. A COLUNA quando o eixo é o tempo (o
  *  olho lê da esquerda para a direita e vê a leitura andando pelos
@@ -508,20 +547,21 @@ const ALTURA = 132;
  * A luz vem de `--barra-luz`, que o hover do item muda. É assim que o hover
  * funciona sem precisar ganhar do inline, o que ele nunca ganharia.
  */
-function material(zero: boolean): React.CSSProperties {
+function material(zero: boolean, cor: string): React.CSSProperties {
   return {
     // Valor zero: SÓ o filete, sem preenchimento. A barra existe, e é honesta:
     // sumir com a categoria que deu zero é a mentira mais fácil de um gráfico.
     background: zero
       ? "transparent"
-      : "color-mix(in srgb, var(--color-ink) var(--barra-luz, 14%), transparent)",
-    borderTop: "1px solid var(--color-ink)",
+      : `color-mix(in srgb, var(${cor}) var(--barra-luz, 30%), transparent)`,
+    borderTop: `1px solid var(${cor})`,
     transition: "background 160ms ease",
   };
 }
 
 /** Os séculos. O tempo é um eixo, então ele deita. */
 function Seculos({ dados }: { dados: { century: number; label: string; n: number }[] }) {
+  const cor = "--grafico-tempo";
   const maior = Math.max(...dados.map((d) => d.n), 1);
 
   return (
@@ -552,7 +592,7 @@ function Seculos({ dados }: { dados: { century: number; label: string; n: number
                 // desaparece.
                 width: "60%",
                 height: Math.round((d.n / maior) * ALTURA),
-                ...material(d.n === 0),
+                ...material(d.n === 0, cor),
               }}
             />
           </span>
@@ -573,7 +613,7 @@ function Seculos({ dados }: { dados: { century: number; label: string; n: number
  * tamanhos sem errar, e o rótulo fica do lado do dado, em vez de numa legenda que
  * obriga a ir e voltar.
  */
-function Barras({ dados }: { dados: Slice[] }) {
+function Barras({ dados, cor }: { dados: Slice[]; cor: string }) {
   const maior = Math.max(...dados.map((d) => d.n), 1);
 
   return (
@@ -586,10 +626,10 @@ function Barras({ dados }: { dados: Slice[] }) {
 
           <span className="flex min-w-0 flex-1 items-center">
             <span
-              className="block h-2 shrink-0"
+              className="block h-2.5 shrink-0"
               style={{
                 width: `${Math.max((d.n / maior) * 100, 1.5)}%`,
-                ...material(d.n === 0),
+                ...material(d.n === 0, cor),
               }}
             />
           </span>
@@ -599,6 +639,56 @@ function Barras({ dados }: { dados: Slice[] }) {
           </span>
         </li>
       ))}
+    </ul>
+  );
+}
+
+/**
+ * O QUE VOCÊ ACHOU: uma linha por palavra, do "adorei" ao "detestei", com o
+ * glifo de cada uma. Os cinco degraus aparecem SEMPRE, com os zeros dentro:
+ * sumir com a palavra que ninguém usou é a mentira mais fácil de um gráfico.
+ *
+ * E as cinco barras têm a MESMA cor de propósito: verde no "adorei" e vermelho
+ * no "detestei" transformaria a palavra numa escala de semáforo, e escala vira
+ * média, que é o que a nota-palavra existe para matar. Ver lib/veredito.ts.
+ */
+function Vereditos({ dados }: { dados: { value: number; n: number }[] }) {
+  const maior = Math.max(...dados.map((d) => d.n), 1);
+
+  return (
+    <ul className="flex flex-col gap-3.5">
+      {dados.map((d) => {
+        const Glifo = GLIFO[d.value as keyof typeof GLIFO];
+        return (
+          <li key={d.value} className="barra-item flex items-center gap-4">
+            <span className="flex w-32 shrink-0 items-center gap-2.5">
+              <Glifo
+                size={15}
+                strokeWidth={1.5}
+                aria-hidden
+                className="shrink-0 text-[var(--color-ink-faint)]"
+              />
+              <span className="truncate text-[13px] text-[var(--color-ink-soft)]">
+                {mine(d.value)}
+              </span>
+            </span>
+
+            <span className="flex min-w-0 flex-1 items-center">
+              <span
+                className="block h-2.5 shrink-0"
+                style={{
+                  width: `${Math.max((d.n / maior) * 100, 1.5)}%`,
+                  ...material(d.n === 0, "--grafico-veredito"),
+                }}
+              />
+            </span>
+
+            <span className="tabular w-6 shrink-0 text-right text-[12px] text-[var(--color-ink-faint)]">
+              {d.n}
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -665,6 +755,23 @@ function fraseEditoras(dados: Slice[]): string {
 function fraseOrigens(dados: Slice[]): string {
   const primeira = dados[0]!;
   return `${primeira.n} ${primeira.n === 1 ? "livro seu veio" : "livros seus vieram"} de ${primeira.label.toLowerCase()}.`;
+}
+
+/** «"adorei" é a palavra que você mais diz.» O fato, e nunca uma conta. */
+function fraseVeredito(dados: { value: number; n: number }[]): string | undefined {
+  const total = dados.reduce((soma, d) => soma + d.n, 0);
+  if (total === 0) return undefined;
+
+  if (total === 1) {
+    const unico = dados.find((d) => d.n === 1)!;
+    return `Um livro julgado até agora: "${mine(unico.value)}".`;
+  }
+
+  const porUso = [...dados].sort((a, b) => b.n - a.n || b.value - a.value);
+  if (porUso[0]!.n === porUso[1]!.n) {
+    return `${total} livros julgados, e nenhuma palavra tomou a frente.`;
+  }
+  return `De ${total} livros julgados, "${mine(porUso[0]!.value)}" é a palavra que você mais diz.`;
 }
 
 function fraseFormato(dados: Slice[]): string {

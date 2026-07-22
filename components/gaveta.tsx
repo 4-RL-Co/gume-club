@@ -56,7 +56,7 @@ export function Gaveta({
         type="button"
         onClick={() => setAberta((v) => !v)}
         aria-expanded={aberta}
-        className="flex w-full items-center justify-between gap-4 p-6 text-left transition-colors hover:bg-white/[0.02] sm:px-7"
+        className="flex w-full items-center justify-between gap-4 p-6 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--color-ink)_3%,transparent)] sm:px-7"
       >
         <span className="min-w-0">
           <span className="block text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">

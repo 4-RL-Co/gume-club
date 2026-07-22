@@ -241,7 +241,7 @@ create index on readings (entry_id, started_on desc);
 -- A nota é uma PALAVRA, guardada como smallint 1..5 para ordenar, filtrar e
 -- importar. Na tela nunca aparece um dígito.
 --
---   1 não terminei · 2 não gostei · 3 achei ok · 4 gostei · 5 adorei
+--   1 detestei · 2 não gostei · 3 achei ok · 4 gostei · 5 adorei
 --
 -- Estrela é escala, escala vira média, média vira placar. Palavra não soma: não
 -- existe "a média entre gostei e adorei", e é por isso que a palavra é a forma

@@ -1,4 +1,4 @@
-import { Flame, Check, Minus, X, Undo2 } from "lucide-react";
+import { Flame, Check, Minus, X, Ban } from "lucide-react";
 import { mine, theirs } from "@/lib/veredito";
 
 /**
@@ -43,7 +43,7 @@ export const GLIFO = {
   4: Check, //  gostei        · deu certo
   3: Minus, //  achei ok      · nem lá, nem cá
   2: X, //      não gostei    · não
-  1: Undo2, //  não terminei  · dei meia-volta
+  1: Ban, //    detestei      · nunca mais
 } as const;
 
 /** Mesmo tamanho e mesmo traço para os cinco. Mexeu em um, criou um placar. */

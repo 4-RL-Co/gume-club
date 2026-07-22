@@ -330,7 +330,7 @@ export function Command() {
                     router.push(`/autor/${a.slug}`);
                     setOpen(false);
                   }}
-                  className="flex w-full items-center gap-4 px-6 py-3 text-left transition-colors hover:bg-white/[0.04]"
+                  className="flex w-full items-center gap-4 px-6 py-3 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)]"
                 >
                   <span className="cover-lift w-8 shrink-0">
                     <Cover title={a.name} src={a.coverUrl} />
@@ -376,7 +376,7 @@ export function Command() {
                   }}
                   className={[
                     "flex w-full cursor-pointer items-center gap-4 px-6 py-3 text-left transition-colors",
-                    i === cursor ? "bg-white/[0.04]" : "",
+                    i === cursor ? "bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)]" : "",
                   ].join(" ")}
                 >
                   <span className="cover-lift w-8 shrink-0">
@@ -421,7 +421,7 @@ export function Command() {
                     }}
                     className={[
                       "flex w-full items-center gap-4 px-6 py-3 text-left transition-colors",
-                      idx === cursor ? "bg-white/[0.04]" : "",
+                      idx === cursor ? "bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)]" : "",
                     ].join(" ")}
                   >
                     <Avatar src={p.image} name={p.displayName} handle={p.handle} size={32} />
@@ -454,7 +454,7 @@ export function Command() {
                     router.push(`/buscar?q=${encodeURIComponent(q.trim())}`);
                     setOpen(false);
                   }}
-                  className="flex w-full items-center gap-3 px-6 py-3 text-left text-[13px] text-[var(--color-ink-faint)] transition-colors hover:bg-white/[0.04] hover:text-[var(--color-ink)]"
+                  className="flex w-full items-center gap-3 px-6 py-3 text-left text-[13px] text-[var(--color-ink-faint)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)] hover:text-[var(--color-ink)]"
                 >
                   <Plus size={15} strokeWidth={1.5} className="shrink-0" />
                   Não é nenhum desses? Cadastre o livro à mão

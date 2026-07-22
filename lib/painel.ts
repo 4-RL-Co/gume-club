@@ -433,7 +433,7 @@ async function getUso(): Promise<Painel["uso"]> {
      group by r.value
   `);
   const PALAVRA: Record<number, string> = {
-    1: "não terminei", 2: "não gostei", 3: "achei ok", 4: "gostei", 5: "adorei",
+    1: "detestei", 2: "não gostei", 3: "achei ok", 4: "gostei", 5: "adorei",
   };
   const mapaNotas = new Map(notas.map((r) => [r.value, r.n]));
 

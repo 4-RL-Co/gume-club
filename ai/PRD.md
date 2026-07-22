@@ -6,7 +6,7 @@
 
 Concretamente: leitores de clássicos (Antofágica, Martin Claret, Editora 34, Companhia das Letras), leitores de filosofia e leitores de mangá. Na maioria, livros físicos. Um ou dois livros por mês. Pessoas que querem um registro bonito do que leram e um pequeno círculo em cujo gosto confiam.
 
-**Este é um projeto de fim de semana**, e o escopo é implacável por causa disso. Os primeiros dez usuários são amigos do Gabriel, pelo nome, convidados na mão. Sucesso em seis meses é **200 leitores fiéis**, não crescimento. Se uma feature só faz sentido com 100 mil usuários, ela não pertence aqui.
+**Este é um projeto de fim de semana**, e o escopo é implacável por causa disso. Os primeiros dez usuários são amigos do dono, pelo nome, convidados na mão. Sucesso em seis meses é **200 leitores fiéis**, não crescimento. Se uma feature só faz sentido com 100 mil usuários, ela não pertence aqui.
 
 O nicho é um presente. Clássicos são o problema de catálogo mais fácil da categoria (domínio público, bem catalogados, sem a cauda longa do BookTok), e mangá tem uma excelente API oficial. A parte difícil de um tracker de livros quase desaparece.
 

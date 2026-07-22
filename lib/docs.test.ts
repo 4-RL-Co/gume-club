@@ -151,7 +151,7 @@ describe("os documentos não citam arquivo que não existe", () => {
  *
  *  Um comentário que promete uma trava sem nomeá-la não está documentando uma trava: está
  *  pedindo confiança. E confiança é exatamente o que este repositório se recusa a usar como
- *  mecanismo de defesa (ver AGENTS.md: "nenhuma proteção pode depender de o Gabriel revisar
+ *  mecanismo de defesa (ver AGENTS.md: "nenhuma proteção pode depender de o dono revisar
  *  o código").
  *
  *  ═══ A LEI ═══

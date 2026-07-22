@@ -64,7 +64,7 @@ export function AfinidadeLinha({
         type="button"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        className="surface-2 flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-white/[0.02]"
+        className="surface-2 flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--color-ink)_3%,transparent)]"
       >
         <span className="w-10 shrink-0">
           <Cover title={title} author={author} src={coverUrl} />
@@ -104,7 +104,7 @@ export function AfinidadeLinha({
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="fechar"
-                className="shrink-0 rounded-[var(--radius-control)] p-1.5 text-[var(--color-ink-faint)] transition-colors hover:bg-white/[0.05] hover:text-[var(--color-ink)]"
+                className="shrink-0 rounded-[var(--radius-control)] p-1.5 text-[var(--color-ink-faint)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-ink)_6%,transparent)] hover:text-[var(--color-ink)]"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                   <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
@@ -117,7 +117,7 @@ export function AfinidadeLinha({
                 <li key={l.handle}>
                   <Link
                     href={`/@${l.handle}`}
-                    className="flex items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 transition-colors hover:bg-white/[0.04]"
+                    className="flex items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 transition-colors hover:bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)]"
                   >
                     <Avatar src={l.image} name={l.name} handle={l.handle} size={34} />
                     <span className="min-w-0">
@@ -136,7 +136,7 @@ export function AfinidadeLinha({
             <div className="border-t border-[var(--color-rule)] p-3">
               <Link
                 href={`/livro/${slug}`}
-                className="block rounded-[var(--radius-control)] px-3 py-2 text-[14px] text-[var(--color-ink-soft)] transition-colors hover:bg-white/[0.03] hover:text-[var(--color-ink)]"
+                className="block rounded-[var(--radius-control)] px-3 py-2 text-[14px] text-[var(--color-ink-soft)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)] hover:text-[var(--color-ink)]"
               >
                 abrir a página do livro
               </Link>

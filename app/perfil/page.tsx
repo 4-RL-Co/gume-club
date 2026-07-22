@@ -166,7 +166,7 @@ export default async function Perfil() {
                 <li key={p.handle}>
                   <Link
                     href={`/@${p.handle}`}
-                    className="flex items-center gap-3 rounded-[var(--radius-control)] px-2 py-2 transition-colors hover:bg-white/[0.03]"
+                    className="flex items-center gap-3 rounded-[var(--radius-control)] px-2 py-2 transition-colors hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)]"
                   >
                     <Avatar src={p.image} name={p.name} handle={p.handle} size={32} />
                     <span className="min-w-0">
@@ -243,13 +243,15 @@ export default async function Perfil() {
           Baixar a minha estante
         </a>
 
+        {/* A promessa de apagar a conta morava aqui COM "apaga na hora" e sem botão
+            nenhum no app inteiro (auditoria de 2026-07-22). Promessa impressa sem
+            botão é pior que ausência: na tela que existe para provar confiança, era
+            a única frase que mentia. Até o fluxo existir, a frase diz a verdade. */}
         <p className="mt-6 max-w-lg text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
-          E se um dia você quiser ir embora, apagar a conta apaga mesmo: tudo que você escreveu
-          some junto, na hora, sem deixar rastro para os outros.{" "}
-          <strong className="font-medium text-[var(--color-ink)]">
-            Baixe a sua estante antes
-          </strong>
-          , porque depois não tem de onde tirar.
+          E se um dia você quiser ir embora, a estante vai com você: é o arquivo aqui de
+          cima, e ele não pede licença. O botão de apagar a conta de vez chega em breve, e
+          quando chegar vai apagar mesmo: tudo que você escreveu some junto, sem deixar
+          rastro para os outros.
         </p>
       </section>
     </main>

@@ -97,7 +97,7 @@ A licença é a garantia. Se a instância hospedada um dia deixar de honrar a li
 Dois comandos, e eles têm que funcionar numa máquina limpa.
 
 ```bash
-git clone git@github.com:4-RL-Co/gume-club.git
+git clone https://github.com/4-RL-Co/gume-club.git
 cd gume-club
 ```
 
@@ -116,7 +116,7 @@ docker compose up -d
 pnpm install && pnpm db:migrate && pnpm dev
 ```
 
-Quer uma estante de exemplo para não começar com o app vazio? `pnpm db:seed:exemplo`.
+Quer uma estante de exemplo para não começar com o app vazio? `pnpm db:seed`.
 
 Se qualquer um dos dois falhar numa máquina limpa, isso é um bug e a gente quer a issue. Código aberto que você não consegue rodar é decoração.
 
@@ -169,7 +169,7 @@ O modelo:
 
 O schema, o plano e o sistema de design são públicos de propósito, porque são as decisões caras de mudar depois e baratas de discutir agora. Se você acha que uma delas está errada, abra uma issue. Isso não é formalidade.
 
-**O que segura a qualidade, já que o mantenedor não é programador de formação:** o repositório se defende sozinho. Mais de 850 testes, e os mais importantes não testam funções: eles **varrem o próprio código** e quebram o build se uma regra for violada. Um teste impede um número de contribuição de vazar para fora da página de contribuidores. Outro impede uma insígnia de ser ganha por ler. Outro impede uma rota de nascer pública sem ninguém decidir. E um "red team" ataca o próprio sistema, trocando UUIDs para tentar ler e escrever nas linhas de outra pessoa.
+**O que segura a qualidade, já que o mantenedor não é programador de formação:** o repositório se defende sozinho. Mais de 800 testes, e os mais importantes não testam funções: eles **varrem o próprio código** e quebram o build se uma regra for violada. Um teste impede um número de contribuição de vazar para fora da página de contribuidores. Outro impede uma insígnia de ser ganha por ler. Outro impede uma rota de nascer pública sem ninguém decidir. E um "red team" ataca o próprio sistema, trocando UUIDs para tentar ler e escrever nas linhas de outra pessoa.
 
 ## Stack
 
