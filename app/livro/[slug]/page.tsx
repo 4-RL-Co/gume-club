@@ -363,7 +363,13 @@ export default async function BookPage({
             {/* The year of the WORK and the year of the EDITION are different
                 facts, so they sit side by side and are labelled. */}
             <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3">
-              <Fact label="editora" value={edition?.publisher ?? null} />
+              {/* A editora leva para a vitrine dela no explorar: o selo é um corredor
+                  do catálogo, e um nome que abre uma sala vale mais que um nome parado. */}
+              <Fact
+                label="editora"
+                value={edition?.publisher ?? null}
+                href={edition?.publisher ? `/explorar?ver=editoras&qual=${encodeURIComponent(edition.publisher)}` : undefined}
+              />
               <Fact label="ano da obra" value={book.firstPublished} />
               <Fact label="ano da edição" value={edition?.publishedYear ?? null} />
               <Fact
@@ -529,7 +535,7 @@ export default async function BookPage({
           ) : (
             <section className="surface p-6">
               <p className="text-[14px] text-[var(--color-ink-soft)]">
-                Entre para prateleirar, dar nota e escrever.
+                Entre para guardar este livro na estante, dar a sua palavra e escrever.
               </p>
             </section>
           )}
@@ -652,14 +658,22 @@ function Label({ children }: { children: React.ReactNode }) {
  * A fact. Inter, not the serif: "Companhia das Letras" is interface data, and
  * setting data in a display serif is exactly what made this look amateur.
  */
-function Fact({ label, value }: { label: string; value: string | number | null }) {
+function Fact({ label, value, href }: { label: string; value: string | number | null; href?: string }) {
   if (value === null || value === "") return null;
   return (
     <div>
       <dt className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
         {label}
       </dt>
-      <dd className="tabular mt-1.5 text-[15px] text-[var(--color-ink)]">{value}</dd>
+      <dd className="tabular mt-1.5 text-[15px] text-[var(--color-ink)]">
+        {href ? (
+          <Link href={href} className="underline decoration-[var(--color-rule)] underline-offset-4 transition-colors hover:decoration-[var(--color-ink)]">
+            {value}
+          </Link>
+        ) : (
+          value
+        )}
+      </dd>
     </div>
   );
 }

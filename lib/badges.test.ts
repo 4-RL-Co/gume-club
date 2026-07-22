@@ -352,7 +352,7 @@ describe("a insígnia de quem paga", () => {
  * ════════════════════════════════════════════════════════════════════
  *  A PLACA DO PERFIL: UMA MOLDURA PARA AS NOVE.
  *
- *  A estética de RPG entrou (o Gabriel pediu, e ela é bonita). O veneno
+ *  A estética de RPG entrou (o dono pediu, e ela é bonita). O veneno
  *  dela NÃO entrou, e é isto que este teste guarda.
  *
  *  O que faz um jogo virar farm não é a moldura: é a moldura DIFERENTE.

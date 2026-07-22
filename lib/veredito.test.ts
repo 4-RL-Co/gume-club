@@ -3,20 +3,21 @@ import { readFileSync } from "node:fs";
 import { VERDICTS, mine, theirs, fromStars, fromHalfStars } from "@/lib/veredito";
 
 /**
- * A tradução de estrela para palavra é uma PERDA, e a perda é declarada. Este
- * teste existe para que ela nunca mude sem alguém decidir que mudou.
+ * A tradução de estrela para palavra é degrau por degrau desde que o 1 virou
+ * julgamento ("detestei"). Este teste existe para que ela nunca mude sem alguém
+ * decidir que mudou.
  */
 describe("a nota é uma palavra", () => {
   it("tem cinco, nesta ordem, e nenhuma delas é 'odiei'", () => {
     expect(VERDICTS.map((v) => v.mine)).toEqual([
-      "não terminei", "não gostei", "achei ok", "gostei", "adorei",
+      "detestei", "não gostei", "achei ok", "gostei", "adorei",
     ]);
   });
 
   it("fala em primeira pessoa para você e em terceira para os outros", () => {
     expect(mine(5)).toBe("adorei");
     expect(theirs(5)).toBe("adorou");
-    expect(theirs(1)).toBe("não terminou");
+    expect(theirs(1)).toBe("detestou");
   });
 
   it("nunca devolve um número", () => {
@@ -26,12 +27,15 @@ describe("a nota é uma palavra", () => {
     }
   });
 
-  it("traduz a estrela de importação, e uma e duas caem na mesma frase", () => {
+  it("traduz a estrela de importação, cada degrau na sua palavra", () => {
     expect(fromStars(5)).toBe(5);
     expect(fromStars(4)).toBe(4);
     expect(fromStars(3)).toBe(3);
     expect(fromStars(2)).toBe(2);
-    expect(fromStars(1)).toBe(2); // a perda declarada
+    // Uma estrela era achatada em "não gostei" enquanto o degrau 1 se chamava
+    // "não terminei" (um quase-status). Com o 1 virando julgamento, a tradução
+    // ficou inteira e o aviso de perda saiu da importação.
+    expect(fromStars(1)).toBe(1);
     expect(fromStars(0)).toBeNull();
   });
 

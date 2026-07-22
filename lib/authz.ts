@@ -132,53 +132,16 @@ export function visibleTo(
   return or(isMine, and(donoExiste, or(isPublic, isFollowersAndIFollow)))!;
 }
 
-/**
- * ════════════════════════════════════════════════════════════════════
- *  SQL predicate: "rows of `ownerCol` where the viewer and the owner
- *  follow EACH OTHER."
- *
- *  This exists for exactly one thing: the reader's contact channel, on
- *  an available copy. It is NOT a general visibility rule and must not
- *  become one — nothing else in the product is gated on mutual follow.
- *
- *  WHY MUTUAL FOLLOW IS THE TRUST SYSTEM
- *
- *  The alternative was a private message system, and a DM is the single
- *  largest moderation surface a product can have. "No comments" was
- *  decided precisely so that moderation stays possible for ONE person.
- *  A marketplace smuggles messages, reputation and dispute into a
- *  weekend project through the back door.
- *
- *  Mutual follow is a trust system we ALREADY HAVE, and it costs nothing
- *  to run: you follow them, they follow you back. The Gume makes the
- *  introduction and leaves the room.
- *
- *  THE COST, ACCEPTED WITH EYES OPEN: a swap only happens between people
- *  who already chose each other. A stranger can see the copy is
- *  available and has no way to ask. That is the CORRECT behaviour, not a
- *  missing feature. See ai/DECISIONS.md.
- * ════════════════════════════════════════════════════════════════════
+/*
+ * `mutuals()` MOROU AQUI, e saiu. Era a predicata "os dois se seguem", escrita
+ * para uma coisa só: o canal de contato do exemplar disponível — e essa feature
+ * saiu do produto na migration 0046 (ver lib/copies.ts). A função ficou meses
+ * morta dentro do único arquivo que o SECURITY.md promete "pequeno o bastante
+ * para ler em cinco minutos", sem teste, parecendo tão provada quanto
+ * visibleTo(). Código de autorização sem uso e sem prova não é reserva: é
+ * armadilha para quem reusar. Se a troca de exemplares voltar, a predicata
+ * volta pelo git (auditoria de 2026-07-22), COM teste SQL, como as outras.
  */
-export function mutuals(viewer: Viewer, ownerCol: PgColumn): SQL {
-  // Nobody is mutual with nobody. An anonymous visitor never sees a contact.
-  if (!viewer) return sql`false`;
-
-  return sql`(
-    ${ownerCol} <> ${viewer.id}::uuid
-    and exists (
-      select 1 from follows f
-      where f.follower_id = ${viewer.id}::uuid
-        and f.followee_id = ${ownerCol}
-        and f.state = 'accepted'
-    )
-    and exists (
-      select 1 from follows f2
-      where f2.follower_id = ${ownerCol}
-        and f2.followee_id = ${viewer.id}::uuid
-        and f2.state = 'accepted'
-    )
-  )`;
-}
 
 /**
  * In-memory mirror of `visibleTo`, for tests and for the rare case where a row

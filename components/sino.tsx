@@ -68,8 +68,8 @@ export function Sino({ novidades }: { novidades: Novidade[] }) {
         onClick={abrir}
         aria-label={naoVistas > 0 ? `novidades, ${naoVistas} sem ver` : "novidades"}
         className={[
-          "relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] transition-colors hover:bg-white/[0.06] hover:text-[var(--color-ink)]",
-          aberto ? "bg-white/[0.06] text-[var(--color-ink)]" : "text-[var(--color-ink-soft)]",
+          "relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-ink)_7%,transparent)] hover:text-[var(--color-ink)]",
+          aberto ? "bg-[color-mix(in_srgb,var(--color-ink)_7%,transparent)] text-[var(--color-ink)]" : "text-[var(--color-ink-soft)]",
         ].join(" ")}
       >
         <Bell size={19} strokeWidth={1.5} />
@@ -108,7 +108,7 @@ export function Sino({ novidades }: { novidades: Novidade[] }) {
 
 function Item({ n, onIr }: { n: Novidade; onIr: () => void }) {
   return (
-    <div className="flex items-start gap-3 rounded-[var(--radius-2)] px-3 py-2.5 transition-colors hover:bg-white/[0.03]">
+    <div className="flex items-start gap-3 rounded-[var(--radius-2)] px-3 py-2.5 transition-colors hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)]">
       <Link href={`/@${n.handle}`} onClick={onIr} aria-label={n.name ?? n.handle} className="shrink-0">
         <Avatar src={n.image} name={n.name} handle={n.handle} size={34} />
       </Link>

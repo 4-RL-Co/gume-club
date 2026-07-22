@@ -300,7 +300,14 @@ export async function fotografarLista(
 
   const limpa = url?.trim() ?? null;
   if (limpa !== null) {
-    const ok = limpa.length <= 600 && (limpa.startsWith("/uploads/") || limpa.startsWith("https://"));
+    // O funil de upload entrega /uploads/ (disco) ou o host do Blob (produção).
+    // "Qualquer https" aceitava um servidor arbitrário — o rastreador dentro do
+    // app que lib/imagens.ts existe para impedir. Mesma régua do avatar
+    // (app/perfil/actions.ts). Auditoria de 2026-07-22.
+    const ok =
+      limpa.length <= 600 &&
+      (limpa.startsWith("/uploads/") ||
+        /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\//.test(limpa));
     if (!ok) return; // um endereço que não veio do funil não entra, e nada é dito
   }
 

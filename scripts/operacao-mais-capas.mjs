@@ -47,8 +47,10 @@ const { sql } = await import("drizzle-orm");
 
 const SO_H1 = process.argv.includes("--so-h1");
 // A planilha da pesquisa mora em seed/: ela é dado de catálogo, e o material
-// bruto da operação (imagens, rascunhos) não entra no repositório.
-const CSV = "seed/operacao-mais-capas.csv";
+// bruto da operação (imagens, rascunhos) não entra no repositório. Outra
+// planilha no MESMO formato pode ser passada como argumento (a semeadura das
+// listas do Goodreads usa isto): node ... operacao-mais-capas.mjs seed/x.csv
+const CSV = process.argv.slice(2).find((a) => a.endsWith(".csv")) ?? "seed/operacao-mais-capas.csv";
 
 /** Um parser de CSV pequeno e correto para aspas: vírgula dentro de aspas não separa. */
 function parseCsv(texto) {

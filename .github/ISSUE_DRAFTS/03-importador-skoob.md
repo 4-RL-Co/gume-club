@@ -3,6 +3,10 @@ title: "Importador: Skoob (a investigação vem antes do código)"
 labels: good first issue, importador
 ---
 
+> ✅ **JÁ ENTREGUE. NÃO ABRIR como issue.** A investigação aconteceu e o parser existe:
+> lib/import/parse.ts detecta o CSV do Skoob (skoob_id, estante). O texto fica como
+> registro. Conferido contra o código em 2026-07-22.
+
 ## O que é
 
 Trazer a estante do Skoob pra cá. **E essa issue começa diferente das outras cinco: ela

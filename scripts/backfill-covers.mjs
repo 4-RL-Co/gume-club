@@ -71,9 +71,14 @@ const sql = postgres(url);
 
 const TUDO = process.argv.includes("--tudo");
 const CANONE = process.argv.includes("--canone");
+// --obras <arquivo.json>: um escopo por LISTA DE IDS de obra, para operações de
+// curadoria (a semeadura das listas do Goodreads usa isto). Mesma ideia do
+// --canone: quem escolhe as obras é um arquivo medido antes, não uma busca aqui.
+const obrasIdx = process.argv.indexOf("--obras");
+const OBRAS = obrasIdx > -1 ? JSON.parse(readFileSync(process.argv[obrasIdx + 1], "utf8")) : null;
 const limIdx = process.argv.indexOf("--limite");
 const LIMITE =
-  limIdx > -1 ? Number(process.argv[limIdx + 1]) : TUDO || CANONE ? 1_000_000 : 5_000;
+  limIdx > -1 ? Number(process.argv[limIdx + 1]) : TUDO || CANONE || OBRAS ? 1_000_000 : 5_000;
 
 /**
  * Os autores do cânone, como o CATÁLOGO os conhece.
@@ -358,7 +363,19 @@ if (FANTASMAS) {
  * outra edição já tem, a estante empresta aquela (ver lib/shelf.ts) e não há nada
  * a fazer aqui. Esse é o passo 1 da cadeia, e ele não custa uma requisição.
  */
-const alvo = CANONE
+const alvo = OBRAS
+  ? sql`
+      select distinct on (w.id) e.id, e.isbn13 as isbn, w.title, a.name as author
+        from editions e
+        join works w on w.id = e.work_id
+        left join authors a on a.id = w.author_id
+       where e.cover_url is null
+         and w.id = any(${OBRAS}::uuid[])
+         and not exists (
+           select 1 from editions e2 where e2.work_id = w.id and e2.cover_url is not null)
+       order by w.id, (e.isbn13 is null)
+       limit ${LIMITE}`
+  : CANONE
   ? sql`
       select distinct on (w.id) e.id, e.isbn13 as isbn, w.title, a.name as author
         from editions e
@@ -396,11 +413,13 @@ const alvo = CANONE
 const edicoes = await alvo;
 
 console.log(
-  CANONE
-    ? `Cânone: ${edicoes.length} obras dos 300 autores, sem capa em nenhuma edição.`
-    : TUDO
-      ? `Catálogo: ${edicoes.length} obras sem capa em nenhuma edição.`
-      : `Nas estantes: ${edicoes.length} obras sem capa em nenhuma edição.`,
+  OBRAS
+    ? `Da lista (--obras): ${edicoes.length} obras sem capa em nenhuma edição.`
+    : CANONE
+      ? `Cânone: ${edicoes.length} obras dos 300 autores, sem capa em nenhuma edição.`
+      : TUDO
+        ? `Catálogo: ${edicoes.length} obras sem capa em nenhuma edição.`
+        : `Nas estantes: ${edicoes.length} obras sem capa em nenhuma edição.`,
 );
 
 let deOL = 0;

@@ -59,7 +59,9 @@ say "instalando dependências"
 pnpm install
 
 say "rodando as migrations"
-pnpm db:generate
+# SÓ migrate, nunca generate: as migrations deste repo são escritas à mão (ver
+# AGENTS.md), e o generate num clone limpo inventaria uma migration espúria
+# ANTES da primeira aplicação. Auditoria de 2026-07-22.
 pnpm db:migrate
 
 say "checando"

@@ -3,6 +3,11 @@ title: "Importador: CSV do StoryGraph, sem perdas"
 labels: good first issue, importador
 ---
 
+> ✅ **JÁ ENTREGUE. NÃO ABRIR como issue.** O parser do StoryGraph existe em
+> lib/import/parse.ts (detecção por cabeçalho, as várias datas num campo só, a estrela
+> decimal virando palavra), com fixture em lib/import/fixtures/storygraph.csv. O texto
+> fica como registro da régua. Conferido contra o código em 2026-07-22.
+
 ## O que é
 
 Um parser que lê o CSV de exportação do StoryGraph e devolve uma lista de

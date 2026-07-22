@@ -113,9 +113,12 @@ describe("o import grava a estante inteira", () => {
     expect(estantes.map((e) => e.name)).toEqual(["favoritos", "releituras", "ya"]);
   });
 
-  it("declara a perda: uma e duas estrelas caem na mesma palavra", async () => {
+  it("não declara perda de nota: cada estrela tem a sua palavra", async () => {
+    // O aviso de achatamento existiu enquanto uma e duas estrelas caíam juntas em
+    // "não gostei". Com o degrau 1 virando julgamento ("detestei"), a tradução é
+    // inteira e o aviso sumiu de propósito.
     const relatorio = await aplicar(actor, parse(goodreads));
-    expect(relatorio.avisos.join(" ")).toMatch(/não gostei/);
+    expect(relatorio.avisos.join(" ")).not.toMatch(/estrelas/);
   });
 });
 

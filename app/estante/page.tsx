@@ -28,11 +28,14 @@ export default async function Estante({
    * os lidos ordenados por nota. Sem isto, o único caminho de volta era a seta do
    * navegador, e cada livro aberto custava o recorte inteiro. Ver BookCard.
    */
+  // No recorte padrão ("todos", sem query) o texto sai vazio, e o livro aberto dali
+  // ficava SEM caminho de volta enquanto todos os outros recortes tinham. O padrão
+  // vira "filtro=tudo" de propósito: voltar existe de qualquer lugar da estante.
   const de = new URLSearchParams(
     Object.entries(params).flatMap(([k, v]) =>
       typeof v === "string" ? [[k, v] as [string, string]] : [],
     ),
-  ).toString();
+  ).toString() || "filtro=tudo";
   const viewer = await getViewer();
 
   // Logged in, you are looking at your own shelf. Logged out, at the founding
@@ -120,7 +123,14 @@ export default async function Estante({
               >
                 traga ela para cá
               </Link>
-              . Ou procure um livro e comece por ele.
+              . Ou{" "}
+              <Link
+                href="/buscar"
+                className="underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+              >
+                procure um livro
+              </Link>{" "}
+              e comece por ele.
             </>
           ) : (
             "Nada nesta prateleira ainda."

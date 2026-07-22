@@ -480,6 +480,5 @@ function rotulo(status: string): string {
 
 /** A estrela decimal do StoryGraph (4.25) vira a palavra mais próxima. */
 function arredonda(estrelas: number): number {
-  const s = Math.round(estrelas);
-  return s <= 2 ? 2 : Math.min(5, s);
+  return Math.min(5, Math.max(1, Math.round(estrelas)));
 }

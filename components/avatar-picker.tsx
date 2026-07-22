@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { JANELA, SIZE, retangulo, travar } from "@/lib/recorte";
+import { tipoDeImagem } from "@/lib/tipo-de-imagem";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -69,6 +70,8 @@ export function AvatarPicker({
   const dragging = useRef<{ x: number; y: number } | null>(null);
   /** O endereço `blob:` vivo. Fica num ref, e não num efeito com dependência de `src`. */
   const urlRef = useRef<string | null>(null);
+  /** O que os bytes do arquivo escolhido disseram. A recusa usa isto para falar a verdade. */
+  const tipoRef = useRef<ReturnType<typeof tipoDeImagem>>("desconhecido");
 
   /**
    * ═══ POR QUE O REVOKE MORA AQUI, E NÃO NUM EFEITO [src] ═══
@@ -91,18 +94,31 @@ export function AvatarPicker({
     setError(null);
 
     /**
-     * ═══ FOTO DE IPHONE (HEIC) PASSA A FUNCIONAR ═══
+     * ═══ FOTO DE IPHONE (HEIC) PASSA A FUNCIONAR, AGORA PELOS BYTES ═══
      *
      * O Chrome não decodifica HEIC, e é o formato padrão do iPhone. Em vez de mandar a
      * pessoa exportar como JPG, a gente converte no navegador, antes do recorte.
      *
+     * E a decisão vem da ASSINATURA do arquivo, nunca do nome: um leitor real ficou
+     * preso num "não consegui abrir" porque o arquivo dele DIZIA .png e era HEIC por
+     * dentro (conversor que só renomeia faz isso, e o compartilhar do iPhone também).
+     * A extensão dizia uma coisa, os bytes diziam outra, e a gente acreditava na
+     * extensão: a conversão era pulada e a tela mandava a pessoa fazer o que ela
+     * achava que já tinha feito. Mesma regra do servidor (o sniff da rota de upload):
+     * um arquivo é o que os bytes dele dizem. Ver lib/tipo-de-imagem.ts.
+     *
      * A biblioteca (`heic2any`, com o decodificador libheif em WASM) é grande, então ela é
      * importada SOB DEMANDA, só quando um HEIC de verdade aparece. Quem sobe um JPG comum
-     * nunca baixa esse peso. O `.type` às vezes vem vazio no HEIC, então a extensão do nome
-     * é a segunda pista.
+     * nunca baixa esse peso.
      */
-    const ehHeic = /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
-    if (!file.type.startsWith("image/") && !ehHeic) return setError("escolha uma imagem");
+    const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+    const tipo = tipoDeImagem(bytes);
+    tipoRef.current = tipo;
+    const ehHeic =
+      tipo === "heic" || /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+    if (tipo === "desconhecido" && !ehHeic && !file.type.startsWith("image/")) {
+      return setError("escolha uma imagem");
+    }
 
     let usavel = file;
     if (ehHeic) {
@@ -141,16 +157,21 @@ export function AvatarPicker({
   /**
    * ═══ A FOTO QUE O NAVEGADOR NÃO ABRE ═══
    *
-   * Uma foto de iPhone é HEIC, e o Chrome não decodifica HEIC. O arquivo passa no filtro
-   * (`accept="image/*"` aceita `image/heic`), o `createObjectURL` funciona, mas a imagem
-   * nunca carrega: o `onError` dispara, ou o `onLoad` vem com dimensão zero. Sem tratar
-   * isso, a caixa de recorte ficava CINZA em silêncio, e o "Usar esta foto" não fazia nada,
-   * porque `save()` desiste sem `natural`. O bug parecia da prévia; era o formato.
-   *
-   * Agora a recusa é dita em voz alta, e com a saída: exporte como JPG ou PNG.
+   * O `onError` dispara, ou o `onLoad` vem com dimensão zero, e sem tratar isso a caixa
+   * de recorte ficava CINZA em silêncio. A recusa é dita em voz alta, e ela conta O QUE
+   * a gente descobriu do arquivo: o HEIC de verdade agora converte sozinho (mesmo de
+   * nome trocado), então chegar aqui é conversão que falhou ou arquivo que não abre, e
+   * cada caso tem a sua frase. Mandar todo mundo "exportar como JPG" era acusar de HEIC
+   * uma pessoa que já estava mandando um JPG.
    */
   function recusar() {
-    setError("Não consegui abrir essa imagem. Se for foto de iPhone (HEIC), exporte como JPG ou PNG e tente de novo.");
+    setError(
+      tipoRef.current === "heic"
+        ? "A foto é HEIC, do iPhone, e a conversão não deu certo por aqui. Exporte como JPG ou PNG e tente de novo."
+        : tipoRef.current === "desconhecido"
+          ? "Isso não parece uma imagem por dentro, seja qual for o nome do arquivo. Exporte como JPG ou PNG e tente de novo."
+          : "Não consegui abrir essa imagem: ela pode estar corrompida ou ser pesada demais para este aparelho. Exporte de novo como JPG e tente.",
+    );
     limpar();
   }
 

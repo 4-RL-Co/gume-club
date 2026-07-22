@@ -78,7 +78,7 @@ export default async function Pessoas({
                 "pill px-4 py-2 text-[14px] transition-colors",
                 on
                   ? "afiado font-medium text-[var(--color-ink)]"
-                  : "text-[var(--color-ink-soft)] hover:bg-white/[0.03] hover:text-[var(--color-ink)]",
+                  : "text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)] hover:text-[var(--color-ink)]",
               ].join(" ")}
             >
               {a.label}

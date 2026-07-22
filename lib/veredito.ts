@@ -10,7 +10,15 @@
  */
 
 export const VERDICTS = [
-  { value: 1, mine: "não terminei", theirs: "não terminou" },
+  /**
+   * O DEGRAU 1 JÁ SE CHAMOU "não terminei", e o nome estava errado de dois jeitos:
+   * gente marcava enquanto ainda estava LENDO (parecia um status, e status é outra
+   * coluna: "larguei" existe para isso), e o degrau era para ser PIOR que "não
+   * gostei", o que o nome não dizia. Virou julgamento: "detestei". "Odiei" foi
+   * considerado e recusado (forte demais para um app que fala baixo), e o teste
+   * garante que ele nunca entra.
+   */
+  { value: 1, mine: "detestei", theirs: "detestou" },
   { value: 2, mine: "não gostei", theirs: "não gostou" },
   { value: 3, mine: "achei ok", theirs: "achou ok" },
   { value: 4, mine: "gostei", theirs: "gostou" },
@@ -30,20 +38,19 @@ export function theirs(value: number): string {
 }
 
 /**
- * Estrela de importação vira palavra, e a perda é DECLARADA.
+ * Estrela de importação vira palavra, degrau por degrau.
  *
- * O Goodreads (e o Skoob, e a planilha da sua amiga) guarda estrela de 1 a 5.
- * Duas estrelas e uma estrela são a mesma frase aqui: "não gostei". Isso perde
- * informação, e a pessoa é avisada na tela quando acontece. Perda declarada é
- * honesta; perda silenciosa não é.
+ * O Goodreads (e o Skoob, e a planilha da sua amiga) guarda estrela de 1 a 5, e
+ * agora cada estrela tem a sua palavra: uma estrela é "detestei", e não mais uma
+ * perda achatada em "não gostei". Enquanto o degrau 1 se chamava "não terminei"
+ * (um quase-status), mandar uma estrela para lá seria mentir sobre a leitura; com
+ * o degrau virando julgamento, a tradução ficou inteira.
  */
 export function fromStars(stars: number): VerdictValue | null {
   if (!Number.isFinite(stars) || stars < 1) return null;
   const s = Math.round(stars);
   if (s >= 5) return 5;
-  if (s === 4) return 4;
-  if (s === 3) return 3;
-  return 2; // 1 e 2 estrelas caem na mesma frase, e a pessoa fica sabendo
+  return Math.max(1, s) as VerdictValue;
 }
 
 /**

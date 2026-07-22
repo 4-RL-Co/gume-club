@@ -96,6 +96,14 @@ export const RATES = {
   search: { limit: 300, windowMs: 60_000 },
   /** Toda escrita: prateleirar, dar nota, resenhar, recomendar. */
   write: { limit: 120, windowMs: 60_000 },
+  /**
+   * UPLOAD DE IMAGEM. Mais apertado que a escrita comum, e por dinheiro: cada
+   * upload em produção é uma escrita PAGA no blob, de até 4 MB. Vinte por minuto
+   * é folgado para gente (ninguém troca de avatar duas vezes por segundo) e é
+   * teto para o laço que transformaria a conta de hospedagem num incêndio. Era a
+   * única escrita do app fora do balde; auditoria de 2026-07-22.
+   */
+  upload: { limit: 20, windowMs: 60_000 },
 } as const;
 
 export type Regra = { limit: number; windowMs: number };
@@ -176,8 +184,21 @@ export async function varrer(): Promise<void> {
   }
 }
 
-/** Quem está batendo na porta. `x-forwarded-for` é o que a Vercel põe. */
+/**
+ * Quem está batendo na porta.
+ *
+ * `x-real-ip` PRIMEIRO, e de propósito: é o cabeçalho que a plataforma (Vercel,
+ * nginx com a config padrão) escreve com o IP que ELA viu na borda, e que o
+ * cliente não consegue forjar. O `x-forwarded-for` é uma lista que proxies vão
+ * ACRESCENTANDO — se a borda acrescenta em vez de substituir, o primeiro item é
+ * o que o atacante mandou, e cada requisição com um valor novo cairia num balde
+ * novo: o limite de força bruta pareceria limitar e não limitaria. Auditoria de
+ * 2026-07-22. Quem hospedar atrás de um proxy que não põe `x-real-ip` cai no
+ * primeiro `x-forwarded-for`, que é o melhor que aquele ambiente oferece.
+ */
 export function quem(req: Request): string {
+  const real = req.headers.get("x-real-ip")?.trim();
+  if (real) return real;
   const encaminhado = req.headers.get("x-forwarded-for");
-  return encaminhado?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "sem-ip";
+  return encaminhado?.split(",")[0]?.trim() || "sem-ip";
 }

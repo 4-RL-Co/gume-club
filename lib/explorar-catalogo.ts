@@ -36,7 +36,16 @@ export type AutorVitrine = {
  * porque gente ordenada é pódio. O desempate é o tamanho no acervo, e depois o nome:
  * um catálogo novo, ainda sem leitores, mostra os autores mais presentes.
  */
-export async function getAutoresParaExplorar(limite = 18): Promise<AutorVitrine[]> {
+/**
+ * A BUSCA das vitrines desce até aqui, no SQL, de propósito: a vitrine mostra só o
+ * topo (os 18 autores mais lidos, as 24 editoras mais presentes), e um filtro por
+ * cima da fatia não acharia a editora pequena que está no acervo mas fora do topo.
+ * Sem acento e sem caixa, com o mesmo immutable_unaccent da busca do catálogo.
+ */
+const semAcentoSql = (coluna: ReturnType<typeof sql>, busca: string) =>
+  sql`immutable_unaccent(lower(${coluna})) like '%' || immutable_unaccent(lower(${busca})) || '%'`;
+
+export async function getAutoresParaExplorar(limite = 18, busca = ""): Promise<AutorVitrine[]> {
   const rows = await db.execute<AutorVitrine>(sql`
     select a.slug,
            a.name,
@@ -47,6 +56,7 @@ export async function getAutoresParaExplorar(limite = 18): Promise<AutorVitrine[
       join works w on w.author_id = a.id
       left join library_entries le on le.work_id = w.id and le.visibility = 'public'
       left join users u on u.id = le.user_id and u.deleted_at is null and u.banned_at is null
+     where ${busca ? semAcentoSql(sql`a.name`, busca) : sql`true`}
      group by a.id, a.slug, a.name, a.nationality, a.image_url
      order by count(distinct u.id) desc, count(distinct w.id) desc, a.name asc
      limit ${limite}`);
@@ -56,11 +66,12 @@ export async function getAutoresParaExplorar(limite = 18): Promise<AutorVitrine[
 export type Rotulo = { nome: string; obras: number };
 
 /** Os gêneros do acervo, dos mais povoados para baixo. */
-export async function getGeneros(limite = 24): Promise<Rotulo[]> {
+export async function getGeneros(limite = 24, busca = ""): Promise<Rotulo[]> {
   const rows = await db.execute<{ nome: string; obras: number }>(sql`
     select w.genre as nome, count(*)::int as obras
       from works w
      where w.genre is not null and w.genre <> ''
+       and ${busca ? semAcentoSql(sql`w.genre`, busca) : sql`true`}
      group by w.genre
      order by count(*) desc, w.genre asc
      limit ${limite}`);
@@ -68,11 +79,12 @@ export async function getGeneros(limite = 24): Promise<Rotulo[]> {
 }
 
 /** As editoras do acervo, das mais presentes para baixo. */
-export async function getEditoras(limite = 24): Promise<Rotulo[]> {
+export async function getEditoras(limite = 24, busca = ""): Promise<Rotulo[]> {
   const rows = await db.execute<{ nome: string; obras: number }>(sql`
     select e.publisher as nome, count(distinct e.work_id)::int as obras
       from editions e
      where e.publisher is not null and e.publisher <> ''
+       and ${busca ? semAcentoSql(sql`e.publisher`, busca) : sql`true`}
      group by e.publisher
      order by count(distinct e.work_id) desc, e.publisher asc
      limit ${limite}`);

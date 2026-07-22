@@ -96,7 +96,7 @@ function Sala({
   return (
     <Link
       href={href}
-      className="surface group flex items-start gap-4 p-6 transition-colors hover:bg-white/[0.03]"
+      className="surface group flex items-start gap-4 p-6 transition-colors hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)]"
     >
       <Icon size={20} strokeWidth={1.5} className="mt-0.5 shrink-0 text-[var(--color-ink-faint)]" />
 

@@ -361,7 +361,7 @@ export async function retirar(viewer: Viewer, userId: string, badge: string): Pr
  *  Estava escrito, em maiúsculas, em dois documentos: "nada de nível, de
  *  tier, de 'faltam 12 correções'. ESCADA PRODUZ FARM."
  *
- *  A distinção que virou a decisão é do Gabriel, e ela é boa: o que este
+ *  A distinção que virou a decisão é do dono, e ela é boa: o que este
  *  app existe para NÃO fazer é transformar leitura em COBRANÇA.
  *
  *  ═══ E ESTA FRASE DIZIA MAIS DO QUE PODIA ═══

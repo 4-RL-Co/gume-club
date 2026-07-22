@@ -553,7 +553,7 @@ A página não é desempenho, é **curadoria**. Ela não te diz quanto você leu
 
 A entrada anterior dizia: *"Não ordena do maior para o menor. Ordena por quem chegou primeiro. O número é um registro, não um placar — e no dia em que virar placar, alguém começa a farmar correção trivial para subir nele."*
 
-**Está revertido, a pedido do Gabriel, e o motivo dele é bom:** ordem de chegada **não é neutra**, é só outra ordem. Com cem pessoas na lista, ela **enterra quem mais cuidou do catálogo** embaixo de quem simplesmente se cadastrou antes. Este projeto promete, em voz alta, que **quem conserta uma capa vale o que vale quem faz um commit** — e reconhecimento que ninguém consegue **ver** não é reconhecimento, é uma frase bonita num arquivo que a gente escreveu para si mesmo.
+**Está revertido, a pedido do dono, e o motivo dele é bom:** ordem de chegada **não é neutra**, é só outra ordem. Com cem pessoas na lista, ela **enterra quem mais cuidou do catálogo** embaixo de quem simplesmente se cadastrou antes. Este projeto promete, em voz alta, que **quem conserta uma capa vale o que vale quem faz um commit** — e reconhecimento que ninguém consegue **ver** não é reconhecimento, é uma frase bonita num arquivo que a gente escreveu para si mesmo.
 
 **O custo está aceito de olhos abertos, e ele é real.** Contar só o que **sobreviveu** (`reverted_at is null`) impede a correção **errada**, e **não impede a correção trivial**: uma correção minúscula e certa sobrevive e conta. Com a lista ordenada, a jogada ótima passa a ser **fazer quinhentas correções minúsculas e certas**. O medo antigo continua verdadeiro; a gente escolheu pagar por ele.
 
@@ -572,7 +572,7 @@ Se um dia aparecer farm de correção trivial, o conserto **não é voltar à or
 
 Estava escrito em maiúsculas, em dois documentos: *"nada de nível, de tier, de 'faltam 12 correções'. **ESCADA PRODUZ FARM**: quem precisa de 500 correções para subir de degrau faz 500 correções ruins."*
 
-**Está revertido, a pedido do Gabriel, e a distinção dele é a coisa boa desta entrada:**
+**Está revertido, a pedido do dono, e a distinção dele é a coisa boa desta entrada:**
 
 > Gamificar **contribuição** não é ruim. O ponto do Gume é não gamificar **leitura**, e não comparar leitores.
 
@@ -595,7 +595,7 @@ E a insígnia continua **binária**: a barra mostra a distância, e o glifo cont
 
 **2026-07-12 — Moderador é um cargo SEPARADO do bibliotecário, e só o idealizador concede.**
 
-A moderação nasceu presa ao bibliotecário, e isso estava errado. O Gabriel pegou: *"eles já têm muito poder"*.
+A moderação nasceu presa ao bibliotecário, e isso estava errado. O dono pegou: *"eles já têm muito poder"*.
 
 **Bibliotecário SE GANHA SOZINHO:** 50 correções que sobreviveram, 30 dias de conta, e a porta abre. É a regra **certa** para o que ele faz (aprovar capa, desfazer vandalismo no catálogo): o pior erro dele é um erro de **ficha de livro**, revertível por outro bibliotecário, com o nome dele no log.
 
@@ -1163,7 +1163,7 @@ título. Então: inglês decisivo → acento → inglês sem português nenhum �
 
 ## A sinopse em inglês não vai para a tela
 
-**DECISÃO DO GABRIEL:** fonte em português primeiro. Nada de tradução automática — ela
+**DECISÃO DO DONO:** fonte em português primeiro. Nada de tradução automática — ela
 encostaria na promessa pública de "nada de IA generativa", e poria texto escrito por uma
 máquina num dataset que promete ser CC0.
 
@@ -1304,7 +1304,7 @@ vazio educado dizendo "siga alguém" — como, e a partir de onde?
 
 ## O accent: a lâmina (#7DD3C0)
 
-**DECISÃO DO GABRIEL**, entre três direções desenhadas: a brasa (o terracota que já
+**DECISÃO DO DONO**, entre três direções desenhadas: a brasa (o terracota que já
 estava no código), a lâmina (verde-água) e a tinta (violeta).
 
 Ela sai do **nome do produto**, e não de uma tendência. Gume é fio de faca; verde-água é
@@ -1370,7 +1370,7 @@ Gume virou um jogo de ler.
 
 ## O Gume vai ter ELO. E as políticas que isso contradiz foram reescritas, não escondidas.
 
-**DECISÃO DO GABRIEL:** *"eu vou gamificar o app… vamos ter que mudar nossas políticas,
+**DECISÃO DO DONO:** *"eu vou gamificar o app… vamos ter que mudar nossas políticas,
 mas é em nome da diversão entre amigos."*
 
 É legítima, e é dele. O Gume deixa de ser um app que se recusa a contar e passa a ser um
@@ -2121,7 +2121,7 @@ sua caixa de entrada**, e fingir que consegue seria a pior mentira desta rodada.
 
 **2026-07-14: A IA sai da lista de recusas do README, e o "sem IA" fica sendo sobre as FEATURES.**
 
-O README listava "sem IA generativa escrevendo sobre a sua leitura" ao lado de "sem ofensiva" e "sem placar", como um valor de marca. E o Gabriel apontou a incoerência: o app é construído com IA, do primeiro commit a esta linha. Disavowar a ferramenta que a gente usa todo dia, na porta de entrada, é pose, e pose é a única coisa que este README não pode ter, porque a tese do projeto é confiança.
+O README listava "sem IA generativa escrevendo sobre a sua leitura" ao lado de "sem ofensiva" e "sem placar", como um valor de marca. E o dono apontou a incoerência: o app é construído com IA, do primeiro commit a esta linha. Disavowar a ferramenta que a gente usa todo dia, na porta de entrada, é pose, e pose é a única coisa que este README não pode ter, porque a tese do projeto é confiança.
 
 A recusa então some da vitrine, e o que fica é a verdade dividida em duas:
 
@@ -2416,3 +2416,45 @@ A demora das capas incomodava o dono, e a medição confirmou: dois terços da e
 - **Prévia de formulário fica crua de propósito**: os campos de colar URL (correção, autor, livro manual, moderação) mostram `<img>` direto, porque ali a URL é arbitrária por natureza e quem olha é quem está conferindo.
 
 E a tira "lendo agora" saiu do perfil, a pedido do dono: a estante com recortes no fim da página já responde isso num clique, e duas moradas para a mesma resposta era o pergaminho voltando.
+
+---
+
+**2026-07-22: O degrau 1 virou julgamento: "detestei". E a importação parou de achatar a uma estrela.**
+
+"Não terminei" estava errado de dois jeitos, e os dois apareceram no uso real: gente marcava enquanto ainda estava LENDO (o nome parecia um status, e status é outra coluna: "larguei" existe para isso), e o degrau era para ser pior que "não gostei", o que o nome não dizia. Virou "detestei", em primeira pessoa, "detestou" na terceira. **"Odiei" foi considerado e recusado** pelo dono: forte demais para um app que fala baixo, e o teste de lib/veredito.ts garante que ele nunca entra. O glifo virou o Ban (nunca mais), no lugar da meia-volta.
+
+Consequência que paga a mudança: **a importação ficou inteira.** Uma estrela caía em "não gostei" junto com duas (mandar alguém para "não terminei" seria mentir sobre a leitura), e a perda era declarada num aviso. Com o degrau 1 sendo julgamento, cada estrela tem a sua palavra, e o aviso de achatamento saiu do fluxo de importar (app/importar/actions.ts e lib/import/aplicar.ts).
+
+---
+
+**2026-07-22: Os gráficos da estatística ganharam cor, uma por assunto, e o card "o que você achou".**
+
+O dono vetou o monocromático da página de estatísticas: desinteressante, difícil de ler, "tudo da mesma cor é ruim". A regra antiga ("a única cor é a capa") protegia a capa, e a página de estatísticas é a única tela do app sem capa nenhuma; lá o gráfico é o conteúdo. A regra sobrevive onde importa: fora dessa página, nada ganhou cor.
+
+- **A cor segue o ASSUNTO, nunca o valor**: tempo azul, países verde, editoras ocre, procedência vinho, formato verde-água, veredito roxo (tokens `--grafico-*` em globals.css, com um degrau próprio no tema escuro). Dentro de um gráfico, todas as barras são iguais: quem compara é o comprimento, e cor por valor seria ranking pintado. As duas paletas passaram no validador de dataviz (banda de luminância, croma, separação para daltonismo, contraste sobre `#fbf9f4` e `#111111`).
+- **O material continua o da casa**: volume translúcido com a aresta superior acesa em 1px na cor cheia. O fio é onde a luz bate, agora na cor do assunto.
+- **"O que você achou"**: card novo com a contagem por palavra, do "adorei" ao "detestei", com o glifo de cada uma, os cinco degraus sempre visíveis (zero aparece como filete). As cinco barras têm a MESMA cor de propósito: verde no "adorei" e vermelho no "detestei" seria um semáforo, semáforo é escala, e escala vira média. Sem mínimo de livros: contagem é fato, não retrato; a frase-resumo continua calada abaixo de 5.
+
+---
+
+**2026-07-22: A semeadura das listas do Goodreads: 901 obras conferidas, zero duplicata, e a proveniência limpa.**
+
+O dono quis o conteúdo de nove listas do Goodreads (Clube de Literatura Clássica, Best Literature in Portuguese, Fantasia/Sci-Fi traduzida, Leitura Escolar, Jabuti Romance 1959-2012, Martin Claret, e três de negócios/investimentos) dentro do catálogo, com ficha completa e capa. Scraping do Goodreads continua rejeitado; o desenho que respeita a decisão: **o dono salvou as páginas à mão** (seed/listas-goodreads/, fora do git), e delas só saem **título e autor** — fato bibliográfico. Todo o resto (ISBN, editora, ano, capa) veio das fontes abertas de sempre, pelo `enriquecer()` da casa.
+
+- **Os números**: 994 linhas parseadas (batendo exato com o total declarado de cada lista), 976 obras únicas, 901 no CSV final (seed/listas-goodreads.csv, versionado e reaplicável). As 901 **casaram todas com obras que o acervo já tinha** (o dump PT-BR cobre bem o cânone brasileiro): zero criada, zero duplicada, zero falha, **642 fichas enriquecidas**.
+- **O passe de tradução**: 129 títulos estavam em inglês (metade era obra LUSÓFONA catalogada pela edição americana: "Esau and Jacob", "Rebellion in the Backlands"). Caminho: edições `por` da mesma obra na Open Library → palpite do cânone confirmado no Google Books restrito a pt → chute do Google por último, com revisão à mão por cima (o chute errou 2 de 4: série errada, livro errado do autor — desconfiança justificada). 97 traduzidos; 32 sem edição BR encontrada ficaram FORA do catálogo (não se semeia obra em inglês num catálogo PT-BR), listados com os 5 volumes 3-em-1 em seed/listas-goodreads/relatorio-semeadura.md para decisão à mão.
+- **Capas**: das 901, 377 obras estavam sem capa em qualquer edição. O backfill ganhou o escopo `--obras <arquivo.json>` (irmão do --canone: a lista vem de medição, não de busca). A cota diária do Google acabou no meio: 7 capas novas, 9 sem capa em fonte nenhuma (tipográfica), **359 aguardando a cota de amanhã** — retomar com `node scripts/backfill-covers.mjs --obras seed/listas-goodreads/obras-sem-capa.json` depois das 5h.
+- **De quebra**: o script da operação aceita caminho de CSV como argumento, e a amostragem achou duplicatas ANTIGAS de grafia no acervo ("Euclides"/"Euclydes" separam Os Sertões em três fichas) — assunto para o fundir-duplicatas, fora desta operação.
+
+---
+
+**2026-07-22: A auditoria de véspera de LinkedIn, e o que ela mudou.**
+
+Quatro auditorias paralelas (segurança, testes, UX/UI, vitrine do repo) antes de abrir aos primeiros contribuidores. Nenhuma quebra de autorização, IDOR ou vazamento; os achados eram de borda, e os de código foram aplicados no mesmo dia:
+
+- **Segurança**: `/api/upload` era a única escrita fora do balde de rate limit e justamente a paga; ganhou balde próprio (20/min por pessoa, `RATES.upload`). O `quem()` passou a preferir `x-real-ip` (o header que a borda escreve e o cliente não forja) ao primeiro `x-forwarded-for`. O pôster OG de perfil passou a sumir com banido, como a página. `fotografarLista` trocou "qualquer https" pela régua do avatar (host do Blob ou /uploads/).
+- **Verde que mentia**: os canários do acervo (busca, países, autores) davam `return` silencioso com banco vazio e o CI os reportava PASSADOS; viraram `ctx.skip()`, e o relatório diz a verdade. `mutuals()` saiu do lib/authz.ts: morta desde a migration 0046, sem teste, parecia tão provada quanto `visibleTo()`.
+- **UX**: /buscar ganhou os estados de falha do ⌘K (429 não é mais "não achamos nada"); a frase de apagar conta parou de prometer botão que não existe (virou "em breve", até a fatia nascer); Estatísticas não imprime mais o zero de 132px no recorte do ano (vira frase, com a lente da vida inteira); nasceu o app/error.tsx na voz da casa (a única tela em inglês era a de erro); os realces `bg-white/3%` (invisíveis no tema claro) viraram tinta rebaixada em 21 arquivos; **o item Perfil do celular virou menu** com Sair, Sobre, Tema e Cuidar do acervo, que só existiam na coluna do desktop; "prateleirar" saiu do convite da página do livro; "procure um livro" da estante vazia virou link.
+- **Vitrine**: clone por HTTPS, `db:seed` aponta para o exemplo versionado (o pessoal virou `db:seed:olegas`), contagem de testes alinhada em "mais de 800" nos três documentos, README.en sincronizado com o PT (coleções, Top 100, bloco da 4/RL), setup-mac parou de rodar `db:generate` (migration é à mão). docs/design.md e docs/schema.md atualizados para "detestei".
+
+O que ficou por fazer, decidido e não esquecido: **apagar a conta de verdade** (fatia própria: migration de cascata, confirmação, teste); a trava estrutural de migrations append-only; teste para o `sniff()` do upload; `DATABASE_URL_TEST`; e os cliques de GitHub que só o dono dá (abrir as good first issues prontas em .github/ISSUE_DRAFTS/, descrição/topics/homepage/release/social preview).

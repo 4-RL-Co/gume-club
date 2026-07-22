@@ -1,5 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Search } from "lucide-react";
+import { semAcento } from "@/lib/texto";
 import { getViewer } from "@/lib/viewer";
 import { ScreenHeader } from "@/components/screen-header";
 import { Explore } from "@/components/explore";
@@ -50,6 +52,7 @@ export default async function Explorar({
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
   const ver: Vitrine = VITRINES.find((v) => v.key === one(params.ver))?.key ?? "tudo";
   const escolhido = (one(params.qual) ?? "").slice(0, 80);
+  const busca = (one(params.q) ?? "").slice(0, 80).trim();
 
   const viewer = await getViewer();
 
@@ -69,7 +72,7 @@ export default async function Explorar({
                 "pill px-4 py-2 text-[14px] transition-colors",
                 on
                   ? "afiado font-medium text-[var(--color-ink)]"
-                  : "text-[var(--color-ink-soft)] hover:bg-white/[0.03] hover:text-[var(--color-ink)]",
+                  : "text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)] hover:text-[var(--color-ink)]",
               ].join(" ")}
             >
               {v.label}
@@ -80,12 +83,46 @@ export default async function Explorar({
 
       {ver === "tudo" && <Explore viewer={viewer} />}
       {ver === "pessoas" && <Pessoas viewer={viewer} />}
-      {ver === "colecoes" && <Colecoes viewer={viewer} />}
-      {ver === "autores" && <Autores />}
-      {ver === "generos" && <PorRotulo tipo="generos" escolhido={escolhido} />}
-      {ver === "editoras" && <PorRotulo tipo="editoras" escolhido={escolhido} />}
+      {ver === "colecoes" && <Colecoes viewer={viewer} busca={busca} />}
+      {ver === "autores" && <Autores busca={busca} />}
+      {ver === "generos" && <PorRotulo tipo="generos" escolhido={escolhido} busca={busca} />}
+      {ver === "editoras" && <PorRotulo tipo="editoras" escolhido={escolhido} busca={busca} />}
     </main>
   );
+}
+
+/**
+ * A BUSCA de uma vitrine: um formulário simples que recarrega a mesma tela com ?q=.
+ *
+ * Servidor de ponta a ponta de propósito: a vitrine já é renderizada no servidor, e
+ * uma caixa que filtra por navegação não precisa carregar componente de cliente
+ * nenhum. Sem acento e sem caixa, como toda busca da casa (lib/texto.ts).
+ */
+function Busca({ ver, valor, oQue }: { ver: string; valor: string; oQue: string }) {
+  return (
+    <form method="get" action="/explorar" className="relative mt-6 max-w-md">
+      <input type="hidden" name="ver" value={ver} />
+      <Search
+        size={17}
+        strokeWidth={1.5}
+        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-ink-faint)]"
+      />
+      <input
+        name="q"
+        defaultValue={valor}
+        placeholder={oQue}
+        aria-label={oQue}
+        className="w-full rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent py-3 pl-11 pr-4 text-[15px] outline-none placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-ink)]"
+      />
+    </form>
+  );
+}
+
+/** O filtro da busca: contém, sem acento e sem caixa. */
+function bate(busca: string, ...textos: (string | null | undefined)[]): boolean {
+  if (!busca) return true;
+  const alvo = semAcento(busca);
+  return textos.some((t) => semAcento(t).includes(alvo));
 }
 
 /** A vitrine de PESSOAS: a busca e as estantes de gente, que já moram no Explore. */
@@ -94,13 +131,19 @@ async function Pessoas({ viewer }: { viewer: Awaited<ReturnType<typeof getViewer
 }
 
 /** A vitrine de COLEÇÕES: a curadoria da casa fixa, e todas as públicas embaixo. */
-async function Colecoes({ viewer }: { viewer: Awaited<ReturnType<typeof getViewer>> }) {
-  const listas = await getTodasAsListas(viewer);
+async function Colecoes({ viewer, busca }: { viewer: Awaited<ReturnType<typeof getViewer>>; busca: string }) {
+  const todas = await getTodasAsListas(viewer);
+  const listas = todas.filter((l) => bate(busca, l.name, l.description, l.dono.name, l.dono.handle));
   return (
-    <div className="mt-8 flex flex-col gap-8">
-      <CuradoriaCard />
+    <div className="mt-2 flex flex-col gap-8">
+      <Busca ver="colecoes" valor={busca} oQue="buscar uma coleção pelo nome" />
+      {!busca && <CuradoriaCard />}
       {listas.length === 0 ? (
-        <Empty>Ninguém abriu uma coleção ainda. Monte a sua num livro qualquer.</Empty>
+        <Empty>
+          {busca
+            ? "Nenhuma coleção com esse nome por aqui."
+            : "Ninguém abriu uma coleção ainda. Monte a sua num livro qualquer."}
+        </Empty>
       ) : (
         <ListaGrid listas={listas} />
       )}
@@ -109,11 +152,14 @@ async function Colecoes({ viewer }: { viewer: Awaited<ReturnType<typeof getViewe
 }
 
 /** A vitrine de AUTORES: rostos e nomes, sorteados, cada um com a própria sala. */
-async function Autores() {
-  const autores = await getAutoresParaExplorar();
-  if (autores.length === 0) return <div className="mt-8"><Empty>O acervo ainda não tem autor com obra.</Empty></div>;
+async function Autores({ busca }: { busca: string }) {
+  const autores = await getAutoresParaExplorar(18, busca);
+  if (!busca && autores.length === 0) return <div className="mt-8"><Empty>O acervo ainda não tem autor com obra.</Empty></div>;
 
   return (
+    <>
+    <Busca ver="autores" valor={busca} oQue="buscar um autor pelo nome" />
+    {autores.length === 0 && <div className="mt-8"><Empty>Ninguém com esse nome nas prateleiras.</Empty></div>}
     <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
       {autores.map((a) => (
         <li key={a.slug}>
@@ -131,31 +177,44 @@ async function Autores() {
         </li>
       ))}
     </ul>
+    </>
   );
 }
 
 /** GÊNEROS e EDITORAS: um mapa de rótulos e, escolhido um, a vitrine de obras dele. */
-async function PorRotulo({ tipo, escolhido }: { tipo: "generos" | "editoras"; escolhido: string }) {
-  const rotulos: Rotulo[] = tipo === "generos" ? await getGeneros() : await getEditoras();
+async function PorRotulo({ tipo, escolhido, busca }: { tipo: "generos" | "editoras"; escolhido: string; busca: string }) {
+  // A busca filtra os rótulos NO SQL (achar a editora pequena que está fora do
+  // topo da vitrine). Ver lib/explorar-catalogo.ts.
+  const rotulos: Rotulo[] = tipo === "generos" ? await getGeneros(24, busca) : await getEditoras(24, busca);
   const obras: ObraVitrine[] = escolhido
     ? tipo === "generos"
       ? await getObrasPorGenero(escolhido)
       : await getObrasPorEditora(escolhido)
     : [];
 
-  if (rotulos.length === 0) {
+  if (!busca && rotulos.length === 0) {
     return <div className="mt-8"><Empty>O acervo ainda não tem esse recorte preenchido.</Empty></div>;
   }
 
   return (
-    <div className="mt-8">
-      <div className="flex flex-wrap gap-2">
+    <div className="mt-2">
+      <Busca
+        ver={tipo}
+        valor={busca}
+        oQue={tipo === "generos" ? "buscar um gênero" : "buscar uma editora"}
+      />
+      {rotulos.length === 0 && (
+        <p className="mt-6 text-[14px] text-[var(--color-ink-soft)]">
+          {tipo === "generos" ? "Nenhum gênero com esse nome." : "Nenhum selo com esse nome."}
+        </p>
+      )}
+      <div className="mt-8 flex flex-wrap gap-2">
         {rotulos.map((r) => {
           const on = r.nome === escolhido;
           return (
             <Link
               key={r.nome}
-              href={`/explorar?ver=${tipo}&qual=${encodeURIComponent(on ? "" : r.nome)}`}
+              href={`/explorar?ver=${tipo}&qual=${encodeURIComponent(on ? "" : r.nome)}${busca ? `&q=${encodeURIComponent(busca)}` : ""}`}
               aria-current={on ? "page" : undefined}
               className={[
                 "pill border px-3.5 py-1.5 text-[13px] transition-colors",

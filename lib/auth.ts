@@ -441,8 +441,8 @@ export const auth = betterAuth({
            * O handle LIVRE, e ele contorna o RESERVADO em silêncio.
            *
            * O banco tem um gatilho que recusa handle reservado (migration 0027), e é
-           * ele a defesa de verdade. Mas quem se chama "Gabriel" não pode receber um
-           * erro de banco na cara, no meio do cadastro: ele recebe `@gabriel-2` e nem
+           * ele a defesa de verdade. Mas quem se chama "Marina" não pode receber um
+           * erro de banco na cara, no meio do cadastro: ele recebe `@marina-2` e nem
            * fica sabendo que houve uma decisão.
            *
            * A consulta pergunta as duas coisas de uma vez (já existe? é reservado?),

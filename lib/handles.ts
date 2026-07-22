@@ -9,8 +9,8 @@
  *
  *  Este arquivo existe para o cadastro CONTORNAR o handle reservado em
  *  silêncio, em vez de estourar na cara de quem está entrando. Alguém que
- *  se chama "Gabriel" não pode receber um erro de banco de dados na tela
- *  de cadastro: ele recebe `@gabriel-2` e nem fica sabendo.
+ *  se chama "Marina" não pode receber um erro de banco de dados na tela
+ *  de cadastro: ele recebe `@marina-2` e nem fica sabendo.
  *
  *  As duas regras são a MESMA regra, e por isso a forma canônica está
  *  escrita nos dois lugares, com o mesmo mapa. Se você mudar um, mude o

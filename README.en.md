@@ -49,7 +49,8 @@ So: Gume. The interesting part isn't the log. It's the "us".
 ## What it is
 
 - **A shelf.** Want to read, reading, read, abandoned. Rereads. Physical and digital, in the same place. The rating is a **word** (loved it, liked it, it was ok, didn't like it, didn't finish), never a number: a star is a scale, a scale becomes an average, an average becomes a scoreboard.
-- **A friends feed, and a tab to discover.** The feed is chronological and only from people you follow: what your friends read, with nothing injected in the middle. And there's an explore tab, with shelves of people you don't follow yet, shuffled and not ranked. You go into it when you want, instead of it coming into you.
+- **A friends feed, and a gallery to discover.** The feed is chronological and only from people you follow: what your friends read, with nothing injected in the middle. And there's Explore, a gallery of curators: shelves of people you don't follow yet and collections assembled by hand, shuffled and not ranked. You go into it when you want, instead of it coming into you.
+- **Collections, assembled by hand.** You build a collection with a cover, a description and, if the order is the point, a 1st, 2nd and 3rd. Someone else's good collection you **keep**: it shows up on your profile with credit to whoever made it, and nobody counts how many kept it, because a counted endorsement is a like by another name. And there is one list nobody edits: the **Top 100 favorites**, the books the community loved the most, rebuilt with every verdict. It ranks books, never people: a book on the podium is curation; a person on the podium is the race we refused.
 - **An open book graph.** Book data contributed by readers, and the declared intent to publish it back as an open dataset, so that if this project ever ends, the data outlives it. The part where a reader corrects the catalog already works; publishing the dump is a step still to come.
 - **Files you can take with you.** One click and the file downloads: JSON and CSV, with your shelf, reading dates, ratings, reviews (including the private ones), and the catalog corrections you made. No queue, no email, no "we're preparing your file", which is friction disguised as care. **And the CSV uses the Goodreads export columns**, the format that Skoob, StoryGraph, Oku and Fable know how to import: *an export is only an exit if another app can read it*. A proprietary JSON nobody imports is a ransom note in a pretty font. Leaving should be easy. That's what makes staying mean something.
 
@@ -80,6 +81,13 @@ The statistics tell you who you are (the age of the works you read, the countrie
 
 ## How it pays for itself
 
+<a href="https://github.com/4-RL-Co">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./public/logo/4rl-mark-dark.svg">
+    <img src="./public/logo/4rl-mark.svg" alt="4/RL Co." width="44" align="left">
+  </picture>
+</a>
+
 `gume.club` is hosted and paid for by [4/RL Co.](https://github.com/4-RL-Co) One day there will be a way to support the project, and it will be optional and **cosmetic**: a badge on the profile, and nothing beyond that. Support unlocks no features: people who pay and people who don't use exactly the same Gume. This is written here on purpose, because it's a promise.
 
 The license is the guarantee. If the hosted instance ever stops honoring the list above, you can take the code, take your data, and run your own. The exit is the point: it's what makes the promises real instead of merely pretty.
@@ -89,7 +97,7 @@ The license is the guarantee. If the hosted instance ever stops honoring the lis
 Two commands, and they have to work on a clean machine.
 
 ```bash
-git clone git@github.com:4-RL-Co/gume-club.git
+git clone https://github.com/4-RL-Co/gume-club.git
 cd gume-club
 ```
 
@@ -108,7 +116,7 @@ docker compose up -d
 pnpm install && pnpm db:migrate && pnpm dev
 ```
 
-Want a sample shelf so you don't start with an empty app? `pnpm db:seed:exemplo`.
+Want a sample shelf so you don't start with an empty app? `pnpm db:seed`.
 
 If either one fails on a clean machine, that's a bug and we want the issue. Open source you can't run is decoration.
 
@@ -151,13 +159,13 @@ The model:
 
 ## Status
 
-**It works.** The product is up and used every day by the person who maintains it: shelf, search over a Portuguese catalog of nearly 300 thousand editions, chronological feed, person-to-person recommendation, curation statistics, catalog corrections, and lossless import and export.
+**It works.** The product is up and used every day by the person who maintains it: shelf, search over a Portuguese catalog of hundreds of thousands of editions, chronological feed, person-to-person recommendation (with the recommender's face on the cover), collections with order and cover, the community's Top 100, curation statistics, catalog corrections, invitations with provenance, and lossless import and export.
 
 **It's live at [gume.club](https://gume.club).** The official instance runs on [Railway](https://railway.app) (the Next.js app and Postgres, on the same private network), with [Vercel Blob](https://vercel.com/storage/blob) for reader-uploaded images. None of that is required: being self-hostable, you can run your own with a Postgres and any place to keep the images.
 
 The schema, the plan, and the design system are public on purpose, because they're the decisions that are expensive to change later and cheap to argue about now. If you think one of them is wrong, open an issue. That's not a formality.
 
-**What holds quality, given that the maintainer is not a trained programmer:** the repository defends itself. More than 700 tests, and the most important ones don't test functions: they **sweep the code itself** and break the build if a rule is violated. One test stops a contribution count from leaking off the contributors page. Another stops a badge from being earned by reading. Another stops a route from being born public without anyone deciding. And a "red team" attacks the system itself, swapping UUIDs to try to read and write another person's rows.
+**What holds quality, given that the maintainer is not a trained programmer:** the repository defends itself. More than 800 tests, and the most important ones don't test functions: they **sweep the code itself** and break the build if a rule is violated. One test stops a contribution count from leaking off the contributors page. Another stops a badge from being earned by reading. Another stops a route from being born public without anyone deciding. And a "red team" attacks the system itself, swapping UUIDs to try to read and write another person's rows.
 
 ## Stack
 

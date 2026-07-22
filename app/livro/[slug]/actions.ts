@@ -75,7 +75,7 @@ export async function setStatus(
 
 /**
  * A nota é uma palavra: smallint 1..5, e nunca um float, em nenhuma camada.
- * 1 não terminei · 2 não gostei · 3 achei ok · 4 gostei · 5 adorei.
+ * 1 detestei · 2 não gostei · 3 achei ok · 4 gostei · 5 adorei.
  * Dar nota de novo no mesmo livro substitui a nota. Ver lib/veredito.ts.
  */
 export async function setRating(slug: string, workId: string, value: number): Promise<void> {

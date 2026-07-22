@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  * The door.
  *
  * Nobody may land in an empty room. If you came through someone's invite, the
- * first thing you see is not a blank shelf, it is THEIRS: "O Gabriel te trouxe",
+ * first thing you see is not a blank shelf, it is THEIRS: "A Marina te trouxe",
  * and then the books he reads, and a button to follow him. You begin the app
  * inside a conversation instead of inside a void.
  *

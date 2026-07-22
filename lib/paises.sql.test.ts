@@ -23,15 +23,16 @@ import { paisDe } from "@/lib/paises";
  * ════════════════════════════════════════════════════════════════════
  */
 describe("o país no banco", () => {
-  it("está escrito de um jeito só, e nenhum nome é uma variante de outro", async () => {
+  it("está escrito de um jeito só, e nenhum nome é uma variante de outro", async (ctx) => {
     const linhas = await db.execute<{ nationality: string; n: number }>(sql`
       select nationality, count(*)::int as n
         from authors
        where nationality is not null
        group by nationality`);
 
-    // Um banco vazio (a CI recém-migrada) não tem o que medir, e isso não é um erro.
-    if (linhas.length === 0) return;
+    // Um banco vazio (a CI recém-migrada) não tem o que medir, e isso não é um erro —
+    // mas também não é um VERDE: skip conta a verdade no relatório da suíte.
+    if (linhas.length === 0) return ctx.skip();
 
     /**
      * Um nome está torto quando a regra o mudaria. Se `paisDe("Brasileira")` devolve

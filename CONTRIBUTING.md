@@ -20,7 +20,7 @@ poder ser encontrada por quem chegar depois, e não sumir na rolagem de um chat.
 ### 1. Rode
 
 ```bash
-git clone git@github.com:4-RL-Co/gume-club.git
+git clone https://github.com/4-RL-Co/gume-club.git
 cd gume-club
 cp .env.example .env
 docker compose up -d      # sobe o Postgres
@@ -29,7 +29,7 @@ pnpm db:migrate
 pnpm dev                  # http://localhost:3000
 ```
 
-Quer uma estante de exemplo para não começar com o app vazio? `pnpm db:seed:exemplo` planta
+Quer uma estante de exemplo para não começar com o app vazio? `pnpm db:seed` planta
 vinte livros conhecidos (`seed/exemplo.csv`).
 
 No Mac, sem Docker, `bash scripts/setup-mac.sh` faz tudo isso sozinho.
@@ -93,7 +93,7 @@ feito pra se defender sozinho**, e a revisão que importa é automática.
 
 ## Os testes são o revisor, e vale saber quem eles são
 
-São mais de 700, e **os mais importantes não testam funções: eles varrem o próprio código.**
+São mais de 800, e **os mais importantes não testam funções: eles varrem o próprio código.**
 
 - Um quebra o build se uma tela sua falar como desenvolvedor (`schema`, `endpoint`, "Fase 4").
   **O Gume fala com leitores.**

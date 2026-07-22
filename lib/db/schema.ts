@@ -371,7 +371,7 @@ export const readings = pgTable("readings", {
  * A nota é uma PALAVRA, guardada como smallint 1..5 para ordenar, filtrar e
  * importar. Nunca um float, nunca meia estrela, e na tela nunca um dígito.
  *
- * 1 não terminei · 2 não gostei · 3 achei ok · 4 gostei · 5 adorei
+ * 1 detestei · 2 não gostei · 3 achei ok · 4 gostei · 5 adorei
  *
  * Estrela é escala, escala vira média, média vira placar. Palavra não soma. Ver
  * lib/veredito.ts e a entrada em ai/DECISIONS.md.

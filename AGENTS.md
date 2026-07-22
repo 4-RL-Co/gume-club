@@ -32,13 +32,13 @@ Gume: um registro de leitura de código aberto. Web primeiro, PWA, auto-hospedá
 11. **Sem IA generativa escrevendo pelo leitor.** Nem resumo do gosto dele, nem resenha, nem recomendação gerada. É uma regra sobre as FEATURES do produto, e não sobre a ferramenta: o Gume é construído com IA, e o README diz isso. O que a gente não faz é pôr IA para falar no lugar de quem lê. Não proponha uma feature dessas. Ver ai/DECISIONS.md.
 12. **Quando estiver em dúvida, peça 3 opções com trade-offs e uma recomendação.** Não escolha em silêncio.
 
-## Quem é o Gabriel, e o que isso exige de você
+## Quem é o dono do projeto, e o que isso exige de você
 
 **Ele é publicitário. É entusiasta, e não programador.** Ele mesmo pediu que isso ficasse escrito aqui.
 
 Três consequências, e nenhuma delas é opcional:
 
-1. **Nenhuma proteção pode depender de "o Gabriel revisa o código".** Ele não vai pegar um bug lendo um diff, e fingir que vai é teatro. A defesa tem que ser **automática**: teste, CI, `pnpm audit:security`, e os testes estruturais que quebram o build sozinhos. É por isso que este repo tem tanto teste que varre o próprio código: eles são o revisor.
+1. **Nenhuma proteção pode depender de "o dono revisa o código".** Ele não vai pegar um bug lendo um diff, e fingir que vai é teatro. A defesa tem que ser **automática**: teste, CI, `pnpm audit:security`, e os testes estruturais que quebram o build sozinhos. É por isso que este repo tem tanto teste que varre o próprio código: eles são o revisor.
 2. **Confira o CI depois de todo push.** Verde na sua máquina não é verde. Já foram **nove commits seguidos** empurrados para o `main` com o CI vermelho, e quem descobriu foi ele, pelas notificações do GitHub. O CI é a sentinela dele: deixar o CI vermelho é desligar a sentinela.
 3. **Explicar o porquê em português de gente é o trabalho, não gentileza.** Termo técnico só quando ele é o nome exato da coisa, e sempre com a consequência ao lado. Nunca esconda um erro seu atrás de jargão.
 
@@ -211,7 +211,7 @@ gh pr create --fill        # ou pela API, se o gh não estiver autenticado
 # o CI roda no PR. VERDE → eu mesmo faço o merge. VERMELHO → conserto ANTES.
 ```
 
-**O Gabriel não revisa código** (ele é publicitário, ver acima), e por isso o PR exige **zero aprovações**: quem aprova é o CI. O PR não é burocracia, é a porta onde o teste pode dizer "não" **antes** de o `main` quebrar.
+**O dono não revisa código** (ele é publicitário, ver acima), e por isso o PR exige **zero aprovações**: quem aprova é o CI. O PR não é burocracia, é a porta onde o teste pode dizer "não" **antes** de o `main` quebrar.
 
 Isso existe porque já falhou: nove commits seguidos foram para o `main` com o CI vermelho, e quem descobriu foi ele, pelas notificações do GitHub. Com o porteiro, aquilo é impossível.
 

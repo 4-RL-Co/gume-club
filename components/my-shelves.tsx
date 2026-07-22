@@ -67,7 +67,7 @@ export function MyShelves({ shelves }: { shelves: Shelf[] }) {
                 "pill flex items-center justify-between gap-2 px-3 py-2 text-[14px] transition-colors duration-150",
                 active
                   ? "afiado font-medium text-[var(--color-ink)]"
-                  : "text-[var(--color-ink-soft)] hover:bg-white/[0.03] hover:text-[var(--color-ink)]",
+                  : "text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)] hover:text-[var(--color-ink)]",
               ].join(" ")}
             >
               <span className="truncate">{s.name}</span>
