@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Gaveta } from "@/components/gaveta";
 import { Avatar } from "@/components/avatar";
 import type { Conexao } from "@/lib/conexoes";
 
@@ -20,24 +21,18 @@ import type { Conexao } from "@/lib/conexoes";
  * ════════════════════════════════════════════════════════════════════
  */
 function Lista({
-  titulo,
   vazio,
   pessoas,
 }: {
-  titulo: string;
   vazio: string;
   pessoas: Conexao[];
 }) {
   return (
     <section>
-      <h2 className="tabular text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-        {titulo}
-      </h2>
-
       {pessoas.length === 0 ? (
-        <p className="mt-4 text-[14px] text-[var(--color-ink-soft)]">{vazio}</p>
+        <p className="text-[14px] text-[var(--color-ink-soft)]">{vazio}</p>
       ) : (
-        <ul className="mt-4 max-h-[420px] overflow-y-auto pr-1">
+        <ul className="max-h-[420px] overflow-y-auto pr-1">
           {pessoas.map((p) => (
             <li key={p.handle}>
               <Link
@@ -62,6 +57,15 @@ function Lista({
   );
 }
 
+/**
+ * ═══ EM GAVETAS, E FECHADAS ═══
+ *
+ * As duas listas moravam abertas na página, e uma coluna de cem rostos empurrava o
+ * feed para o fundo do poço: a resposta de "quem eu sigo" virava o custo de chegar
+ * ao resto da tela. Agora cada lista é uma gaveta fechada, e quem quer os nomes abre.
+ * O resumo NÃO diz quantos, de propósito: contador de seguidores é a linha que o
+ * README não cruza, nem na própria página da pessoa.
+ */
 export function Conexoes({
   seguindo,
   seguidores,
@@ -70,17 +74,19 @@ export function Conexoes({
   seguidores: Conexao[];
 }) {
   return (
-    <div className="mt-8 grid gap-10 sm:grid-cols-2">
-      <Lista
-        titulo="quem você segue"
-        vazio="você ainda não segue ninguém. Procure alguém em Explorar."
-        pessoas={seguindo}
-      />
-      <Lista
-        titulo="quem segue você"
-        vazio="ninguém ainda. Chame quem você conhece pelo seu link."
-        pessoas={seguidores}
-      />
+    <div className="mt-8 grid gap-4 sm:grid-cols-2 sm:items-start">
+      <Gaveta titulo="quem você segue" resumo="abra para ver as pessoas">
+        <Lista
+          vazio="você ainda não segue ninguém. Procure alguém em Explorar."
+          pessoas={seguindo}
+        />
+      </Gaveta>
+      <Gaveta titulo="quem segue você" resumo="abra para ver as pessoas">
+        <Lista
+          vazio="ninguém ainda. Chame quem você conhece pelo seu link."
+          pessoas={seguidores}
+        />
+      </Gaveta>
     </div>
   );
 }

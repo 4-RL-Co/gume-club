@@ -349,3 +349,77 @@ describe("um banido não aparece em lugar nenhum", () => {
     expect(livros.length, "os dados do banido foram confiscados").toBeGreaterThan(0);
   });
 });
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  QUEM RECOMENDOU APARECE NA CAPA. E O BANIDO NÃO.
+ *
+ *  A estante passou a mostrar o rosto de quem indicou o livro, e a mostrar isso
+ *  também para quem VISITA. Isso não é exposição nova (a recomendação já nasce
+ *  pública no feed), mas cria uma superfície nova onde um nome aparece — e toda
+ *  superfície nova onde um nome aparece precisa obedecer à mesma regra do resto:
+ *  um banido ou apagado some.
+ *
+ *  Sem isto, banir alguém o tiraria do feed, do explorar e do perfil, e ele
+ *  continuaria estampado na capa de um livro na estante de outra pessoa.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("o rosto de quem recomendou obedece às mesmas regras de todo mundo", () => {
+  const marcaRec = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  let quemIndicou: string;
+  let quemRecebeu: string;
+  let obraIndicada: string;
+
+  beforeAll(async () => {
+    const mk = async (handle: string) => {
+      const [u] = await db
+        .insert(users)
+        .values({ handle, email: `${handle}@redteam.test` })
+        .returning({ id: users.id });
+      criados.push(u!.id);
+      return u!.id;
+    };
+
+    quemIndicou = await mk(`rec-indicou-${marcaRec}`);
+    quemRecebeu = await mk(`rec-recebeu-${marcaRec}`);
+
+    const [w] = await db
+      .insert(works)
+      .values({ slug: `rec-obra-${marcaRec}`, title: `A obra indicada ${marcaRec}` })
+      .returning({ id: works.id });
+    obraIndicada = w!.id;
+
+    await db.insert(libraryEntries).values({
+      userId: quemRecebeu,
+      workId: obraIndicada,
+      status: "want_to_read",
+      visibility: "public",
+      recommendedBy: quemIndicou,
+    });
+  });
+
+  afterAll(async () => {
+    await db.execute(sql`delete from works where id = ${obraIndicada}::uuid`);
+  });
+
+  it("um estranho que visita a estante vê de quem o livro veio", async () => {
+    const livros = await getShelf(atacante, quemRecebeu);
+    const achado = livros.find((l) => l.workId === obraIndicada);
+
+    expect(achado?.recomendadoPor, "a procedência sumiu para quem visita").toBe(
+      `rec-indicou-${marcaRec}`,
+    );
+  });
+
+  it("e o rosto some quando quem indicou é banido", async () => {
+    await db.execute(sql`update users set banned_at = now() where id = ${quemIndicou}::uuid`);
+
+    const livros = await getShelf(atacante, quemRecebeu);
+    const achado = livros.find((l) => l.workId === obraIndicada);
+
+    // O LIVRO continua na estante: banir quem indicou não confisca o livro de quem
+    // recebeu. O que some é o nome do banido.
+    expect(achado, "banir quem indicou tirou o livro da estante de outra pessoa").toBeTruthy();
+    expect(achado?.recomendadoPor, "um banido continuou estampado numa capa").toBeNull();
+  });
+});

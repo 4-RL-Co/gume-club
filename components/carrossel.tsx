@@ -7,15 +7,18 @@ import { Cover } from "@/components/cover";
 import type { ShelfBook } from "@/lib/shelf-view";
 
 /**
- * A VITRINE DOS "ADOREI", COM SETA PARA PASSAR.
+ * ════════════════════════════════════════════════════════════════════
+ *  A VITRINE DOS "ADOREI": UMA FILA RETA, com seta para passar.
  *
- * Uma fila que rola de lado precisa dizer que rola: sem a seta, quem está no mouse não
- * sabe que existe mais livro à direita, e a metade escondida some. As setas só aparecem
- * quando há para onde rolar — no começo não há seta à esquerda, no fim não há à direita,
- * e numa fila curta que cabe inteira não há nenhuma. Chrome que aparece só quando serve.
+ *  Esta vitrine já foi um palco 3D com perspectiva, reflexo e anel infinito, em
+ *  três formas diferentes, e o dono julgou no uso real: nenhuma funcionou. A capa
+ *  girada esconde a própria arte, o reflexo comia altura, e o efeito virava o
+ *  assunto quando o assunto são os LIVROS. A fila reta mostra as capas inteiras,
+ *  de frente, que é como capa se mostra.
  *
- * É o único pedaço client do perfil, e de propósito: medir a largura e rolar são coisas
- * do navegador. As capas continuam sendo `Cover`, o mesmo componente da parede.
+ *  O que a era 3D deixou de herança boa: as setas só aparecem quando há para onde
+ *  rolar, e a fila continua rolando por toque e trackpad de graça.
+ * ════════════════════════════════════════════════════════════════════
  */
 export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[] }) {
   const fila = useRef<HTMLUListElement>(null);
@@ -57,7 +60,7 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
         >
           {books.map((b) => (
             <li key={b.workId} className="w-24 shrink-0 sm:w-28">
-              <Link href={`/livro/${b.slug}`} className="cover-lift block">
+              <Link href={`/livro/${b.slug}`} className="cover-lift block" title={b.title}>
                 <Cover title={b.title} author={b.author} src={b.coverUrl} />
               </Link>
             </li>

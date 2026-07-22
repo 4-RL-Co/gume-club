@@ -132,6 +132,37 @@ export async function getShelf(
            and a.work_id = ${works.id}
            and a.honra is not null
          order by a.id desc limit 1)`,
+
+      /**
+       * ═══ QUEM TE DEU ESTE LIVRO ═══
+       *
+       * `library_entries.recommended_by` já era gravado desde que a recomendação existe,
+       * e não aparecia na estante: o livro chegava e a procedência sumia. Um livro que
+       * veio de alguém é diferente de um livro que você achou sozinho, e essa diferença
+       * é metade do motivo de o Gume existir.
+       *
+       * Aparece TAMBÉM para quem visita a estante, e isso não é exposição nova: a
+       * recomendação já nasce pública no feed (`activities`, verbo `recommended`). O que
+       * governa se o livro aparece continua sendo a visibilidade da LINHA, filtrada por
+       * visibleTo() como todo o resto.
+       *
+       * Um recomendador apagado ou banido some daqui, como some de todo lugar.
+       */
+      recomendadoPor: sql<string | null>`(
+        select rec.handle from users rec
+         where rec.id = ${libraryEntries.recommendedBy}
+           and rec.deleted_at is null
+           and rec.banned_at is null)`,
+      recomendadoPorNome: sql<string | null>`(
+        select rec.display_name from users rec
+         where rec.id = ${libraryEntries.recommendedBy}
+           and rec.deleted_at is null
+           and rec.banned_at is null)`,
+      recomendadoPorFoto: sql<string | null>`(
+        select rec.image from users rec
+         where rec.id = ${libraryEntries.recommendedBy}
+           and rec.deleted_at is null
+           and rec.banned_at is null)`,
     })
     .from(libraryEntries)
     .innerJoin(works, eq(works.id, libraryEntries.workId))

@@ -7,14 +7,17 @@ import { getShelf, getShelfCounts } from "@/lib/shelf";
 import { getFriendRatings } from "@/lib/ratings";
 import { Share } from "@/components/share";
 import { Report } from "@/components/report";
-import { CoverWall } from "@/components/cover-wall";
+import { PerfilEstante } from "@/components/perfil-estante";
 import { Moldura, Barra } from "@/components/moldura";
 import { getEscadas } from "@/lib/escada";
 import { Empty } from "@/components/empty";
 import { FollowButton } from "@/components/follow-button";
 import { chegadaDe, getBadges } from "@/lib/badges";
 import { BadgesExplicadas } from "@/components/badges";
-import { getCollections } from "@/lib/curation";
+import { getListasDe, getListasGuardadas } from "@/lib/listas";
+import { CuradoriaCard } from "@/components/curadoria-card";
+import { souIdealizador } from "@/lib/authz";
+import { ListaGrid } from "@/components/lista-card";
 import { getResenhasDe } from "@/lib/explore";
 import { Cover } from "@/components/cover";
 import { Carrossel } from "@/components/carrossel";
@@ -111,14 +114,18 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
   const viewer = await getViewer();
   const mine = viewer?.id === profile.id;
 
-  const [books, lendo, counts, following, badges, shelves, resenhas] = await Promise.all([
+  const [books, lendo, counts, following, badges, shelves, guardadas, resenhas] = await Promise.all([
     getShelf(viewer, profile.id, { filter: "tudo", sort: "adicionado" }),
     getShelf(viewer, profile.id, { filter: "lendo" }),
     getShelfCounts(viewer, profile.id),
     viewer && !mine ? isFollowing(viewer.id, profile.id) : Promise.resolve(false),
     // Insígnias, e nunca um número: o número vive em /contribuidores e não sai de lá.
     getBadges(profile.id),
-    getCollections(viewer, profile.id),
+    // As estantes que ela montou, como CARDS: capas, nome, descrição. Ver lib/listas.ts.
+    getListasDe(viewer, profile.id),
+    // E as que ela GUARDOU de outras pessoas, com o crédito de quem fez. A visibilidade
+    // roda de novo aqui: uma estante que ficou privada some desta seção sozinha.
+    getListasGuardadas(viewer, profile.id),
     // As resenhas DELA, e a consulta é quem decide quais: privada nunca sai daqui.
     // Ver getResenhasDe() em lib/explore.ts e SECURITY.md.
     getResenhasDe(viewer, profile.id),
@@ -128,20 +135,19 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
   // lib/honras.ts.
   const escadas = await getEscadas(profile.id);
 
+  // O perfil da CASA carrega a curadoria da casa fixada nas coleções: as editoriais
+  // moram com quem as edita. souIdealizador aqui não é permissão, é identificação:
+  // pergunta se ESTE perfil é o de quem imaginou o Gume.
+  const perfilDaCasa = await souIdealizador({ id: profile.id });
+
   const name = profile.displayName ?? profile.handle;
   const primeiroNome = name.split(" ")[0];
   const opinions = await getFriendRatings(viewer, books.map((b) => b.workId));
 
-  // ═══ O PERFIL É AGRUPADO POR STATUS, E NÃO UMA PILHA ÚNICA ═══
-  //
-  // "Ter e ler são coisas diferentes, e aqui são contadas separadas" (/sobre). A parede
-  // antiga misturava tudo — lido, esperando, largado — numa grade só. Agora cada status
-  // tem seu lugar: os lidos são a parede principal (com o veredito de cada um), e o resto
-  // são tiras. Tudo derivado de `books` (filtro "tudo"), sem query nova.
+  // O QUE ELA ADOROU vira a vitrine em profundidade; o resto da estante mora numa
+  // parede só com recortes (components/perfil-estante.tsx), derivada de `books`
+  // (filtro "tudo") sem query nova.
   const adorou = books.filter((b) => b.rating === 5);
-  const esperando = books.filter((b) => b.status === "want_to_read");
-  const lidos = books.filter((b) => b.status === "read");
-  const largados = books.filter((b) => b.status === "did_not_finish");
 
   return (
     <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
@@ -301,42 +307,56 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
 
       {lendo.length > 0 && <Tira titulo="lendo agora" books={lendo} />}
 
-      {esperando.length > 0 && <Tira titulo="esperando pra ler" books={esperando} />}
+      {/* ═══ AS ESTANTES QUE ELA MONTOU, COMO CARDS ═══
 
-      {shelves.length > 0 && (
-        <section className="surface mt-5 p-7">
-          {/* "Estantes personalizadas", e não só "estantes": agora lidos, esperando e
-              lendo também são estantes na página, e estas aqui são as que a pessoa
-              inventou. O nome tem que separar as duas coisas. */}
+          Eram pílulas de texto com um número, e uma coleção montada com capricho merece
+          aparecer como o que é: capas em leque, nome, descrição. A curadoria é o que o
+          perfil tem de mais pessoal depois das resenhas, e estava vestida de filtro. */}
+      {(shelves.length > 0 || perfilDaCasa) && (
+        <section className="mt-5">
           <h2 className={EYEBROW}>
-            {mine ? "minhas estantes personalizadas" : `estantes que ${primeiroNome} montou`}
+            {mine ? "minhas coleções" : `coleções que ${primeiroNome} montou`}
           </h2>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {shelves.map((c) => (
-              <Link
-                key={c.id}
-                href={`/estante/${c.slug}`}
-                className="pill border border-[var(--color-rule)] px-3.5 py-1.5 text-[13px] text-[var(--color-ink-soft)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]"
-              >
-                {c.name}
-                <span className="tabular ml-1.5 text-[var(--color-ink-faint)]">{c.n}</span>
-              </Link>
-            ))}
+          {/* A curadoria editorial, FIXA no topo das coleções da casa. */}
+          {perfilDaCasa && (
+            <div className="mt-4">
+              <CuradoriaCard compacto />
+            </div>
+          )}
+          {shelves.length > 0 && (
+            <div className="mt-4">
+              <ListaGrid listas={shelves} mostrarDono={false} />
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* As que ela GUARDOU. O crédito no card é de quem montou, por nome e rosto:
+          guardar é apontar para o trabalho de outra pessoa, e o gesto só faz sentido
+          se quem fez aparecer. Quantas pessoas guardaram não existe em tela nenhuma. */}
+      {guardadas.length > 0 && (
+        <section className="mt-5">
+          <h2 className={EYEBROW}>
+            {mine ? "coleções que eu guardei" : `coleções que ${primeiroNome} guardou`}
+          </h2>
+          <div className="mt-4">
+            <ListaGrid listas={guardadas} />
           </div>
         </section>
       )}
 
-      {/* A parede principal: os LIDOS, cada um com o que a pessoa achou. É o coração do
-          perfil, e agora ele só tem livro que aconteceu — não mais uma pilha misturada. */}
-      {lidos.length > 0 && (
-        <div className="mt-10">
-          <h2 className={EYEBROW}>lidos</h2>
-          <CoverWall books={lidos} opinions={opinions} />
-        </div>
-      )}
+      {/* ═══ A ESTANTE, EM UMA PAREDE SÓ ═══
 
-      {largados.length > 0 && (
-        <Tira titulo={mine ? "larguei no meio" : "largou no meio"} books={largados} />
+          "Lendo agora" continua sendo uma tira própria lá em cima (é o presente, e o
+          presente merece a primeira dobra). O resto (lidos, esperando, largados) morava
+          em containers empilhados, e o perfil virava um pergaminho. Agora é uma parede
+          com recortes em pílula, como a aba de estante: clica em "esperando" e a parede
+          troca. Abre nos lidos, que é o coração: livro que aconteceu, com veredito. */}
+      {books.length > 0 && (
+        <div className="mt-10">
+          <h2 className={EYEBROW}>a estante</h2>
+          <PerfilEstante books={books} opinions={opinions} />
+        </div>
       )}
 
       {books.length === 0 && (

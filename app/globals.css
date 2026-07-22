@@ -647,4 +647,69 @@
     .marquee,
     .marquee-reverso { animation: none; }
   }
+
+  /* ══════════════════════════════════════════════════════════════════
+     A AURA DA CAPA, no topo da página do livro.
+
+     A capa é a única cor da tela (docs/design.md), e a página do livro é a casa
+     dela. A aura é a própria capa, estourada de desfoque, escorrendo por trás do
+     topo: a página inteira fica banhada na paleta DAQUELE livro, e nenhuma cor
+     nova entra no sistema. É o mesmo gesto do Letterboxd com os filmes, traduzido:
+     lá é um still de cena; aqui, a capa que você já está olhando.
+
+     Fraca de propósito. Ela é clima, e não conteúdo: o texto passa por cima dela
+     com o mesmo contraste de sempre, porque ela mal existe. No claro, mais fraca
+     ainda: papel banhado de tinta borrada vira papel sujo rápido.
+     ══════════════════════════════════════════════════════════════════ */
+  /* A máscara é RADIAL, e não uma faixa: um gradiente reto morria numa linha
+     visível e a aura virava um bloco com fim. A elipse morre em toda direção ao
+     mesmo tempo, sem borda em lugar nenhum: névoa, e não faixa. */
+  /* A elipse da máscara morre BEM ANTES das bordas da caixa (a 62% de uma elipse
+     de 60% da largura, o fade completa a ~37% do centro): a luz nunca alcança a
+     borda, então não existe borda para cortá-la. A primeira versão deixava a
+     máscara viva na beirada e o overflow serrava a luz num fio reto, que era
+     exatamente o "bloco" que o dono apontou. Luz que termina sozinha é névoa;
+     luz serrada é caixa. */
+  .aura-capa {
+    position: absolute;
+    inset: -40px 0 auto 0;
+    height: 520px;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.13;
+    mask-image: radial-gradient(ellipse 60% 85% at 50% 0%, black, transparent 62%);
+    -webkit-mask-image: radial-gradient(ellipse 60% 85% at 50% 0%, black, transparent 62%);
+  }
+
+  .aura-capa img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(90px) saturate(1.15);
+    transform: scale(1.6);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .aura-capa { opacity: 0.26; }
+  }
+  :root[data-theme="dark"] .aura-capa { opacity: 0.26; }
+
+  /* ══════════════════════════════════════════════════════════════════
+     O LEQUE RESPIRA. No hover de um card de estante, as capas se afastam um
+     dedo, como quem folheia a pilha para ver o que tem embaixo. É um convite
+     de meio segundo, e não um truque: solta o mouse e elas se guardam.
+     ══════════════════════════════════════════════════════════════════ */
+  .leque > * {
+    transition: transform 380ms var(--ease-spring, cubic-bezier(0.22, 0.9, 0.3, 1));
+  }
+  .card:hover .leque > *:nth-child(2) { transform: translateX(7px) rotate(0.6deg); }
+  .card:hover .leque > *:nth-child(3) { transform: translateX(14px) rotate(1.1deg); }
+  .card:hover .leque > *:nth-child(4) { transform: translateX(21px) rotate(1.6deg); }
+  .card:hover .leque > *:nth-child(5) { transform: translateX(28px) rotate(2.1deg); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .leque > * { transition: none; }
+    .card:hover .leque > * { transform: none; }
+  }
 }

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { visibleTo } from "@/lib/authz";
@@ -11,6 +12,10 @@ import { ScreenHeader } from "@/components/screen-header";
 import { CoverWall } from "@/components/cover-wall";
 import { Empty } from "@/components/empty";
 import { ShelfSettings } from "@/components/shelf-settings";
+import { Avatar } from "@/components/avatar";
+import { GuardarEstante } from "@/components/guardar-estante";
+import { OrganizarEstante } from "@/components/organizar-estante";
+import { jaGuardei } from "@/lib/listas";
 
 export const dynamic = "force-dynamic";
 
@@ -28,9 +33,15 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
       id: collections.id,
       name: collections.name,
       slug: collections.slug,
+      description: collections.description,
+      ranked: collections.ranked,
+      coverWorkId: collections.coverWorkId,
+      fotoUrl: collections.coverUrl,
       visibility: collections.visibility,
       userId: collections.userId,
       handle: sql<string>`(select u.handle from users u where u.id = ${collections.userId})`,
+      donoNome: sql<string | null>`(select u.display_name from users u where u.id = ${collections.userId})`,
+      donoFoto: sql<string | null>`(select u.image from users u where u.id = ${collections.userId})`,
     })
     .from(collections)
     .where(and(
@@ -42,6 +53,7 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
   if (!shelf) notFound();
 
   const mine = viewer?.id === shelf.userId;
+  const guardada = !mine && viewer ? await jaGuardei(viewer, shelf.id) : false;
 
   const books = await db
     .select({
@@ -56,6 +68,7 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
       firstPublished: works.firstPublished,
       pageCount: editions.pageCount,
       coverUrl: editions.coverUrl,
+      genre: works.genre,
       status: sql<string>`coalesce(${libraryEntries.status}::text, 'want_to_read')`,
       rating: ratings.value,
       acquiredNote: ownedCopies.acquiredNote,
@@ -85,8 +98,57 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
 
   const opinions = await getFriendRatings(viewer, books.map((b) => b.workId));
 
+  /**
+   * AS TAGS DA ESTANTE, derivadas dos próprios livros: os gêneros que mais aparecem.
+   * Ninguém digita tag (campo de tag livre é máquina de duplicata, como o nome de
+   * estante já ensinou); a curadoria se descreve sozinha pelo que tem dentro.
+   */
+  const generos = [...books.reduce((m, b) => {
+    if (b.genre) m.set(b.genre, (m.get(b.genre) ?? 0) + 1);
+    return m;
+  }, new Map<string, number>())]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([g]) => g);
+
+  /** A capa da estante: a ESCOLHIDA por quem montou, ou a do primeiro livro com capa.
+      Ela vira a aura do topo, como na página do livro. Ver a migration 0053. */
+  const capaDaEstante =
+    books.find((b) => b.workId === shelf.coverWorkId)?.coverUrl ??
+    books.find((b) => b.coverUrl)?.coverUrl ?? null;
+
   return (
-    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+    <main className="relative mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+      {/* A aura do topo: a FOTO subida, se houver, senão a capa escolhida. */}
+      {(shelf.fotoUrl ?? capaDaEstante) && (
+        <div className="aura-capa" aria-hidden>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={shelf.fotoUrl ?? capaDaEstante!} alt="" loading="lazy" decoding="async" />
+        </div>
+      )}
+
+      {/* ═══ O PANO DE FUNDO, como as listas do Letterboxd ═══
+
+          A foto que quem montou subiu, larga, morrendo suave para o fundo da página
+          (máscara em dois eixos: sem borda dura em lugar nenhum). Ela é CLIMA e
+          moldura; o título continua sendo o dono da página. */}
+      {shelf.fotoUrl && (
+        <div aria-hidden className="relative -mx-6 -mb-10 h-56 overflow-hidden sm:-mx-10 sm:h-72">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={shelf.fotoUrl}
+            alt=""
+            decoding="async"
+            className="h-full w-full object-cover"
+            style={{
+              maskImage: "linear-gradient(to bottom, black 35%, transparent 96%), linear-gradient(to right, transparent, black 12%, black 88%, transparent)",
+              WebkitMaskImage: "linear-gradient(to bottom, black 35%, transparent 96%)",
+              maskComposite: "intersect",
+            }}
+          />
+        </div>
+      )}
+
       <ScreenHeader
         title={shelf.name}
         meta={[
@@ -99,18 +161,93 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
               para quem recebesse, e um botão que promete o que não cumpre é pior
               que nenhum botão. */}
           {shelf.visibility !== "private" && <Share titulo={shelf.name} />}
+          {/* GUARDAR é gesto de visita: a sua estante já é sua. E ninguém conta
+              quantos guardaram, em tela nenhuma. Ver lib/listas.ts. */}
+          {!mine && viewer && (
+            <GuardarEstante slug={shelf.slug} collectionId={shelf.id} guardada={guardada} />
+          )}
           {mine && (
-            <ShelfSettings id={shelf.id} name={shelf.name} visibility={shelf.visibility} />
+            <ShelfSettings
+              id={shelf.id}
+              slug={shelf.slug}
+              name={shelf.name}
+              visibility={shelf.visibility}
+              description={shelf.description}
+              numerada={shelf.ranked}
+              capaWorkId={shelf.coverWorkId}
+              fotografada={Boolean(shelf.fotoUrl)}
+              capas={books
+                .filter((b) => b.coverUrl)
+                .slice(0, 12)
+                .map((b) => ({ workId: b.workId, title: b.title, coverUrl: b.coverUrl! }))}
+            />
           )}
         </span>
       </ScreenHeader>
 
+      {/* O ESPAÇO DE QUEM MONTOU: rosto e nome logo sob o título, porque uma estante
+          montada é a assinatura de alguém, e não uma pasta anônima. */}
+      {shelf.visibility !== "private" && (
+        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <Link
+            href={`/@${shelf.handle}`}
+            className="flex items-center gap-2.5 text-[13px] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
+          >
+            <Avatar src={shelf.donoFoto} name={shelf.donoNome} handle={shelf.handle} size={26} />
+            <span>
+              montada por{" "}
+              <span className="font-medium text-[var(--color-ink)]">
+                {shelf.donoNome ?? shelf.handle}
+              </span>
+            </span>
+          </Link>
+
+          {/* As tags: os gêneros que a própria estante carrega. Ninguém digitou nada. */}
+          {generos.map((g) => (
+            <span
+              key={g}
+              className="pill border border-[var(--color-rule)] px-3 py-1 text-[12px] lowercase text-[var(--color-ink-faint)]"
+            >
+              {g}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* A descrição, embaixo do nome: o recorte desta curadoria, nas palavras de quem
+          montou. É o mesmo texto do card dela no perfil e no explorar. */}
+      {shelf.description && (
+        <p className="voice mt-4 max-w-2xl text-[16px] leading-relaxed text-[var(--color-ink-soft)]">
+          {shelf.description}
+        </p>
+      )}
+
+      {mine && books.length > 1 && (
+        <div className="mt-6">
+          <OrganizarEstante
+            slug={shelf.slug}
+            collectionId={shelf.id}
+            itens={books.map((b) => ({ workId: b.workId, title: b.title }))}
+          />
+        </div>
+      )}
+
       {books.length === 0 ? (
         <Empty>
-          Estante vazia. Abra um livro e coloque ele aqui.
+          Coleção vazia. Abra um livro e coloque ele aqui.
         </Empty>
       ) : (
-        <CoverWall books={books as ShelfBook[]} opinions={opinions} />
+        <CoverWall
+          books={books.map((b): ShelfBook => ({
+            ...b,
+            honra: null,
+            recomendadoPor: null,
+            recomendadoPorNome: null,
+            recomendadoPorFoto: null,
+          }))}
+          opinions={opinions}
+          numerada={shelf.ranked}
+        />
       )}
     </main>
   );

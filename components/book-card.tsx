@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Cover } from "@/components/cover";
 import { tintaDeHonra, nomeDaHonra } from "@/lib/honras";
 import { Verdict } from "@/components/veredito";
-import { AvatarStack } from "@/components/avatar";
+import { Avatar, AvatarStack } from "@/components/avatar";
 import { STATUS_LABEL, type ShelfBook } from "@/lib/shelf-view";
 import type { Opinion } from "@/lib/ratings";
 import { theirs } from "@/lib/veredito";
@@ -30,6 +30,7 @@ export function BookCard({
   opinion,
   focused = false,
   de,
+  numero = null,
 }: {
   book: ShelfBook;
   opinion?: Opinion;
@@ -43,6 +44,12 @@ export function BookCard({
    * caía na estante inteira de novo, e perdia o recorte a cada livro que abria.
    */
   de?: string;
+  /**
+   * A POSIÇÃO numa estante NUMERADA (1º, 2º, 3º). Só existe quando quem montou a
+   * estante escolheu numerar: é a ordem de UMA curadoria, sobre LIVROS, e nunca um
+   * placar de gente. Nulo em todo outro contexto.
+   */
+  numero?: number | null;
 }) {
   const status = STATUS_LABEL[book.status] ?? book.status;
 
@@ -66,7 +73,68 @@ export function BookCard({
   const honra = nomeDaHonra(book.honra);
 
   return (
-    <li className="h-full" id={`livro-${book.workId}`}>
+    <li className="relative h-full" id={`livro-${book.workId}`}>
+      {/* O NÚMERO da estante numerada, na serifa da voz. O TOP 3 é pódio de CURADORIA
+          (livros escolhidos por uma pessoa, nunca gente ordenada), e o pódio se diz
+          com tamanho e tinta cheia, não com ouro e prata: metal é a paleta que o
+          design proíbe porque todo mundo lê troféu. O 1º é o maior, o 4º em diante
+          é uma nota de rodapé. */}
+      {numero !== null && (
+        <span
+          aria-hidden
+          className={[
+            "voice pointer-events-none absolute z-10 leading-none",
+            numero === 1
+              ? "left-3 top-1.5 text-[44px] font-medium text-[var(--color-ink)]"
+              : numero === 2
+                ? "left-3.5 top-2 text-[34px] font-medium text-[var(--color-ink)]"
+                : numero === 3
+                  ? "left-3.5 top-2.5 text-[28px] font-medium text-[var(--color-ink)]"
+                  : "left-4 top-3 text-[20px] text-[var(--color-ink-faint)]",
+          ].join(" ")}
+          style={
+            numero <= 3
+              ? { textShadow: "0 1px 12px color-mix(in srgb, var(--color-canvas) 85%, transparent)" }
+              : undefined
+          }
+        >
+          {numero}
+        </span>
+      )}
+      {/* ════════════════════════════════════════════════════════════════
+          ═══ QUEM TE DEU ESTE LIVRO, NO CANTO DA CAPA ═══
+
+          Um livro que veio de alguém é diferente de um livro que você achou sozinho, e
+          a estante não contava essa diferença: a recomendação chegava e a procedência
+          sumia. Agora o rosto de quem indicou fica na capa, e quem VISITA a estante
+          também vê — foi para isso que a recomendação nasceu pública no feed.
+
+          ═══ IRMÃO DO CARD, E NUNCA DENTRO DELE ═══
+
+          O card inteiro é um link para o LIVRO. Este rosto é um link para a PESSOA, e
+          dois destinos não cabem num link só: link dentro de link é HTML inválido, e o
+          navegador resolve o conflito do jeito dele. Então ele mora fora do card, por
+          cima, como irmão. É a mesma regra da tira de "amigos lendo".
+
+          Só aparece quando existe recomendação, que é a minoria das linhas — e é isso
+          que faz o rosto significar alguma coisa quando aparece.
+          ════════════════════════════════════════════════════════════════ */}
+      {book.recomendadoPor && (
+        <Link
+          href={`/@${book.recomendadoPor}`}
+          title={`${book.recomendadoPorNome ?? book.recomendadoPor} indicou este livro`}
+          aria-label={`${book.recomendadoPorNome ?? book.recomendadoPor} indicou este livro`}
+          className="absolute left-3 top-3 z-10 rounded-full ring-2 ring-[var(--surface-1)] transition-transform hover:scale-110"
+        >
+          <Avatar
+            src={book.recomendadoPorFoto}
+            name={book.recomendadoPorNome}
+            handle={book.recomendadoPor}
+            size={26}
+          />
+        </Link>
+      )}
+
       {/* h-full so a one-line title and a two-line title still bottom out level:
           a ragged baseline across a row reads as a bug, not as rhythm. */}
       <Link

@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { getEstantes, getAfinidade, getResenhas, getLendoAgora } from "@/lib/explore";
+import { getListasParaExplorar } from "@/lib/listas";
+import { CuradoriaCard } from "@/components/curadoria-card";
+import { ListaGrid } from "@/components/lista-card";
 import { getCoroasPorHandle } from "@/lib/escada";
 import { Moldura } from "@/components/moldura";
 import { Empty } from "@/components/empty";
@@ -26,9 +29,12 @@ import type { Viewer } from "@/lib/authz";
  * você lê (que abre e mostra quem são as pessoas), resenhas recentes, e o que está aberto
  * na mesa de alguém agora. Ver ai/DECISIONS.md, a entrada que tirou a praça.
  */
-export async function Explore({ viewer }: { viewer: Viewer }) {
-  const [estantes, afinidade, resenhas, lendo] = await Promise.all([
+export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; soPessoas?: boolean }) {
+  const [estantes, listas, afinidade, resenhas, lendo] = await Promise.all([
     getEstantes(viewer),
+    // As coleções MONTADAS, com nome e recorte. Sorteadas como tudo aqui: "as mais
+    // guardadas" seria um ranking de popularidade, e é a coisa que esta tela recusa.
+    getListasParaExplorar(viewer),
     getAfinidade(viewer),
     getResenhas(viewer),
     getLendoAgora(viewer),
@@ -52,16 +58,60 @@ export async function Explore({ viewer }: { viewer: Viewer }) {
   ]);
 
   const vazio =
-    estantes.length === 0 && afinidade.length === 0 && resenhas.length === 0 && lendo.length === 0;
+    estantes.length === 0 && listas.length === 0 && afinidade.length === 0 &&
+    resenhas.length === 0 && lendo.length === 0;
 
   return (
     <div className="mt-8">
       {/* ── BUSCAR UMA PESSOA: fica no topo, e sempre, mesmo quando não há estante
           pública para descobrir. Achar quem você já conhece não depende de ter gente
           nova para conhecer. Ver components/busca-pessoas.tsx. */}
-      <BuscaPessoas />
+      {/* A busca de pessoas exige sessão (o servidor recusa anônimo): para quem não
+          entrou, a galeria continua inteira, só sem o campo. */}
+      {viewer && <BuscaPessoas />}
 
-      {vazio ? (
+      {soPessoas ? (
+        /* A vitrine de PESSOAS sozinha: a busca lá em cima já apareceu, e aqui vão as
+           estantes de gente, com mais fôlego do que na mistura. */
+        estantes.length === 0 ? (
+          <p className="surface mt-10 p-7 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
+            Você já segue todo mundo que abriu a estante por aqui. Quando alguém novo chegar,
+            a estante dela aparece nesta vitrine.
+          </p>
+        ) : (
+          <ul className="mt-10 grid gap-4 sm:grid-cols-2 sm:gap-5">
+            {estantes.map((e) => (
+              <li key={e.handle}>
+                <Link href={`/@${e.handle}`} className="surface surface-hover flex h-full flex-col p-6 sm:p-7">
+                  <span className="flex items-center gap-3">
+                    <Moldura coroa={coroas[e.handle] ?? null} src={e.image} name={e.name} handle={e.handle} size={52} />
+                    <span className="min-w-0">
+                      <span className="block truncate text-[15px] text-[var(--color-ink)]">
+                        {e.name ?? e.handle}
+                      </span>
+                      <span className="block truncate text-[12px] text-[var(--color-ink-faint)]">
+                        @{e.handle}
+                      </span>
+                    </span>
+                  </span>
+                  {e.bio && (
+                    <span className="voice mt-4 line-clamp-2 text-[16px] leading-snug text-[var(--color-ink-soft)]">
+                      {e.bio}
+                    </span>
+                  )}
+                  <span className="mt-6 flex gap-2">
+                    {e.capas.slice(0, 6).map((c, i) => (
+                      <span key={i} className="cover-lift block w-1/6">
+                        <Cover title="" src={c} />
+                      </span>
+                    ))}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : vazio ? (
         <div className="mt-10">
           <Empty>
             Ainda não tem estante pública para descobrir. Assim que alguém abrir a estante, ela
@@ -129,6 +179,33 @@ export async function Explore({ viewer }: { viewer: Viewer }) {
               </ul>
             )}
           </section>
+
+          {/* ── ESTANTES MONTADAS À MÃO: a curadoria de alguém, com nome e recorte.
+              Sorteadas e rotacionando, como tudo nesta tela: destacar "as mais
+              guardadas" seria um ranking de popularidade com outro chapéu. */}
+          {listas.length > 0 && (
+            <section>
+              <Titulo>coleções montadas à mão</Titulo>
+              <p className="mt-4 max-w-lg text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
+                Coleções que alguém montou com as próprias mãos. Abra uma, e se ela for boa,
+                guarde: ela fica no seu perfil, com o nome de quem fez.
+              </p>
+              <div className="mt-6">
+                <ListaGrid listas={listas} />
+              </div>
+              <p className="mt-5">
+                <Link
+                  href="/colecoes"
+                  className="text-[13px] text-[var(--color-ink-soft)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+                >
+                  ver todas as coleções
+                </Link>
+              </p>
+            </section>
+          )}
+
+          {/* A curadoria da casa: um componente só para as três vitrines. */}
+          <CuradoriaCard />
 
           {/* ── 2. QUEM LÊ O QUE VOCÊ LÊ ─────────────────────────────── */}
           {afinidade.length > 0 && (

@@ -22,7 +22,7 @@ export function MyShelves({ shelves }: { shelves: Shelf[] }) {
     <>
       <div className="mt-8 mb-2.5 flex items-center justify-between px-2">
         <h2 className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
-          minhas estantes
+          minhas coleções
         </h2>
         <button
           onClick={() => setAdding(!adding)}

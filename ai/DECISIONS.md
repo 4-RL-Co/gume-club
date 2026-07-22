@@ -2245,3 +2245,150 @@ Então entraram **duas colunas de precisão** (`started_precision`, `ended_preci
 **O formato diz a precisão, e nada mais viaja.** A tela manda `"2019"` ou `"2019-03-14"`; `dataOuAno()` (lib/datas.ts) lê o formato e devolve a data mais a precisão. Na volta, `getLeituras` devolve `"2019"` para quem marcou só o ano, e nunca `"2019-01-01"` — mostrar o 1º de janeiro seria o app dizendo ao leitor um dia que ele não disse. Sem terceiro estado para sincronizar, e a precisão faz o round-trip inteiro (provado contra o Postgres em lib/leituras.sql.test.ts).
 
 **Uma regra que precisou afrouxar, e está certo:** "o fim não vem antes do começo" agora compara por ANO quando qualquer das pontas é ano. Começar em março de 2019 e marcar "terminei em 2019" não é contradição — o ano contém o mês —, e comparar março contra o 1º de janeiro que pousamos recusaria uma história perfeitamente possível.
+
+---
+
+**2026-07-21: "Quando você leu" desce para uma gaveta, e a regra que decidiu isso já estava escrita na página.**
+
+O dono olhou a página do livro e disse que estava com coisa demais, apontando o campo "quando você leu". A resposta não precisou de opinião nova: a própria página do livro carrega, num comentário, a regra que resolve o caso. Fica **aberto** o que a pessoa faz toda vez (prateleira, nota, resenha, quem escreveu o livro); vai para **gaveta** o que ela faz uma vez na vida (a linhagem da cópia, o registro de correções, as quarenta edições).
+
+Corrigir a data de uma leitura é uma vez na vida — e passou a ser ainda mais raro no mesmo dia em que marcar "lido" começou a perguntar o ano ali mesmo. Aberta o tempo todo, a seção era um formulário de manutenção no meio de uma página de leitura. Ela agora é uma `Gaveta`, como as outras coisas dessa natureza.
+
+**O resumo é o que faz a gaveta valer.** A `Gaveta` exige um resumo pelo motivo que está escrito nela: sem ele, a pessoa precisa abrir para descobrir se valia a pena abrir. Aqui o resumo é a própria resposta que ela buscaria dentro — "terminei em 2019", "larguei em 2021", ou "2 leituras" para quem releu. Com isso a gaveta **informa fechada**, e só se abre para corrigir.
+
+Duas decisões pequenas que vieram junto:
+
+- **O resumo mora em `lib/leituras-view.ts`, e não dentro do componente.** É texto de tela, e o texto de tela deste projeto é varrido por lib/voice.test.ts (entrou na lista `PROSA_FORA_DAS_TELAS`). Um resumo que falasse como desenvolvedor quebraria o build, que é exatamente o serviço que a varredura presta. É o mesmo padrão de `shelf-view`, `badges-view` e `corrections-view`.
+- **O resumo fala sempre em ANO, mesmo quando o dia é conhecido**, porque ele é uma etiqueta e não a ficha. E um teste trava que ele nunca deixa vazar o 1º de janeiro que a gente pousa quando a pessoa marcou só o ano: aquele dia é um lugar de pousar, e mostrá-lo seria o app dizendo ao leitor um dia que ele nunca disse.
+
+---
+
+**2026-07-21: O GitHub volta, como vínculo, e o teste que o proibia fica mais apertado em vez de mais frouxo.**
+
+O dono pediu a insígnia de construtor, e ela não tinha como existir: se calcula cruzando a conta do GitHub ligada por OAuth com quem tem PR mesclado (nunca autodeclarada, por decisão registrada), e o app não tinha NENHUM jeito de ligar o GitHub — o provider foi removido do login e a tela de vínculo nunca nasceu. A insígnia era impossível até para quem escreveu o app inteiro.
+
+A saída considerada e recusada: conceder construtor à mão. Resolveria hoje e quebraria a regra "nunca autodeclarado" para sempre; o próximo que pedisse teria precedente. O dono escolheu construir o vínculo de verdade.
+
+**O que entrou:**
+- O provider do GitHub volta a `lib/auth.ts` com DUAS travas de cadastro (`disableSignUp` + `disableImplicitSignUp`, porque o Better Auth lê uma no sign-in e outra no callback): ele NUNCA cria conta, só se liga a uma que já existe. O motivo de ele ter saído do login continua válido e continua defendido: GitHub pode entregar e-mail não verificado, o vetor clássico de tomada de conta.
+- E ele SÓ é registrado quando as credenciais existem no ambiente. Sem elas, nem o provider nem a seção do perfil aparecem: uma porta que aparece e não abre é pior que porta nenhuma, que foi o bug que o tirou daqui da primeira vez.
+- "Conectar o GitHub" mora no PERFIL (components/conectar-github.tsx), para quem já está dentro. A tela de entrar continua sem GitHub, e o teste que garante isso não mudou.
+- O ícone é o `Code` genérico, não a marca do GitHub: o Google segue sendo a única marca de terceiro que o app desenha.
+
+**O teste estrutural virou, e virou para mais apertado.** `lib/auth.codigo.test.ts` proibia a palavra "github" em `socialProviders` — e o próprio comentário do teste previa este dia ("ele volta um dia como VÍNCULO... e a pessoa tem que explicar por quê"). A intenção nunca foi "a string não existe"; era "o GitHub não cria conta". O teste agora exige a coisa de verdade: se o GitHub estiver lá, tem que estar com as duas travas, senão a build cai. Antes bastava apagar a palavra; agora a garantia é sobre o comportamento.
+
+Falta do lado do dono: criar o OAuth app no GitHub (callback `<APP_URL>/api/auth/callback/github`) e pôr `GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET` no ambiente. Aí ele conecta pelo perfil e a insígnia aparece sozinha — para ele e para todo contribuidor futuro.
+
+---
+
+**2026-07-21: A estante inventada vira curadoria inteira: cards com capas, ordem numerada, e o gesto de guardar. E o rosto de quem indicou aparece na capa.**
+
+O dono pediu listas como as do Letterboxd (que ele ama): bonitas, ranqueadas, salváveis, no perfil e no explorar. E pediu sem o site virar movido a curtida, com curadoria valendo. As quatro decisões, tomadas com ele:
+
+1. **Lista E estante inventada são a MESMA coisa.** `collections` já tinha nome, descrição e visibilidade, e `collection_items` tinha `position` que nenhuma tela usava. Um conceito, um nome: o repo já se queimou com dois nomes para a mesma coisa (elo/honra). O que faltava entrou nela, em vez de nascer uma segunda coleção.
+
+2. **Numerada é escolha POR estante** (`collections.ranked`, migration 0052). "Meus dez favoritos" tem 1º e 2º; "terror brasileiro" é um conjunto. Obrigar toda estante a ter números faria de toda coleção um pódio. Reordenar é por setas (components/organizar-estante.tsx), não arrasto: funciona no celular, sem biblioteca, e grava a cada toque.
+
+3. **Guardar existe, e NUNCA conta** (`collection_saves`). Guardar é endosso; endosso contado é curtida com outro nome, a linha que o README não cruza. A estante guardada aparece no perfil de quem guardou COM o crédito de quem montou (nome e rosto no card), e "quantas pessoas guardaram" não existe em tela nenhuma, nem para o dono. A trava é estrutural: um teste varre lib/listas.ts e quebra o build se alguma consulta contar collection_saves. O insert de guardar carrega a visibilidade DENTRO (guardar estante privada não insere nada), e uma estante que ficou privada depois some da tela de quem guardou, porque o filtro roda de novo a cada leitura.
+
+4. **No explorar, sorteio rotativo**, como as estantes de gente e pelo motivo já escrito lá: dar vez a todo mundo sem inventar critério de mérito. "As mais guardadas" seria ranking de popularidade com outro chapéu.
+
+**O card** (components/lista-card.tsx) é a cara do Letterboxd traduzida para a casa: leque de capas sobrepostas, nome em serifa, descrição em duas linhas, e quem fez com rosto. Dois links irmãos (card → estante, rodapé → pessoa), nunca aninhados. A descrição e a numeração se editam em "ajustar esta estante".
+
+**E a procedência da recomendação apareceu na estante** (a fatia anterior desta leva): o rosto de quem indicou fica no canto da capa, visível também para quem visita, porque a recomendação já nasce pública no feed. Red team prova que o banido some da capa sem confiscar o livro de quem recebeu.
+
+**O carrossel dos "adorei" ganhou profundidade** (components/carrossel.tsx): cover-flow com perspectiva, reflexo das capas num balcão de vidro, movido pelo scroll nativo (o 3D é maquiagem por cima do scroll, então trackpad, teclado e dedo já funcionam). Sem biblioteca. `prefers-reduced-motion` devolve a fila reta: profundidade é tempero, não enjoo. Não briga com o design: a única cor continua vindo das capas, o efeito só lhes dá palco.
+
+---
+
+**2026-07-21: A rodada de dez retornos do dono, e a fronteira do ranking dita em voz alta.**
+
+O dono usou o app de verdade e voltou com dez pontos. Os que renderam decisão:
+
+- **O ranking de LIVRO é permitido; o de GENTE continua proibido.** Nasceu `/queridinhos`: os cem livros que a comunidade mais adorou, ranking automático refeito a cada visita, com pódio estilizado no top 3. A fronteira, escrita em lib/queridinhos.ts: estatística de curadoria ordena LIVROS pelo amor recebido (fala de gosto); placar ordenaria GENTE pelo esforço (fala de produção), e esse segue proibido. Só nota PÚBLICA entra: a nota privada de alguém não vira estatística nem anônima, nem agregada. Pela mesma régua, a página do livro diz "N pessoas adoraram este livro".
+- **O pódio se diz com tamanho e tinta, nunca com metal.** Top 3 das listas numeradas e dos queridinhos: número grande na serifa da voz, tinta cheia. Ouro/prata/bronze continuam proibidos pelo design (todo mundo lê troféu); tamanho diz "primeiro" sem dizer "prêmio".
+- **As tags de uma estante são DERIVADAS, nunca digitadas**: os gêneros que mais aparecem nos próprios livros. Campo de tag livre é máquina de duplicata (o nome de estante já ensinou isso); a curadoria se descreve pelo que carrega.
+- **O perfil deixou de ser um pergaminho**: lidos/esperando/largados moravam em containers empilhados e viraram UMA parede com recortes em pílula (abre nos lidos). "Lendo agora" continua tira própria: é o presente, e o presente merece a primeira dobra.
+- **Indicar subiu do porão**: a gaveta de recomendar estava no fim da página do livro e o próprio dono não a achava. Um gesto que ninguém encontra não existe. Subiu para junto das ações de toda hora.
+- **O carrossel aprendeu com o uso real**: foco a 28% da esquerda (o foco no centro exigia meia tela vazia), SEM scroll-snap (o snap obrigatório segurava a rolagem vertical da página, um pedágio), e o reflexo mora numa janela baixa com overflow escondido (o reflexo inteiro no fluxo dobrava a altura da seção). A aura da capa virou máscara RADIAL: gradiente reto morre numa linha visível e vira bloco; a elipse morre em toda direção, névoa e não faixa.
+- **A estante inventada é um espaço de alguém**: aura da primeira capa, "montada por" com rosto, tags derivadas, descrição e o guardar no cabeçalho.
+
+---
+
+**2026-07-21: O Explorar volta à barra (reversão registrada), a capa da estante é um livro dela, e o foco do carrossel deixou de ser adivinhação.**
+
+Quatro retornos do dono, e uma reversão feita de olhos abertos:
+
+- **Amigos e Explorar viraram dois lugares na barra.** A decisão de 2026-07-14 tinha fundido Amigos + Explorar + Recomendações em /pessoas com três abas, e ela fazia sentido quando o Explorar era um recorte. Ele cresceu: estantes de gente, estantes montadas à mão, os queridinhos, afinidade, resenhas. Virou uma galeria de curadores, e galeria é destino, não aba. A divisão é a frase que sempre esteve no código: **amigos é quem você já escolheu; explorar é como você escolhe**. /pessoas ficou com duas abas (Amigos, Recomendações) e o título "Amigos"; /explorar é página própria, aberta inclusive para quem não entrou (tudo ali já é público por construção, e é a melhor vitrine para quem chega por link). O link antigo (?aba=explorar) redireciona. É também onde os queridinhos ficam visíveis: barra → Explorar → o card da curadoria da casa.
+
+- **A capa da estante é um livro DELA, escolhido por quem montou** (collections.cover_work_id, migration 0053). Nunca upload solto: uma imagem livre na vitrine do explorar seria a única superfície onde qualquer um põe qualquer coisa na tela de todo mundo sem passar por bibliotecário. A capa de catálogo já foi curada; apontar para ela é seguro. A escolhida lidera o leque do card e vira a aura da página; clicar de novo desfaz e volta ao primeiro da ordem.
+
+- **O foco do carrossel era tímido demais, e virou inconfundível**: escala de 0,78 a 1,12 (era 0,92 a 1,06), opacidade de 0,30 a 1,00 (era 0,55), e uma LEGENDA embaixo dizendo o título do livro aceso. Foco que precisa de adivinhação não é foco.
+
+- **A capa que morreu vira a capa tipográfica.** URLs de capa apontam para servidor de terceiro, e servidor de terceiro some: a imagem 404 mostrava o ícone quebrado do navegador com texto vazando. O Cover virou client component por UM motivo: o onError é do navegador, e só ele sabe que a imagem morreu. O fallback é a mesma capa desenhada de quem nunca teve imagem.
+
+---
+
+**2026-07-21: O carrossel vira anel, a estante ganha foto de verdade (reversão da 0053, pedida pelo dono), e o livro mostra a comunidade em ícones.**
+
+- **O carrossel dos "adorei" é um ANEL, terceira forma e a que ficou.** A 1ª (foco no centro) abria com meia tela vazia; a 2ª (foco à esquerda) matou o vazio mas deixou o foco ilegível e as pontas desordenadas. A 3ª volta o foco ao CENTRO e mata o vazio por outro caminho: o conteúdo se repete três vezes, a rolagem nasce no terço do meio, e perto de uma borda o carrossel se reancora um terço adiante sem ninguém ver. Não há começo vazio porque não há começo. As capas se dispõem num arco (o centro no trono, as pontas descem), e a legenda diz o título do foco. Anel só com 5+ capas e sem prefers-reduced-motion; senão, fila reta.
+
+- **A foto da estante: o dono reverteu a decisão da 0053 de olhos abertos.** A 0053 tinha recusado upload solto ("seria a única superfície sem curadoria na vitrine") e dado a capa por referência a um livro. O dono pediu foto de verdade, como as listas do Letterboxd, e o argumento de risco era mais fraco do que parecia: o retrato de perfil JÁ é upload livre que aparece em toda parte, pelo mesmo funil (/api/upload: logado, tipo pelos primeiros bytes, nome do servidor, teto de tamanho). Entrou `collections.cover_url` (migration 0054): a foto vira o pano de fundo da página da estante (máscara suave, clima e não conteúdo). O setter só aceita endereço com cara do nosso funil (/uploads/ ou https), nunca http puro, data: ou javascript:. A capa-por-referência da 0053 continua existindo para o leque do card.
+
+- **O livro mostra a comunidade numa fila de ícones**: quantos leram, em quantas estantes montadas mora, quantos gostaram ou adoraram, e a COROA com a posição quando está no top 100 dos queridinhos. A posição usa o MESMO desempate de lib/queridinhos.ts, senão a coroa da ficha discordaria da lista. Tudo contagem sobre LIVRO e só do que é público, como sempre. O que é zero não aparece: lápide não é ficha.
+
+- **A curadoria do Gume em destaque no explorar**: o cartão da casa cresceu, com o pódio de verdade dentro (as cinco capas mais adoradas, a 1ª no trono). É a lista da instituição, montada pela comunidade inteira, e agora parece isso.
+
+---
+
+**2026-07-21: A cor entrou nos ícones da comunidade, por decisão do dono, e a fronteira dela é o ícone.**
+
+O design da casa era monocromático com a cor vindo só das capas, e o dono já tinha rejeitado laranja uma vez (na página de estatísticas). Desta vez ele PEDIU cor, apontando o Letterboxd: os ícones da fila da comunidade na ficha do livro (verde para leram, azul para estantes, laranja para o coração de gostaram ou adoraram) e a coroa DOURADA da curadoria da casa, que assina também o cartão do explorar e o cabeçalho do /queridinhos.
+
+A fronteira registrada: **a cor mora no ÍCONE, nunca no texto nem no número.** O texto continua tinta, e a paleta é fixa e pequena (quatro tons, escolhidos para funcionar no claro e no escuro). Se um dia a cor escorrer do ícone para rótulo, fundo ou número, passou da fronteira.
+
+Mais três da mesma rodada: a fila de ícones aparece SEMPRE (zero incluso), porque uma fila que some e volta conforme os números parece bug; o carrossel ganhou o giro SATURADO (flanco esquerdo inteiro num ângulo, direito noutro, só o trono de frente, como o expositor da referência que o dono mandou), sem translateY, com a escala desenhando o arco sozinha; e a lista da casa se chama "Top 100: os queridinhos do Gume", com página editorial: aura do 1º colocado, coroa dourada e título grande na serifa.
+
+---
+
+**2026-07-21: "Estar na estante" é estar na estante, a luz que não pode ser serrada, e a página do livro emagrece.**
+
+- **"Em N estantes" conta GENTE, e qualquer status conta.** A primeira versão contava só as estantes montadas; o dono corrigiu: lido, lendo, esperando e largado são todos "está na estante de alguém". A conta virou pessoas distintas com o livro na própria estante (qualquer status, público) ou numa estante montada pública. A mesma definição vale na ficha do livro e nos cards do Top 100, que ganharam a fila de ícones coloridos (leram, gostaram ou adoraram, estantes).
+
+- **A luz termina sozinha, nunca serrada.** A aura tinha a máscara ainda viva na borda da caixa, e o overflow serrava o brilho num fio reto: o "bloco" que o dono apontou. A elipse da máscara agora morre bem antes das bordas (fade completo a ~37% do centro): não existe borda para cortá-la. Luz que termina sozinha é névoa; luz serrada é caixa.
+
+- **A página do livro emagreceu quatro móveis, cada um para o lugar onde já era usado:**
+  1. A gaveta "edições" e o seletor "qual edição é a minha" eram duas moradas do mesmo assunto; viraram uma: com o livro na sua estante, a gaveta É o seletor. O cartão de ferramentas ficou só com "tirar da estante".
+  2. "Arrumar este livro" saiu do porão e virou um LÁPIS no canto do cartão de informações: erro de ficha se vê na ficha, e é nela que se conserta. O histórico continua público.
+  3. "Quando você leu" virou uma linha em itálico encostada no painel ("terminei em 2019 · ajustar"), com o editor abrindo ali mesmo. Já foi cartão, já foi gaveta; a resposta cabe em meia frase, e meia frase com moldura própria ocupava uma seção.
+  4. A caixa de resenha nasce FECHADA, com um convite de uma linha ("escrever uma resenha"). A maioria das visitas a um livro não é para escrever, e a caixa aberta era um formulário cobrando texto de quem só veio olhar. Quem já escreveu segue vendo o texto como texto.
+
+- **"De onde veio" já conta nas estatísticas** (o card "de onde vieram os seus livros" existia). O filtro por procedência na estante ficou em aberto de propósito: o campo é texto livre por decisão antiga (a procedência é história, não formulário), e filtrar texto livre exige escolher entre busca ou normalização. Vai ao dono como pergunta, não como surpresa.
+
+---
+
+**2026-07-21: O 3D perdeu para o livro, a estante inventada vira COLEÇÃO, e as editoriais ganham morada fixa.**
+
+- **O carrossel dos "adorei" voltou à fila reta.** Três formas de 3D (palco central, foco à esquerda, anel infinito com arco), e o dono julgou no uso real: nenhuma funcionou. A capa girada esconde a própria arte, e o efeito virava o assunto quando o assunto são os livros. A fila reta mostra as capas inteiras, de frente, que é como capa se mostra. Ficou da era 3D: setas que só aparecem quando há para onde rolar.
+
+- **"Estantes personalizadas" viraram COLEÇÕES**, em toda tela. Dois conceitos, dois nomes: a ESTANTE é a biblioteca da pessoa (lidos, lendo, esperando); a COLEÇÃO é o que ela montou à mão. O nome antigo usava a mesma palavra para as duas coisas e obrigava o qualificador "personalizadas". A tabela no banco sempre se chamou collections; a tela agora concorda com ela.
+
+- **/colecoes: a galeria de todas as coleções públicas**, cronológica (a mais nova primeiro, sem algoritmo, o costume do feed), com a CURADORIA DA CASA fixada no topo, fora da ordem: destaque editorial é decidido pela casa, não conquistado por métrica. O cartão da curadoria virou um componente só (components/curadoria-card.tsx) porque agora aparece em três vitrines (explorar, /colecoes, perfil da casa), e três cópias divergiriam na primeira semana.
+
+- **As editoriais moram fixas no perfil do idealizador**, no topo de "minhas coleções": as listas da casa ficam com quem é a casa.
+
+- **Voltar ao topo**: o elevador aparece depois de duas telas de rolagem (antes disso é um botão para ir aonde a pessoa já está), em vidro, acima da barra do celular.
+
+- **E a operação mais capas entrou no repertório**: scripts/operacao-mais-capas.mjs lê a planilha de pesquisa do dono (H1, Clube de Literatura Clássica, Bravo, Jabuti e afins) e aplica no catálogo REUSANDO as funções do app (findOrCreateWork casa por ISBN e título sem duplicar e passa pelo portão de autores; enriquecer completa ficha com a desconfiança da casa). Para isso nasceu o scripts/alias/ (resolvedor de "@/" e de import sem extensão fora do Next). A CDN da H1 entrou nas origens de imagem aceitas: capa POR REFERÊNCIA, como a política manda. Rodar duas vezes não duplica nada.
+
+---
+
+**2026-07-21: O Explorar ganhou corredores, o card da casa se encheu de capas, e a operação mais capas fechou a primeira volta.**
+
+- **O Explorar virou seis vitrines com um menu de pílulas**: tudo, pessoas, coleções, autores, gêneros e editoras. As três últimas são CATÁLOGO puro (a vitrine da livraria, sem linha de leitor, então sem visibleTo por construção), com as obras sorteando como sempre. Gêneros e editoras são um mapa de rótulos com contagem de LIVRO; escolhido um, a vitrine de obras dele. Ver lib/explorar-catalogo.ts.
+
+- **O card da curadoria encheu**: a faixa de capas virou contígua e cheia (oito capas sobrepostas um dedo), como as listas em destaque do Letterboxd que o dono mandou de referência. O pódio decrescente anterior deixava um terço do card vazio.
+
+- **"Os nomes, pelo rosto" morreu**: o resumo das gavetas de conexões virou "abra para ver as pessoas". Resumo de gaveta diz o que acontece ao abrir, não poesia.
+
+- **A operação mais capas, primeira volta**: 405 linhas, 0 falhas, nenhuma duplicata criada (o catálogo já tinha as 405 obras, e o casamento provou seu valor), 290 fichas enriquecidas pela máquina, 27 da H1 com capa em alta por referência, e 94 sem ISBN nem capa mesmo depois da busca (lista para conferência à mão). O material bruto (imagens, rascunhos) saiu do disco; ficou o que é terminantemente útil: a planilha em seed/operacao-mais-capas.csv (dado de catálogo, reaplicável em produção) e os marks da 4/RL em public/logo/ (o README agora dá o crédito com a marca). E um teste de exportação foi CONSERTADO no processo: ele fatiava CSV com split ingênuo e quebrou quando a obra sorteada veio com vírgula no título; o CSV sempre esteve certo, e agora a conferência fatia com as mesmas regras de quem escreve.

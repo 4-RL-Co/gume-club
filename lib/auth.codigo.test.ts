@@ -273,18 +273,58 @@ describe("o código por e-mail", () => {
  * ════════════════════════════════════════════════════════════════════
  */
 describe("a porta de entrada", () => {
-  it("o GitHub não é um provedor de login", () => {
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  ═══ O DIA CHEGOU, E A REGRA MUDOU DE FORMA SEM MUDAR DE INTENÇÃO ═══
+   *
+   *  Este teste dizia "a palavra github não pode aparecer em socialProviders", e o
+   *  comentário acima já previa a exceção: "ele volta um dia como VÍNCULO de conta (a
+   *  insígnia de Construtor precisa do handle do GitHub), e nunca como login. Se alguém
+   *  o trouxer de volta, a build quebra e a pessoa tem que explicar por quê."
+   *
+   *  A explicação: sem o GitHub ligado, a insígnia de Construtor não existia para
+   *  NINGUÉM — nem para quem escreveu o app inteiro —, porque ela se calcula cruzando a
+   *  conta ligada por OAuth com quem tem PR mesclado, e não é autodeclarada.
+   *
+   *  ═══ O QUE MUDOU, E O QUE NÃO ═══
+   *
+   *  A intenção nunca foi "a string github não existe no arquivo". Era **o GitHub não
+   *  cria conta**, porque ele pode entregar e-mail não verificado, que é o vetor clássico
+   *  de tomada de conta.
+   *
+   *  Então o teste passou a exigir a coisa de verdade: se o GitHub estiver ali, ele tem
+   *  que vir com as DUAS travas de cadastro. O Better Auth lê `disableSignUp` no sign-in
+   *  e `options.disableSignUp` no callback (api/routes/sign-in.mjs e callback.mjs), e
+   *  `disableImplicitSignUp` cobre o caminho do `requestSignUp`. Com as duas, ele só se
+   *  liga a uma conta que JÁ EXISTE: uma porta que só abre por dentro.
+   *
+   *  Isto é MAIS apertado que a regra antiga, e não menos: antes bastava a palavra não
+   *  aparecer. Agora, se ela aparecer sem as travas, a build cai.
+   *
+   *  E a outra metade da promessa continua intacta, no teste logo abaixo: a tela de
+   *  ENTRAR não oferece o GitHub. Ele mora no perfil, para quem já está dentro.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  it("o GitHub nunca cria conta: ele é vínculo, e não porta", () => {
     const social = AUTH.slice(AUTH.indexOf("socialProviders:"), AUTH.indexOf("account:"));
 
     expect(social.length, "o bloco de socialProviders sumiu: a varredura quebrou").toBeGreaterThan(20);
+    expect(social).toMatch(/google/);
+
+    if (!/github/i.test(social)) return; // ausente é o estado mais seguro de todos
 
     expect(
-      /github/i.test(social),
-      "o GitHub voltou a ser login. Ele confunde leitor, e pode entregar e-mail NÃO " +
-        "VERIFICADO, que é o vetor clássico de tomada de conta. Ele é VÍNCULO, e não porta.",
-    ).toBe(false);
+      /disableSignUp:\s*true/.test(social),
+      "o GitHub está em socialProviders SEM disableSignUp. Ele pode entregar e-mail não " +
+        "verificado, e sem esta trava ele vira uma porta de cadastro: o vetor clássico de " +
+        "tomada de conta.",
+    ).toBe(true);
 
-    expect(social).toMatch(/google/);
+    expect(
+      /disableImplicitSignUp:\s*true/.test(social),
+      "falta disableImplicitSignUp no GitHub. Sem ela, um pedido com requestSignUp cria " +
+        "conta pelo GitHub assim mesmo.",
+    ).toBe(true);
   });
 
   it("a tela de entrar não oferece o GitHub", () => {

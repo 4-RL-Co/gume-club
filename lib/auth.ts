@@ -139,11 +139,47 @@ export const auth = betterAuth({
    *  feita por quem já está dentro, depois do lançamento. Não é uma porta de entrada.
    * ════════════════════════════════════════════════════════════════════
    */
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  O GITHUB VOLTOU — COMO VÍNCULO, E NUNCA COMO PORTA.
+   *
+   *  Ele volta para o que sempre foi o propósito dele, e que está escrito acima: a
+   *  insígnia de Construtor precisa do handle do GitHub para casar com quem tem PR
+   *  mesclado. Isso é uma ação de quem JÁ ESTÁ DENTRO ("conectar o GitHub", no perfil).
+   *
+   *  ═══ AS DUAS TRAVAS, E POR QUE SÃO DUAS ═══
+   *
+   *  1. `disableSignUp` e `disableImplicitSignUp`. O GitHub pode entregar e-mail NÃO
+   *     VERIFICADO, que é o vetor clássico de tomada de conta — o motivo nº 3 pelo qual
+   *     ele saiu do login. Com estas duas, o GitHub NUNCA cria uma conta: ele só se liga
+   *     a uma que já existe. Uma porta que só abre por dentro não é uma porta de entrada.
+   *     (As duas porque o Better Auth lê `disableSignUp` no sign-in e
+   *     `options.disableSignUp` no callback: ver api/routes/sign-in.mjs e callback.mjs.)
+   *
+   *  2. Ele SÓ É REGISTRADO se as credenciais existirem. Sem isto, volta o bug que o
+   *     tirou daqui: "Social provider github is missing clientId or clientSecret" a cada
+   *     carga, e um botão que aparece e não abre. Uma porta que aparece e não funciona é
+   *     pior do que porta nenhuma — então, sem credencial, ela não aparece.
+   *
+   *  E o `trustedProviders` continua só com o Google: ligar o GitHub segue exigindo
+   *  e-mail local verificado, como manda a defesa contra roubo de conta logo abaixo.
+   * ════════════════════════════════════════════════════════════════════
+   */
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
     },
+    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+      ? {
+          github: {
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
+            disableSignUp: true,
+            disableImplicitSignUp: true,
+          },
+        }
+      : {}),
   },
 
   /**
@@ -184,6 +220,22 @@ export const auth = betterAuth({
       enabled: true,
       trustedProviders: ["google"],
       requireLocalEmailVerified: true,
+      /**
+       * ═══ E-MAILS DIFERENTES NO VÍNCULO EXPLÍCITO, E POR QUE ISSO É SEGURO ═══
+       *
+       * Sem isto, "conectar o GitHub" falhava para quase todo mundo: o Better Auth
+       * recusa o vínculo quando o e-mail do provedor difere do e-mail da conta
+       * (email_doesn't_match), e o e-mail do GitHub de alguém quase nunca é o mesmo
+       * do Gume. A insígnia de construtor morreria na porta.
+       *
+       * A chave só afrouxa o vínculo EXPLÍCITO: a pessoa está LOGADA e clicou
+       * "conectar" (linkSocial, e o callback desse fluxo). Quem tem a sessão já é
+       * dono da conta; exigir que os e-mails coincidam ali não protege ninguém, só
+       * impede o vínculo honesto. A defesa contra roubo de conta é OUTRA: o vínculo
+       * AUTOMÁTICO no login continua atrás de requireLocalEmailVerified e do
+       * trustedProviders, que esta chave não toca. Ver lib/auth.vinculo.test.ts.
+       */
+      allowDifferentEmails: true,
     },
   },
 

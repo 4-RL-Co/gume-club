@@ -493,8 +493,40 @@ export const collections = pgTable("collections", {
   name: text("name").notNull(),
   description: text("description"),
   visibility: visibility("visibility").notNull().default("public"),
+  /**
+   * A estante NUMERADA: 1º, 2º, 3º. Escolha de quem monta, estante por estante:
+   * "meus dez favoritos" tem ordem, "terror brasileiro" é um conjunto. Obrigar toda
+   * estante a ter números faria de toda coleção um pódio. Ver a migration 0052.
+   */
+  ranked: boolean("ranked").notNull().default(false),
+  /**
+   * A CARA da estante: um livro DELA, escolhido por quem montou, por referência ao
+   * catálogo. Nunca upload solto: a capa de catálogo já foi curada, e apontar para
+   * ela não abre superfície de vandalismo na vitrine. Ver a migration 0053.
+   */
+  coverWorkId: uuid("cover_work_id").references(() => works.id, { onDelete: "set null" }),
+  /**
+   * A FOTO da estante, subida por quem montou pelo mesmo funil do retrato de perfil
+   * (/api/upload). Vira o pano de fundo da página da estante. Ver a migration 0054.
+   */
+  coverUrl: text("cover_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex("collections_user_slug").on(t.userId, t.slug)]);
+
+/**
+ * QUEM GUARDOU A ESTANTE DE QUEM. Uma pergunta só ("quais você guardou?"), e nunca a
+ * outra ("quantos guardaram esta?"): guardar é endosso, e endosso contado é curtida
+ * com outro nome, que é a linha que o README não cruza. Nenhuma consulta conta por
+ * aqui, e um teste varre isso. Ver lib/listas.ts e a migration 0052.
+ */
+export const collectionSaves = pgTable("collection_saves", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  collectionId: uuid("collection_id").notNull().references(() => collections.id, { onDelete: "cascade" }),
+  savedAt: timestamp("saved_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex("collection_saves_pk").on(t.userId, t.collectionId),
+  index("collection_saves_col_idx").on(t.collectionId),
+]);
 
 export const collectionItems = pgTable("collection_items", {
   collectionId: uuid("collection_id").notNull().references(() => collections.id, { onDelete: "cascade" }),

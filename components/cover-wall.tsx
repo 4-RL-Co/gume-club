@@ -12,16 +12,25 @@ export function CoverWall({
   books,
   opinions = {},
   de,
+  numerada = false,
 }: {
   books: ShelfBook[];
   opinions?: Record<string, Opinion>;
   /** O recorte de onde estes livros vieram, para o "voltar". Ver BookCard. */
   de?: string;
+  /** Estante NUMERADA: cada card ganha a posição (1, 2, 3), na ordem recebida. */
+  numerada?: boolean;
 }) {
   return (
     <ul className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
-      {books.map((b) => (
-        <BookCard key={b.workId} book={b} opinion={opinions[b.workId]} de={de} />
+      {books.map((b, i) => (
+        <BookCard
+          key={b.workId}
+          book={b}
+          opinion={opinions[b.workId]}
+          de={de}
+          numero={numerada ? i + 1 : null}
+        />
       ))}
     </ul>
   );
