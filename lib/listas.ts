@@ -157,6 +157,22 @@ export async function getListasParaExplorar(viewer: Viewer, limite = 6): Promise
   return rows.map(paraCard);
 }
 
+/**
+ * TODAS as coleções públicas, para a galeria de /colecoes. Cronológico (a mais nova
+ * primeiro), sem algoritmo: é o mesmo costume do feed. As editoriais da casa não
+ * entram por aqui: elas são fixadas no topo da tela, e o destaque delas é editorial,
+ * não conquistado por métrica.
+ */
+export async function getTodasAsListas(viewer: Viewer, limite = 100): Promise<ListaCard[]> {
+  const rows = await db.execute<CardRow>(sql`
+    ${cardSelect(viewer)}
+       and u.email_verified = true
+       and exists (select 1 from collection_items ci where ci.collection_id = collections.id)
+     order by collections.created_at desc
+     limit ${limite}`);
+  return rows.map(paraCard);
+}
+
 // ─────────────────────────────────────────────────────────── as mutações
 
 /**

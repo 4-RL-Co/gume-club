@@ -49,7 +49,7 @@ export function ShelfSettings({
         onClick={() => setOpen(true)}
         className="mt-7 text-[13px] text-[var(--color-ink-faint)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
       >
-        ajustar esta estante
+        ajustar esta coleção
       </button>
     );
   }
@@ -97,7 +97,7 @@ export function ShelfSettings({
           defaultValue={description ?? ""}
           maxLength={LIMITS.note}
           rows={2}
-          placeholder="o que é esta estante, em uma ou duas frases"
+          placeholder="o que é esta coleção, em uma ou duas frases"
           className="w-full resize-none rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[14px] leading-relaxed outline-none focus:border-[var(--color-ink)]"
         />
         <button
@@ -114,7 +114,7 @@ export function ShelfSettings({
           (/api/upload: logado, tipo pelos primeiros bytes, teto de tamanho). */}
       <div className="mt-4">
         <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-          a foto da estante
+          a foto da coleção
         </span>
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <label className="cursor-pointer rounded-[var(--radius-control)] border border-[var(--color-rule)] px-3 py-1.5 text-[12px] text-[var(--color-ink-soft)] transition-colors hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]">
@@ -172,7 +172,7 @@ export function ShelfSettings({
       {capas.length > 1 && (
         <div className="mt-4">
           <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-            a capa da estante
+            a capa da coleção
           </span>
           <div className="mt-2 flex flex-wrap gap-2">
             {capas.map((c) => {
@@ -250,7 +250,7 @@ export function ShelfSettings({
       <div className="mt-5 flex items-center gap-3 text-[13px]">
         {armed ? (
           <>
-            <span className="text-[var(--color-ink-soft)]">apagar a estante? os livros ficam.</span>
+            <span className="text-[var(--color-ink-soft)]">apagar a coleção? os livros ficam.</span>
             <button
               disabled={pending}
               onClick={() => start(() => apagarEstante(id))}
@@ -267,7 +267,7 @@ export function ShelfSettings({
             onClick={() => setArmed(true)}
             className="text-[var(--color-ink-faint)] hover:text-[var(--color-perigo)]"
           >
-            apagar esta estante
+            apagar esta coleção
           </button>
         )}
         <button onClick={() => setOpen(false)} className="ml-auto text-[var(--color-ink-faint)]">

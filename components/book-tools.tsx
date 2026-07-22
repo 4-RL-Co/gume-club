@@ -34,14 +34,17 @@ export type Tool = {
  * de edições (EscolherEdicao, usada pela página), e este cartão ficou com a única
  * coisa que restou: tirar o livro da estante.
  */
+/**
+ * E "tirar da estante" NÃO tem um cartão só para ele: um botão destrutivo raro
+ * não é uma seção, é uma linha baixa no fim da coluna. Cartão inteiro para um
+ * botão dava ao gesto mais raro da página o mesmo peso de uma seção de conteúdo.
+ */
 export function BookTools(t: { workId: string; onShelf: boolean }) {
   if (!t.onShelf) return null;
   return (
-    <section className="surface p-6">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-        <Remove workId={t.workId} />
-      </div>
-    </section>
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-2">
+      <Remove workId={t.workId} />
+    </div>
   );
 }
 

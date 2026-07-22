@@ -234,7 +234,7 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
 
       {books.length === 0 ? (
         <Empty>
-          Estante vazia. Abra um livro e coloque ele aqui.
+          Coleção vazia. Abra um livro e coloque ele aqui.
         </Empty>
       ) : (
         <CoverWall

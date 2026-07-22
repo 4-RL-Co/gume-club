@@ -49,6 +49,13 @@ export const FONTES_DE_IMAGEM = [
   { host: "books.google.com", oQueE: "capas do Google Books" },
   { host: "*.gstatic.com", oQueE: "imagens do Google" },
   { host: "s4.anilist.co", oQueE: "capas da AniList" },
+  /**
+   * A CDN da H1 Editora. Entrou na operação que trouxe o catálogo da H1 inteiro
+   * (scripts/operacao-mais-capas.mjs): 27 edições com ISBN e capa exata em alta,
+   * apontadas POR REFERÊNCIA para o endereço público da editora, como a política
+   * manda. Guardar o endereço, nunca a cópia.
+   */
+  { host: "h1editora.fbitsstatic.net", oQueE: "capas da H1 Editora" },
   { host: "commons.wikimedia.org", oQueE: "o Wikimedia Commons" },
   { host: "upload.wikimedia.org", oQueE: "o Wikimedia Commons" },
   { host: "avatars.githubusercontent.com", oQueE: "a foto de perfil do GitHub" },

@@ -15,6 +15,8 @@ import { FollowButton } from "@/components/follow-button";
 import { chegadaDe, getBadges } from "@/lib/badges";
 import { BadgesExplicadas } from "@/components/badges";
 import { getListasDe, getListasGuardadas } from "@/lib/listas";
+import { CuradoriaCard } from "@/components/curadoria-card";
+import { souIdealizador } from "@/lib/authz";
 import { ListaGrid } from "@/components/lista-card";
 import { getResenhasDe } from "@/lib/explore";
 import { Cover } from "@/components/cover";
@@ -132,6 +134,11 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
   // A HONRA. Uma escada só: livros, HQs e cada volume de mangá contam juntos. Ver
   // lib/honras.ts.
   const escadas = await getEscadas(profile.id);
+
+  // O perfil da CASA carrega a curadoria da casa fixada nas coleções: as editoriais
+  // moram com quem as edita. souIdealizador aqui não é permissão, é identificação:
+  // pergunta se ESTE perfil é o de quem imaginou o Gume.
+  const perfilDaCasa = await souIdealizador({ id: profile.id });
 
   const name = profile.displayName ?? profile.handle;
   const primeiroNome = name.split(" ")[0];
@@ -305,14 +312,22 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
           Eram pílulas de texto com um número, e uma coleção montada com capricho merece
           aparecer como o que é: capas em leque, nome, descrição. A curadoria é o que o
           perfil tem de mais pessoal depois das resenhas, e estava vestida de filtro. */}
-      {shelves.length > 0 && (
+      {(shelves.length > 0 || perfilDaCasa) && (
         <section className="mt-5">
           <h2 className={EYEBROW}>
-            {mine ? "minhas estantes personalizadas" : `estantes que ${primeiroNome} montou`}
+            {mine ? "minhas coleções" : `coleções que ${primeiroNome} montou`}
           </h2>
-          <div className="mt-4">
-            <ListaGrid listas={shelves} mostrarDono={false} />
-          </div>
+          {/* A curadoria editorial, FIXA no topo das coleções da casa. */}
+          {perfilDaCasa && (
+            <div className="mt-4">
+              <CuradoriaCard compacto />
+            </div>
+          )}
+          {shelves.length > 0 && (
+            <div className="mt-4">
+              <ListaGrid listas={shelves} mostrarDono={false} />
+            </div>
+          )}
         </section>
       )}
 
@@ -322,7 +337,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
       {guardadas.length > 0 && (
         <section className="mt-5">
           <h2 className={EYEBROW}>
-            {mine ? "estantes que eu guardei" : `estantes que ${primeiroNome} guardou`}
+            {mine ? "coleções que eu guardei" : `coleções que ${primeiroNome} guardou`}
           </h2>
           <div className="mt-4">
             <ListaGrid listas={guardadas} />

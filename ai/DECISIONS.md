@@ -2364,3 +2364,19 @@ Mais três da mesma rodada: a fila de ícones aparece SEMPRE (zero incluso), por
   4. A caixa de resenha nasce FECHADA, com um convite de uma linha ("escrever uma resenha"). A maioria das visitas a um livro não é para escrever, e a caixa aberta era um formulário cobrando texto de quem só veio olhar. Quem já escreveu segue vendo o texto como texto.
 
 - **"De onde veio" já conta nas estatísticas** (o card "de onde vieram os seus livros" existia). O filtro por procedência na estante ficou em aberto de propósito: o campo é texto livre por decisão antiga (a procedência é história, não formulário), e filtrar texto livre exige escolher entre busca ou normalização. Vai ao dono como pergunta, não como surpresa.
+
+---
+
+**2026-07-21: O 3D perdeu para o livro, a estante inventada vira COLEÇÃO, e as editoriais ganham morada fixa.**
+
+- **O carrossel dos "adorei" voltou à fila reta.** Três formas de 3D (palco central, foco à esquerda, anel infinito com arco), e o dono julgou no uso real: nenhuma funcionou. A capa girada esconde a própria arte, e o efeito virava o assunto quando o assunto são os livros. A fila reta mostra as capas inteiras, de frente, que é como capa se mostra. Ficou da era 3D: setas que só aparecem quando há para onde rolar.
+
+- **"Estantes personalizadas" viraram COLEÇÕES**, em toda tela. Dois conceitos, dois nomes: a ESTANTE é a biblioteca da pessoa (lidos, lendo, esperando); a COLEÇÃO é o que ela montou à mão. O nome antigo usava a mesma palavra para as duas coisas e obrigava o qualificador "personalizadas". A tabela no banco sempre se chamou collections; a tela agora concorda com ela.
+
+- **/colecoes: a galeria de todas as coleções públicas**, cronológica (a mais nova primeiro, sem algoritmo, o costume do feed), com a CURADORIA DA CASA fixada no topo, fora da ordem: destaque editorial é decidido pela casa, não conquistado por métrica. O cartão da curadoria virou um componente só (components/curadoria-card.tsx) porque agora aparece em três vitrines (explorar, /colecoes, perfil da casa), e três cópias divergiriam na primeira semana.
+
+- **As editoriais moram fixas no perfil do idealizador**, no topo de "minhas coleções": as listas da casa ficam com quem é a casa.
+
+- **Voltar ao topo**: o elevador aparece depois de duas telas de rolagem (antes disso é um botão para ir aonde a pessoa já está), em vidro, acima da barra do celular.
+
+- **E a operação mais capas entrou no repertório**: scripts/operacao-mais-capas.mjs lê a planilha de pesquisa do dono (H1, Clube de Literatura Clássica, Bravo, Jabuti e afins) e aplica no catálogo REUSANDO as funções do app (findOrCreateWork casa por ISBN e título sem duplicar e passa pelo portão de autores; enriquecer completa ficha com a desconfiança da casa). Para isso nasceu o scripts/alias/ (resolvedor de "@/" e de import sem extensão fora do Next). A CDN da H1 entrou nas origens de imagem aceitas: capa POR REFERÊNCIA, como a política manda. Rodar duas vezes não duplica nada.

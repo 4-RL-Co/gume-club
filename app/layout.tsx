@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/sidebar";
 import { SCRIPT_DO_TEMA } from "@/components/tema";
 import { Command } from "@/components/command";
 import { ToastHost } from "@/components/toast-host";
+import { VoltarAoTopo } from "@/components/voltar-ao-topo";
 import { PublicHeader } from "@/components/public-header";
 import { getViewer } from "@/lib/viewer";
 import { souIdealizador } from "@/lib/authz";
@@ -111,6 +112,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Cmd+K de qualquer tela: achar um livro e pôr na estante é a ação mais
             repetida do app, e ela custava uma navegação inteira. */}
         <Command />
+
+        {/* O elevador: some no topo, aparece depois de duas telas. */}
+        <VoltarAoTopo />
 
         {/* Cinco segundos de arrependimento em toda ação destrutiva. */}
         <ToastHost />

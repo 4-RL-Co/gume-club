@@ -53,3 +53,6 @@ scripts/importar-biblioteca.mjs
 
 # a Fraunces variável, baixada pelo scripts/wordmark.py sob demanda
 .fraunces-var.ttf
+
+# material de pesquisa de catálogo (imagens e planilhas locais, nunca do repo)
+operaçãomaiscapas/
