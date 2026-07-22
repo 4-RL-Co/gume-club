@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getViewer } from "@/lib/viewer";
 import { ScreenHeader } from "@/components/screen-header";
 import { Explore } from "@/components/explore";
@@ -7,6 +8,7 @@ import { Cover } from "@/components/cover";
 import { Avatar } from "@/components/avatar";
 import { ListaGrid } from "@/components/lista-card";
 import { CuradoriaCard } from "@/components/curadoria-card";
+import { origemAceita } from "@/lib/imagens";
 import { getTodasAsListas } from "@/lib/listas";
 import {
   getAutoresParaExplorar, getGeneros, getEditoras,
@@ -116,9 +118,8 @@ async function Autores() {
       {autores.map((a) => (
         <li key={a.slug}>
           <Link href={`/autor/${a.slug}`} className="surface surface-hover flex h-full flex-col items-center gap-3 p-6 text-center">
-            {a.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={a.imageUrl} alt="" className="h-20 w-20 rounded-full object-cover" />
+            {a.imageUrl && origemAceita(a.imageUrl) ? (
+              <Image src={a.imageUrl} alt="" width={80} height={80} sizes="80px" className="h-20 w-20 rounded-full object-cover" />
             ) : (
               <Avatar name={a.name} handle={a.slug} size={80} />
             )}

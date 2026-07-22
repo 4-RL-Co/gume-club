@@ -75,6 +75,36 @@ export const FONTES_DE_IMAGEM = [
 ] as const;
 
 /**
+ * A origem desta imagem é uma das aceitas?
+ *
+ * Existe porque o otimizador de imagem ESTOURA (no servidor, derrubando a
+ * renderização) quando recebe um host fora da lista, em vez de recusar com
+ * educação. O catálogo tem capas de hosts que nunca entraram na lista (sebo,
+ * editora pequena, loja), e uma capa dessas não pode derrubar a página: ela cai
+ * para a capa tipográfica, que era o destino dela de qualquer jeito, porque a
+ * CSP já a bloqueava no navegador.
+ *
+ * Pura e sem dependência de servidor de propósito: os componentes de tela
+ * (client) a usam antes de desenhar.
+ */
+export function origemAceita(src: string | null | undefined): boolean {
+  if (!src) return false;
+  if (src.startsWith("/")) return true; // a nossa própria casa (/uploads, /logo)
+
+  let u: URL;
+  try {
+    u = new URL(src);
+  } catch {
+    return false;
+  }
+  if (u.protocol !== "https:") return false;
+
+  return FONTES_DE_IMAGEM.some(({ host }) =>
+    host.startsWith("*.") ? u.hostname.endsWith(host.slice(1)) : u.hostname === host,
+  );
+}
+
+/**
  * A diretiva da CSP, montada da lista. É o middleware que usa.
  *
  * ════════════════════════════════════════════════════════════════════

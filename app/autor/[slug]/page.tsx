@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import Image from "next/image";
+import { origemAceita } from "@/lib/imagens";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { sql } from "drizzle-orm";
@@ -100,7 +102,7 @@ export default async function Autor({ params }: { params: Promise<{ slug: string
           nacionalidade estava quase toda vazia, e não havia como um leitor
           consertar. A edição era corrigível desde o começo; o autor, não. */}
       <div className="mt-10 flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-8">
-        {autor.image_url && (
+        {autor.image_url && origemAceita(autor.image_url) && (
           /* ═══ A FOTO É DE ALGUÉM, E ELA É MOSTRADA DA ORIGEM ═══
 
              O retrato de um autor é obra de um fotógrafo. O Gume guarda o ENDEREÇO e
@@ -110,10 +112,12 @@ export default async function Autor({ params }: { params: Promise<{ slug: string
              é CC0 — em geral é CC-BY-SA ou domínio público, e a licença exige atribuição.
              Mostrar sem creditar seria o mesmo erro que copiar a sinopse de uma loja. */
           <figure className="shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={autor.image_url}
               alt={`Retrato de ${autor.name}`}
+              width={112}
+              height={112}
+              sizes="112px"
               className="h-28 w-28 rounded-full object-cover"
               style={{ border: "1px solid var(--color-rule)" }}
             />

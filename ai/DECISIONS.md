@@ -2400,3 +2400,19 @@ Mais três da mesma rodada: a fila de ícones aparece SEMPRE (zero incluso), por
 O dono pediu uma página de novidades ("patch notes") dentro de quem faz. A casa tinha o futuro (/o-que-falta), as pessoas (/contribuidores) e o reconhecimento (/insignias); faltava o passado. Nasceu /o-que-mudou, quarta tela da casa, com o mesmo cabeçalho de filete rosa e as portas entre elas.
 
 As decisões: **só coisa grande entra** (a régua, escrita em lib/mudancas.ts: um leitor que voltou depois de duas semanas notaria sozinho? entra; detalhe por baixo do capim, não), a mais nova em cima, agrupada por dia numa linha do tempo. E o conteúdo mora num ARQUIVO varrido por lib/voice.test.ts, pelo mesmo motivo do o-que-falta: "patch notes" é o formato mais fácil do mundo para escorregar em jargão, e aqui a voz de leitor é obrigatória por teste. Nada de gerar do histórico do código: mudança grande se escreve à mão, uma vez, com cuidado.
+
+---
+
+**2026-07-22: As imagens passam pelo otimizador da casa, e a origem estranha cai para a capa tipográfica.**
+
+A demora das capas incomodava o dono, e a medição confirmou: dois terços da estante dele vêm de covers.openlibrary.org, que serve a imagem GRANDE (60 KB, quase um segundo) para um espaço de 112 px, direto do servidor de terceiro, sem cache nenhum do nosso lado.
+
+- **Toda imagem de tela passa pelo otimizador do Next** (`next/image`): o servidor busca uma vez, corta para o tamanho do espaço, converte para WebP e guarda por 31 dias. Medido: a mesma capa caiu de 62 KB para 22 KB, e a segunda visita responde em 0,02 s (170 vezes mais rápido). A capa do topo da página do livro carrega com prioridade.
+
+- **A lista de fontes continua sendo UMA**: `FONTES_DE_IMAGEM` em lib/imagens.ts agora alimenta a CSP E os `remotePatterns` do otimizador. Fonte nova entra num lugar só. Continua sendo capa POR REFERÊNCIA: cache é cache, expira e se refaz; cópia é cópia, e a gente não copia.
+
+- **Origem fora da lista cai para a capa tipográfica, por `origemAceita()`**: o otimizador ESTOURA no servidor (derrubando a renderização) ao receber um host desconhecido, em vez de recusar com educação; e o catálogo tem capas de hosts que nunca entraram na lista. A guarda roda antes de desenhar. É coerente: a CSP já bloqueava esses hosts no navegador, então essas capas já apareciam quebradas; agora quebram BONITO.
+
+- **Prévia de formulário fica crua de propósito**: os campos de colar URL (correção, autor, livro manual, moderação) mostram `<img>` direto, porque ali a URL é arbitrária por natureza e quem olha é quem está conferindo.
+
+E a tira "lendo agora" saiu do perfil, a pedido do dono: a estante com recortes no fim da página já responde isso num clique, e duas moradas para a mesma resposta era o pergaminho voltando.

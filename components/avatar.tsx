@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import { origemAceita } from "@/lib/imagens";
 
 /**
  * A person is round. A book is a rectangle with a hard corner.
@@ -33,8 +35,21 @@ export function Avatar({
       aria-hidden
     >
       {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt="" className="h-full w-full object-cover" />
+        src.startsWith("blob:") || src.startsWith("data:") ? (
+          // A prévia local (o recorte antes de subir) ainda não tem URL de verdade,
+          // e o otimizador não fala blob:. Só ela fica crua.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt="" className="h-full w-full object-cover" />
+        ) : origemAceita(src) ? (
+          <Image src={src} alt="" width={size} height={size} sizes={`${size}px`} className="h-full w-full object-cover" />
+        ) : (
+          <span
+            className="font-medium text-[var(--color-ink-soft)]"
+            style={{ fontSize: Math.round(size * 0.42) }}
+          >
+            {initial}
+          </span>
+        )
       ) : (
         <span
           className="font-medium text-[var(--color-ink-soft)]"

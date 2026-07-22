@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import { origemAceita } from "@/lib/imagens";
 
 /**
  * A cover. When Open Library has no image we draw a typographic one instead of
@@ -33,8 +35,17 @@ const INKS = [
 const PAPER = "240 236 228";
 
 export function Cover({
-  title, author, src,
-}: { title: string; author?: string | null; src?: string | null }) {
+  title, author, src, prioridade = false,
+}: {
+  title: string;
+  author?: string | null;
+  src?: string | null;
+  /**
+   * A capa-herói de uma página (a grande, da página do livro) carrega ANTES de
+   * tudo: ela é o motivo de a pessoa ter aberto a tela. Todo o resto fica lazy.
+   */
+  prioridade?: boolean;
+}) {
   /**
    * ═══ A IMAGEM QUE MORREU VIRA A CAPA TIPOGRÁFICA, e não um ícone quebrado ═══
    *
@@ -56,24 +67,38 @@ export function Cover({
   for (const c of title) h = (Math.imul(h, 31) + c.charCodeAt(0)) | 0;
   const ink = INKS[Math.abs(h) % INKS.length];
 
-  if (src && !morreu) {
+  if (src && !morreu && origemAceita(src)) {
     // The ink block sits UNDER the jacket while it loads. A wall of forty covers
     // that flashes gray and then fills in reads as a page that is broken and then
     // recovers; a wall that starts as ink and resolves into jackets reads as a
     // wall. Same milliseconds, and only one of them looks intentional.
+    //
+    // ═══ E A IMAGEM PASSA PELO NOSSO OTIMIZADOR ═══
+    //
+    // Era um <img> direto no servidor de terceiro: cada leitor negociava com a
+    // Open Library (lenta) e baixava a versão GRANDE para um slot de 112px. Com o
+    // next/image, o nosso servidor busca uma vez, corta para o tamanho do slot,
+    // converte para WebP e cacheia por um mês: a Open Library vira problema nosso,
+    // uma vez, em vez de problema de todo leitor, sempre. A política de capa POR
+    // REFERÊNCIA fica intacta: o que o banco guarda continua sendo o endereço da
+    // fonte; cache é cache, não cópia.
+    //
+    // Um host fora das origens aceitas faz o otimizador recusar, o onError
+    // dispara, e a capa cai para a tipográfica: melhor lombada honesta que
+    // imagem quebrada.
     return (
       <span
-        className="block aspect-2/3 w-full overflow-hidden"
+        className="relative block aspect-2/3 w-full overflow-hidden"
         style={{ background: ink, borderRadius: "var(--radius-cover)" }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={src}
           alt={title}
-          loading="lazy"
-          decoding="async"
+          fill
+          sizes="(max-width: 640px) 45vw, 240px"
+          priority={prioridade}
           onError={() => setMorreu(true)}
-          className="h-full w-full object-cover"
+          className="object-cover"
           style={{ borderRadius: "var(--radius-cover)" }}
         />
       </span>
