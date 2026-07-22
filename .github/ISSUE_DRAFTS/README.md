@@ -2,9 +2,9 @@
 
 Onze issues prontas. **Não são issues abertas ainda**: são o texto delas, pra copiar e colar no
 GitHub com a label `good first issue`. Cada arquivo tem o título e as labels no cabeçalho.
-Duas já saíram do papel: a **01** (Goodreads) foi entregue e não se abre mais, e a **09**
-(exportar) saiu pela metade — só o Markdown continua aberto. As duas ficam na tabela como
-registro.
+Quatro já saíram do papel: a **01** (Goodreads), a **02** (StoryGraph) e a **03** (Skoob)
+foram entregues e não se abrem mais, e a **09** (exportar) saiu pela metade — só o
+Markdown continua aberto. Todas ficam na tabela como registro.
 
 O README promete, em voz alta, que "issues marcadas com `good first issue` são de verdade".
 Promessa vazia custa contribuidor: a pessoa chega, procura, não acha nada, e vai embora.
@@ -38,8 +38,8 @@ Não é um objetivo. É a definição de pronto.
 | # | Issue | Tamanho |
 |---|---|---|
 | [01](./01-importador-goodreads.md) | Goodreads. **Já entregue, não abrir.** Foi o maior e abriu caminho pros outros cinco: criou a espinha (`lib/import/`) que eles reusam. O texto fica como registro da régua. | ✅ entregue |
-| [02](./02-importador-storygraph.md) | StoryGraph. Parser puro. | tarde |
-| [03](./03-importador-skoob.md) | Skoob. Começa com uma investigação, e "não dá" é uma resposta válida. | fim de semana |
+| [02](./02-importador-storygraph.md) | StoryGraph. **Já entregue, não abrir**: parser, fixture e as várias datas num campo só, em `lib/import/parse.ts`. | ✅ entregue |
+| [03](./03-importador-skoob.md) | Skoob. **Já entregue, não abrir**: a investigação aconteceu e o parser detecta o CSV (`skoob_id`, `estante`). | ✅ entregue |
 | [04](./04-importador-librarything.md) | LibraryThing. O importador de quem **coleciona**. | tarde |
 | [05](./05-importador-kindle.md) | Kindle. A estante invisível de dez anos. | fim de semana |
 | [06](./06-importador-kobo.md) | Kobo. E a decisão do sqlite. | fim de semana |
