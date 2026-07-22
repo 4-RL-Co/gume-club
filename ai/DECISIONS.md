@@ -2326,3 +2326,15 @@ Quatro retornos do dono, e uma reversão feita de olhos abertos:
 - **O foco do carrossel era tímido demais, e virou inconfundível**: escala de 0,78 a 1,12 (era 0,92 a 1,06), opacidade de 0,30 a 1,00 (era 0,55), e uma LEGENDA embaixo dizendo o título do livro aceso. Foco que precisa de adivinhação não é foco.
 
 - **A capa que morreu vira a capa tipográfica.** URLs de capa apontam para servidor de terceiro, e servidor de terceiro some: a imagem 404 mostrava o ícone quebrado do navegador com texto vazando. O Cover virou client component por UM motivo: o onError é do navegador, e só ele sabe que a imagem morreu. O fallback é a mesma capa desenhada de quem nunca teve imagem.
+
+---
+
+**2026-07-21: O carrossel vira anel, a estante ganha foto de verdade (reversão da 0053, pedida pelo dono), e o livro mostra a comunidade em ícones.**
+
+- **O carrossel dos "adorei" é um ANEL, terceira forma e a que ficou.** A 1ª (foco no centro) abria com meia tela vazia; a 2ª (foco à esquerda) matou o vazio mas deixou o foco ilegível e as pontas desordenadas. A 3ª volta o foco ao CENTRO e mata o vazio por outro caminho: o conteúdo se repete três vezes, a rolagem nasce no terço do meio, e perto de uma borda o carrossel se reancora um terço adiante sem ninguém ver. Não há começo vazio porque não há começo. As capas se dispõem num arco (o centro no trono, as pontas descem), e a legenda diz o título do foco. Anel só com 5+ capas e sem prefers-reduced-motion; senão, fila reta.
+
+- **A foto da estante: o dono reverteu a decisão da 0053 de olhos abertos.** A 0053 tinha recusado upload solto ("seria a única superfície sem curadoria na vitrine") e dado a capa por referência a um livro. O dono pediu foto de verdade, como as listas do Letterboxd, e o argumento de risco era mais fraco do que parecia: o retrato de perfil JÁ é upload livre que aparece em toda parte, pelo mesmo funil (/api/upload: logado, tipo pelos primeiros bytes, nome do servidor, teto de tamanho). Entrou `collections.cover_url` (migration 0054): a foto vira o pano de fundo da página da estante (máscara suave, clima e não conteúdo). O setter só aceita endereço com cara do nosso funil (/uploads/ ou https), nunca http puro, data: ou javascript:. A capa-por-referência da 0053 continua existindo para o leque do card.
+
+- **O livro mostra a comunidade numa fila de ícones**: quantos leram, em quantas estantes montadas mora, quantos gostaram ou adoraram, e a COROA com a posição quando está no top 100 dos queridinhos. A posição usa o MESMO desempate de lib/queridinhos.ts, senão a coroa da ficha discordaria da lista. Tudo contagem sobre LIVRO e só do que é público, como sempre. O que é zero não aparece: lápide não é ficha.
+
+- **A curadoria do Gume em destaque no explorar**: o cartão da casa cresceu, com o pódio de verdade dentro (as cinco capas mais adoradas, a 1ª no trono). É a lista da instituição, montada pela comunidade inteira, e agora parece isso.

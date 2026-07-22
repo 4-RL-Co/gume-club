@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getEstantes, getAfinidade, getResenhas, getLendoAgora } from "@/lib/explore";
 import { getListasParaExplorar } from "@/lib/listas";
+import { getQueridinhos } from "@/lib/queridinhos";
+import { Crown } from "lucide-react";
 import { ListaGrid } from "@/components/lista-card";
 import { getCoroasPorHandle } from "@/lib/escada";
 import { Moldura } from "@/components/moldura";
@@ -29,7 +31,7 @@ import type { Viewer } from "@/lib/authz";
  * na mesa de alguém agora. Ver ai/DECISIONS.md, a entrada que tirou a praça.
  */
 export async function Explore({ viewer }: { viewer: Viewer }) {
-  const [estantes, listas, afinidade, resenhas, lendo] = await Promise.all([
+  const [estantes, listas, afinidade, resenhas, lendo, queridinhos] = await Promise.all([
     getEstantes(viewer),
     // As estantes MONTADAS, com nome e recorte. Sorteadas como tudo aqui: "as mais
     // guardadas" seria um ranking de popularidade, e é a coisa que esta tela recusa.
@@ -37,6 +39,8 @@ export async function Explore({ viewer }: { viewer: Viewer }) {
     getAfinidade(viewer),
     getResenhas(viewer),
     getLendoAgora(viewer),
+    // O TOPO dos queridinhos, para o cartão da casa mostrar as capas de verdade.
+    getQueridinhos(5),
   ]);
 
   /**
@@ -154,20 +158,44 @@ export async function Explore({ viewer }: { viewer: Viewer }) {
             </section>
           )}
 
-          {/* ── A CURADORIA DA CASA: a porta para os queridinhos. Um convite, e não
-              uma vitrine inteira: a lista mora na página dela. */}
-          <Link href="/queridinhos" className="surface surface-hover block p-6 sm:p-7">
-            <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-              a curadoria da comunidade
-            </span>
-            <span className="voice mt-2 block text-[20px] text-[var(--color-ink)]">
-              Os queridinhos do Gume
-            </span>
-            <span className="mt-1 block text-[13px] text-[var(--color-ink-soft)]">
-              Os cem livros que a comunidade mais adorou. A lista se refaz sozinha, a cada
-              veredito novo.
-            </span>
-          </Link>
+          {/* ═══ A CURADORIA DO GUME, EM DESTAQUE ═══
+
+              O cartão da casa: maior que os outros, com o pódio de verdade dentro (as
+              cinco capas mais adoradas, a primeira no trono). É a lista da INSTITUIÇÃO,
+              montada pela comunidade inteira, e merece parecer isso. Só aparece quando
+              já existe queridinho: um cartão de vitrine vazio é uma promessa quebrada. */}
+          {queridinhos.length > 0 && (
+            <Link
+              href="/queridinhos"
+              className="surface surface-hover block overflow-hidden p-7 sm:p-9"
+            >
+              <span className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
+                <Crown size={13} strokeWidth={1.5} aria-hidden />
+                a curadoria do Gume
+              </span>
+              <span className="voice mt-2 block text-[26px] leading-tight text-[var(--color-ink)] sm:text-[30px]">
+                Os queridinhos do Gume
+              </span>
+              <span className="mt-2 block max-w-lg text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
+                Os cem livros que a comunidade mais adorou, na ordem do amor recebido.
+                Ninguém edita: cada veredito conta, e a lista se refaz sozinha.
+              </span>
+
+              {/* O pódio em capas: o 1º maior e na frente, os outros descendo atrás,
+                  como um expositor. As capas são a única cor, como sempre. */}
+              <span className="mt-6 flex items-end gap-3">
+                {queridinhos.map((q, i) => (
+                  <span
+                    key={q.slug}
+                    className="cover-lift block shrink-0"
+                    style={{ width: `${i === 0 ? 21 : 16 - i}%`, zIndex: 10 - i }}
+                  >
+                    <Cover title={q.title} author={q.author} src={q.coverUrl} />
+                  </span>
+                ))}
+              </span>
+            </Link>
+          )}
 
           {/* ── 2. QUEM LÊ O QUE VOCÊ LÊ ─────────────────────────────── */}
           {afinidade.length > 0 && (

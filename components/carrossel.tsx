@@ -8,76 +8,64 @@ import type { ShelfBook } from "@/lib/shelf-view";
 
 /**
  * ════════════════════════════════════════════════════════════════════
- *  A VITRINE DOS "ADOREI", EM PROFUNDIDADE.
+ *  A VITRINE DOS "ADOREI": UM CARROSSEL CIRCULAR, com a capa do meio no trono.
  *
- *  Era uma fila reta de capas. Virou uma vitrine de verdade: a capa do centro
- *  vem à frente, as vizinhas giram para dentro em perspectiva, e um reflexo
- *  baixo escorre de cada uma, como livros de pé num balcão de vidro. Rolar é a
- *  interação inteira: o que está no centro é o que está em foco, e o resto se
- *  inclina para ele.
+ *  Terceira forma desta vitrine, e cada uma aprendeu com o uso real:
  *
- *  ═══ POR QUE ISSO NÃO BRIGA COM O DESIGN ═══
+ *  1ª: foco no centro → a fila abria com meia tela vazia à esquerda.
+ *  2ª: foco à esquerda → o vazio sumiu, mas ninguém sabia qual capa estava
+ *      em foco, e as pontas ficavam desordenadas.
+ *  3ª (esta): o foco VOLTA ao centro, e o vazio morre de outro jeito: a fila
+ *      é um ANEL. O conteúdo se repete três vezes, a rolagem nasce no terço do
+ *      meio, e quando ela se aproxima de uma borda o carrossel se reancora um
+ *      terço adiante, sem ninguém ver: as três cópias são idênticas. Não há
+ *      começo vazio porque não há começo: é um círculo, e uma volta inteira
+ *      sempre te traz de volta ao primeiro.
  *
- *  A regra da casa é "a única cor vem das capas" (docs/design.md). Esta vitrine
- *  não adiciona cor nenhuma: ela dá PALCO às capas, que são o conteúdo. O vidro
- *  continua sendo só as setas; o reflexo é a própria capa, apagando.
+ *  As capas se dispõem num ARCO: a do centro no alto do palco, inteira e acesa;
+ *  as vizinhas descem e giram para dentro conforme se afastam, como num
+ *  expositor giratório de livraria. A legenda embaixo diz o título da capa em
+ *  foco, porque foco que precisa de adivinhação não é foco.
  *
- *  ═══ COMO FUNCIONA, SEM BIBLIOTECA ═══
- *
- *  Um scroll horizontal comum com snap no centro. A cada quadro (rAF), cada capa
- *  calcula a distância do próprio centro ao centro da janela e vira essa
- *  distância em rotação, profundidade e escala. É o navegador rolando, como
- *  sempre rolou: o 3D é maquiagem em cima do scroll, então o teclado, o arrasto
- *  e o trackpad já funcionam de graça.
- *
- *  Quem pediu menos movimento (prefers-reduced-motion) recebe a fila reta de
- *  antes: profundidade é tempero, e não pode ser enjoo.
+ *  Quem pediu menos movimento (prefers-reduced-motion) recebe uma fila reta,
+ *  sem anel e sem 3D: profundidade é tempero, e não pode ser enjoo. Com poucas
+ *  capas (até quatro) também não há anel: um círculo de três livros é um
+ *  carrossel de hamster.
  * ════════════════════════════════════════════════════════════════════
  */
 
-/** O quanto a capa vizinha gira (graus) e afunda (px) no auge da distância. */
-const GIRO_MAX = 42;
+const GIRO_MAX = 38;
 const FUNDO_MAX = 110;
+/** O quanto as pontas do arco descem (px) em relação ao trono do centro. */
+const ARCO = 34;
 
 export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[] }) {
   const fila = useRef<HTMLUListElement>(null);
-  const [temEsquerda, setTemEsquerda] = useState(false);
-  const [temDireita, setTemDireita] = useState(true);
   const [semMovimento, setSemMovimento] = useState(false);
   const [emFoco, setEmFoco] = useState(0);
   const focoRef = useRef(0);
   const quadro = useRef<number>(0);
+  const ancorado = useRef(false);
 
-  const medir = useCallback(() => {
+  // O anel só existe com capas suficientes e com movimento permitido.
+  const anel = !semMovimento && books.length >= 5;
+  const trilha = anel ? [...books, ...books, ...books] : books;
+
+  /** Reancora a rolagem no terço do meio quando ela se aproxima de uma borda. */
+  const reancorar = useCallback(() => {
     const el = fila.current;
-    if (!el) return;
-    setTemEsquerda(el.scrollLeft > 4);
-    setTemDireita(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-  }, []);
+    if (!el || !anel) return;
+    const um = el.scrollWidth / 3;
+    if (el.scrollLeft < um * 0.5) el.scrollLeft += um;
+    else if (el.scrollLeft > um * 1.5) el.scrollLeft -= um;
+  }, [anel]);
 
-  /**
-   * A maquiagem 3D de um quadro: distância do PONTO DE FOCO vira giro, fundo e escala.
-   *
-   * O foco fica a 28% da borda esquerda, e não no centro. Com o foco no centro, a
-   * primeira capa precisava de meia tela vazia à esquerda para chegar lá, e a seção
-   * abria com um buraco. Com o foco à esquerda, a fila começa quase encostada, a capa
-   * em destaque fica onde o olho ocidental começa a ler, e o resto da fila recua para
-   * a direita como uma prateleira em fuga.
-   */
+  /** A maquiagem de um quadro: distância do CENTRO vira giro, arco, fundo e escala. */
   const pintar = useCallback(() => {
     const el = fila.current;
     if (!el) return;
-    const foco = el.scrollLeft + el.clientWidth * 0.28;
+    const centro = el.scrollLeft + el.clientWidth / 2;
 
-    /**
-     * ═══ O FOCO TEM QUE SER INCONFUNDÍVEL ═══
-     *
-     * A primeira régua (escala 0,92 a 1,06 e opacidade a partir de 0,55) era tímida:
-     * com três capas quase do mesmo tamanho e quase do mesmo brilho, ninguém sabia
-     * qual estava em foco. Agora a diferença é gritada: a capa em foco fica em
-     * tamanho cheio e acesa; as vizinhas caem para 78% e escurecem até 30%. E a
-     * legenda embaixo diz o título, porque foco que precisa de adivinhação não é foco.
-     */
     let melhor = 0;
     let melhorPerto = -1;
 
@@ -86,7 +74,7 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
       if (!alvo) return;
 
       const meio = li.offsetLeft + li.offsetWidth / 2;
-      const d = Math.max(-1, Math.min(1, (meio - foco) / (el.clientWidth * 0.45)));
+      const d = Math.max(-1, Math.min(1, (meio - centro) / (el.clientWidth * 0.45)));
       const perto = 1 - Math.abs(d);
       if (perto > melhorPerto) {
         melhorPerto = perto;
@@ -95,6 +83,7 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
 
       alvo.style.transform =
         `perspective(900px) rotateY(${(-d * GIRO_MAX).toFixed(2)}deg) ` +
+        `translateY(${(ARCO * d * d).toFixed(1)}px) ` +
         `translateZ(${(-FUNDO_MAX * Math.abs(d)).toFixed(1)}px) ` +
         `scale(${(0.78 + perto * 0.34).toFixed(3)})`;
       alvo.style.opacity = String(0.3 + perto * 0.7);
@@ -108,11 +97,11 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
   }, []);
 
   const aoRolar = useCallback(() => {
-    medir();
     if (semMovimento) return;
+    reancorar();
     cancelAnimationFrame(quadro.current);
     quadro.current = requestAnimationFrame(pintar);
-  }, [medir, pintar, semMovimento]);
+  }, [pintar, reancorar, semMovimento]);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -120,21 +109,30 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
     const ouvir = (e: MediaQueryListEvent) => setSemMovimento(e.matches);
     mq.addEventListener("change", ouvir);
 
-    medir();
+    // A rolagem NASCE no terço do meio: o anel não tem começo, então ninguém
+    // precisa ver um. Só uma vez, para o resize não te teleportar.
+    const el = fila.current;
+    if (el && anel && !ancorado.current) {
+      ancorado.current = true;
+      el.scrollLeft = el.scrollWidth / 3;
+    }
     if (!mq.matches) pintar();
+
     window.addEventListener("resize", aoRolar);
     return () => {
       mq.removeEventListener("change", ouvir);
       window.removeEventListener("resize", aoRolar);
       cancelAnimationFrame(quadro.current);
     };
-  }, [medir, pintar, aoRolar]);
+  }, [anel, pintar, aoRolar]);
 
   const rolar = (sentido: 1 | -1) => {
     const el = fila.current;
     if (!el) return;
-    el.scrollBy({ left: sentido * el.clientWidth * 0.6, behavior: "smooth" });
+    el.scrollBy({ left: sentido * el.clientWidth * 0.5, behavior: "smooth" });
   };
+
+  const focado = trilha[emFoco] ?? books[0];
 
   return (
     <section className="surface mt-5 overflow-hidden p-7">
@@ -143,32 +141,20 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
       </h2>
 
       <div className="relative mt-2">
-        {temEsquerda && <Seta sentido={-1} onClick={() => rolar(-1)} />}
+        {/* No anel sempre há para onde ir nos dois sentidos: as setas ficam. */}
+        {!semMovimento && <Seta sentido={-1} onClick={() => rolar(-1)} />}
 
         <ul
           ref={fila}
           onScroll={aoRolar}
-          className="flex items-start gap-6 overflow-x-auto pb-1 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={
-            semMovimento
-              ? undefined
-              : {
-                  /**
-                   * O respiro das pontas acompanha o PONTO DE FOCO (28% da esquerda):
-                   * a fila começa quase encostada, sem meia tela vazia, e a última capa
-                   * ainda alcança o foco no fim da rolagem.
-                   *
-                   * SEM scroll-snap, de propósito: o snap obrigatório brigava com a
-                   * rolagem VERTICAL da página, que ficava presa no container. Rolar a
-                   * página não pode ter pedágio; o 3D funciona contínuo do mesmo jeito.
-                   */
-                  paddingInlineStart: "calc(28% - 4rem)",
-                  paddingInlineEnd: "58%",
-                }
-          }
+          className={[
+            "flex items-start gap-6 overflow-x-auto pb-1 pt-4",
+            "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+            !anel && !semMovimento ? "justify-center" : "",
+          ].join(" ")}
         >
-          {books.map((b) => (
-            <li key={b.workId} className="w-28 shrink-0 sm:w-32">
+          {trilha.map((b, i) => (
+            <li key={`${b.workId}-${i}`} className="w-28 shrink-0 sm:w-32">
               <div
                 data-palco
                 style={semMovimento ? undefined : { transformStyle: "preserve-3d", willChange: "transform" }}
@@ -177,9 +163,7 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
                   <Cover title={b.title} author={b.author} src={b.coverUrl} />
 
                   {/* O reflexo: a própria capa, de cabeça para baixo, morrendo em um
-                      dedo de altura. Ele mora numa janela BAIXA (h-12) com overflow
-                      escondido: a primeira versão deixava o reflexo inteiro no fluxo, o
-                      container dobrava de altura, e a seção virava um paredão. */}
+                      dedo de altura dentro de uma janela baixa. */}
                   {!semMovimento && (
                     <span aria-hidden className="pointer-events-none block h-12 overflow-hidden">
                       <span
@@ -201,15 +185,14 @@ export function Carrossel({ titulo, books }: { titulo: string; books: ShelfBook[
           ))}
         </ul>
 
-        {temDireita && <Seta sentido={1} onClick={() => rolar(1)} />}
+        {!semMovimento && <Seta sentido={1} onClick={() => rolar(1)} />}
       </div>
 
-      {/* A LEGENDA DO FOCO: o título do livro aceso, dito por extenso. O 3D aponta,
-          a legenda confirma, e ninguém precisa adivinhar qual capa está na frente. */}
-      {!semMovimento && books[emFoco] && (
-        <p className="mt-3 min-h-[1.5rem] text-[14px] text-[var(--color-ink-soft)]" aria-live="polite">
-          <span className="voice text-[16px] text-[var(--color-ink)]">{books[emFoco].title}</span>
-          {books[emFoco].author && <span className="text-[var(--color-ink-faint)]"> · {books[emFoco].author}</span>}
+      {/* A LEGENDA DO FOCO, centrada sob o trono: o 3D aponta, a legenda confirma. */}
+      {!semMovimento && focado && (
+        <p className="mt-3 min-h-[1.5rem] text-center text-[14px] text-[var(--color-ink-soft)]" aria-live="polite">
+          <span className="voice text-[16px] text-[var(--color-ink)]">{focado.title}</span>
+          {focado.author && <span className="text-[var(--color-ink-faint)]"> · {focado.author}</span>}
         </p>
       )}
     </section>

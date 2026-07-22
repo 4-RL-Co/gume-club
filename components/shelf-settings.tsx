@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { LIMITS } from "@/lib/limits";
 import { renomearEstante, apagarEstante, visibilidadeEstante } from "@/app/livro/[slug]/curation-actions";
-import { descreverEstante, numerarEstante, escolherCapaEstante } from "@/app/estante/[slug]/actions";
+import { descreverEstante, numerarEstante, escolherCapaEstante, fotografarEstante } from "@/app/estante/[slug]/actions";
 import type { Visibility } from "@/lib/authz";
 
 /**
@@ -17,6 +17,7 @@ import type { Visibility } from "@/lib/authz";
  */
 export function ShelfSettings({
   id, slug, name, visibility, description = null, numerada = false, capaWorkId = null, capas = [],
+  fotografada = false,
 }: {
   id: string;
   slug: string;
@@ -28,12 +29,17 @@ export function ShelfSettings({
   capaWorkId?: string | null;
   /** Os livros com capa desta estante, para escolher a cara dela. */
   capas?: { workId: string; title: string; coverUrl: string }[];
+  /** A estante já tem uma foto subida? A tela só precisa do sim ou não. */
+  fotografada?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [armed, setArmed] = useState(false);
   const [vis, setVis] = useState(visibility);
   const [comNumeros, setComNumeros] = useState(numerada);
   const [capa, setCapa] = useState(capaWorkId);
+  const [temFoto, setTemFoto] = useState(fotografada);
+  const [enviando, setEnviando] = useState(false);
+  const [erroFoto, setErroFoto] = useState<string | null>(null);
   const [descrito, setDescrito] = useState(false);
   const [pending, start] = useTransition();
 
@@ -102,6 +108,62 @@ export function ShelfSettings({
           {descrito ? "guardado" : "guardar a descrição"}
         </button>
       </form>
+
+      {/* A FOTO DA ESTANTE: uma imagem sua para o alto da página, como a lombada de
+          uma coleção de verdade. Passa pelo MESMO funil do retrato de perfil
+          (/api/upload: logado, tipo pelos primeiros bytes, teto de tamanho). */}
+      <div className="mt-4">
+        <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+          a foto da estante
+        </span>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <label className="cursor-pointer rounded-[var(--radius-control)] border border-[var(--color-rule)] px-3 py-1.5 text-[12px] text-[var(--color-ink-soft)] transition-colors hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]">
+            {enviando ? "enviando" : temFoto ? "trocar a foto" : "subir uma foto"}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              disabled={pending || enviando}
+              onChange={async (e) => {
+                const arquivo = e.target.files?.[0];
+                e.target.value = "";
+                if (!arquivo) return;
+                setEnviando(true);
+                setErroFoto(null);
+                try {
+                  const body = new FormData();
+                  body.append("file", arquivo, arquivo.name);
+                  const res = await fetch("/api/upload", { method: "POST", body });
+                  const json = await res.json();
+                  if (!res.ok) throw new Error(json.error ?? "não deu para enviar");
+                  await fotografarEstante(slug, id, json.url);
+                  setTemFoto(true);
+                } catch (err) {
+                  setErroFoto(err instanceof Error ? err.message : "não deu para enviar");
+                } finally {
+                  setEnviando(false);
+                }
+              }}
+            />
+          </label>
+          {temFoto && (
+            <button
+              type="button"
+              disabled={pending || enviando}
+              onClick={() =>
+                start(async () => {
+                  await fotografarEstante(slug, id, null);
+                  setTemFoto(false);
+                })
+              }
+              className="text-[12px] text-[var(--color-ink-faint)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+            >
+              tirar a foto
+            </button>
+          )}
+        </div>
+        {erroFoto && <p className="mt-2 text-[12px] text-[var(--color-perigo)]">{erroFoto}</p>}
+      </div>
 
       {/* A CARA DA ESTANTE: qual capa a representa no card, no explorar e na aura.
           A escolha é entre os livros DELA (referência ao catálogo, nunca upload solto):

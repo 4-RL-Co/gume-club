@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, Bookmark, Heart, Crown } from "lucide-react";
 import { Cover } from "@/components/cover";
 import { Prosa } from "@/components/prosa";
 import { Gaveta } from "@/components/gaveta";
@@ -97,26 +97,58 @@ export default async function BookPage({
   // A cópia de papel saiu daqui: "de onde veio esse livro" mora numa gaveta dentro do
   // painel, e ele lê a nota direto de `book.mine`. Doar, trocar e emprestar foram
   // removidos do app (migration 0046).
-  const [correcoes, bibliotecario, adoraram] = await Promise.all([
+  const [correcoes, bibliotecario, comunidade] = await Promise.all([
     getCorrecoes([book.workId, ...book.editions.map((e) => e.id)]),
     souBibliotecario(viewer),
     /**
-     * QUANTAS PESSOAS ADORARAM este livro. Uma contagem sobre um LIVRO, e não sobre
-     * gente: é a comunidade dizendo o que ela ama, que é curadoria (fala de gosto), e
-     * não placar (falaria de esforço). Só notas PÚBLICAS entram: a nota privada de
-     * alguém não vira estatística de ninguém, nem anônima. Ver /queridinhos.
+     * O LIVRO NA COMUNIDADE, em uma consulta: quantos leram, em quantas estantes
+     * montadas ele está, quantos gostaram ou adoraram, e a posição nos queridinhos
+     * quando ele está no top 100.
+     *
+     * Tudo contagem sobre um LIVRO, nunca sobre gente (curadoria fala de gosto;
+     * placar falaria de esforço), e SÓ o que é público entra: a linha privada de
+     * alguém não vira estatística de ninguém, nem anônima. A posição usa o MESMO
+     * desempate de lib/queridinhos.ts (mais adorados primeiro, título como
+     * desempate), senão a coroa daqui discordaria da lista de lá.
      */
     db
-      .execute<{ n: number }>(sql`
-        select count(*)::int as n
-          from ratings r
-          join users u on u.id = r.user_id
-         where r.work_id = ${book.workId}::uuid
-           and r.value = 5
-           and r.visibility = 'public'
-           and u.deleted_at is null
-           and u.banned_at is null`)
-      .then((r) => r[0]?.n ?? 0),
+      .execute<{ leram: number; estantes: number; gostaram: number; adoraram: number; posicao: number | null }>(sql`
+        with publico as (
+          select r.work_id, count(*) filter (where r.value = 5)::int as adoraram
+            from ratings r
+            join users u on u.id = r.user_id
+           where r.visibility = 'public' and u.deleted_at is null and u.banned_at is null
+           group by r.work_id
+        )
+        select
+          (select count(*)::int from library_entries le
+             join users u on u.id = le.user_id
+            where le.work_id = ${book.workId}::uuid
+              and le.status = 'read'
+              and le.visibility = 'public'
+              and u.deleted_at is null and u.banned_at is null) as leram,
+          (select count(distinct ci.collection_id)::int from collection_items ci
+             join collections c on c.id = ci.collection_id
+             join users u on u.id = c.user_id
+            where ci.work_id = ${book.workId}::uuid
+              and c.visibility = 'public'
+              and u.deleted_at is null and u.banned_at is null) as estantes,
+          (select count(*)::int from ratings r
+             join users u on u.id = r.user_id
+            where r.work_id = ${book.workId}::uuid
+              and r.value >= 4
+              and r.visibility = 'public'
+              and u.deleted_at is null and u.banned_at is null) as gostaram,
+          coalesce((select p.adoraram from publico p where p.work_id = ${book.workId}::uuid), 0) as adoraram,
+          (select case when meu.adoraram is null or meu.adoraram = 0 then null else (
+             select 1 + count(*)::int from publico p
+               join works w2 on w2.id = p.work_id
+              where p.adoraram > meu.adoraram
+                 or (p.adoraram = meu.adoraram and w2.title < (select w3.title from works w3 where w3.id = ${book.workId}::uuid))
+           ) end
+           from (select p2.adoraram from publico p2 where p2.work_id = ${book.workId}::uuid) meu) as posicao
+      `)
+      .then((r) => r[0] ?? { leram: 0, estantes: 0, gostaram: 0, adoraram: 0, posicao: null }),
   ]);
 
   /**
@@ -326,12 +358,42 @@ export default async function BookPage({
               <Fact label="ISBN" value={edition?.isbn13 ?? null} />
             </dl>
 
-            {/* A comunidade, em uma linha baixa: quantas pessoas ADORARAM. Só aparece
-                quando alguém adorou, porque "0 pessoas adoraram" é uma lápide. */}
-            {adoraram > 0 && (
-              <p className="mt-6 border-t border-[var(--color-rule)] pt-4 text-[13px] text-[var(--color-ink-soft)]">
-                <span className="tabular font-medium text-[var(--color-ink)]">{adoraram}</span>{" "}
-                {adoraram === 1 ? "pessoa adorou este livro" : "pessoas adoraram este livro"}
+            {/* ═══ O LIVRO NA COMUNIDADE, numa fila de ícones baixa ═══
+
+                Quantos leram, em quantas estantes montadas ele mora, quantos gostaram
+                ou adoraram, e a COROA quando ele está no top 100 dos queridinhos. Só
+                aparece o que existe: "0 leram" é uma lápide, e lápide não é ficha. */}
+            {(comunidade.leram > 0 || comunidade.estantes > 0 || comunidade.gostaram > 0) && (
+              <p className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[var(--color-rule)] pt-4 text-[13px] text-[var(--color-ink-soft)]">
+                {comunidade.leram > 0 && (
+                  <span className="inline-flex items-center gap-1.5" title={`${comunidade.leram} ${comunidade.leram === 1 ? "pessoa leu" : "pessoas leram"}`}>
+                    <BookOpenCheck size={14} strokeWidth={1.5} aria-hidden />
+                    <span className="tabular font-medium text-[var(--color-ink)]">{comunidade.leram}</span> leram
+                  </span>
+                )}
+                {comunidade.estantes > 0 && (
+                  <span className="inline-flex items-center gap-1.5" title="em quantas estantes montadas este livro está">
+                    <Bookmark size={14} strokeWidth={1.5} aria-hidden />
+                    em <span className="tabular font-medium text-[var(--color-ink)]">{comunidade.estantes}</span>{" "}
+                    {comunidade.estantes === 1 ? "estante" : "estantes"}
+                  </span>
+                )}
+                {comunidade.gostaram > 0 && (
+                  <span className="inline-flex items-center gap-1.5" title={`${comunidade.gostaram} gostaram ou adoraram`}>
+                    <Heart size={14} strokeWidth={1.5} aria-hidden />
+                    <span className="tabular font-medium text-[var(--color-ink)]">{comunidade.gostaram}</span> gostaram
+                  </span>
+                )}
+                {comunidade.posicao !== null && comunidade.posicao <= 100 && (
+                  <Link
+                    href="/queridinhos"
+                    className="inline-flex items-center gap-1.5 text-[var(--color-ink)] underline decoration-[var(--color-rule)] underline-offset-4 hover:decoration-[var(--color-ink)]"
+                    title="entre os cem que a comunidade mais adorou"
+                  >
+                    <Crown size={14} strokeWidth={1.5} aria-hidden />
+                    <span className="tabular font-medium">{comunidade.posicao}º</span> dos queridinhos
+                  </Link>
+                )}
               </p>
             )}
           </section>

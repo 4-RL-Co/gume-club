@@ -36,6 +36,7 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
       description: collections.description,
       ranked: collections.ranked,
       coverWorkId: collections.coverWorkId,
+      fotoUrl: collections.coverUrl,
       visibility: collections.visibility,
       userId: collections.userId,
       handle: sql<string>`(select u.handle from users u where u.id = ${collections.userId})`,
@@ -118,10 +119,33 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
 
   return (
     <main className="relative mx-auto max-w-6xl px-6 pb-32 sm:px-10">
-      {capaDaEstante && (
+      {/* A aura do topo: a FOTO subida, se houver, senão a capa escolhida. */}
+      {(shelf.fotoUrl ?? capaDaEstante) && (
         <div className="aura-capa" aria-hidden>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={capaDaEstante} alt="" loading="lazy" decoding="async" />
+          <img src={shelf.fotoUrl ?? capaDaEstante!} alt="" loading="lazy" decoding="async" />
+        </div>
+      )}
+
+      {/* ═══ O PANO DE FUNDO, como as listas do Letterboxd ═══
+
+          A foto que quem montou subiu, larga, morrendo suave para o fundo da página
+          (máscara em dois eixos: sem borda dura em lugar nenhum). Ela é CLIMA e
+          moldura; o título continua sendo o dono da página. */}
+      {shelf.fotoUrl && (
+        <div aria-hidden className="relative -mx-6 -mb-10 h-56 overflow-hidden sm:-mx-10 sm:h-72">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={shelf.fotoUrl}
+            alt=""
+            decoding="async"
+            className="h-full w-full object-cover"
+            style={{
+              maskImage: "linear-gradient(to bottom, black 35%, transparent 96%), linear-gradient(to right, transparent, black 12%, black 88%, transparent)",
+              WebkitMaskImage: "linear-gradient(to bottom, black 35%, transparent 96%)",
+              maskComposite: "intersect",
+            }}
+          />
         </div>
       )}
 
@@ -151,6 +175,7 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
               description={shelf.description}
               numerada={shelf.ranked}
               capaWorkId={shelf.coverWorkId}
+              fotografada={Boolean(shelf.fotoUrl)}
               capas={books
                 .filter((b) => b.coverUrl)
                 .slice(0, 12)

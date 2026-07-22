@@ -505,6 +505,11 @@ export const collections = pgTable("collections", {
    * ela não abre superfície de vandalismo na vitrine. Ver a migration 0053.
    */
   coverWorkId: uuid("cover_work_id").references(() => works.id, { onDelete: "set null" }),
+  /**
+   * A FOTO da estante, subida por quem montou pelo mesmo funil do retrato de perfil
+   * (/api/upload). Vira o pano de fundo da página da estante. Ver a migration 0054.
+   */
+  coverUrl: text("cover_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex("collections_user_slug").on(t.userId, t.slug)]);
 

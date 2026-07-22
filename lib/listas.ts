@@ -269,6 +269,31 @@ export async function escolherCapaDaLista(
             and ci.work_id = ${workId}::uuid)`);
 }
 
+/**
+ * A FOTO da estante. A URL vem do NOSSO funil de upload (a tela chama /api/upload e
+ * repassa o endereço devolvido), e este setter só aceita o que se parece com ele: um
+ * caminho local (/uploads/...) ou um https. Nunca http puro, nunca data:, nunca
+ * javascript:. `null` tira a foto.
+ */
+export async function fotografarLista(
+  actor: { id: string },
+  collectionId: string,
+  url: string | null,
+): Promise<void> {
+  assertOwner(actor as Viewer, { userId: actor.id });
+
+  const limpa = url?.trim() ?? null;
+  if (limpa !== null) {
+    const ok = limpa.length <= 600 && (limpa.startsWith("/uploads/") || limpa.startsWith("https://"));
+    if (!ok) return; // um endereço que não veio do funil não entra, e nada é dito
+  }
+
+  await db
+    .update(collections)
+    .set({ coverUrl: limpa })
+    .where(and(eq(collections.id, collectionId), eq(collections.userId, actor.id)));
+}
+
 /** A descrição: o que esta estante é, dito por quem montou. */
 export async function descreverLista(
   actor: { id: string },

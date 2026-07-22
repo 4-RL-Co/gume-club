@@ -379,6 +379,13 @@
       "when": 1784700817006,
       "tag": "0053_a_cara_da_estante",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1784700817007,
+      "tag": "0054_a_foto_da_estante",
+      "breakpoints": true
     }
   ]
 }
