@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { ArrowLeft, BookOpenCheck, Bookmark, Heart, Crown } from "lucide-react";
@@ -29,6 +30,7 @@ import { VerdictOf } from "@/components/veredito";
 import { getViewer } from "@/lib/viewer";
 import { getActorOrNull } from "@/lib/actor";
 import { FORMAT_LABEL } from "@/lib/shelf-view";
+import { origemAceita } from "@/lib/imagens";
 
 export const dynamic = "force-dynamic";
 
@@ -241,10 +243,11 @@ export default async function BookPage({
       {/* A AURA: a própria capa, estourada de desfoque, banhando o topo da página com a
           paleta DESTE livro. Clima, e não conteúdo: o texto passa por cima com o
           contraste de sempre. Ver .aura-capa em globals.css. */}
-      {cover?.coverUrl && (
+      {cover?.coverUrl && origemAceita(cover.coverUrl) && (
         <div className="aura-capa" aria-hidden>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={cover.coverUrl} alt="" loading="lazy" decoding="async" />
+          {/* A aura é borrão: 128px de fonte bastam, e o otimizador entrega isso
+              em um punhado de kilobytes em vez da capa inteira de novo. */}
+          <Image src={cover.coverUrl} alt="" fill sizes="128px" quality={30} className="object-cover" />
         </div>
       )}
       {volta && (
@@ -262,7 +265,7 @@ export default async function BookPage({
         <aside className="sm:col-span-4 lg:col-span-3">
           <div className="surface sticky top-6 p-6">
             <div className="cover-lift">
-              <Cover title={book.title} author={book.author} src={cover?.coverUrl ?? null} />
+              <Cover title={book.title} author={book.author} src={cover?.coverUrl ?? null} prioridade />
             </div>
 
             {/* A CAPA EMPRESTADA DIZ QUE É EMPRESTADA.

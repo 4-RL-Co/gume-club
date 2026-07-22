@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import { origemAceita } from "@/lib/imagens";
 import { Prosa } from "@/components/prosa";
 
 /**
@@ -53,13 +55,15 @@ export function AuthorPanel({
     <div className="flex items-center gap-5">
         <div
           className="cover-lift flex h-20 w-20 shrink-0 items-center justify-center sm:h-24 sm:w-24"
-          style={{ background: portraitUrl ? undefined : ink, borderRadius: "var(--radius-cover)" }}
+          style={{ background: portraitUrl && origemAceita(portraitUrl) ? undefined : ink, borderRadius: "var(--radius-cover)" }}
         >
-          {portraitUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+          {portraitUrl && origemAceita(portraitUrl) ? (
+            <Image
               src={portraitUrl}
               alt={name}
+              width={96}
+              height={96}
+              sizes="96px"
               className="h-full w-full object-cover"
               style={{ borderRadius: "var(--radius-cover)" }}
             />

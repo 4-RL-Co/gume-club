@@ -28,24 +28,10 @@ export const dynamic = "force-dynamic";
 
 const EYEBROW = "text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]";
 
-/** Uma tira de capas de um status só (lendo, esperando, larguei). Quebra em linhas: são
-    listas, não vitrines, e o leitor quer ver todas de uma vez sem rolar de lado. */
-function Tira({ titulo, books }: { titulo: string; books: ShelfBook[] }) {
-  return (
-    <section className="surface mt-5 p-7">
-      <h2 className={EYEBROW}>{titulo}</h2>
-      <ul className="mt-5 flex flex-wrap gap-5">
-        {books.map((b) => (
-          <li key={b.workId} className="w-20">
-            <Link href={`/livro/${b.slug}`} className="cover-lift block">
-              <Cover title={b.title} author={b.author} src={b.coverUrl} />
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
+/* A TIRA DE "LENDO AGORA" SAIU DO PERFIL: a estante com recortes, no fim da página,
+   já responde "o que ela está lendo" num clique, e duas moradas para a mesma resposta
+   era o pergaminho voltando aos poucos. O presente de quem você segue continua tendo
+   vitrine própria onde ele é assunto: a tira de amigos, em /pessoas. */
 
 /**
  * The public profile: /@handle.
@@ -114,9 +100,8 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
   const viewer = await getViewer();
   const mine = viewer?.id === profile.id;
 
-  const [books, lendo, counts, following, badges, shelves, guardadas, resenhas] = await Promise.all([
+  const [books, counts, following, badges, shelves, guardadas, resenhas] = await Promise.all([
     getShelf(viewer, profile.id, { filter: "tudo", sort: "adicionado" }),
-    getShelf(viewer, profile.id, { filter: "lendo" }),
     getShelfCounts(viewer, profile.id),
     viewer && !mine ? isFollowing(viewer.id, profile.id) : Promise.resolve(false),
     // Insígnias, e nunca um número: o número vive em /contribuidores e não sai de lá.
@@ -304,8 +289,6 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
           </ul>
         </section>
       )}
-
-      {lendo.length > 0 && <Tira titulo="lendo agora" books={lendo} />}
 
       {/* ═══ AS ESTANTES QUE ELA MONTOU, COMO CARDS ═══
 

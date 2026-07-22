@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { visibleTo } from "@/lib/authz";
@@ -16,6 +17,7 @@ import { Avatar } from "@/components/avatar";
 import { GuardarEstante } from "@/components/guardar-estante";
 import { OrganizarEstante } from "@/components/organizar-estante";
 import { jaGuardei } from "@/lib/listas";
+import { origemAceita } from "@/lib/imagens";
 
 export const dynamic = "force-dynamic";
 
@@ -113,17 +115,17 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
 
   /** A capa da estante: a ESCOLHIDA por quem montou, ou a do primeiro livro com capa.
       Ela vira a aura do topo, como na página do livro. Ver a migration 0053. */
-  const capaDaEstante =
-    books.find((b) => b.workId === shelf.coverWorkId)?.coverUrl ??
-    books.find((b) => b.coverUrl)?.coverUrl ?? null;
+  const capaDaEstante = [
+    books.find((b) => b.workId === shelf.coverWorkId)?.coverUrl,
+    ...books.map((b) => b.coverUrl),
+  ].find((u) => u && origemAceita(u)) ?? null;
 
   return (
     <main className="relative mx-auto max-w-6xl px-6 pb-32 sm:px-10">
       {/* A aura do topo: a FOTO subida, se houver, senão a capa escolhida. */}
-      {(shelf.fotoUrl ?? capaDaEstante) && (
+      {(shelf.fotoUrl ?? capaDaEstante) && origemAceita(shelf.fotoUrl ?? capaDaEstante!) && (
         <div className="aura-capa" aria-hidden>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={shelf.fotoUrl ?? capaDaEstante!} alt="" loading="lazy" decoding="async" />
+          <Image src={shelf.fotoUrl ?? capaDaEstante!} alt="" fill sizes="128px" quality={30} className="object-cover" />
         </div>
       )}
 
@@ -132,14 +134,14 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
           A foto que quem montou subiu, larga, morrendo suave para o fundo da página
           (máscara em dois eixos: sem borda dura em lugar nenhum). Ela é CLIMA e
           moldura; o título continua sendo o dono da página. */}
-      {shelf.fotoUrl && (
+      {shelf.fotoUrl && origemAceita(shelf.fotoUrl) && (
         <div aria-hidden className="relative -mx-6 -mb-10 h-56 overflow-hidden sm:-mx-10 sm:h-72">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={shelf.fotoUrl}
             alt=""
-            decoding="async"
-            className="h-full w-full object-cover"
+            fill
+            sizes="100vw"
+            className="object-cover"
             style={{
               maskImage: "linear-gradient(to bottom, black 35%, transparent 96%), linear-gradient(to right, transparent, black 12%, black 88%, transparent)",
               WebkitMaskImage: "linear-gradient(to bottom, black 35%, transparent 96%)",

@@ -1,9 +1,11 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Crown, BookOpenCheck, Bookmark, Heart } from "lucide-react";
 import { Cover } from "@/components/cover";
 import { Empty } from "@/components/empty";
 import { getViewer } from "@/lib/viewer";
 import { getQueridinhos } from "@/lib/queridinhos";
+import { origemAceita } from "@/lib/imagens";
 
 export const dynamic = "force-dynamic";
 
@@ -30,10 +32,9 @@ export default async function Queridinhos() {
     <main className="relative mx-auto max-w-6xl px-6 pb-32 sm:px-10">
       {/* A aura do 1º colocado banha o topo: a lista editorial abre com a cara do
           livro que a comunidade mais ama hoje. Ver .aura-capa em globals.css. */}
-      {livros[0]?.coverUrl && (
+      {livros[0]?.coverUrl && origemAceita(livros[0].coverUrl) && (
         <div className="aura-capa" aria-hidden>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={livros[0].coverUrl} alt="" loading="lazy" decoding="async" />
+          <Image src={livros[0].coverUrl} alt="" fill sizes="128px" quality={30} className="object-cover" />
         </div>
       )}
 
