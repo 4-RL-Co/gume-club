@@ -171,7 +171,7 @@ export async function getEstantes(viewer: Viewer, limite = 12): Promise<Estante[
  * o que é "mais lido", e não existe sem VOCÊ do outro lado. É afinidade, e ela
  * some no instante em que você tira o livro da estante.
  */
-export async function getAfinidade(viewer: Viewer, limite = 6): Promise<Afinidade[]> {
+export async function getAfinidade(viewer: Viewer, limite = 5): Promise<Afinidade[]> {
   if (!viewer) return [];
 
   const rows = await db.execute<{
@@ -198,7 +198,10 @@ export async function getAfinidade(viewer: Viewer, limite = 6): Promise<Afinidad
      where minha.user_id = ${viewer.id}::uuid
        and ${visibleTo(viewer, libraryEntries.userId, libraryEntries.visibility)}
      group by w.id, w.slug, w.title, a.name
-     order by count(*) desc, w.title asc
+     -- SORTEIA entre os livros em comum, como o resto do explorar: ordenar por
+     -- "quantos leem" fazia a mesma meia dúzia de clássicos morar aqui para sempre,
+     -- e a vitrine que não muda vira papel de parede. Cinco por visita, rodando.
+     order by random()
      limit ${limite}`);
 
   return rows.map((r) => ({
