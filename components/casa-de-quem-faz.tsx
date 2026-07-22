@@ -74,7 +74,7 @@ export function Cabecalho({
  *
  * Sem elas, cada tela era um beco: a pessoa lia, concordava, e ia embora.
  */
-export function Portas({ aqui }: { aqui: "quem-faz" | "o-que-falta" | "insignias" }) {
+export function Portas({ aqui }: { aqui: "quem-faz" | "o-que-falta" | "insignias" | "o-que-mudou" }) {
   const TODAS = [
     {
       key: "o-que-falta",
@@ -95,6 +95,19 @@ export function Portas({ aqui }: { aqui: "quem-faz" | "o-que-falta" | "insignias
       href: "/insignias",
       titulo: "As insígnias e as honras",
       texto: "O que cada uma reconhece, e o que a pessoa fez para ganhá-la.",
+      fora: false,
+    },
+    /**
+     * A porta do PASSADO. As outras respondem "quem faz", "o que dá para fazer" e
+     * "o que se ganha"; esta responde "o que já aconteceu": quem volta depois de um
+     * tempo fora descobre o que chegou sem arqueologia. Só coisa grande, ver
+     * lib/mudancas.ts.
+     */
+    {
+      key: "o-que-mudou",
+      href: "/o-que-mudou",
+      titulo: "O que mudou",
+      texto: "As novidades grandes, da mais nova para baixo.",
       fora: false,
     },
     /**

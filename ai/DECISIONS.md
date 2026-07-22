@@ -2392,3 +2392,11 @@ Mais três da mesma rodada: a fila de ícones aparece SEMPRE (zero incluso), por
 - **"Os nomes, pelo rosto" morreu**: o resumo das gavetas de conexões virou "abra para ver as pessoas". Resumo de gaveta diz o que acontece ao abrir, não poesia.
 
 - **A operação mais capas, primeira volta**: 405 linhas, 0 falhas, nenhuma duplicata criada (o catálogo já tinha as 405 obras, e o casamento provou seu valor), 290 fichas enriquecidas pela máquina, 27 da H1 com capa em alta por referência, e 94 sem ISBN nem capa mesmo depois da busca (lista para conferência à mão). O material bruto (imagens, rascunhos) saiu do disco; ficou o que é terminantemente útil: a planilha em seed/operacao-mais-capas.csv (dado de catálogo, reaplicável em produção) e os marks da 4/RL em public/logo/ (o README agora dá o crédito com a marca). E um teste de exportação foi CONSERTADO no processo: ele fatiava CSV com split ingênuo e quebrou quando a obra sorteada veio com vírgula no título; o CSV sempre esteve certo, e agora a conferência fatia com as mesmas regras de quem escreve.
+
+---
+
+**2026-07-21: "O que mudou": a casa de quem faz ganhou a porta do passado.**
+
+O dono pediu uma página de novidades ("patch notes") dentro de quem faz. A casa tinha o futuro (/o-que-falta), as pessoas (/contribuidores) e o reconhecimento (/insignias); faltava o passado. Nasceu /o-que-mudou, quarta tela da casa, com o mesmo cabeçalho de filete rosa e as portas entre elas.
+
+As decisões: **só coisa grande entra** (a régua, escrita em lib/mudancas.ts: um leitor que voltou depois de duas semanas notaria sozinho? entra; detalhe por baixo do capim, não), a mais nova em cima, agrupada por dia numa linha do tempo. E o conteúdo mora num ARQUIVO varrido por lib/voice.test.ts, pelo mesmo motivo do o-que-falta: "patch notes" é o formato mais fácil do mundo para escorregar em jargão, e aqui a voz de leitor é obrigatória por teste. Nada de gerar do histórico do código: mudança grande se escreve à mão, uma vez, com cuidado.
