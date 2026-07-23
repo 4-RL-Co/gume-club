@@ -342,3 +342,40 @@ describe("insígnia é binária: ela não carrega número nenhum", () => {
     expect(/não se conquista|se paga/.test(conta)).toBe(true);
   });
 });
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  CONTRIBUIDOR É GENTE, e o filtro de robô tem que provar que segura.
+ *
+ *  O dono pediu, com todas as letras: no painel só humanos, e nada de
+ *  railway, claude, dependabot ou gitguardian contando em meta. A regex
+ *  é lida DO FONTE (a muralha de imports deste módulo vale para teste
+ *  também), e cada robô conhecido tem que cair — e um humano de nome
+ *  parecido tem que passar, senão o filtro virou uma vassoura cega.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("robô não é contribuidor", () => {
+  const src = readFileSync("lib/contributors.ts", "utf8");
+  const m = src.match(/const ROBOS =\s*\/(.*)\/(\w*);/);
+
+  it("a regex de robôs existe no fonte", () => {
+    expect(m, "a const ROBOS sumiu de lib/contributors.ts").toBeTruthy();
+  });
+
+  const ROBOS = m ? new RegExp(m[1]!, m[2]) : /nunca/;
+
+  it.each([
+    "dependabot[bot]", "gitguardian[bot]", "github-actions[bot]",
+    "claude", "claude-fable", "railway", "railway-app", "gitguardian",
+    "renovate", "snyk", "codecov", "copilot", "anthropic",
+  ])("barra %s", (login) => {
+    expect(ROBOS.test(login), `${login} passou pelo filtro de robôs`).toBe(true);
+  });
+
+  it.each(["olegas4real", "claudia-santos", "railane", "ana-clara"])(
+    "deixa passar %s, que é gente",
+    (login) => {
+      expect(ROBOS.test(login), `${login} caiu no filtro de robôs sendo humano`).toBe(false);
+    },
+  );
+});
