@@ -196,7 +196,11 @@ export async function getCodigo(): Promise<DoCodigo[]> {
      * e dois robôs. Contribuidor é GENTE: máquina que empurra commit é ferramenta de
      * alguém, e a ferramenta não ganha crédito nem conta em meta.
      */
-    const ROBOS = /\[bot\]$|^(claude|railway|github-actions|dependabot|renovate)([-_].*)?$/i;
+    // A lista cresce quando um serviço novo aparece no repo com cara de gente
+    // (o GitGuardian foi o de 2026-07-23). O teste em lib/contributors.sql.test.ts
+    // prova que cada um destes cai, e que um humano de nome parecido não cai.
+    const ROBOS =
+      /\[bot\]$|^(claude|railway|github-actions|dependabot|renovate|gitguardian|snyk|codecov|sonarcloud|vercel|netlify|imgbot|allcontributors|copilot|anthropic)([-_].*)?$/i;
 
     return json
       .filter((c) => c.type === "User" && !ROBOS.test(c.login))
