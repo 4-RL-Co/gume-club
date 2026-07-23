@@ -53,5 +53,13 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^5.7.0",
     "vitest": "^3.2.7"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": ">=6.4.3",
+      "esbuild": ">=0.25.0",
+      "postcss": ">=8.5.10",
+      "sharp": ">=0.35.0"
+    }
   }
 }
