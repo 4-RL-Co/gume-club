@@ -62,9 +62,25 @@ export function middleware(_req: NextRequest) {
    * `connect-src 'self'` porque o app não fala com ninguém de fora do navegador: quem
    * busca no Open Library é o servidor, e não o cliente.
    */
+  /**
+   * A MEDIÇÃO abre a CSP só quando está ligada (ver components/medicao.tsx):
+   * uma instância auto-hospedada sem os tokens continua com a política de
+   * "não fala com ninguém". As duas listas (o script que entra na página e o
+   * host que a CSP deixa falar) ligam e desligam JUNTAS, pela mesma variável,
+   * para nunca existir script bloqueado em silêncio nem porta aberta à toa.
+   */
+  const medicaoScript = [
+    process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN && "https://static.cloudflareinsights.com",
+    process.env.NEXT_PUBLIC_CLARITY_ID && "https://www.clarity.ms",
+  ].filter(Boolean).join(" ");
+  const medicaoConnect = [
+    process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN && "https://cloudflareinsights.com",
+    process.env.NEXT_PUBLIC_CLARITY_ID && "https://*.clarity.ms",
+  ].filter(Boolean).join(" ");
+
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval'${medicaoScript ? ` ${medicaoScript}` : ""}`,
     "style-src 'self' 'unsafe-inline'",
     /**
      * A CSP vale para a CADEIA do redirect, e não só para o primeiro host.
@@ -75,7 +91,7 @@ export function middleware(_req: NextRequest) {
      */
     imgSrc(),
     "font-src 'self' data:",
-    "connect-src 'self'",
+    `connect-src 'self'${medicaoConnect ? ` ${medicaoConnect}` : ""}`,
     "form-action 'self'",
     "frame-ancestors 'none'",
     "base-uri 'self'",

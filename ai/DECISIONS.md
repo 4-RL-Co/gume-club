@@ -2458,3 +2458,14 @@ Quatro auditorias paralelas (segurança, testes, UX/UI, vitrine do repo) antes d
 - **Vitrine**: clone por HTTPS, `db:seed` aponta para o exemplo versionado (o pessoal virou `db:seed:olegas`), contagem de testes alinhada em "mais de 800" nos três documentos, README.en sincronizado com o PT (coleções, Top 100, bloco da 4/RL), setup-mac parou de rodar `db:generate` (migration é à mão). docs/design.md e docs/schema.md atualizados para "detestei".
 
 O que ficou por fazer, decidido e não esquecido: **apagar a conta de verdade** (fatia própria: migration de cascata, confirmação, teste); a trava estrutural de migrations append-only; teste para o `sniff()` do upload; `DATABASE_URL_TEST`; e os cliques de GitHub que só o dono dá (abrir as good first issues prontas em .github/ISSUE_DRAFTS/, descrição/topics/homepage/release/social preview).
+
+---
+
+**2026-07-23: A medição entra, desligada de fábrica, e o Clarity com os olhos vendados.**
+
+O dono quis medir o uso da instância hospedada: Cloudflare Web Analytics (contagem agregada, sem cookie) e Microsoft Clarity (mapa de calor e replay de sessão). Num produto cujo pitch é "ninguém vende o seu histórico de leitura", isso pede regras, e elas ficaram assim:
+
+- **Desligada de fábrica**: os dois medidores só existem se a variável de ambiente existir (`NEXT_PUBLIC_CF_ANALYTICS_TOKEN`, `NEXT_PUBLIC_CLARITY_ID`). Token cravado no código faria toda instância auto-hospedada mandar os leitores dos outros para o painel do dono desta — um rastreador de fábrica, no app que promete o contrário.
+- **A CSP anda junto**: os hosts de medição só entram no `script-src`/`connect-src` quando a variável está ligada (middleware.ts). Instância sem medição continua com "não fala com ninguém".
+- **O Clarity é o poderoso, e usa cookie**: replay de sessão numa tela de estante mostra o que a pessoa lê. Regras de uso: ligar as máscaras de conteúdo no painel do Clarity (Settings → Masking → Strict), e a página de estatísticas e o painel continuam sendo o que sempre foram: privados; o replay serve para ver onde a interface trava, nunca para ler estante. O aviso de cookies/LGPD da instância hospedada é decisão em aberto do dono.
+- O Cloudflare é o inofensivo: agregado, sem cookie, sem perfil.

@@ -7,6 +7,7 @@ import { Command } from "@/components/command";
 import { ToastHost } from "@/components/toast-host";
 import { VoltarAoTopo } from "@/components/voltar-ao-topo";
 import { PublicHeader } from "@/components/public-header";
+import { Medicao } from "@/components/medicao";
 import { getViewer } from "@/lib/viewer";
 import { souIdealizador } from "@/lib/authz";
 import { getCollections } from "@/lib/curation";
@@ -75,6 +76,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <body className="min-h-dvh">
           <PublicHeader />
           {children}
+          <Medicao />
         </body>
       </html>
     );
@@ -121,6 +123,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
         {/* Room for the fixed column on desktop, and for the bottom bar on a phone. */}
         <div className="pb-24 sm:pb-0 sm:pl-[254px]">{children}</div>
+        <Medicao />
       </body>
     </html>
   );
