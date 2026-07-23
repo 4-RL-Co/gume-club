@@ -43,7 +43,7 @@ jobs:
       # antes mesmo de instalar: o alarme estava vermelho, e vermelho o tempo
       # todo é o mesmo que desligado.
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
 
       - run: pnpm install --frozen-lockfile
