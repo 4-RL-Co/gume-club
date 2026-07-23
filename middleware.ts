@@ -76,6 +76,8 @@ export function middleware(_req: NextRequest) {
   const medicaoConnect = [
     process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN && "https://cloudflareinsights.com",
     process.env.NEXT_PUBLIC_CLARITY_ID && "https://*.clarity.ms",
+    // O alarme de erro (Sentry) manda o rastro para o host de ingestão do DSN.
+    process.env.NEXT_PUBLIC_SENTRY_DSN && "https://*.sentry.io",
   ].filter(Boolean).join(" ");
 
   const csp = [

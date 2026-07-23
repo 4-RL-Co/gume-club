@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 
 /**
  * A TELA DE QUANDO O NOSSO LADO QUEBRA.
@@ -21,8 +22,10 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // O erro vai para o log do servidor pelo próprio framework; aqui é só o console
-    // de quem estiver com a aba aberta e souber o que procurar.
+    // A fronteira de erro ENGOLE a exceção: sem esta linha, o alarme nunca toca
+    // para os erros de renderização, que são justamente os que desenham esta
+    // tela. Sem DSN ligado, a chamada é um não-fazer-nada, de graça.
+    Sentry.captureException(error);
     console.error(error);
   }, [error]);
 

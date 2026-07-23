@@ -2469,3 +2469,9 @@ O dono quis medir o uso da instância hospedada: Cloudflare Web Analytics (conta
 - **A CSP anda junto**: os hosts de medição só entram no `script-src`/`connect-src` quando a variável está ligada (middleware.ts). Instância sem medição continua com "não fala com ninguém".
 - **O Clarity é o poderoso, e usa cookie**: replay de sessão numa tela de estante mostra o que a pessoa lê. Regras de uso: ligar as máscaras de conteúdo no painel do Clarity (Settings → Masking → Strict), e a página de estatísticas e o painel continuam sendo o que sempre foram: privados; o replay serve para ver onde a interface trava, nunca para ler estante. O aviso de cookies/LGPD da instância hospedada é decisão em aberto do dono.
 - O Cloudflare é o inofensivo: agregado, sem cookie, sem perfil.
+
+---
+
+**2026-07-23: O alarme de erro (Sentry), só erro, e desligado de fábrica.**
+
+O primeiro bug real de produção chegou por mensagem no WhatsApp: a tela de erro existia e ninguém do nosso lado ficava sabendo que ela apareceu. Entrou o Sentry, nas mesmas regras da medição: **desligado sem `NEXT_PUBLIC_SENTRY_DSN`** (instância auto-hospedada não manda nada), CSP abrindo o host de ingestão só com a variável ligada, e **só erro** — `tracesSampleRate: 0`, sem replay de sessão (replay é papel do Clarity, e coletar duas vezes é coletar demais). O upload de source maps (rastro legível em produção minificada) ficou de fora por ora: exige token secreto no build, e é a primeira melhoria a fazer quando os rastros começarem a chegar embaralhados.
