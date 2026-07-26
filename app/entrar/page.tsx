@@ -26,19 +26,46 @@ export default function Entrar() {
   useEffect(() => {
     if (!convite) return;
     let vivo = true;
-    rememberInviter(convite).then((nome) => {
-      if (vivo && nome) {
-        setQuemChamou(nome);
-        // Quem chega por um convite está criando conta, não entrando numa que já tem.
-        setMode("criar");
-      }
-    });
+    rememberInviter(convite)
+      .then((nome) => {
+        if (vivo && nome) {
+          setQuemChamou(nome);
+          // Quem chega por um convite está criando conta, não entrando numa que já tem.
+          setMode("criar");
+        }
+      })
+      // A saudação é enfeite: se ela não chegar, a porta continua sendo uma porta.
+      // O `catch` está aqui para o silêncio ser uma ESCOLHA, e não uma promessa
+      // solta virando alarme de madrugada.
+      .catch(() => {});
     return () => {
       vivo = false;
     };
   }, [convite]);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+
+  /**
+   * ═══ O BOTÃO DO GOOGLE TEM ESTADO PRÓPRIO, E TEM POR UM MOTIVO ═══
+   *
+   * Ele é a única coisa desta tela que SAI do app antes de voltar, e o "e se não
+   * sair" não tinha resposta: a chamada era um `onClick` solto, sem espera e sem
+   * rede de proteção. Quando a viagem falhava (o alarme pegou uma, no navegador
+   * de dentro de outro aplicativo, no iPhone), acontecia exatamente o que o
+   * comentário do botão do GitHub aqui embaixo descreve: a pessoa clicava, nada
+   * acontecia, e ela clicava de novo. O rastro do alarme mostra os dois cliques.
+   *
+   * Duas coisas nasceram daí, e são as duas metades do mesmo conserto:
+   *
+   *   "indo"    tranca o botão. O primeiro clique já mandou o navegador embora;
+   *             o segundo só cancela o primeiro no meio do caminho.
+   *   "falhou"  diz em voz alta o que antes só o console sabia, e devolve o
+   *             botão para quem quiser tentar de novo.
+   *
+   * Sucesso não passa por aqui: quando dá certo, quem troca a página é o próprio
+   * Better Auth, e este componente deixa de existir junto com a página.
+   */
+  const [google, setGoogle] = useState<"parado" | "indo" | "falhou">("parado");
 
   const submit = (data: FormData) =>
     start(async () => {
@@ -142,8 +169,22 @@ export default function Entrar() {
           VÍNCULO de conta (a insígnia de Construtor precisa do handle), e não como porta
           de entrada. Ver lib/auth.ts e ai/DECISIONS.md. */}
       <button
-        onClick={() => signIn.social({ provider: "google", callbackURL: "/bem-vindo" })}
-        className="flex w-full items-center justify-center gap-3 rounded-[var(--radius-control)] border border-[var(--color-rule)] px-4 py-2.5 text-[14px] font-medium text-[var(--color-ink)] transition-colors hover:border-[var(--color-ink)]"
+        disabled={google === "indo"}
+        onClick={async () => {
+          setGoogle("indo");
+          setError(null);
+          try {
+            const res = await signIn.social({ provider: "google", callbackURL: "/bem-vindo" });
+            // Se a resposta voltou com erro, a viagem nem começou: o navegador
+            // continua aqui, e o botão precisa voltar a funcionar.
+            if (res?.error) setGoogle("falhou");
+          } catch {
+            // A rede caiu no meio, ou o navegador cancelou a chamada. Sem este
+            // `catch`, a promessa morria sozinha e virava alarme sem dono.
+            setGoogle("falhou");
+          }
+        }}
+        className="flex w-full items-center justify-center gap-3 rounded-[var(--radius-control)] border border-[var(--color-rule)] px-4 py-2.5 text-[14px] font-medium text-[var(--color-ink)] transition-colors hover:border-[var(--color-ink)] disabled:opacity-40"
       >
         {/* A marca do Google, nas cores dela. É a ÚNICA marca de terceiro que o app
             desenha, e ela tem que ser reconhecível: um "G" cinza não é o Google, e um
@@ -154,8 +195,14 @@ export default function Entrar() {
           <path fill="#FBBC05" d="M11.8 28.3c-.4-1.3-.7-2.7-.7-4.3s.3-3 .7-4.3v-5.7H4.5C2.9 17.1 2 20.4 2 24s.9 6.9 2.5 10l7.3-5.7z" />
           <path fill="#EA4335" d="M24 10.7c3.2 0 6.1 1.1 8.4 3.3l6.3-6.3C34.9 4.1 29.9 2 24 2 15.4 2 8.1 6.8 4.5 14l7.3 5.7c1.7-5.2 6.5-9 12.2-9z" />
         </svg>
-        Entrar com o Google
+        {google === "indo" ? "Um momento" : "Entrar com o Google"}
       </button>
+
+      {google === "falhou" && (
+        <p className="mt-2 text-[13px] text-[var(--color-perigo)]">
+          Não deu para chamar o Google agora. Tente de novo, ou entre com e-mail e senha.
+        </p>
+      )}
 
       <button
         onClick={() => {
