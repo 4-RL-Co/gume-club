@@ -119,6 +119,28 @@ export function Sidebar({
         ? path.startsWith("/estante") || path.startsWith("/estatisticas")
         : path.startsWith(href);
 
+  /**
+   * SAIR, NUM LUGAR SÓ, E COM O CASO DA REDE CAINDO.
+   *
+   * Ele estava escrito duas vezes, uma no rodapé do desktop e outra no menu do
+   * celular, e as duas eram `signOut().then(...)` sem rede de proteção. Quando a
+   * chamada falha (e ela falha: conexão de celular no elevador, aba que perde o
+   * sinal), a promessa morre sozinha e vira alarme sem dono, do mesmo feitio do
+   * que o botão do Google produziu em /entrar.
+   *
+   * E o que fazer quando falha importa. Não é mandar para a home: a sessão
+   * CONTINUA de pé, e levar a pessoa embora fingindo que ela saiu é a pior das
+   * mentiras deste app. É recarregar, e a barra volta a dizer a verdade sobre
+   * quem está dentro.
+   */
+  const sair = () =>
+    signOut()
+      .then(() => {
+        router.push("/");
+        router.refresh();
+      })
+      .catch(() => router.refresh());
+
   return (
     <>
       {/* ── desktop: a coluna de vidro ──────────────────────────────── */}
@@ -216,7 +238,7 @@ export function Sidebar({
               image={session.user.image ?? null}
               name={session.user.name ?? null}
               cuidar={fila || moderador}
-              onSair={() => signOut().then(() => { router.push("/"); router.refresh(); })}
+              onSair={sair}
             />
           ) : (
             <Item href="/entrar" active={aceso("/entrar")} icon={<LogIn {...ICON} />}>
@@ -283,7 +305,7 @@ export function Sidebar({
           <EuCelular
             aceso={aceso("/eu") || aceso("/perfil")}
             cuidar={fila || moderador}
-            onSair={() => signOut().then(() => { router.push("/"); router.refresh(); })}
+            onSair={sair}
           />
         ) : (
           <Link
