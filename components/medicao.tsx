@@ -50,34 +50,68 @@ export function Medicao() {
       )}
 
       {/**
-       * ═══ O GOOGLE ANALYTICS, E O QUE MUDA DO SNIPPET QUE O GOOGLE DÁ ═══
+       * ════════════════════════════════════════════════════════════════
+       *  O GOOGLE ANALYTICS, E POR QUE ELE É O ÚNICO DOS TRÊS QUE NÃO USA
+       *  `next/script`.
        *
-       * O Google entrega dois `<script>` para colar no `<head>`: um que baixa o
-       * gtag e outro, embutido, que o configura. Colados assim num app do Next,
-       * eles bloqueiam a primeira pintura e brigam com a navegação do lado do
-       * cliente. Aqui viram dois `next/script` com `afterInteractive`, que é a
-       * mesma coisa depois de a página existir.
+       *  ═══ A PRIMEIRA VERSÃO USAVA, E O GOOGLE NÃO ACHAVA A TAG ═══
        *
-       * O `id` do segundo NÃO é enfeite: sem ele o Next não sabe que os dois
-       * blocos são um só, e em navegação repetida o script embutido pode entrar
-       * de novo e recontar a mesma pessoa.
+       *  Com `next/script`, o script NÃO sai no HTML que o servidor manda. O
+       *  que sai é um `<link rel="preload">` e uma instrução dentro do pacote
+       *  do React; a tag de verdade só nasce depois que a página hidrata, no
+       *  navegador. Para gente de verdade isso funciona perfeitamente, e é
+       *  inclusive melhor: o script de terceiro não disputa a primeira pintura.
        *
-       * E ele conta a navegação sozinho: o gtag escuta a troca de URL do
-       * navegador, então uma página aberta pelo menu conta igual a uma aberta
-       * direto no endereço, sem precisar de código nosso em cada tela.
+       *  Só que a verificação do Google ("sua tag não foi detectada em
+       *  gume.club") lê o HTML, e no HTML não havia tag nenhuma. **Foi medido,
+       *  e nas duas estratégias**: nem `afterInteractive` nem
+       *  `beforeInteractive` põem uma `<script src>` de verdade na resposta
+       *  quando o componente vive no corpo da página.
+       *
+       *  Um painel de medição que diz "não instalado" é um painel em que
+       *  ninguém confia, e o dono ia voltar nessa tela toda semana.
+       *
+       *  ═══ ENTÃO É O SNIPPET DO GOOGLE, COMO ELE É ═══
+       *
+       *  Duas tags literais, exatamente o que o Google manda colar, o que faz
+       *  a verificação passar e a medição começar mais cedo (pega quem abre e
+       *  desiste antes de a página hidratar, que hoje não era contado).
+       *
+       *  O preço é honesto e limitado: um script de terceiro entra na conta do
+       *  carregamento. O `async` segura o estrago (ele não bloqueia a leitura
+       *  da página), e é o mesmo custo que qualquer site com GA paga.
+       *
+       *  ═══ ELAS CAEM EM LUGARES DIFERENTES, E ESTÁ CERTO ═══
+       *
+       *  Medido no HTML gerado: o React 19 IÇA a tag com `async src` para o
+       *  `<head>` sozinho (é o que ele faz com script assíncrono, e de quebra
+       *  garante que ela não se duplica). O bloco embutido fica onde este
+       *  componente mora, no fim do corpo.
+       *
+       *  Separados assim eles continuam certos, e é por desenho do próprio
+       *  gtag: os dois lados conversam pela fila `dataLayer`, e quem chegar
+       *  primeiro cria a fila para o outro. O loader é assíncrono justamente
+       *  porque pode chegar antes ou depois. Não tente "consertar" a ordem.
+       *
+       *  E o gtag conta a troca de página sozinho, escutando a URL, sem
+       *  precisar de código nosso em cada tela.
+       *
+       *  O `unsafe-inline` que o segundo bloco exige JÁ EXISTE na CSP (é o
+       *  preço do Next, que injeta o próprio bootstrap embutido). Este script
+       *  não afrouxa nada: ver middleware.ts.
+       * ════════════════════════════════════════════════════════════════
        */}
       {ga && (
         <>
-          <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${ga}`}
-            strategy="afterInteractive"
+          <script async src={`https://www.googletagmanager.com/gtag/js?id=${ga}`} />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${ga}');`,
+            }}
           />
-          <Script id="ga4" strategy="afterInteractive">
-            {`window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', '${ga}');`}
-          </Script>
         </>
       )}
     </>
