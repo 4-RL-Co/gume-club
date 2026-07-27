@@ -2489,3 +2489,18 @@ O alarme começou a tocar quatro dias depois de entrar, e o primeiro lote já mo
 O que ficou de pé como pendência, e agora com pressa: **o upload de source maps.** As três pilhas chegaram embaralhadas (`Object.95930`, `r`, `xm`), exatamente o que a decisão de 2026-07-23 previu como "a primeira melhoria quando os rastros começarem a chegar embaralhados". A do Google só foi diagnosticada pelo rastro de cliques, e não pela pilha.
 
 ---
+
+**2026-07-26: O Google Analytics entra, pela mesma porta dos outros dois, e o teste que faltava nasce com ele.**
+
+O dono pediu GA4 na instância hospedada. Ele entra com as MESMAS regras da medição de 23/07, e não com o snippet colado no `<head>`: atrás de `NEXT_PUBLIC_GA_ID`, com a CSP abrindo junto, e desligado de fábrica. Um identificador cravado no código faria toda instância auto-hospedada mandar os leitores dos outros para o painel do dono desta.
+
+- **Três portas na CSP, e não uma.** O erro clássico é liberar só `www.google-analytics.com`, ver funcionar na própria máquina, e descobrir semanas depois que faltava metade: o GA4 manda evento para host REGIONAL (`region1.`, `region12.`), fala com o googletagmanager e com o analytics.google.com em depuração. Faltando qualquer um, o navegador bloqueia CALADO e o relatório vem menor que a verdade. É "não traduza falha em ausência de dado" na forma mais escorregadia, porque número menor não parece erro: parece pouco tráfego.
+- **O `img-src` da medição é uma lista SEPARADA da de capas**, e de propósito. `lib/imagens.ts` alimenta o otimizador de imagem e o formulário que valida endereço colado; um host de medição lá dentro faria o formulário aceitar `google-analytics.com/...` como capa de livro. São duas perguntas diferentes, e não uma lista que alguém esqueceu de juntar.
+- **Nasceu o `lib/medicao.test.ts`, que a decisão de 23/07 já exigia sem ter.** Ela afirmava em texto que "as duas listas ligam e desligam JUNTAS, pela mesma variável", e isso era verdade por SORTE: alguém lembrou, duas vezes. Agora toda variável lida por `components/medicao.tsx` tem que aparecer no `middleware.ts` e no `.env.example`, e nenhum host de medição pode entrar na CSP sem a variável dele ao lado.
+
+**E o teste quase nasceu mentindo, o que vale mais que o teste.** A primeira versão removia comentários por regex, do jeito que o resto do repo faz. Só que `"https://*.googletagmanager.com"` contém `/*`, que é uma abertura de comentário: o removedor engolia dali até o próximo fechamento, junto com as linhas que o teste precisava ler, e ele passava sem examinar nada. Foi pego mutando o middleware de propósito (host cravado, sem variável) e vendo o verde continuar. A régua nova olha só para URL entre aspas, sem remover comentário, e ganhou um contador: se um dia ela não reconhecer host nenhum, fica VERMELHA em vez de verde por vazio. O guarda antigo do `img-src` (`lib/imagens.test.ts`) foi mutado também para conferir que os curingas novos não o cegaram: continua pegando.
+
+Duas coisas ficam em aberto, e são do dono:
+
+- **O GA4 e o Cloudflare medem quase a mesma coisa** (audiência e origem de tráfego). O Cloudflare é agregado e sem cookie; o GA4 tem cookie e mais recorte. Manter os dois é escolha, não descuido, mas um dia vale escolher um.
+- **O aviso de cookies continua aberto**, e agora com mais peso: eram Clarity e Cloudflare, e agora é Clarity, Cloudflare e Google, sendo que dois usam cookie. A página `/privacidade` (que mora na branch `arquivo/android-twa`, ainda não no main) diz "três serviços de terceiros" e vira quatro quando aquela branch voltar.

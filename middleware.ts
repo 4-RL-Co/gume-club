@@ -72,12 +72,55 @@ export function middleware(_req: NextRequest) {
   const medicaoScript = [
     process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN && "https://static.cloudflareinsights.com",
     process.env.NEXT_PUBLIC_CLARITY_ID && "https://www.clarity.ms",
+    process.env.NEXT_PUBLIC_GA_ID && "https://*.googletagmanager.com",
   ].filter(Boolean).join(" ");
   const medicaoConnect = [
     process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN && "https://cloudflareinsights.com",
     process.env.NEXT_PUBLIC_CLARITY_ID && "https://*.clarity.ms",
     // O alarme de erro (Sentry) manda o rastro para o host de ingestão do DSN.
     process.env.NEXT_PUBLIC_SENTRY_DSN && "https://*.sentry.io",
+    /**
+     * ═══ O GOOGLE ANALYTICS FALA POR TRÊS PORTAS, E NÃO POR UMA ═══
+     *
+     * O erro clássico é liberar só `www.google-analytics.com`, ver a medição
+     * funcionar na sua máquina, e descobrir semanas depois que faltava metade.
+     * O GA4 manda os eventos para um host REGIONAL (`region1.`, `region12.`,
+     * o que couber em quem está lendo), então tem que ser o curinga. E ele
+     * também fala com o googletagmanager, de onde veio o script, e com o
+     * analytics.google.com quando o painel está aberto em modo de depuração.
+     *
+     * Faltando qualquer um, o navegador bloqueia CALADO: nada quebra na tela,
+     * e o relatório simplesmente vem menor do que a verdade. É a armadilha do
+     * AGENTS.md com outra roupa, e a mais difícil de perceber, porque um
+     * número menor não parece um erro.
+     */
+    process.env.NEXT_PUBLIC_GA_ID && "https://*.google-analytics.com",
+    process.env.NEXT_PUBLIC_GA_ID && "https://*.analytics.google.com",
+    process.env.NEXT_PUBLIC_GA_ID && "https://*.googletagmanager.com",
+  ].filter(Boolean).join(" ");
+
+  /**
+   * ═══ E ELE AINDA MANDA ALGUNS EVENTOS COMO IMAGEM ═══
+   *
+   * Quando o navegador não tem como mandar o evento pela porta normal (a aba
+   * sendo fechada é o caso comum), o gtag cai para um pixel. Sem isto, esses
+   * eventos somem, e somem calados, como todo o resto.
+   *
+   * ═══ POR QUE ISTO NÃO ENTRA EM lib/imagens.ts ═══
+   *
+   * Aquela lista é a das FONTES DE CAPA, e ela alimenta duas outras coisas: o
+   * otimizador de imagem do Next e o formulário que valida o endereço que um
+   * leitor cola. Pôr um host de medição lá dentro faria o formulário aceitar
+   * `google-analytics.com/...` como capa de livro.
+   *
+   * São duas listas porque são duas perguntas ("de onde vem capa" e "para onde
+   * a medição manda pixel"), e não porque alguém esqueceu de juntar. A lista de
+   * capas continua vindo de um lugar só, e `lib/imagens.test.ts` continua
+   * provando isso.
+   */
+  const medicaoImg = [
+    process.env.NEXT_PUBLIC_GA_ID && "https://*.google-analytics.com",
+    process.env.NEXT_PUBLIC_GA_ID && "https://*.googletagmanager.com",
   ].filter(Boolean).join(" ");
 
   const csp = [
@@ -91,7 +134,7 @@ export function middleware(_req: NextRequest) {
      * aparecia com metade dos livros quebrados. Sintoma de CSP quase sempre é
      * isto, e nunca o host que você digitou.
      */
-    imgSrc(),
+    medicaoImg ? `${imgSrc()} ${medicaoImg}` : imgSrc(),
     "font-src 'self' data:",
     `connect-src 'self'${medicaoConnect ? ` ${medicaoConnect}` : ""}`,
     "form-action 'self'",
