@@ -2521,3 +2521,21 @@ Um leitor escreveu: *"tava tentando criar uma coleção aqui, mas não entendi c
 **E o teste achou um bug que a reclamação não mencionava.** `collection_items.position` nasce ZERO por padrão, e a estante é lida em `position asc`. Quem ordena a mão fica com 1, 2, 3. Então **todo insert que aceitava o padrão punha o livro novo em ZERO, e ele pulava para o primeiro lugar**, por cima da curadoria, em silêncio. Estava em TRÊS lugares (`toggleInCollection`, `setShelvesByName` e `addManyToCollection`, este último importando cinquenta livros de uma vez, todos empilhados no topo). A regra do "entra no fim" passou a morar em `porNaLista` (lib/listas.ts), e `lib/colecoes.test.ts` quebra o build se alguém voltar a inserir por conta própria. O bug só era visível numa estante numerada com três livros ou mais, que é exatamente a estante de quem mais se importa com ela.
 
 Os testes novos foram mutados para provar que pegam: com a posição forçada em zero, o teste de ordem fica vermelho.
+
+---
+
+**2026-07-28: Guardar uma coleção passa a ser contado, e a regra "nunca conte" vira uma linha mais fina.**
+
+Reversão de uma decisão anterior, pedida pelo dono, e o argumento é dele: **guardar não é curtir.** Curtir custa um toque e não compromete ninguém. Guardar é pôr a curadoria de outra pessoa dentro do seu perfil, assinada com o nome dela, do lado das suas. É um gesto com preço, e gesto com preço contado não vira vaidade: vira sinal. E a curadoria é o que o Gume quer que aconteça mais: quem monta uma estante boa gastava horas e não recebia nada de volta, nem a notícia de que alguém achou útil.
+
+O que existia antes, e caiu: `lib/listas.ts` dizia "guardar nunca vira número", um teste quebrava o build se qualquer consulta contasse `collection_saves`, e o README prometia isso em duas linhas de venda.
+
+- **A linha não sumiu, ficou mais fina.** Contar QUEM GUARDOU uma estante: pode. Contar gente em volta de LEITURA (curtida em resenha, contador de seguidores, "12 pessoas leram este livro", placar de quem leu mais): continua proibido, e agora com teste próprio, que varre `lib/listas.ts` atrás de `count()` sobre `reviews`, `ratings`, `follows`, `library_entries` e `readings`. **O teste antigo não foi apagado: ele mudou de alvo.** Uma trava que some numa reversão deixa a regra nova sem defesa, e a regra nova é mais difícil de acertar que a antiga, porque tem uma linha no meio em vez de um "não" inteiro.
+- **O número é público; a LISTA de quem guardou é só de quem montou.** A diferença não é capricho: guardar já é público do lado de quem guarda (a estante aparece no perfil dele, com crédito). Virar linha numa lista de "quem endossa a curadoria de fulano", na tela de fulano, é outra coisa, e ninguém consentiu com ela ao clicar em guardar. É o mesmo desenho de "quem entrou pelo seu link": rostos, e só para você. A autorização é no SQL e devolve VAZIO, nunca erro, porque erro contaria que a estante existe e tem gente dentro.
+- **O sino ganhou "fulano guardou a sua estante"**, e ele diz QUAL estante: quem montou cinco não deveria abrir as cinco para descobrir. Aviso que dá trabalho é aviso que se ignora.
+- **O zero não aparece.** Estante nova não mostra "0 guardaram". Quem acabou de montar a primeira estante da vida não precisa de um zero na cara: zero aqui não é informação, é um comentário.
+- **O explorar continua sorteando**, e um teste garante que ele nunca ordene por quantos guardaram. Contar é uma coisa; RANQUEAR gente por popularidade é a corrida que o produto recusa.
+- **A migration 0052 não foi tocada**, e ela diz o contrário disto. Migration é história e não se edita: o que valia quando ela rodou está escrito ali, e o que vale agora está no cabeçalho de `lib/listas.ts`.
+- **Os dois READMEs foram atualizados** (PT e EN), nas duas linhas que prometiam o contrário. Tela nova prometendo uma coisa e README prometendo outra é o pior dos dois mundos.
+
+A trava de IDOR foi mutada para provar que pega: sem a checagem de dono no SQL, o teste fica vermelho.

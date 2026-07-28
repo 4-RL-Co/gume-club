@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Bookmark } from "lucide-react";
 import { Cover } from "@/components/cover";
 import { Avatar } from "@/components/avatar";
 import type { ListaCard as Lista } from "@/lib/listas";
@@ -13,11 +14,18 @@ import type { ListaCard as Lista } from "@/lib/listas";
  *  o nome e a descrição dizem o recorte, e o rosto diz quem montou, porque a
  *  recomendação de pessoa é o produto.
  *
- *  ═══ O QUE O CARD NÃO TEM ═══
+ *  ═══ OS DOIS NÚMEROS DO RODAPÉ ═══
  *
- *  Nenhum número social. "12 livros" é contagem de LIVRO e fica; "guardada por
- *  N pessoas" não existe em tela nenhuma, porque endosso contado é curtida com
- *  outro nome. Ver lib/listas.ts.
+ *  "12 livros" é o tamanho da curadoria. O marcador com o número ao lado é
+ *  quantas pessoas GUARDARAM esta estante, e ele entrou em 2026-07-28, revertendo
+ *  a regra antiga ("guardar nunca vira número") que este comentário defendia.
+ *
+ *  O argumento do dono, e ele está inteiro no cabeçalho de lib/listas.ts:
+ *  guardar não é curtir. Curtir custa um toque; guardar é pôr a curadoria de
+ *  outra pessoa dentro do seu perfil, assinada com o nome dela.
+ *
+ *  O que continua sem número nenhum é LEITURA: sem curtida em resenha, sem
+ *  contador de seguidores, sem "12 pessoas leram este livro".
  *
  *  ═══ DOIS DESTINOS, DOIS LINKS IRMÃOS ═══
  *
@@ -96,8 +104,25 @@ export function ListaCardVis({ lista, mostrarDono = true }: { lista: Lista; most
         ) : (
           <span />
         )}
-        <span className="tabular shrink-0 text-[12px] text-[var(--color-ink-faint)]">
-          {lista.livros === 1 ? "1 livro" : `${lista.livros} livros`}
+        <span className="flex shrink-0 items-center gap-3 text-[12px] text-[var(--color-ink-faint)]">
+          {/* ═══ QUANTOS GUARDARAM ═══
+
+              O marcador só aparece quando alguém guardou. Um "0" em toda estante
+              nova diz a quem acabou de montar a dela que ninguém quis, e essa é a
+              primeira coisa que a pessoa leria depois de uma hora de trabalho.
+              Zero não é informação aqui: é um comentário.
+
+              Ver o cabeçalho de lib/listas.ts para por que este número existe, e
+              por que ele não é o mesmo que uma curtida. */}
+          {lista.guardadas > 0 && (
+            <span className="tabular flex items-center gap-1" title="quantas pessoas guardaram">
+              <Bookmark size={12} strokeWidth={1.5} aria-hidden />
+              {lista.guardadas}
+            </span>
+          )}
+          <span className="tabular">
+            {lista.livros === 1 ? "1 livro" : `${lista.livros} livros`}
+          </span>
         </span>
       </div>
     </div>
