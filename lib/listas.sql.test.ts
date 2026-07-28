@@ -6,6 +6,7 @@ import { users, works, collections, collectionItems } from "@/lib/db/schema";
 import {
   getListasDe, getListasGuardadas, guardarLista, esquecerLista, jaGuardei,
   moverNaLista, numerarLista, descreverLista, getListasParaExplorar,
+  porNaLista,
 } from "@/lib/listas";
 
 /**
@@ -207,5 +208,90 @@ describe("guardar nunca vira número", () => {
         ["capas", "description", "dono", "id", "livros", "name", "ranked", "slug"],
       );
     }
+  });
+});
+
+// ──────────────────────────────────────────── pôr um livro: o dono, e o FIM da fila
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  PÔR UM LIVRO NA ESTANTE.
+ *
+ *  ═══ O TESTE QUE IMPORTA AQUI É O DA POSIÇÃO ═══
+ *
+ *  A estante é lida em `position asc, added_at asc`, e a coluna nasce ZERO por
+ *  padrão. Quem ordena a mão fica com 1, 2, 3. Então um insert que aceitasse o
+ *  padrão poria o livro novo em ZERO, e ele PULARIA PARA O PRIMEIRO LUGAR, por
+ *  cima da curadoria, sem nada na tela dizendo isso.
+ *
+ *  Era exatamente o que `toggleInCollection` fazia (a porta da página do livro),
+ *  e ninguém tinha percebido porque a ordenação só fica visível numa estante
+ *  numerada com três livros ou mais.
+ *
+ *  Um teste de "entrou na estante?" passaria feliz com o bug inteiro de pé. É a
+ *  ORDEM que precisa ser afirmada.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("pôr um livro na estante", () => {
+  it("o livro novo entra no FIM, e não por cima da ordem de quem montou", async () => {
+    const [nova] = await db
+      .insert(works)
+      .values({ slug: `listas-c-${marca}`, title: `O terceiro da lista ${marca}` })
+      .returning({ id: works.id });
+
+    /**
+     * A ordem de ANTES é lida, e não suposta: um teste acima neste arquivo
+     * reordena esta mesma estante, e cravar `[obraA, obraB]` aqui amarraria este
+     * teste à ordem em que o vitest resolve rodar os outros. O que se afirma é a
+     * PROPRIEDADE ("o novo vai para o fim"), e ela não depende de qual era o fim.
+     */
+    const ordemDe = async () =>
+      (await db.execute<{ work_id: string; position: number }>(sql`
+        select work_id, position from collection_items
+         where collection_id = ${listaPublica}::uuid
+         order by position asc, added_at asc`));
+
+    const antes = await ordemDe();
+    expect(await porNaLista(vitima, listaPublica, nova!.id)).toBe(true);
+    const depois = await ordemDe();
+
+    expect(depois.map((o) => o.work_id)).toEqual([
+      ...antes.map((o) => o.work_id),
+      nova!.id,
+    ]);
+    // E a posição é a próxima de verdade, e não um zero que se disfarça de ordem.
+    expect(depois.at(-1)!.position).toBe(Math.max(...antes.map((o) => o.position)) + 1);
+
+    await db.execute(sql`delete from works where id = ${nova!.id}::uuid`);
+  });
+
+  it("pôr duas vezes não duplica, e a segunda diz que já estava lá", async () => {
+    expect(await porNaLista(vitima, listaPublica, obraA)).toBe(false);
+
+    const quantas = await db.execute<{ n: number }>(sql`
+      select count(*)::int as n from collection_items
+       where collection_id = ${listaPublica}::uuid and work_id = ${obraA}::uuid`);
+    expect(quantas[0]!.n).toBe(1);
+  });
+
+  /**
+   * O CAMINHO DO ATACANTE, e ele é o de sempre: trocar o UUID da estante no
+   * corpo da requisição pela estante de outra pessoa. Nada acontece, e nada é
+   * dito (contar que a estante existe já seria contar demais).
+   */
+  it("pôr um livro na estante de OUTRA pessoa não põe nada", async () => {
+    const antes = await db.execute<{ n: number }>(sql`
+      select count(*)::int as n from collection_items where collection_id = ${listaPublica}::uuid`);
+
+    expect(await porNaLista(atacante, listaPublica, obraB)).toBe(false);
+
+    const depois = await db.execute<{ n: number }>(sql`
+      select count(*)::int as n from collection_items where collection_id = ${listaPublica}::uuid`);
+    expect(depois[0]!.n).toBe(antes[0]!.n);
+  });
+
+  it("uma obra que não existe não vira linha na estante", async () => {
+    const fantasma = "00000000-0000-4000-8000-000000000000";
+    expect(await porNaLista(vitima, listaPublica, fantasma)).toBe(false);
   });
 });

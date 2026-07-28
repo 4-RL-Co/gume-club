@@ -16,6 +16,7 @@ import { ShelfSettings } from "@/components/shelf-settings";
 import { Avatar } from "@/components/avatar";
 import { GuardarEstante } from "@/components/guardar-estante";
 import { OrganizarEstante } from "@/components/organizar-estante";
+import { PorNaEstante } from "@/components/por-na-estante";
 import { jaGuardei } from "@/lib/listas";
 import { origemAceita } from "@/lib/imagens";
 
@@ -224,6 +225,17 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
         </p>
       )}
 
+      {/* ═══ A PORTA DE ENTRADA DA ESTANTE, E ELA VEM ANTES DE ORDENAR ═══
+
+          "Não entendi como é a dinâmica de colar um livro ali." Dava para pôr livro
+          numa estante, e só da página do livro; aqui só havia uma frase mandando a
+          pessoa embora. Quem abre uma estante vazia quer encher ESTA estante.
+
+          Fica acima do organizar de propósito: encher vem antes de ordenar, e o
+          organizar só aparece com dois livros, então quem chega no zero via a tela
+          mais vazia possível. Ver components/por-na-estante.tsx. */}
+      {mine && <PorNaEstante slug={shelf.slug} collectionId={shelf.id} />}
+
       {mine && books.length > 1 && (
         <div className="mt-6">
           <OrganizarEstante
@@ -235,8 +247,15 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
       )}
 
       {books.length === 0 ? (
+        /* A frase dizia "abra um livro e coloque ele aqui", e mandava a pessoa para
+           uma tela onde ela tinha que adivinhar o resto. Agora o campo está logo
+           acima, então o estado vazio só precisa dizer o que ele é. Para quem está
+           visitando a estante de outra pessoa, não há campo nenhum, e a frase
+           também não promete um. */
         <Empty>
-          Coleção vazia. Abra um livro e coloque ele aqui.
+          {mine
+            ? "Estante vazia. Procure um livro aqui em cima para começar."
+            : "Estante vazia por enquanto."}
         </Empty>
       ) : (
         <CoverWall
