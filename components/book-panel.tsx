@@ -124,11 +124,29 @@ export function BookPanel({
          *  Agora ela é a continuação natural de "prateleira": esperando/lendo/lido é a
          *  prateleira que o Gume dá; "para reler", "do meu pai" é a que você inventa. São
          *  a mesma pergunta ("onde este livro fica?"), e agora estão no mesmo cartão.
+         *
+         *  ═══ E ELA VOLTOU A SUMIR, POR UMA TRAVA: `mine.status &&` ═══
+         *
+         *  O mesmo relato chegou de novo, quase com as mesmas palavras: "não entendi
+         *  como é a dinâmica de colar um livro ali". A causa era outra, e pior.
+         *
+         *  A trava só desenhava isto quando o livro JÁ ESTAVA na sua prateleira. Num
+         *  livro que a pessoa ainda não tinha marcado, não havia controle nenhum: ela
+         *  seguia a instrução da estante vazia ("abra um livro e coloque ele aqui"),
+         *  abria um livro, e não encontrava nada. A instrução virava mentira.
+         *
+         *  ═══ E TIRÁ-LA É UMA DECISÃO SOBRE O QUE UMA ESTANTE É ═══
+         *
+         *  Sem a trava, um livro pode estar numa estante inventada SEM estar na sua
+         *  prateleira. É o certo, e é o que destrava "quero comprar", "presentes para
+         *  dar" e "o cânone que ainda não li": estante inventada é CURADORIA, e a
+         *  prateleira é o seu histórico de leitura. São perguntas diferentes, e
+         *  responder uma nunca deveria exigir responder a outra antes.
+         *
+         *  Decisão do dono, registrada em ai/DECISIONS.md.
          * ════════════════════════════════════════════════════════════════════
          */}
-        {mine.status && (
-          <Estantes slug={slug} workId={book.workId} minhas={shelves} todas={todas} />
-        )}
+        <Estantes slug={slug} workId={book.workId} minhas={shelves} todas={todas} />
       </Section>
 
       <Verdicts value={mine.rating} pending={pending} slug={slug} workId={book.workId} act={act} />

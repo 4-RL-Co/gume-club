@@ -4,6 +4,7 @@ import { limparNomeDeAutor } from "@/lib/autores";
 import { assertOwner, assertAuthenticated, Forbidden, type Viewer, type Visibility } from "@/lib/authz";
 import { slugify } from "@/lib/slug";
 import { freeAuthorSlug } from "@/lib/library";
+import { porNaLista } from "@/lib/listas";
 import {
   works, editions, authors, libraryEntries, ownedCopies, revisions,
   collections, collectionItems,
@@ -252,7 +253,20 @@ export async function toggleInCollection(
   if (!own) return; // not yours: nothing happens, and nothing is said
 
   if (on) {
-    await db.insert(collectionItems).values({ collectionId, workId }).onConflictDoNothing();
+    /**
+     * ═══ O INSERT SAIU DAQUI, E FOI PARA lib/listas.ts ═══
+     *
+     * Ele gravava sem `position`, e o padrão da coluna é ZERO. Como a estante é
+     * lida em `position asc`, e quem ordena a mão fica com 1, 2, 3, o livro
+     * guardado por esta porta entrava com zero e PULAVA PARA O PRIMEIRO LUGAR,
+     * por cima da curadoria da pessoa, calado.
+     *
+     * A regra do "entra no fim" agora mora num lugar só (`porNaLista`), porque
+     * duas portas com duas regras de posição dariam uma estante que se ordena de
+     * um jeito quando o livro entra pela página dele e de outro quando entra pela
+     * página da estante.
+     */
+    await porNaLista(actor, collectionId, workId);
   } else {
     await db
       .delete(collectionItems)
@@ -354,11 +368,29 @@ export async function setShelvesByName(
         and ci.work_id = ${workId}::uuid
         and ci.collection_id <> all(${sql.param(keep)}::uuid[])`);
 
+    /**
+     * E entra no FIM de cada estante, uma posição por estante.
+     *
+     * Isto gravava sem `position`, e o padrão da coluna é ZERO: o livro digitado
+     * aqui pulava para o primeiro lugar de toda estante nomeada, por cima da
+     * ordem que a pessoa tinha montado a mão. Mesmo bug de `toggleInCollection`,
+     * e a mesma regra conserta os dois. Ver `porNaLista`, em lib/listas.ts.
+     *
+     * Não dá para chamar `porNaLista` aqui: isto roda dentro de uma transação, e
+     * a função abre a própria conexão. A regra é a mesma, escrita no SQL desta
+     * transação, e o teste de lib/colecoes.test.ts exige que ela continue sendo.
+     */
     if (wanted.length) {
-      await tx
-        .insert(collectionItems)
-        .values(wanted.map((collectionId) => ({ collectionId, workId })))
-        .onConflictDoNothing();
+      await tx.execute(sql`
+        insert into collection_items (collection_id, work_id, position)
+        select c.id,
+               ${workId}::uuid,
+               coalesce((select max(ci.position) from collection_items ci
+                          where ci.collection_id = c.id), 0) + 1
+          from collections c
+         where c.id = any(${sql.param(wanted)}::uuid[])
+           and c.user_id = ${actor.id}::uuid
+        on conflict (collection_id, work_id) do nothing`);
     }
   });
 }
@@ -577,9 +609,25 @@ export async function addManyToCollection(
   if (!owned) throw new Forbidden("essa estante não é sua");
 
   const ids = workIds.slice(0, 500);
+
+  /**
+   * NO FIM DA ESTANTE, E NA ORDEM EM QUE VIERAM.
+   *
+   * O `with ordinality` numera as linhas do array (1, 2, 3...), e cada uma soma
+   * esse número ao maior que já existe. Sem isto, os cinquenta livros de uma
+   * importação entravam TODOS com posição zero, empilhados em cima da curadoria
+   * de quem já tinha ordenado a estante, e a ordem entre eles virava sorteio.
+   *
+   * Livro repetido não entra e deixa um buraco na numeração. Buraco não faz mal:
+   * a leitura é `order by position asc`, e ela não pede números seguidos.
+   */
   await db.execute(sql`
-    insert into collection_items (collection_id, work_id)
-    select ${collectionId}::uuid, x from unnest(${sql.param(ids)}::uuid[]) as x
+    insert into collection_items (collection_id, work_id, position)
+    select ${collectionId}::uuid,
+           x.id,
+           coalesce((select max(ci.position) from collection_items ci
+                      where ci.collection_id = ${collectionId}::uuid), 0) + x.n
+      from unnest(${sql.param(ids)}::uuid[]) with ordinality as x(id, n)
     on conflict do nothing`);
 
   return ids.length;

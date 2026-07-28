@@ -181,6 +181,70 @@ export async function getTodasAsListas(viewer: Viewer, limite = 100): Promise<Li
  * como em toda mutação de estante), e só em livros que já estão nela: isto ordena,
  * não adiciona.
  */
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  PÔR UM LIVRO NA ESTANTE INVENTADA, E ELE ENTRA NO FIM.
+ *
+ *  ═══ O "FIM" NÃO É DETALHE: É A ORDENAÇÃO INTEIRA ═══
+ *
+ *  A ordem desta tabela é `position asc, added_at asc`, e `position` nasce ZERO
+ *  por padrão no banco. Quem monta uma estante e ordena a mão fica com 1, 2, 3...
+ *
+ *  Então um livro novo inserido com o padrão entra com posição ZERO, que é MENOR
+ *  que todas, e ele **pula para o primeiro lugar**. Numa estante numerada, o
+ *  livro que a pessoa acabou de achar vira o 1º da lista dela, por cima da
+ *  curadoria que ela levou meia hora para montar, sem nada na tela dizendo isso.
+ *
+ *  É a pior espécie de bug: silencioso, e ele estraga justamente o trabalho
+ *  manual que a pessoa mais valoriza.
+ *
+ *  Aqui a posição é calculada (o maior que existe, mais um), na mesma consulta
+ *  do insert, para não haver janela entre ler o máximo e gravar.
+ *
+ *  ═══ E ELA É A ÚNICA PORTA DE ENTRADA ═══
+ *
+ *  `toggleInCollection`, em lib/curation.ts, é a porta da PÁGINA DO LIVRO, e ela
+ *  chama esta função em vez de ter o próprio insert. Duas portas com duas regras
+ *  de posição seria a estante ordenada de um jeito quando o livro entra por um
+ *  lado e de outro quando entra pelo outro, e ninguém entenderia por quê.
+ *
+ *  Devolve `true` quando entrou, e `false` quando já estava lá (ou quando a
+ *  estante não é sua). Quem chama decide o que dizer: "guardei" e "já estava
+ *  aqui" são frases diferentes, e a segunda não é um erro.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export async function porNaLista(
+  actor: { id: string },
+  collectionId: string,
+  workId: string,
+): Promise<boolean> {
+  assertOwner(actor as Viewer, { userId: actor.id });
+
+  /**
+   * O dono é checado DENTRO do insert, e não numa consulta antes.
+   *
+   * O `select ... where c.user_id = ...` é a fonte das linhas: se a estante não
+   * for do ator, o select não devolve linha nenhuma e o insert grava nada. Não
+   * existe o intervalo entre "conferi que é seu" e "gravei" em que a estante
+   * poderia ter mudado de dono ou sumido.
+   */
+  const gravadas = await db.execute(sql`
+    insert into collection_items (collection_id, work_id, position)
+    select c.id,
+           ${workId}::uuid,
+           coalesce((select max(ci.position) from collection_items ci
+                      where ci.collection_id = c.id), 0) + 1
+      from collections c
+     where c.id = ${collectionId}::uuid
+       and c.user_id = ${actor.id}::uuid
+       and exists (select 1 from works w where w.id = ${workId}::uuid)
+    on conflict (collection_id, work_id) do nothing
+    returning work_id
+  `);
+
+  return gravadas.length > 0;
+}
+
 export async function ordenarLista(
   actor: { id: string },
   collectionId: string,

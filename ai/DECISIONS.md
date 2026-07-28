@@ -2506,3 +2506,18 @@ Duas coisas ficam em aberto, e são do dono:
 
 - **O GA4 e o Cloudflare medem quase a mesma coisa** (audiência e origem de tráfego). O Cloudflare é agregado e sem cookie; o GA4 tem cookie e mais recorte. Manter os dois é escolha, não descuido, mas um dia vale escolher um.
 - **O aviso de cookies continua aberto**, e agora com mais peso: eram Clarity e Cloudflare, e agora é Clarity, Cloudflare e Google, sendo que dois usam cookie. A página `/privacidade` (que mora na branch `arquivo/android-twa`, ainda não no main) diz "três serviços de terceiros" e vira quatro quando aquela branch voltar.
+
+---
+
+**2026-07-28: Pôr um livro numa estante inventada ganha duas portas, e a trava que escondia a primeira cai.**
+
+Um leitor escreveu: *"tava tentando criar uma coleção aqui, mas não entendi como é a dinâmica de colar um livro ali"*. A investigação achou um recurso inteiro escondido, e um bug de ordem que ninguém tinha visto.
+
+- **A causa raiz era uma trava de uma linha.** O controle de estantes na página do livro vivia dentro de um `mine.status &&`: **só era desenhado se o livro já estivesse na prateleira da pessoa**. Quem seguia a instrução da estante vazia ("abra um livro e coloque ele aqui"), abria um livro ainda não marcado, e não encontrava nada. A instrução virava mentira. É a SEGUNDA vez que esse mesmo relato chega, com causa diferente: na primeira o controle estava no rodapé, na gaveta de curadoria, e foi movido para o cartão principal.
+- **Tirar a trava é uma decisão sobre o que uma estante é**, e o dono a tomou: um livro pode estar numa estante inventada **sem** estar na prateleira. Estante inventada é CURADORIA, prateleira é o HISTÓRICO de leitura, e são perguntas diferentes. É o que destrava "quero comprar", "presentes para dar" e "o cânone que ainda não li". A alternativa (guardar numa estante marca o livro como "esperando") foi recusada: transformaria toda curadoria em lista de leitura.
+- **Nasceu a segunda porta**: um campo de busca DENTRO da estante (components/por-na-estante.tsx). Quem abre uma estante vazia quer encher AQUELA estante, e mandar procurar a porta em outra tela foi o que gerou a reclamação. A busca é só do NOSSO acervo, de propósito: trazer livro de fora é operação de catálogo, e mora na busca principal. Ela distingue os três estados (não achei / limite estourado / a busca caiu), porque lista vazia com 429 lida como "não temos" é a lei mais cara deste projeto quebrada dentro da nossa tela.
+- **O que já existia e nunca aparecia:** ordenar (setas) e numerar já estavam prontos. O organizar só aparece com dois livros ou mais, então quem nunca conseguiu pôr o primeiro via a tela mais vazia possível. **Era um problema só, e não quatro.**
+
+**E o teste achou um bug que a reclamação não mencionava.** `collection_items.position` nasce ZERO por padrão, e a estante é lida em `position asc`. Quem ordena a mão fica com 1, 2, 3. Então **todo insert que aceitava o padrão punha o livro novo em ZERO, e ele pulava para o primeiro lugar**, por cima da curadoria, em silêncio. Estava em TRÊS lugares (`toggleInCollection`, `setShelvesByName` e `addManyToCollection`, este último importando cinquenta livros de uma vez, todos empilhados no topo). A regra do "entra no fim" passou a morar em `porNaLista` (lib/listas.ts), e `lib/colecoes.test.ts` quebra o build se alguém voltar a inserir por conta própria. O bug só era visível numa estante numerada com três livros ou mais, que é exatamente a estante de quem mais se importa com ela.
+
+Os testes novos foram mutados para provar que pegam: com a posição forçada em zero, o teste de ordem fica vermelho.
