@@ -17,7 +17,8 @@ import { Avatar } from "@/components/avatar";
 import { GuardarEstante } from "@/components/guardar-estante";
 import { OrganizarEstante } from "@/components/organizar-estante";
 import { PorNaEstante } from "@/components/por-na-estante";
-import { jaGuardei } from "@/lib/listas";
+import { jaGuardei, quemGuardou } from "@/lib/listas";
+import { QuemGuardouEsta } from "@/components/quem-guardou";
 import { origemAceita } from "@/lib/imagens";
 
 export const dynamic = "force-dynamic";
@@ -57,6 +58,20 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
 
   const mine = viewer?.id === shelf.userId;
   const guardada = !mine && viewer ? await jaGuardei(viewer, shelf.id) : false;
+
+  /**
+   * QUANTOS guardaram é público; QUEM guardou é só de quem montou.
+   *
+   * A contagem sai daqui mesmo, e a lista vem de `quemGuardou`, que devolve
+   * vazio para quem não é dono (a checagem é no SQL, ver lib/listas.ts). Pedir a
+   * lista sempre e deixar o servidor decidir é mais seguro do que perguntar
+   * "sou dono?" aqui e confiar na resposta.
+   */
+  const [[contagem], guardaram] = await Promise.all([
+    db.execute<{ n: number }>(sql`
+      select count(*)::int as n from collection_saves where collection_id = ${shelf.id}::uuid`),
+    quemGuardou(viewer, shelf.id),
+  ]);
 
   const books = await db
     .select({
@@ -234,6 +249,11 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
           Fica acima do organizar de propósito: encher vem antes de ordenar, e o
           organizar só aparece com dois livros, então quem chega no zero via a tela
           mais vazia possível. Ver components/por-na-estante.tsx. */}
+      {/* Quantas pessoas guardaram esta curadoria. Ver components/quem-guardou.tsx
+          e o cabeçalho de lib/listas.ts: guardar não é curtir, e este número
+          entrou para que quem monta estante boa saiba que ela serviu. */}
+      <QuemGuardouEsta quantos={contagem?.n ?? 0} quem={guardaram} souDono={mine} />
+
       {mine && <PorNaEstante slug={shelf.slug} collectionId={shelf.id} />}
 
       {mine && books.length > 1 && (

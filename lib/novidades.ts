@@ -38,7 +38,7 @@ import { assertAuthenticated, type Viewer } from "@/lib/authz";
  * ════════════════════════════════════════════════════════════════════
  */
 
-export type TipoNovidade = "seguiu" | "convidado" | "recomendou";
+export type TipoNovidade = "seguiu" | "convidado" | "recomendou" | "guardou";
 
 export type Novidade = {
   /** Chave estável para o React: tipo + quem + quando. */
@@ -52,6 +52,15 @@ export type Novidade = {
   /** Só na recomendação. */
   livroTitulo: string | null;
   livroSlug: string | null;
+  /**
+   * Só em "guardou": o nome e o endereço da estante que a pessoa guardou.
+   *
+   * Viajam junto para o sino poder dizer QUAL estante. "Alguém guardou uma
+   * estante sua" manda quem montou cinco estantes ir procurar em qual delas,
+   * e é o tipo de aviso que ensina a ignorar o sino.
+   */
+  estanteNome: string | null;
+  estanteSlug: string | null;
 };
 
 export async function getNovidades(viewer: Viewer): Promise<Novidade[]> {
@@ -65,11 +74,14 @@ export async function getNovidades(viewer: Viewer): Promise<Novidade[]> {
     image: string | null;
     titulo: string | null;
     slug: string | null;
+    estante_nome: string | null;
+    estante_slug: string | null;
   }>(sql`
     (
       select 'seguiu'::text as tipo, f.created_at as quando,
              u.handle, u.display_name as name, u.image,
-             null::text as titulo, null::text as slug
+             null::text as titulo, null::text as slug,
+             null::text as estante_nome, null::text as estante_slug
         from follows f
         join users u on u.id = f.follower_id
        where f.followee_id = ${viewer!.id}::uuid
@@ -79,7 +91,8 @@ export async function getNovidades(viewer: Viewer): Promise<Novidade[]> {
     (
       select 'convidado'::text as tipo, u.created_at as quando,
              u.handle, u.display_name as name, u.image,
-             null::text as titulo, null::text as slug
+             null::text as titulo, null::text as slug,
+             null::text as estante_nome, null::text as estante_slug
         from users u
        where u.invited_by = ${viewer!.id}::uuid
          and u.deleted_at is null and u.banned_at is null
@@ -88,11 +101,33 @@ export async function getNovidades(viewer: Viewer): Promise<Novidade[]> {
     (
       select 'recomendou'::text as tipo, r.created_at as quando,
              u.handle, u.display_name as name, u.image,
-             w.title as titulo, w.slug as slug
+             w.title as titulo, w.slug as slug,
+             null::text as estante_nome, null::text as estante_slug
         from recommendations r
         join users u on u.id = r.from_user_id
         join works w on w.id = r.work_id
        where r.to_user_id = ${viewer!.id}::uuid
+         and u.deleted_at is null and u.banned_at is null
+    )
+    union all
+    (
+      /**
+       * GUARDOU A SUA ESTANTE. Quem monta curadoria boa gasta horas e não
+       * recebia notícia nenhuma de que alguém achou útil. Este é o aviso que
+       * faltava, e ele diz QUAL estante: "guardou uma estante sua" manda a
+       * pessoa procurar em qual, e sino que dá trabalho é sino que se ignora.
+       *
+       * O 'c.user_id = viewer' é o que faz este ramo ser só sobre as SUAS
+       * estantes, e ele é a autorização, no SQL, como em toda leitura daqui.
+       */
+      select 'guardou'::text as tipo, cs.saved_at as quando,
+             u.handle, u.display_name as name, u.image,
+             null::text as titulo, null::text as slug,
+             c.name as estante_nome, c.slug as estante_slug
+        from collection_saves cs
+        join collections c on c.id = cs.collection_id
+        join users u on u.id = cs.user_id
+       where c.user_id = ${viewer!.id}::uuid
          and u.deleted_at is null and u.banned_at is null
     )
     order by quando desc
@@ -107,5 +142,7 @@ export async function getNovidades(viewer: Viewer): Promise<Novidade[]> {
     image: r.image,
     livroTitulo: r.titulo,
     livroSlug: r.slug,
+    estanteNome: r.estante_nome,
+    estanteSlug: r.estante_slug,
   }));
 }
