@@ -29,7 +29,7 @@
     "brand": "node scripts/brand.mjs"
   },
   "dependencies": {
-    "@sentry/nextjs": "^10.67.0",
+    "@sentry/nextjs": "^10.69.0",
     "@vercel/blob": "^2.6.1",
     "better-auth": "^1.6.25",
     "drizzle-orm": "^0.45.2",
