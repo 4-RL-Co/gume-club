@@ -53,7 +53,7 @@ export default async function Queridinhos() {
         </h1>
         <p className="voice mt-5 max-w-2xl text-[17px] leading-relaxed text-[var(--color-ink-soft)]">
           Os livros que a comunidade mais adorou, na ordem do amor recebido. Ninguém edita esta
-          lista: cada &quot;adorei&quot; público conta um voto, e ela se refaz a cada visita.
+          lista: cada &quot;adorei&quot; conta um voto, e ela se refaz a cada visita.
         </p>
       </header>
 

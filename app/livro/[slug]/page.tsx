@@ -110,10 +110,18 @@ export default async function BookPage({
      * quando ele está no top 100.
      *
      * Tudo contagem sobre um LIVRO, nunca sobre gente (curadoria fala de gosto;
-     * placar falaria de esforço), e SÓ o que é público entra: a linha privada de
-     * alguém não vira estatística de ninguém, nem anônima. A posição usa o MESMO
-     * desempate de lib/queridinhos.ts (mais adorados primeiro, título como
-     * desempate), senão a coroa daqui discordaria da lista de lá.
+     * placar falaria de esforço).
+     *
+     * ═══ A REGRA DE VISIBILIDADE MUDOU, E ELA MORA EM lib/queridinhos.ts ═══
+     *
+     * VEREDITO (adorei, gostei) conta pública OU privada; ESTANTE (leram, em
+     * quantas) só conta pública. O porquê está inteiro no cabeçalho daquele
+     * arquivo, com o custo de privacidade escrito em voz alta.
+     *
+     * As duas telas TÊM que usar a mesma régua. Se a de lá contar privado e a
+     * daqui não, a coroa desta página aparece num livro que a lista de lá põe em
+     * outro lugar, e o leitor vê o app discordando de si mesmo. `lib/queridinhos.sql.test.ts`
+     * compara as duas e quebra o build se elas divergirem.
      */
     db
       .execute<{ leram: number; estantes: number; gostaram: number; adoraram: number; posicao: number | null }>(sql`
@@ -121,7 +129,7 @@ export default async function BookPage({
           select r.work_id, count(*) filter (where r.value = 5)::int as adoraram
             from ratings r
             join users u on u.id = r.user_id
-           where r.visibility = 'public' and u.deleted_at is null and u.banned_at is null
+           where u.deleted_at is null and u.banned_at is null
            group by r.work_id
         )
         select
@@ -152,7 +160,6 @@ export default async function BookPage({
              join users u on u.id = r.user_id
             where r.work_id = ${book.workId}::uuid
               and r.value >= 4
-              and r.visibility = 'public'
               and u.deleted_at is null and u.banned_at is null) as gostaram,
           coalesce((select p.adoraram from publico p where p.work_id = ${book.workId}::uuid), 0) as adoraram,
           (select case when meu.adoraram is null or meu.adoraram = 0 then null else (
