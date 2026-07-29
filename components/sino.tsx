@@ -120,6 +120,24 @@ function Item({ n, onIr }: { n: Novidade; onIr: () => void }) {
           </Link>{" "}
           {n.tipo === "seguiu" && "começou a te seguir"}
           {n.tipo === "convidado" && "entrou no Gume pelo seu convite"}
+          {/* GUARDOU, e o aviso diz QUAL estante: quem montou cinco não deveria
+              precisar abrir as cinco para descobrir de qual se trata. */}
+          {n.tipo === "guardou" && (
+            <>
+              guardou a sua estante{" "}
+              {n.estanteSlug ? (
+                <Link
+                  href={`/estante/${n.estanteSlug}`}
+                  onClick={onIr}
+                  className="voice text-[14px] text-[var(--color-ink)] hover:underline"
+                >
+                  {n.estanteNome}
+                </Link>
+              ) : (
+                <span className="text-[var(--color-ink)]">{n.estanteNome}</span>
+              )}
+            </>
+          )}
           {n.tipo === "recomendou" && (
             <>
               te recomendou{" "}

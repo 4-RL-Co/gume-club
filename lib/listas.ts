@@ -16,14 +16,32 @@ import { LIMITS, clamp } from "@/lib/limits";
  *  GUARDAR a estante boa, e a vitrine do explorar mostra estantes com cara de
  *  estante: capas, nome, descrição e quem fez.
  *
- *  ═══ GUARDAR NUNCA VIRA NÚMERO ═══
+ *  ═══ GUARDAR VIRA NÚMERO, E ISSO MUDOU EM 2026-07-28 ═══
  *
- *  Guardar é endosso, e endosso contado é curtida com outro nome: "guardada por
- *  12 pessoas" é exatamente o contador que o README promete não ter. Então a
- *  regra deste módulo é estrutural: NENHUMA consulta conta `collection_saves`.
- *  Quem guarda vê o que guardou; quem fez recebe o crédito pelo nome na estante
- *  guardada; e quantas vezes, ninguém sabe, nem o dono. Um teste varre este
- *  arquivo e quebra o build se uma contagem nascer aqui.
+ *  Este arquivo dizia o contrário, com todas as letras: "guardar nunca vira
+ *  número", e um teste quebrava o build se alguma consulta contasse
+ *  `collection_saves`. A migration 0052 diz a mesma coisa, e ela é história:
+ *  migration não se edita, e o que valia quando ela rodou está escrito ali.
+ *
+ *  O dono reverteu, e o argumento é dele: **guardar não é curtir.** Curtir custa
+ *  um toque e não compromete ninguém. Guardar é pôr a curadoria de outra pessoa
+ *  dentro do seu perfil, assinada com o nome dela, do lado das suas. É um gesto
+ *  com preço, e um gesto com preço contado não vira vaidade: vira sinal.
+ *
+ *  E a curadoria é o que o Gume quer que aconteça mais. Quem monta uma estante
+ *  boa gasta horas e não recebia nada de volta, nem sequer a notícia de que
+ *  alguém achou útil.
+ *
+ *  ═══ A LINHA NÃO SUMIU: ELA FICOU MAIS FINA ═══
+ *
+ *  O que continua proibido, e agora é o teste que defende: contagem de gente
+ *  sobre LEITURA. Curtida em resenha, contador de seguidores, "12 pessoas leram
+ *  este livro", placar de quem leu mais. A recusa do README vale inteira ali, e
+ *  é ali que ela sempre importou: leitura é íntima, curadoria é pública por
+ *  natureza (ela já nasce com o nome de quem fez na testa).
+ *
+ *  Contar LIVRO sempre foi permitido (o card conta `collection_items` desde
+ *  sempre). Agora contar QUEM GUARDOU também é, e só isso.
  *
  *  ═══ VISIBILIDADE, COMO EM TODO LUGAR ═══
  *
@@ -47,8 +65,13 @@ export type ListaCard = {
   ranked: boolean;
   /** Até cinco capas, na ordem da estante. É o leque do card. */
   capas: CapaDeLista[];
-  /** Quantos livros a estante tem. Contagem de LIVRO, nunca de gente. */
+  /** Quantos livros a estante tem. */
   livros: number;
+  /**
+   * Quantas pessoas guardaram esta estante. Ver o cabeçalho: guardar não é
+   * curtir, e o dono decidiu que este número existe para incentivar curadoria.
+   */
+  guardadas: number;
   dono: { handle: string; name: string | null; image: string | null };
 };
 
@@ -67,6 +90,10 @@ function cardSelect(viewer: Viewer) {
            u.image as dono_image,
            (select count(*)::int from collection_items ci
              where ci.collection_id = collections.id) as livros,
+           -- QUEM GUARDOU, contado. Ver o cabeçalho: mudou em 2026-07-28, e a
+           -- linha que ficou é "não se conta gente sobre LEITURA".
+           (select count(*)::int from collection_saves cs
+             where cs.collection_id = collections.id) as guardadas,
            coalesce((
              select json_agg(json_build_object(
                       'coverUrl', c.cover_url, 'title', c.title, 'author', c.author))
@@ -95,7 +122,7 @@ function cardSelect(viewer: Viewer) {
 type CardRow = {
   id: string; slug: string; name: string; description: string | null; ranked: boolean;
   dono_handle: string; dono_name: string | null; dono_image: string | null;
-  livros: number; capas: CapaDeLista[];
+  livros: number; guardadas: number; capas: CapaDeLista[];
 };
 
 function paraCard(r: CardRow): ListaCard {
@@ -107,6 +134,7 @@ function paraCard(r: CardRow): ListaCard {
     ranked: r.ranked,
     capas: r.capas,
     livros: r.livros,
+    guardadas: r.guardadas,
     dono: { handle: r.dono_handle, name: r.dono_name, image: r.dono_image },
   };
 }
@@ -438,4 +466,50 @@ export async function jaGuardei(viewer: Viewer, collectionId: string): Promise<b
     ))
     .limit(1);
   return Boolean(row);
+}
+
+/** Um rosto na lista de quem guardou. Nome e cara, nunca e-mail nem quando. */
+export type QuemGuardou = { handle: string; name: string | null; image: string | null };
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  QUEM GUARDOU ESTA ESTANTE. SÓ PARA QUEM MONTOU ELA.
+ *
+ *  O número é público (ver o cabeçalho deste arquivo); a LISTA não é. São coisas
+ *  diferentes, e a diferença é a mesma que o Gume já faz no convite: a página do
+ *  perfil mostra quem entrou pelo seu link **só para você**, porque quem te deu
+ *  crédito não pediu para virar vitrine de ninguém.
+ *
+ *  Guardar uma estante é um gesto público no perfil de quem guardou (a estante
+ *  aparece lá, com o crédito de quem fez). Aparecer numa lista de "seguidores da
+ *  minha curadoria", na tela de outra pessoa, é outra coisa, e ninguém consentiu
+ *  com ela.
+ *
+ *  ═══ A AUTORIZAÇÃO É NO SQL, E DEVOLVE VAZIO ═══
+ *
+ *  A checagem de dono está DENTRO da consulta (`c.user_id = viewer`), e não numa
+ *  linha de JavaScript antes dela: quem pedir a lista de uma estante alheia
+ *  recebe uma lista vazia, e não um erro. Erro contaria que a estante existe e
+ *  que ela tem gente dentro, o que já é contar demais.
+ *
+ *  E some quem foi banido ou apagou a conta, como em toda leitura de gente.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export async function quemGuardou(
+  viewer: Viewer,
+  collectionId: string,
+): Promise<QuemGuardou[]> {
+  if (!viewer) return [];
+
+  return db.execute<QuemGuardou>(sql`
+    select u.handle, u.display_name as name, u.image
+      from collection_saves cs
+      join collections c on c.id = cs.collection_id
+      join users u on u.id = cs.user_id
+     where cs.collection_id = ${collectionId}::uuid
+       and c.user_id = ${viewer.id}::uuid
+       and u.deleted_at is null
+       and u.banned_at is null
+     order by cs.saved_at desc
+     limit 200`);
 }
