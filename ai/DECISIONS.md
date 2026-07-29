@@ -2539,3 +2539,18 @@ O que existia antes, e caiu: `lib/listas.ts` dizia "guardar nunca vira número",
 - **Os dois READMEs foram atualizados** (PT e EN), nas duas linhas que prometiam o contrário. Tela nova prometendo uma coisa e README prometendo outra é o pior dos dois mundos.
 
 A trava de IDOR foi mutada para provar que pega: sem a checagem de dono no SQL, o teste fica vermelho.
+
+---
+
+**2026-07-29: O Top 100 passa a contar o "adorei" privado. Veredito conta sempre; estante, só se for pública.**
+
+O dono viu a lista errada e relatou: um livro com dois "adorei" aparecendo atrás de vários com um. Era a **Saga de Njáll**, na 22ª posição.
+
+A investigação confirmou pelos números da produção: **da 5ª posição em diante a lista estava em ordem alfabética**, ou seja, todos empatados em um voto. O Njáll estava no meio desse bloco, contando UM. A consulta estava certa (ordena por contagem, desempata por título); o que estava errado era o que ela contava: só `visibility = 'public'`, e um dos dois "adorei" do livro era privado.
+
+- **A regra nova tem uma linha no meio.** VEREDITO (adorei, gostei) conta pública ou privada: é opinião sobre o LIVRO, agregada sobre a comunidade inteira, e uma lista de gosto que ignora metade dos votos não é o retrato do gosto, é o retrato de quem deixou a nota aberta. ESTANTE (quantos leram, em quantas estantes mora) continua só pública: estante é um LUGAR que pertence a uma pessoa, e não uma opinião sobre o livro.
+- **`adoraram` e `gostaram` andam juntas por ARITMÉTICA, e não por gosto.** `gostaram` é `value >= 4`, que inclui os adorei. Se uma contasse privado e a outra não, a tela mostraria "3 adoraram" ao lado de "2 gostaram ou adoraram", que é impossível, e o leitor concluiria que o app não sabe contar.
+- **As duas telas foram mudadas juntas.** A mesma conta existe em `lib/queridinhos.ts` (a lista) e em `app/livro/[slug]/page.tsx` (a coroa e a posição). São consultas de formatos diferentes e não dá para unificar sem piorar as duas, então nasceu `lib/queridinhos.sql.test.ts`, que LÊ o código da página e quebra o build se a régua de visibilidade divergir. Sem isso, a lista põe o livro em quinto, a página dele diz outra coisa, e o app discorda de si mesmo em silêncio.
+- **A frase da tela foi corrigida junto.** `/queridinhos` dizia "cada 'adorei' público conta um voto". Virou "cada 'adorei' conta um voto".
+
+**O que isso custa, e está escrito no código:** um livro com UM veredito no Gume inteiro, e ele privado, passa a aparecer com "1". Ninguém sabe quem, mas alguém que soubesse que só uma pessoa tem aquele livro poderia deduzir a nota dela. O app permite estante pública com nota privada, então essa combinação existe. É estreito e é real; foi apresentado ao dono e ele decidiu assim, porque a alternativa é uma lista que mente sobre o gosto da comunidade. A volta atrás é uma linha.
