@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { MINIMO_CENTAVOS, reais, type Tier } from "@/lib/apoio";
 
 /**
@@ -11,6 +12,17 @@ import { MINIMO_CENTAVOS, reais, type Tier } from "@/lib/apoio";
  *  para lá. Nenhum dado de cartão passa por este arquivo, e nenhuma chave do Stripe
  *  existe no cliente. Apoio não destrava nada, então o navegador não precisa falar com o
  *  Stripe, só ir até ele.
+ *
+ *  ═══ O PREÇO APARECE PARA QUEM NÃO ESTÁ LOGADO. O BOTÃO É QUE PEDE SESSÃO ═══
+ *
+ *  A tela inteira ficava atrás do login, e isso escondia o preço: para saber que custa
+ *  R$ 4,90, a pessoa precisava criar uma conta. Ninguém cria conta para descobrir quanto
+ *  custa uma coisa; ela fecha a aba.
+ *
+ *  Agora quem não entrou vê os três valores e o campo, e o clique leva ao entrar. A
+ *  sessão continua obrigatória, e continua sendo o servidor que a exige: estes componentes
+ *  não guardam nada, e um `logado` mentiroso vindo do navegador só faria a pessoa dar de
+ *  cara com um 401. Ver as rotas em app/api/checkout.
  * ════════════════════════════════════════════════════════════════════
  */
 
@@ -35,12 +47,64 @@ async function abrirCheckout(url: string, corpo: unknown): Promise<string> {
   return dados.url;
 }
 
-export function AssinarBotao({ tier, rotulo, preco }: { tier: Tier; rotulo: string; preco: string }) {
+/** A moldura de um plano. A mesma caixa, com ou sem sessão, para a tela não pular. */
+function Plano({
+  rotulo,
+  preco,
+  children,
+}: {
+  rotulo: string;
+  preco: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col">
+      {children}
+      <span className="sr-only">
+        {rotulo}, {preco} por mês
+      </span>
+    </div>
+  );
+}
+
+const CAIXA =
+  "rounded-[var(--radius-control)] border border-[var(--color-rule)] px-4 py-3.5 text-left transition-colors hover:border-[var(--color-colaborar)] disabled:opacity-40";
+
+export function AssinarBotao({
+  tier,
+  rotulo,
+  preco,
+  logado,
+}: {
+  tier: Tier;
+  rotulo: string;
+  preco: string;
+  logado: boolean;
+}) {
   const [pendente, começar] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
 
+  const miolo = (
+    <>
+      <span className="block text-[15px] font-medium text-[var(--color-ink)]">{rotulo}</span>
+      <span className="mt-1 block text-[13px] text-[var(--color-ink-soft)]">
+        {pendente ? "Um momento" : `${preco} por mês`}
+      </span>
+    </>
+  );
+
+  if (!logado) {
+    return (
+      <Plano rotulo={rotulo} preco={preco}>
+        <Link href="/entrar" className={CAIXA}>
+          {miolo}
+        </Link>
+      </Plano>
+    );
+  }
+
   return (
-    <div className="flex flex-col">
+    <Plano rotulo={rotulo} preco={preco}>
       <button
         disabled={pendente}
         onClick={() =>
@@ -53,19 +117,16 @@ export function AssinarBotao({ tier, rotulo, preco }: { tier: Tier; rotulo: stri
             }
           })
         }
-        className="rounded-[var(--radius-control)] border border-[var(--color-rule)] px-4 py-3 text-left transition-colors hover:border-[var(--color-colaborar)] disabled:opacity-40"
+        className={CAIXA}
       >
-        <span className="block text-[15px] font-medium text-[var(--color-ink)]">{rotulo}</span>
-        <span className="mt-1 block text-[13px] text-[var(--color-ink-soft)]">
-          {pendente ? "Um momento" : `${preco} por mês`}
-        </span>
+        {miolo}
       </button>
       {erro && <p className="mt-2 text-[13px] text-[var(--color-perigo)]">{erro}</p>}
-    </div>
+    </Plano>
   );
 }
 
-export function AvulsoForm() {
+export function AvulsoForm({ logado }: { logado: boolean }) {
   /** Em REAIS na tela, e em centavos no servidor. Ninguém digita centavos. */
   const [valor, setValor] = useState("20");
   const [pendente, começar] = useTransition();
@@ -73,6 +134,33 @@ export function AvulsoForm() {
 
   const centavos = Math.round(Number(valor.replace(",", ".")) * 100);
   const valido = Number.isFinite(centavos) && centavos >= MINIMO_CENTAVOS;
+
+  const campo = (
+    <label className="flex items-center gap-2">
+      <span className="text-[15px] text-[var(--color-ink-soft)]">R$</span>
+      <input
+        inputMode="decimal"
+        value={valor}
+        onChange={(e) => setValor(e.target.value)}
+        aria-label="quanto você quer apoiar, em reais"
+        className="w-28 rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[15px] text-[var(--color-ink)]"
+      />
+    </label>
+  );
+
+  const BOTAO =
+    "mt-4 inline-block rounded-[var(--radius-control)] border border-[var(--color-rule)] px-4 py-2.5 text-[14px] font-medium text-[var(--color-ink)] transition-colors hover:border-[var(--color-colaborar)] disabled:opacity-40";
+
+  if (!logado) {
+    return (
+      <div className="mt-4">
+        {campo}
+        <Link href="/entrar" className={BOTAO}>
+          Apoiar uma vez
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -91,21 +179,9 @@ export function AvulsoForm() {
       }}
       className="mt-4"
     >
-      <label className="flex items-center gap-2">
-        <span className="text-[15px] text-[var(--color-ink-soft)]">R$</span>
-        <input
-          inputMode="decimal"
-          value={valor}
-          onChange={(e) => setValor(e.target.value)}
-          className="w-28 rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[15px] text-[var(--color-ink)]"
-        />
-      </label>
+      {campo}
 
-      <button
-        type="submit"
-        disabled={pendente || !valido}
-        className="mt-4 rounded-[var(--radius-control)] border border-[var(--color-rule)] px-4 py-2.5 text-[14px] font-medium text-[var(--color-ink)] transition-colors hover:border-[var(--color-colaborar)] disabled:opacity-40"
-      >
+      <button type="submit" disabled={pendente || !valido} className={BOTAO}>
         {pendente ? "Um momento" : "Apoiar uma vez"}
       </button>
 
