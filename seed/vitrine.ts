@@ -53,15 +53,20 @@ console.log("\n1. a pessoa\n");
 
 const [vitrine] = await sql`
   insert into users (handle, display_name, email, email_verified, bio,
-                     librarian_tier, moderator_at, is_supporter, moldura)
+                     librarian_tier, moderator_at, avulso_badge_until, moldura)
   values ('vitrine', 'Vitrine', 'vitrine@gume.local', true,
           'Um perfil de mentira, para olhar de verdade. Todas as insígnias, as duas escadas, e a moldura de apoiador.',
           -- BIBLIOTECÁRIA e MODERADORA: estes dois são PAPÉIS, e papel se dá.
           -- Os outros cinco são consequência, e aparecem sozinhos lá embaixo.
-          2, now(), true, 'apoiador')
+          --
+          -- A de APOIADORA vinha de is_supporter, que não existe mais: quem apoia é
+          -- calculado de assinatura viva ou avulso no prazo (ver lib/apoio.ts). Aqui a
+          -- vitrine ganha um avulso com validade longa, e não uma assinatura de mentira:
+          -- é uma coluna de data, sem precisar inventar um id do Stripe que não existe.
+          2, now(), now() + interval '365 days', 'apoiador')
   on conflict (handle) do update
      set display_name = excluded.display_name,
-         is_supporter = excluded.is_supporter,
+         avulso_badge_until = excluded.avulso_badge_until,
          moldura      = excluded.moldura,
          librarian_tier = excluded.librarian_tier,
          moderator_at = excluded.moderator_at,

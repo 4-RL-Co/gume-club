@@ -52,7 +52,29 @@ export const users = pgTable("users", {
    */
   coverUrl: text("cover_url"),
   accentColor: text("accent_color"),
-  isSupporter: boolean("is_supporter").notNull().default(false),
+  /**
+   * O cliente no Stripe. Não é segredo, e não autoriza nada sozinho: é o vínculo entre
+   * uma pessoa daqui e um `cus_...` de lá, para o checkout não criar um cliente novo a
+   * cada apoio. Único, porque dois leitores no mesmo cliente seria um pagando a insígnia
+   * do outro.
+   */
+  stripeCustomerId: text("stripe_customer_id"),
+  /**
+   * APARECER NA LISTA DE APOIADORES. Opt-in, e o padrão é não aparecer.
+   *
+   * Pagar não é consentir em ser publicado. Quem quiser aparecer marca a caixa em
+   * /perfil, e /contribuidores só mostra quem marcou.
+   */
+  supporterPublic: boolean("supporter_public").notNull().default(false),
+  /**
+   * Até quando o apoio AVULSO vale. Cada pagamento empurra 30 dias para frente, e eles
+   * somam em vez de se sobrescrever. Ver ehApoiador() e estenderAvulso(), em lib/apoio.ts.
+   *
+   * Não existe `is_supporter`: quem apoia é CALCULADO desta data e das assinaturas vivas.
+   * Um booleano guardado mentiria no dia 31, quando o avulso vence e ninguém manda
+   * webhook nenhum porque não aconteceu nada.
+   */
+  avulsoBadgeUntil: timestamp("avulso_badge_until", { withTimezone: true }),
   /**
    * O e-mail foi verificado.
    *
@@ -624,4 +646,74 @@ export const badgeGrants = pgTable("badge_grants", {
 }, (t) => [
   uniqueIndex("badge_grants_uma_por_pessoa").on(t.userId, t.badge).where(sql`${t.revokedAt} is null`),
   check("badge_grants_badge", sql`${t.badge} = 'idealizador'`),
+]);
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  O APOIO. Três tabelas, e NENHUM booleano dizendo "esta pessoa apoia".
+ *
+ *  Quem apoia é uma PERGUNTA, respondida na hora por ehApoiador() em lib/apoio.ts:
+ *  existe assinatura viva, ou o avulso ainda não venceu. Nada guardado, nada para
+ *  ficar velho, nada para alguém lembrar de limpar.
+ *
+ *  E o que está aqui é ESPELHO do Stripe, nunca fonte. A fonte é o Stripe, e o webhook
+ *  reconfirma com ele antes de gravar: um POST que chega pela internet dizendo "fulano
+ *  pagou" é uma campainha, e não uma prova.
+ * ════════════════════════════════════════════════════════════════════
+ */
+
+export const stripeSubscription = pgTable("stripe_subscription", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  stripeSubscriptionId: text("stripe_subscription_id").notNull().unique(),
+  priceId: text("price_id").notNull(),
+  /**
+   * Marcador, Lombada, Capa Dura. Os três dão a MESMA insígnia: o tier existe só para a
+   * pessoa saber o que assinou. Nada lê isto para decidir o que alguém pode fazer, e
+   * nada pode passar a ler. Apoio não destrava função nenhuma.
+   */
+  tier: text("tier").notNull(),
+  /** O status cru do Stripe. Quais valem insígnia é regra de lib/apoio.ts, e só de lá. */
+  status: text("status").notNull(),
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index("stripe_subscription_user").on(t.userId, t.status),
+  check("stripe_subscription_tier", sql`${t.tier} in ('marcador', 'lombada', 'capadura')`),
+]);
+
+/**
+ * Um apoio de valor livre. O valor é guardado por honestidade contábil, e NUNCA aparece
+ * para ninguém além de quem pagou: a lista de apoiadores não mostra, não ordena e não
+ * soma. Não existe apoiar mais, é sim ou não.
+ */
+export const stripeOneTimeSupport = pgTable("stripe_one_time_support", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  stripeCheckoutSessionId: text("stripe_checkout_session_id").notNull().unique(),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  amountCents: integer("amount_cents").notNull(),
+  currency: text("currency").notNull().default("brl"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index("stripe_one_time_support_user").on(t.userId, t.createdAt),
+  check("stripe_one_time_support_amount", sql`${t.amountCents} > 0`),
+]);
+
+/**
+ * A trava contra o evento repetido.
+ *
+ * O Stripe REENVIA, e está certo em reenviar: uma resposta que se perdeu na volta, um
+ * deploy no meio. Sem isto, um avulso reenviado daria 60 dias de insígnia por um
+ * pagamento de 30.
+ *
+ * A linha entra DEPOIS de o efeito ter sido aplicado, e junto com ele. Marcar antes
+ * seria pior que não marcar: um erro no meio perderia o pagamento em silêncio.
+ */
+export const stripeProcessedEvent = pgTable("stripe_processed_event", {
+  eventId: text("event_id").primaryKey(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index("stripe_processed_event_created_at").on(t.createdAt),
 ]);

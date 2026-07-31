@@ -12,12 +12,11 @@ import { RATES, limitar, quem, varrer } from "@/lib/rate-limit";
  *  ═══ POR QUE A CONTAGEM MUDOU DE LUGAR ═══
  *
  *  Ela morava no `middleware.ts`, num `Map` na memória do processo. Isso funcionava num
- *  servidor só. Em serverless, cada requisição pode cair num processo diferente, e um
- *  balde por processo é um balde que não conta nada: mil tentativas espalhadas por
- *  cinquenta instâncias viram cinquenta baldes de vinte, nenhum passa do teto de dez, e
- *  **as mil tentativas passam**.
+ *  servidor só. Com mais de uma instância, um balde por processo é um balde que não
+ *  conta nada: mil tentativas espalhadas entre as réplicas viram vários baldes pequenos,
+ *  nenhum passa do teto de dez, e **as mil tentativas passam**.
  *
- *  E não dava para só trocar o Map pelo banco lá: na Vercel o middleware roda no runtime
+ *  E não dava para só trocar o Map pelo banco lá: o middleware do Next roda no runtime
  *  Edge, que não fala com o Postgres. Então o limite veio para cá, que roda em Node, é
  *  dono do risco, e é o único caminho por onde uma senha pode ser adivinhada.
  *

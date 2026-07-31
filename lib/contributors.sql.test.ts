@@ -309,7 +309,17 @@ describe("insígnia é binária: ela não carrega número nenhum", () => {
     for (const consulta of codigo.split(/\bsql`/).slice(1)) {
       const q = (consulta.split("`")[0] ?? "").replace(/^[ \t]*--[^\n]*/gm, " ");
 
-      const olhaApoio = /is_supporter/i.test(q);
+      /**
+       * Quem apoia deixou de ser um booleano guardado (`is_supporter`) e virou uma
+       * pergunta feita na hora, por ehApoiador(), em lib/apoio.ts. A trava é a MESMA, e
+       * só passou a reconhecer a marca nova: uma consulta que olha para o apoio é a que
+       * chama ehApoiador() ou filtra por supporter_public.
+       *
+       * Se esta regex parar de casar com a consulta de apoio, a trava vira decoração:
+       * ela passaria a dizer "nenhuma consulta mistura dinheiro com trabalho" porque não
+       * enxerga nenhuma consulta de dinheiro. O teste logo abaixo cobre isso.
+       */
+      const olhaApoio = /ehApoiador|supporter_public|is_supporter/i.test(q);
       const contaTrabalho = /revisions|count\(/i.test(q);
 
       expect(
@@ -327,6 +337,39 @@ describe("insígnia é binária: ela não carrega número nenhum", () => {
         ).toBe(false);
       }
     }
+  });
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  A TRAVA DE CIMA PRECISA ENXERGAR ALGUMA COISA.
+   *
+   *  Ela varre as consultas e reprova a que misturar dinheiro com trabalho. Só que uma
+   *  trava assim passa por um motivo bom (nenhuma consulta mistura) e por um motivo
+   *  péssimo, indistinguível do bom: ela não reconhece mais NENHUMA consulta como sendo
+   *  de dinheiro, e aprova tudo em silêncio.
+   *
+   *  Foi o que quase aconteceu quando `is_supporter` deixou de existir: a regex
+   *  continuaria procurando uma coluna que ninguém mais usa, e nunca mais reprovaria nada.
+   *
+   *  Este teste é o contrapeso: existe pelo menos UMA consulta de apoio para a trava
+   *  morder. No dia em que a marca mudar de nome de novo, quebra aqui, e não em silêncio.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  it("a trava enxerga a consulta de apoio, e não passa por não achar nenhuma", () => {
+    const codigo = readFileSync(new URL("../lib/contributors.ts", import.meta.url), "utf8");
+
+    const consultasDeApoio = codigo
+      .split(/\bsql`/)
+      .slice(1)
+      .map((c) => (c.split("`")[0] ?? "").replace(/^[ \t]*--[^\n]*/gm, " "))
+      .filter((q) => /ehApoiador|supporter_public|is_supporter/i.test(q));
+
+    expect(
+      consultasDeApoio.length,
+      "nenhuma consulta de apoio foi reconhecida. Ou a lista de apoiadores sumiu, ou ela " +
+        "passou a marcar quem apoia de um jeito que a trava acima não enxerga. No segundo " +
+        "caso a trava está aprovando tudo sem olhar nada.",
+    ).toBeGreaterThan(0);
   });
 
   /**

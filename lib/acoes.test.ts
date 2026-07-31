@@ -187,9 +187,9 @@ describe("as ações de servidor", () => {
    *  porque toda ação de servidor do Next é um POST. Era estrutura fazendo o trabalho:
    *  uma ação nova nascia protegida sem ninguém lembrar.
    *
-   *  Em serverless isso morre duas vezes: o middleware roda no Edge (que não fala com o
-   *  Postgres) e o balde vivia na memória de um processo que não existe entre duas
-   *  requisições.
+   *  Isso morre duas vezes: o middleware roda no runtime Edge (que não fala com o
+   *  Postgres) e o balde vivia na memória de um processo só, que não conta nada assim que
+   *  existe mais de uma réplica.
    *
    *  O limite desceu para `getActor()` — o portão por onde toda mutação já passava. As
    *  poucas ações que precisam do `Viewer` inteiro (as de papel: moderar, curar, corrigir)

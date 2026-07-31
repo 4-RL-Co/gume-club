@@ -62,6 +62,25 @@ const PUBLICO: Record<string, string> = {
     "o pôster de um perfil. Lê linha de leitor, e por isso filtra com visibleTo(null, ...): só o que um estranho já podia ver na página",
   "app/estante/[slug]/opengraph-image.tsx":
     "o pôster de uma estante. Idem: visibleTo(null, ...), e uma estante privada não vira pôster nenhum",
+
+  /*
+   * O AVISO DO STRIPE, e ele é a superfície mais estranha do app: a única em que uma
+   * requisição SEM SESSÃO pode mudar dado de leitor.
+   *
+   * Quem bate aqui é um servidor do Stripe, e ele nunca vai ter cookie: getViewer()
+   * devolveria null sempre, e exigi-lo tornaria o webhook impossível de existir.
+   *
+   * Quem autoriza é a ASSINATURA HMAC sobre o corpo cru, conferida com o segredo do
+   * endpoint antes de a rota olhar para o conteúdo. Sem segredo no ambiente, a rota
+   * responde 404 e não processa nada.
+   *
+   * E a autorização não para na assinatura: para dados de assinatura, a rota vai buscar
+   * o estado atual na API do Stripe antes de gravar, porque um evento assinado ainda pode
+   * estar descrevendo um estado que já mudou. lib/stripe.webhook.test.ts prova que corpo
+   * sem assinatura válida é recusado, e que o mesmo evento duas vezes só conta uma.
+   */
+  "app/api/webhooks/stripe/route.ts":
+    "é o aviso de pagamento do Stripe, que nunca tem sessão. Quem autoriza é o HMAC sobre o corpo cru, conferido com STRIPE_WEBHOOK_SECRET antes de qualquer leitura do conteúdo, e o efeito é idempotente por id de evento. Ver lib/stripe.webhook.test.ts",
 };
 
 function arquivos(dir: string, out: string[] = []): string[] {

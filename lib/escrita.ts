@@ -13,9 +13,10 @@ import { RATES, limitar, varrer } from "@/lib/rate-limit";
  *       POST cobre todas elas de uma vez, inclusive as que ainda não foram escritas.
  *       Uma ação nova nasce protegida sem ninguém lembrar."
  *
- *  Isso morreu no deploy em serverless, por dois motivos ao mesmo tempo: o middleware
- *  roda no Edge (que não fala com o Postgres), e um balde na memória de um processo
- *  efêmero não conta nada. Ver lib/rate-limit.ts.
+ *  Isso morreu quando o limite foi para o banco, por dois motivos ao mesmo tempo: o
+ *  middleware roda no runtime Edge (que não fala com o Postgres), e um balde na memória
+ *  do processo não conta nada assim que existe mais de uma instância. Ver
+ *  lib/rate-limit.ts.
  *
  *  ═══ E COMO ELE FOI RECUPERADO ═══
  *

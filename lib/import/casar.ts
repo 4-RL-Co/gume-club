@@ -54,8 +54,8 @@ export { ehFato } from "@/lib/import/tipos";
  * Procura um livro do arquivo no catálogo. Não escreve nada.
  *
  * Um lote por vez, e o lote vem do cliente: quatrocentos livros são quatrocentas buscas, e
- * quatrocentas buscas não cabem numa requisição serverless — a função morre no meio, e a
- * pessoa vê "erro" depois de esperar dois minutos.
+ * quatrocentas buscas não cabem numa requisição só: ela estoura o tempo, morre no meio, e
+ * a pessoa vê "erro" depois de esperar dois minutos.
  */
 export async function procurarNoCatalogo(livros: LivroImportado[]): Promise<Achado[]> {
   const achados: Achado[] = [];

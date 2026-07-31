@@ -64,8 +64,8 @@ export const FONTES_DE_IMAGEM = [
   /**
    * ═══ E A FOTO QUE A PRÓPRIA PESSOA MANDOU ═══
    *
-   * Em produção ela não mora mais no nosso disco (em serverless não existe disco): ela vai
-   * para o armazenamento de objetos, e volta de um host que NÃO é o nosso.
+   * Em produção ela não mora no nosso disco (ele não sobrevive ao deploy): ela vai para o
+   * armazenamento de objetos, e volta de um host que NÃO é o nosso.
    *
    * Sem esta linha, a CSP bloquearia o rosto de todo mundo que subisse uma foto — que é
    * exatamente o bug que este arquivo existe para matar, recriado por quem o matou, uma

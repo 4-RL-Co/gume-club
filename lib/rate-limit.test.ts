@@ -12,10 +12,9 @@ import { RATES, limitar } from "@/lib/rate-limit";
  *
  *  O limitador era um `Map` na memória. Num servidor só, isso está certo.
  *
- *  No deploy em serverless, não existe "o processo": existe um processo novo, ou um de
- *  uma dúzia mornos, a cada requisição. Um script que tenta mil senhas se espalha por
- *  cinquenta instâncias, cada uma conta vinte, nenhuma passa do teto de dez, e **as mil
- *  tentativas de senha passam**.
+ *  Com mais de uma instância, o balde vira um balde POR INSTÂNCIA. Um script que tenta
+ *  mil senhas se espalha entre as réplicas, cada uma conta o seu punhado, nenhuma passa
+ *  do teto de dez, e **as mil tentativas de senha passam**.
  *
  *  O limite não afrouxa: ele deixa de existir, e continua PARECENDO que existe.
  *
@@ -156,7 +155,7 @@ describe("onde o limite mora", () => {
 
     expect(
       /\blimitar\s*\(|\bhit\s*\(/.test(mw),
-      "o limite voltou para o middleware. Na Vercel ele roda no Edge, que não fala com o " +
+      "o limite voltou para o middleware. Ele roda no runtime Edge, que não fala com o " +
         "Postgres: ou ele quebra, ou alguém o 'conserta' com um Map na memória e o limite " +
         "silenciosamente para de existir de novo.",
     ).toBe(false);

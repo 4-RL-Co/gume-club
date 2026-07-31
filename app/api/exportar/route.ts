@@ -27,8 +27,8 @@ import {
  *
  *  ═══ POR QUE STREAMING, E NÃO UM BUFFER ═══
  *
- *  Alguém com cinco mil livros não pode montar o arquivo inteiro na memória de um processo
- *  serverless. Ele estoura — e estoura JUSTAMENTE para quem tem uma vida de leitura ali
+ *  Alguém com cinco mil livros não pode ter o arquivo inteiro montado na memória do
+ *  servidor. Ela estoura — e estoura JUSTAMENTE para quem tem uma vida de leitura ali
  *  dentro, que é quem mais precisa de levar embora.
  *
  *  A estante sai do banco em lotes, cada lote vira linhas de CSV, e cada linha vai para a

@@ -25,7 +25,7 @@ export async function GET(req: Request) {
   /**
    * ═══ O LIMITE DA BUSCA VEIO PARA CÁ ═══
    *
-   * Ele morava no middleware, na memória do processo. Em serverless isso não conta nada
+   * Ele morava no middleware, na memória do processo, que não conta nada com réplicas
    * (ver lib/rate-limit.ts), e a busca é a rota mais cara que existe aqui: cada tecla vira
    * um trigrama sobre 414 mil edições, e qualquer pessoa, sem conta nenhuma, pode
    * dispará-la num laço.

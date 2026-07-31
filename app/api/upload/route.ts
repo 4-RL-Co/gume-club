@@ -93,10 +93,10 @@ export async function POST(req: Request) {
   /**
    * ═══ ONDE A FOTO FICA NÃO É DECIDIDO AQUI ═══
    *
-   * Isto gravava direto em `public/uploads`. Em serverless, o disco é somente leitura
-   * fora de `/tmp` e some entre requisições: **todo upload falharia**, para todo mundo,
-   * desde o primeiro minuto — e nenhum teste pegaria, porque em desenvolvimento o disco
-   * existe e é gravável.
+   * Isto gravava direto em `public/uploads`. Num container sem disco preservado, o que
+   * for gravado ali some no próximo deploy: a foto subiria e viraria um endereço quebrado
+   * dias depois — e nenhum teste pegaria, porque em desenvolvimento o disco existe, é
+   * gravável, e ninguém reinicia nada.
    *
    * Ver lib/guardar.ts.
    */

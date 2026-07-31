@@ -39,10 +39,16 @@ for (const file of files) {
       failures.push(`${rel}: imports the database from a client component`);
   }
 
-  // 2. a hardcoded secret is a secret. inclui a chave da AbacatePay (apoio): ela mora
+  // 2. a hardcoded secret is a secret. inclui as chaves do Stripe (apoio): elas moram
   //    no env, e uma chave de pagamento colada num arquivo rastreado é pública para
   //    sempre no dia em que o repo é público. Ver .env.example.
-  if (/(sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{20,}|abc_(?:dev|prod)_[a-zA-Z0-9]{16,}|postgres:\/\/[^"'\s]*:[^"'@\s]+@)/.test(src))
+  //
+  //    ═══ O PADRÃO DO STRIPE NÃO ERA PEGO POR ACIDENTE ═══
+  //    A regra tinha `sk-`, com HÍFEN, que é o formato da OpenAI. O Stripe usa
+  //    `sk_live_` e `sk_test_`, com UNDERLINE, e passava batido: a varredura parecia
+  //    proteger a chave de pagamento e não protegia nenhuma. `whsec_` é o segredo do
+  //    webhook, e vazá-lo é deixar qualquer um forjar "fulano pagou".
+  if (/(sk-[a-zA-Z0-9]{20,}|(?:sk|rk)_(?:live|test)_[a-zA-Z0-9]{16,}|whsec_[a-zA-Z0-9]{16,}|ghp_[a-zA-Z0-9]{20,}|postgres:\/\/[^"'\s]*:[^"'@\s]+@)/.test(src))
     failures.push(`${rel}: looks like a hardcoded credential`);
 
   // 3. never build SQL by concatenation. drizzle's sql`` template is fine.

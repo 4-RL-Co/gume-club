@@ -71,10 +71,9 @@ describe("o código por e-mail", () => {
    *
    * ═══ E O LIMITE MUDOU DE CASA, POR CAUSA DO DEPLOY ═══
    *
-   * Ele era chamado no `middleware.ts`. Em serverless isso morre duas vezes: o middleware
-   * roda no Edge (que não fala com o Postgres) e o balde vivia na memória de um processo
-   * que não existe entre duas requisições — mil tentativas se espalham por cinquenta
-   * instâncias e nenhuma passa do teto.
+   * Ele era chamado no `middleware.ts`. Isso morre duas vezes: o middleware roda no
+   * runtime Edge (que não fala com o Postgres) e o balde vivia na memória de um processo
+   * só — com réplicas, mil tentativas se espalham entre elas e nenhuma passa do teto.
    *
    * Agora quem conta é a própria rota de entrada, em Node, no banco. Este teste segue o
    * limite até onde ele foi morar: `app/api/auth/[...all]/route.ts` conta **todo POST**
@@ -220,7 +219,7 @@ describe("o código por e-mail", () => {
      * para o e-mail da vítima, e a caixa de entrada dela viraria o ataque.
      *
      * Por isso existe um segundo limite, por PESSOA — e ele conta no banco, e não na
-     * memória: em serverless, memória de processo é memória de ninguém, e um limite que
+     * memória: com réplicas, memória de processo é memória de ninguém, e um limite que
      * não atravessa instância não é um limite. Ver lib/rate-limit.ts.
      */
     expect(

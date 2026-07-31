@@ -340,11 +340,35 @@ describe("a insígnia de quem paga", () => {
    * Uma insígnia de apoiador que fica para sempre depois de a pessoa cancelar é uma
    * mentira que o app conta todo dia.
    */
+  /**
+   * ═══ E O TESTE FICOU MAIS DURO, E NÃO MAIS FROUXO ═══
+   *
+   * Ele exigia `is_supporter`, um BOOLEANO GRAVADO, e essa coluna não conseguia cumprir
+   * a promessa que este mesmo teste defende. O apoio avulso vale 30 dias, e no dia 31 o
+   * Stripe não manda evento nenhum, porque não aconteceu nada: um booleano ficaria
+   * `true` para sempre, e a insígnia viraria exatamente a mentira que o teste existe para
+   * impedir.
+   *
+   * Agora a exigência é a oposta e mais forte: a insígnia tem que vir de ehApoiador(),
+   * que PERGUNTA na hora (assinatura viva, ou avulso no prazo), e o arquivo não pode
+   * voltar a ler um booleano guardado. A promessa é a mesma; o que mudou é que agora ela
+   * é cumprível.
+   */
   it("ela é lida do apoio de HOJE, e não concedida à mão", () => {
     const badges = readFileSync(new URL("../lib/badges.ts", import.meta.url), "utf8");
-    expect(badges, "o apoiador tem que sair de is_supporter, e não de uma concessão").toMatch(
-      /is_supporter[\s\S]{0,40}as apoiador/,
+
+    expect(badges, "o apoiador tem que sair de ehApoiador(), e não de uma concessão").toMatch(
+      /ehApoiador\(sql`u`\)\}[\s\S]{0,20}as apoiador/,
     );
+
+    // Sem comentários: a proibição é sobre o que a consulta LÊ, e a explicação histórica
+    // acima cita o nome da coluna de propósito.
+    const semComentario = badges.replace(/--[^\n]*/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+    expect(
+      /is_supporter/.test(semComentario),
+      "a insígnia voltou a sair de um booleano guardado. Ele mente no dia em que o apoio " +
+        "vence, porque ninguém manda aviso quando o tempo simplesmente passa.",
+    ).toBe(false);
   });
 });
 
