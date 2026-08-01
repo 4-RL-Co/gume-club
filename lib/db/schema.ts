@@ -259,6 +259,42 @@ export const works = pgTable("works", {
 ]);
 
 /** The object on the shelf. Page counts differ, so progress must know which one. */
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  OS ENDEREÇOS QUE UMA OBRA JÁ TEVE. UM LINK COMPARTILHADO NÃO MORRE.
+ *
+ *  ═══ POR QUE ISTO EXISTE ═══
+ *
+ *  O endereço de uma obra carrega o nome do autor: `metamorfose-sheila-koerich`.
+ *  Quando o autor está ERRADO — e estava, era a tradutora —, corrigir a ficha não
+ *  conserta o endereço, e o endereço é a parte que as pessoas veem, copiam e mandam
+ *  uma para a outra.
+ *
+ *  Trocar o endereço sem mais nada troca uma verruga visível por uma perda
+ *  silenciosa: todo link já compartilhado passa a dar "não encontrado", e quem
+ *  clicou não faz ideia do que aconteceu. **Um link quebrado é pior que um link
+ *  feio**, porque o feio ainda leva ao livro.
+ *
+ *  Então o endereço velho não é apagado: ele vira uma linha aqui, e a página do
+ *  livro redireciona. O link antigo continua chegando no lugar certo, para sempre.
+ *
+ *  ═══ POR QUE UMA TABELA, E NÃO UMA COLUNA ═══
+ *
+ *  Uma obra pode ser renomeada mais de uma vez (o autor errado hoje, o título
+ *  bagunçado amanhã), e cada endereço que ela já teve tem que continuar chegando.
+ *  Uma coluna `slug_antigo` guardaria só o penúltimo, e o antepenúltimo — que
+ *  também está no histórico de alguém — morreria.
+ *
+ *  A chave primária é o slug: dois endereços iguais não podem apontar para obras
+ *  diferentes, ou o redirecionamento passa a ser um sorteio.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export const workOldSlugs = pgTable("work_old_slugs", {
+  slug: text("slug").primaryKey(),
+  workId: uuid("work_id").notNull().references(() => works.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("work_old_slugs_work_idx").on(t.workId)]);
+
 export const editions = pgTable("editions", {
   id: uuid("id").primaryKey().defaultRandom(),
   workId: uuid("work_id").notNull().references(() => works.id, { onDelete: "cascade" }),

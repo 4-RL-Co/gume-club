@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { sql } from "drizzle-orm";
@@ -23,7 +23,7 @@ import { getCorrecoes, souBibliotecario } from "@/lib/corrections";
 import { getFollowees, getRecommender } from "@/lib/social";
 import { getShelvesOf, getCollections } from "@/lib/curation";
 import { getFriendRatings } from "@/lib/ratings";
-import { getBook } from "@/lib/book";
+import { getBook, slugAtualDe } from "@/lib/book";
 import { AvatarLink } from "@/components/avatar";
 import { RememberBook } from "@/components/remember-book";
 import { VerdictOf } from "@/components/veredito";
@@ -73,7 +73,31 @@ export default async function BookPage({
   const [viewer, actor] = await Promise.all([getViewer(), getActorOrNull()]);
   const book = await getBook(slug, viewer, actor?.id ?? null);
 
-  if (!book) notFound();
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  ANTES DE DIZER "NÃO ENCONTRADO", PERGUNTE SE ESTE ENDEREÇO JÁ EXISTIU.
+   *
+   *  O endereço de uma obra carrega o nome do autor, e autor errado acontece: a
+   *  importação gravou a TRADUTORA da Metamorfose como autora, e o endereço nasceu
+   *  `metamorfose-sheila-koerich`. Corrigir a ficha não conserta o endereço — e o
+   *  endereço é a parte que as pessoas copiam e mandam uma para a outra.
+   *
+   *  Sem esta consulta, arrumar o autor QUEBRA todo link já compartilhado, e quem
+   *  clica vê "não encontrado" sem entender por quê. Um link quebrado é pior que um
+   *  link feio: o feio ainda leva ao livro.
+   *
+   *  `permanentRedirect` (308) e não `redirect` (307), porque a mudança é definitiva:
+   *  o navegador e os buscadores passam a guardar o endereço novo em vez de bater
+   *  aqui para sempre. É o que diz a verdade sobre o que aconteceu.
+   *
+   *  Só custa uma consulta a mais no caminho do 404, que é o caminho raro.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  if (!book) {
+    const agora = await slugAtualDe(slug);
+    if (agora) permanentRedirect(`/livro/${agora}${volta ? `?de=${encodeURIComponent(de as string)}` : ""}`);
+    notFound();
+  }
 
   const [friends, recommender, shelves, todasAsEstantes, opinions] = await Promise.all([
     actor ? getFollowees(actor.id) : Promise.resolve([]),

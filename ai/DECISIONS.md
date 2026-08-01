@@ -2690,3 +2690,21 @@ O dono buscou pelo ISBN da Metamorfose da Antofágica, achou, pôs na estante �
 - **A importação sempre gravou** (`lib/import/aplicar.ts`), e é por isso que o buraco era pequeno em produção — 41 de 793 — e passou despercebido: quem importa a estante inteira fica bem; quem cadastra um livro à mão fica com o registro cego. Um bug que só atinge o caminho manual é um bug que o dono encontra sozinho, tarde.
 - **O `coalesce` é quem manda, e é a parte que quase não existiu.** O conserto óbvio — gravar a edição no conflito — traz um bug pior de brinde: quem escolheu a edição a dedo no "qual é a sua" perderia a escolha ao clicar em "lido", porque reprateleirar reescreveria a linha com o palpite da busca. Trocar "o app esqueceu a sua edição" por "o app desfez a sua escolha" é andar para trás. O palpite preenche o branco e nunca sobrescreve uma decisão.
 - **A trava mora em `lib/prateleirar.sql.test.ts`**, contra o Postgres de verdade, porque é lá que o conflito acontece. Quatro casos: a edição entra; reprateleirar não desfaz a escolha; o status muda mesmo assim (proteger a edição não pode congelar outra coisa); e prateleirar SEM edição não apaga a que já existia. Mutado: trocar o `coalesce` por `excluded.edition_id` derruba dois dos quatro.
+
+---
+
+**2026-08-01: O endereço antigo de uma obra continua chegando nela. Migration 0057.**
+
+O endereço de uma obra carrega o nome do autor. Quando o autor está errado — e estava, a importação gravou a TRADUTORA da Metamorfose como autora —, corrigir a ficha **não conserta o endereço**: `metamorfose-sheila-koerich` continuava na barra do navegador, com o nome de quem não escreveu o livro.
+
+O dono pediu para trocar. Trocar e pronto seria substituir uma verruga visível por uma perda silenciosa.
+
+- **Um link quebrado é pior que um link feio.** O feio ainda leva ao livro. Todo link já compartilhado — num grupo, num favorito, num buscador — passaria a dar "não encontrado", e quem clicou não teria como saber por quê. O ganho seria estético e o custo, de outra pessoa.
+- **É TABELA, e não uma coluna `slug_antigo`.** Uma obra pode ser renomeada mais de uma vez, e cada endereço que ela já teve precisa continuar chegando. Uma coluna guardaria só o penúltimo, e o antepenúltimo — que também está no histórico de alguém — morreria em silêncio.
+- **A chave primária é o slug**, então dois endereços iguais não podem apontar para obras diferentes. O banco recusa antes de a gente ter chance de errar, e o redirecionamento nunca vira sorteio.
+- **`renomearObra()` faz as duas coisas numa transação só**, porque são uma coisa. Gravar o novo sem registrar o velho deixa links órfãos; registrar o velho sem trocar o novo deixa uma obra redirecionando para si mesma. Separadas, uma delas falha sozinha um dia e o sintoma aparece no navegador de outra pessoa, meses depois.
+- **O caso que transforma o conserto num bug pior: renomear A→B→A.** Sem cuidado, "A" fica registrado como endereço antigo de uma obra que agora se chama "A", e a página redireciona A para A — laço. O navegador desiste e mostra erro no lugar de um livro que existe: pior que o original, porque antes o link ao menos abria alguma coisa. Por isso o `delete` do endereço novo dentro da transação.
+- **É 308 e não 307.** A mudança é definitiva: buscador e navegador passam a guardar o endereço novo em vez de bater aqui para sempre. O código de status é uma afirmação sobre o mundo, e essa é a verdadeira.
+- **A trava (`lib/enderecos.sql.test.ts`) cobre os dois lados**: o banco (o antigo chega, o laço não nasce) e a TELA — que a página realmente pergunte antes de desistir. Sem essa última, a tabela existiria, os testes passariam, e o leitor continuaria vendo "não encontrado": a trava inteira viraria enfeite. As duas foram mutadas.
+
+**Aplicado em produção:** três obras renomeadas, com os endereços antigos guardados e redirecionando.
