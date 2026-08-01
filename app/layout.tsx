@@ -8,8 +8,9 @@ import { ToastHost } from "@/components/toast-host";
 import { VoltarAoTopo } from "@/components/voltar-ao-topo";
 import { PublicHeader } from "@/components/public-header";
 import { Medicao } from "@/components/medicao";
-import { getViewer } from "@/lib/viewer";
+import { getViewer, getUser } from "@/lib/viewer";
 import { souIdealizador } from "@/lib/authz";
+import { apoioLigado } from "@/lib/stripe";
 import { getCollections } from "@/lib/curation";
 import { souModerador } from "@/lib/moderacao";
 import { podeVerAFila } from "@/lib/torneira";
@@ -84,7 +85,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   // A barra não recebe mais contagem: contagem é de FILTRO, e filtro mora na
   // tela que ele filtra. Ela só precisa das estantes que você inventou.
-  const [shelves, moderador, fila, idealizador, novidades] = await Promise.all([
+  const [eu, shelves, moderador, fila, idealizador, novidades] = await Promise.all([
+    // QUEM ESTÁ DENTRO, dito aqui. A barra não pergunta isso ao navegador: enquanto a
+    // resposta do `useSession()` não chegava, ela desenhava a versão de visitante e
+    // oferecia "Entrar" a quem já tinha entrado. Ver a nota em components/sidebar.tsx.
+    getUser(viewer.id),
     getCollections(viewer, viewer.id),
     // MODERADOR, e não bibliotecário: bibliotecário mexe em ficha de livro, moderador
     // mexe em gente, e os dois cargos deixaram de ser o mesmo. Ver lib/moderacao.ts.
@@ -108,7 +113,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-dvh">
         {/* useSearchParams needs a suspense boundary at the layout level */}
         <Suspense fallback={null}>
-          <Sidebar shelves={shelves} moderador={moderador} fila={fila} idealizador={idealizador} novidades={novidades} />
+          <Sidebar
+            eu={eu && { nome: eu.displayName, handle: eu.handle, image: eu.image }}
+            shelves={shelves}
+            moderador={moderador}
+            fila={fila}
+            idealizador={idealizador}
+            novidades={novidades}
+            apoio={apoioLigado()}
+          />
         </Suspense>
 
         {/* Cmd+K de qualquer tela: achar um livro e pôr na estante é a ação mais

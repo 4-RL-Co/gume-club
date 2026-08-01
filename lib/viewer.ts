@@ -77,15 +77,25 @@ export async function getViewer(): Promise<Viewer> {
 /** One reader, by id. Not a permission: just a name to put on a page. */
 export async function getUser(
   id: string,
-): Promise<{ id: string; handle: string; displayName: string | null } | null> {
+): Promise<{ id: string; handle: string; displayName: string | null; image: string | null } | null> {
   // O `handle` vem junto porque ele é o ENDEREÇO da pessoa: sem ele, montar um link
   // para o próprio perfil exigiria uma segunda consulta em toda tela que precisasse.
-  const rows = await db.execute<{ id: string; handle: string; display_name: string | null }>(sql`
-    select id, handle, display_name from users
+  // A `image` vem pelo mesmo motivo: a barra precisa desenhar a cara de quem está
+  // dentro no primeiro pixel, e não depois de uma ida ao servidor. Ver a nota em
+  // components/sidebar.tsx sobre por que ela não pergunta isso do navegador.
+  const rows = await db.execute<{
+    id: string;
+    handle: string;
+    display_name: string | null;
+    image: string | null;
+  }>(sql`
+    select id, handle, display_name, image from users
      where id = ${id}::uuid and deleted_at is null limit 1
   `);
   const row = rows[0];
-  return row ? { id: row.id, handle: row.handle, displayName: row.display_name } : null;
+  return row
+    ? { id: row.id, handle: row.handle, displayName: row.display_name, image: row.image }
+    : null;
 }
 
 /**

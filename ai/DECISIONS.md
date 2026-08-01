@@ -2590,3 +2590,33 @@ O apoio subiu, o dono apoiou a si mesmo para testar, a insígnia apareceu, e ele
 - **O teste mudou de lado, e não afrouxou.** Ele exigia que quem não pedisse ficasse fora; agora exige que quem apoia entre sem pedir E que quem desmarca saia. O que ele protege é o mesmo: que a escolha da pessoa mande. Só que a escolha que precisa funcionar agora é a de SAIR, e **um opt-out cujo botão de sair não funciona é pior que um opt-in**. Os dois lados foram mutados para provar que quebram.
 - **A migration 0055 não foi editada.** Ela diz o contrário disto, e continua dizendo: migration é história. A 0056 é o que vale.
 - **As linhas existentes viraram `true`, e isso só é aceitável hoje.** O apoio subiu hoje, e ninguém tinha feito uma escolha explícita nessa caixa: não há consentimento sendo sobrescrito porque não havia consentimento registrado. Se esta regra mudar de novo, mude só o DEFAULT e deixe as linhas em paz, ou o `update` apaga a decisão de quem desmarcou de propósito. Está escrito dentro da própria migration, para quem for mexer não precisar achar esta entrada.
+
+---
+
+**2026-08-01: Nenhum painel deste app mora dentro do vidro.**
+
+O dono abriu o Gume no celular — instalado pela tela de início, sem barra de endereço — e não achou o perfil, o sobre, o "quem faz", nem o apoiar. O menu que leva a todos eles **abria e não aparecia.**
+
+A causa não é navegação, é material. O menu era desenhado DENTRO da barra de vidro e subia para fora dela (`absolute bottom-full`). No WebKit — o Safari, e portanto todo app instalado num iPhone — um elemento com `backdrop-filter` **recorta os filhos que passam das bordas dele**. No Chrome do computador ele aparece inteiro.
+
+- **É o segundo bug sem rastro do celular, e é pior que o primeiro.** O da busca (ver `lib/celular.test.ts`) era um botão que não existia. Este é um botão que existe, responde ao toque e abre o nada — e quem toca não conclui "isto está quebrado", conclui "este app não tem perfil". A pessoa não reclama, ela fecha o app.
+- **O bug era invisível de dentro.** Ele não existe no navegador em que o código é escrito. Só existe para quem está no telefone, que foi quem o encontrou. De novo, e pelo mesmo caminho.
+- **A regra que sai daqui é de material, e não deste menu:** um painel que precisa passar da borda de uma caixa de vidro é **irmão** dela, nunca filho. O menu agora é `fixed`, desenhado fora da `<GlassBar>`, e não se pendura em ninguém. `position: fixed` não salva quem é filho: o `backdrop-filter` também cria bloco de contenção, então mudar a classe sem mudar o lugar não teria consertado nada.
+- **Ganhou um apanhador de toque.** Solto na tela, o menu precisava de "tocar fora fecha" — antes ele só fechava pelo próprio botão, que agora está debaixo dele. O apanhador é invisível: ele não escurece nada, só devolve o gesto.
+- **Três portas que nunca existiram no celular entraram junto:** "Quem faz", "Apoiar o Gume" e o "Painel" do idealizador. A `/apoiar` só era alcançável de DENTRO da `/contribuidores`, que por sua vez só existia na coluna do desktop: uma porta atrás de uma porta que não existe no aparelho.
+- **A trava é `lib/celular.test.ts`**, que já era a casa dos buracos de celular. Ele agora exige que o painel seja desenhado depois do fim da `<GlassBar>`, que se posicione sozinho, que leve a `/eu`, `/sobre`, `/contribuidores` e `/apoiar`, e que dê para fechar tocando fora. **As duas travas foram mutadas para provar que quebram** — o menu voltou para dentro do vidro e virou `absolute`, e o teste acusou as duas. É o mesmo cuidado que o próprio arquivo documenta: a primeira versão dele já passou verde lendo um comentário no lugar do código.
+
+---
+
+**2026-08-01: A barra sabe quem entrou pelo servidor. `useSession()` sai.**
+
+Na mesma sessão em que o menu do celular foi consertado, o dono relatou a outra metade: **entrando logado, na primeira página o perfil não aparecia.** É outro bug, com outra raiz.
+
+A barra descobria quem estava logado com `useSession()`, um hook que vai ao servidor **depois** que a tela já apareceu. Até a resposta voltar, ela desenhava a versão de visitante: sem Perfil (no lugar dele, "Entrar"), sem sino, sem as estantes inventadas. Um instante depois consertava sozinha — e é por isso que o bug parece impressão de quem viu.
+
+- **O servidor já sabia, com certeza.** O layout nem renderiza esta barra para quem não entrou: quem está deslogado leva o `PublicHeader`. Se o componente está na tela, a pessoa está logada. A tela perguntava de novo ao navegador e **acreditava mais na resposta que ainda não tinha chegado** do que no fato que o servidor tinha em mãos.
+- **Não é lentidão, é mentira.** Oferecer "Entrar" a quem está dentro é a mesma mentira que o `sair` se recusa a contar quando a rede cai ("levar a pessoa embora fingindo que ela saiu"). Uma barra que erra sobre quem está dentro está errada, não devagar.
+- **O celular é onde isso vira produto ruim.** O app instalado abre **frio toda vez**, numa rede de celular, e a primeira tela é justamente onde a pessoa procura o próprio perfil. No computador o intervalo passa rápido demais para alguém notar — mais um bug que só existe para quem está no telefone.
+- **A identidade chega pronta**, do `getUser()` que já estava no `lib/viewer.ts`, no mesmo `Promise.all` do resto do layout. Não há estado de carregando porque não há nada a carregar, e `useSession` deixou de ser importado no app inteiro.
+- **De quebra, a inicial do avatar ficou certa.** Ela era `handle={name ?? "eu"}`, porque o hook não trazia handle nenhum: quem não tinha nome nem foto ganhava a inicial de "eu", um "E" que não era dele. `getUser()` já devolvia o handle; passou a devolver a `image` também.
+- **A trava é `lib/celular.test.ts`**: nada de `useSession` na barra, a identidade tem que chegar por prop, e o layout tem que passá-la. As três foram mutadas para provar que quebram. A primeira sozinha não bastava — não ter `useSession` é fácil se a barra não souber de ninguém; um teste que só proíbe não garante que sobrou o certo no lugar.

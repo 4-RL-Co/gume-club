@@ -15,7 +15,46 @@ import { Sino } from "@/components/sino";
 import { Tema } from "@/components/tema";
 import type { Novidade } from "@/lib/novidades";
 import { Avatar } from "@/components/avatar";
-import { useSession, signOut } from "@/lib/auth-client";
+import { signOut } from "@/lib/auth-client";
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  QUEM ESTÁ DENTRO É O SERVIDOR QUE DIZ.
+ *
+ *  ═══ O BUG: A BARRA OFERECIA "ENTRAR" A QUEM JÁ TINHA ENTRADO ═══
+ *
+ *  A barra descobria quem estava logado com `useSession()`, um hook que faz uma
+ *  ida ao servidor DEPOIS que a tela já apareceu. Enquanto a resposta não voltava,
+ *  `session` era nulo, e a barra desenhava a versão de visitante: sem Perfil (no
+ *  lugar dele, "Entrar"), sem sino, sem as estantes que a pessoa inventou.
+ *
+ *  Ela CONSERTAVA sozinha um instante depois, e é justamente isso que fazia o bug
+ *  parecer imaginação de quem viu. Num telefone, na primeira tela do app instalado
+ *  (que abre frio toda vez, e numa rede de celular), o instante é longo o bastante
+ *  para a pessoa olhar, não achar o perfil, e concluir que ele não existe.
+ *
+ *  ═══ E ELE ERA UMA MENTIRA, NÃO SÓ UMA DEMORA ═══
+ *
+ *  O layout NÃO RENDERIZA esta barra para quem não entrou: quem está deslogado leva
+ *  o PublicHeader. Se este componente existe na tela, a pessoa está logada — o
+ *  servidor já sabia disso, com certeza, e ainda assim a tela perguntava de novo
+ *  para o navegador e acreditava mais na resposta que ainda não chegou.
+ *
+ *  Oferecer "Entrar" a quem está dentro é a mesma mentira que o `sair` mais abaixo
+ *  se recusa a contar quando a rede cai. Uma barra que mente sobre quem está dentro
+ *  não é uma barra lenta: é uma barra errada.
+ *
+ *  Por isso a identidade CHEGA PRONTA, do servidor, junto com o resto. Não há
+ *  estado de carregando, porque não há nada a carregar.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export type QuemEntrou = {
+  /** Como a pessoa se chama, para a barra escrever. */
+  nome: string | null;
+  /** O endereço dela, que é o que dá a inicial quando não há foto. */
+  handle: string;
+  image: string | null;
+};
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -86,12 +125,21 @@ const CONSTRUIR = [
 const ICON = { size: 18, strokeWidth: 1.5 } as const;
 
 export function Sidebar({
+  eu,
   shelves,
   moderador = false,
   fila = false,
   idealizador = false,
   novidades = [],
+  apoio = false,
 }: {
+  /**
+   * Quem está dentro, dito pelo servidor. Nunca perguntado ao navegador: ver a nota
+   * lá em cima. `null` só existe para o caso de a linha do leitor ter sumido embaixo
+   * da sessão (apagou a conta noutra aba), e aí a barra vira a de visitante — que é
+   * a verdade, e não um estado de carregando.
+   */
+  eu: QuemEntrou | null;
   shelves: Shelf[];
   moderador?: boolean;
   /** Bibliotecário ou moderador: quem cuida do acervo vê a fila de pedidos. */
@@ -102,10 +150,21 @@ export function Sidebar({
   idealizador?: boolean;
   /** Te seguiram, seu convidado entrou, te recomendaram: o que o sino mostra. */
   novidades?: Novidade[];
+  /**
+   * Esta instância aceita apoio? Quem hospeda o próprio Gume não tem conta de pagamento,
+   * e para ele a /apoiar responde "não encontrado". Um item de menu que leva a um 404 é
+   * pior que item nenhum, então ele só existe onde a porta abre. Ver lib/stripe.ts.
+   */
+  apoio?: boolean;
 }) {
   const path = usePathname();
   const router = useRouter();
-  const { data: session } = useSession();
+
+  /**
+   * O menu do celular mora AQUI, e não lá dentro do botão que o abre, porque ele
+   * precisa ser desenhado FORA da barra de vidro. Ver MenuCelular, embaixo.
+   */
+  const [menu, setMenu] = useState(false);
 
   /**
    * Estatística é uma vista da estante, então "Estante" continua aceso quando
@@ -152,7 +211,7 @@ export function Sidebar({
           <Link href="/">
             <Logo />
           </Link>
-          {session && <Sino novidades={novidades} />}
+          {eu && <Sino novidades={novidades} />}
         </div>
 
         <BuscaFalsa />
@@ -165,7 +224,7 @@ export function Sidebar({
           ))}
         </nav>
 
-        {session && <MyShelves shelves={shelves} />}
+        {eu && <MyShelves shelves={shelves} />}
 
         {/* O convite. Separado dos lugares de LER por um filete: ler é o produto,
             construir é o convite, e misturar os dois transforma o app numa
@@ -225,6 +284,15 @@ export function Sidebar({
             </Item>
           )}
 
+          {/* A /apoiar era alcançável só de dentro da /contribuidores, aqui e no
+              celular. Uma porta atrás de outra porta é uma porta que a maioria não abre,
+              e esta é a única do app que pede dinheiro. */}
+          {apoio && (
+            <Item href="/apoiar" active={aceso("/apoiar")} icon={<HeartHandshake {...ICON} />}>
+              Apoiar o Gume
+            </Item>
+          )}
+
           <Item href="/sobre" active={aceso("/sobre")} icon={<Info {...ICON} />}>
             Sobre
           </Item>
@@ -233,10 +301,11 @@ export function Sidebar({
               padrão e uma péssima prisão. Ver components/tema.tsx. */}
           <Tema />
 
-          {session ? (
+          {eu ? (
             <Eu
-              image={session.user.image ?? null}
-              name={session.user.name ?? null}
+              image={eu.image}
+              name={eu.nome}
+              handle={eu.handle}
               cuidar={fila || moderador}
               onSair={sair}
             />
@@ -301,12 +370,22 @@ export function Sidebar({
             quem entrou no celular de outra pessoa ficava logado para sempre, e um
             bibliotecário não chegava na própria sala. O menu é o MESMO do rodapé
             do desktop (ver Eu, abaixo), servido pelo único item que já era seu. */}
-        {session ? (
-          <EuCelular
-            aceso={aceso("/eu") || aceso("/perfil")}
-            cuidar={fila || moderador}
-            onSair={sair}
-          />
+        {eu ? (
+          <button
+            onClick={() => setMenu((v) => !v)}
+            aria-expanded={menu}
+            aria-controls="menu-do-celular"
+            aria-label="Perfil"
+            className={[
+              "flex flex-col items-center gap-1 rounded-[var(--radius-control)] px-3 py-2 transition-colors",
+              aceso("/eu") || aceso("/perfil") || menu
+                ? "text-[var(--color-ink)]"
+                : "text-[var(--color-ink-faint)]",
+            ].join(" ")}
+          >
+            <UserRound size={20} strokeWidth={1.5} />
+            <span className="text-[10px] uppercase tracking-[0.12em]">Perfil</span>
+          </button>
         ) : (
           <Link
             href="/entrar"
@@ -323,12 +402,51 @@ export function Sidebar({
         )}
       </GlassBar>
 
+      {/* ════════════════════════════════════════════════════════════
+          ═══ O MENU FICA FORA DA BARRA, E ISSO NÃO É ARRUMAÇÃO ═══
+
+          Ele era desenhado DENTRO da barra de vidro e subia para fora dela. No
+          WebKit — o Safari, e todo app que se instala pela tela de início do
+          iPhone — um elemento com `backdrop-filter` RECORTA os filhos que passam
+          das bordas dele. O menu abria e era cortado inteiro.
+
+          No computador funcionava, então o bug não existia para quem escrevia o
+          código: existia para quem estava no telefone. E não havia botão
+          quebrado — havia botão que abre o nada, que é pior, porque a pessoa
+          conclui que o app não tem aquilo.
+
+          Levava junto TUDO o que só se alcança por aqui: o perfil, o sobre, o
+          cuidar do acervo, e o sair. Metade do app dependia de um menu invisível.
+
+          Por isso ele é irmão da barra, e não filho: nenhum menu deste app pode
+          depender de escapar de uma caixa de vidro.
+          ════════════════════════════════════════════════════════════ */}
+      {eu && menu && (
+        <>
+          {/* O apanhador de toque. Invisível de propósito: ele não escurece nada,
+              só devolve o gesto que todo mundo já tem no dedo — tocar fora fecha.
+              Sem ele, o menu só fechava pelo próprio botão, e ninguém adivinha isso. */}
+          <button
+            aria-label="Fechar o menu"
+            onClick={() => setMenu(false)}
+            className="fixed inset-0 z-40 cursor-default sm:hidden"
+          />
+          <MenuCelular
+            cuidar={fila || moderador}
+            idealizador={idealizador}
+            apoio={apoio}
+            fecha={() => setMenu(false)}
+            onSair={sair}
+          />
+        </>
+      )}
+
       {/* o fio no topo, para o celular saber de quem é o app, e o sino ao lado */}
       <div className="flex items-center justify-between px-6 pt-6 sm:hidden">
         <Link href="/" aria-label="Gume">
           <Mark size={22} />
         </Link>
-        {session && <Sino novidades={novidades} />}
+        {eu && <Sino novidades={novidades} />}
       </div>
     </>
   );
@@ -370,10 +488,19 @@ function BuscaFalsa() {
 
 /** A sua cara, no rodapé. Perfil, o acervo (se for seu papel) e sair moram debaixo dela. */
 function Eu({
-  image, name, cuidar, onSair,
+  image, name, handle, cuidar, onSair,
 }: {
   image: string | null;
   name: string | null;
+  /**
+   * O ENDEREÇO da pessoa, e não o nome dela outra vez.
+   *
+   * Isto vinha `handle={name ?? "eu"}`, porque o hook do navegador não trazia handle
+   * nenhum e o nome era o que havia à mão. Quem não tem nome nem foto ganhava a
+   * inicial de "eu" — um "E" que não é dele. Agora o handle vem do servidor, junto
+   * com o resto, e a inicial é a certa.
+   */
+  handle: string;
   /** Bibliotecário ou moderador. O papel abre uma porta a mais, e só para quem o tem. */
   cuidar: boolean;
   onSair: () => void;
@@ -429,7 +556,7 @@ function Eu({
             : "text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)] hover:text-[var(--color-ink)]",
         ].join(" ")}
       >
-        <Avatar src={image} name={name} handle={name ?? "eu"} size={26} />
+        <Avatar src={image} name={name} handle={handle} size={26} />
         <span className="truncate">{name ?? "Você"}</span>
 
         {/* ═══ A SETA. Sem ela, ninguém sabia que dá para clicar ═══
@@ -461,60 +588,83 @@ function Eu({
  * elas são itens da coluna, e no celular a coluna não existe: este menu é o único
  * teto que sobrou para elas. O rodapé da barra de baixo é apertado demais para
  * itens novos, e cada ícone a mais ali rouba área de toque de todos os outros.
+ *
+ * ═══ ELE NÃO SABE ABRIR E FECHAR, E É DE PROPÓSITO ═══
+ *
+ * Quem guarda o "aberto" é a Sidebar, porque o botão que abre mora DENTRO da barra
+ * de vidro e o painel tem que morar FORA dela. Um componente só não consegue estar
+ * nos dois lugares, e tentar isso foi exatamente o que deixou o menu invisível no
+ * iPhone. Ver a nota na Sidebar.
+ *
+ * A altura: a barra é `bottom-3` e tem 64px, então o topo dela está a 76px do pé da
+ * tela. O menu encosta 12px acima disso — o mesmo respiro que o vidro tem da borda.
  */
-function EuCelular({
-  aceso, cuidar, onSair,
+function MenuCelular({
+  cuidar, idealizador, apoio, fecha, onSair,
 }: {
-  aceso: boolean;
   cuidar: boolean;
+  idealizador: boolean;
+  apoio: boolean;
+  fecha: () => void;
   onSair: () => void;
 }) {
-  const [aberto, setAberto] = useState(false);
-  const fecha = () => setAberto(false);
   const linha =
     "block rounded-[var(--radius-2)] px-3 py-2.5 text-[14px] text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)] hover:text-[var(--color-ink)]";
 
   return (
-    <div className="relative">
-      {aberto && (
-        <div className="surface absolute bottom-full right-0 z-50 mb-3 w-56 overflow-hidden p-2">
-          <Link href="/eu" onClick={fecha} className={linha}>
-            Perfil
-          </Link>
+    <div
+      id="menu-do-celular"
+      className="surface fixed bottom-[88px] right-3 z-50 w-56 overflow-hidden p-2 sm:hidden"
+    >
+      <Link href="/eu" onClick={fecha} className={linha}>
+        Perfil
+      </Link>
 
-          {cuidar && (
-            <Link href="/cuidar" onClick={fecha} className={linha}>
-              Cuidar do acervo
-            </Link>
-          )}
-
-          <Link href="/sobre" onClick={fecha} className={linha}>
-            Sobre
-          </Link>
-
-          <Tema />
-
-          <button
-            onClick={onSair}
-            className="flex w-full items-center gap-2 rounded-[var(--radius-2)] px-3 py-2.5 text-left text-[14px] text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)] hover:text-[var(--color-ink)]"
-          >
-            <LogOut size={15} strokeWidth={1.5} />
-            Sair
-          </button>
-        </div>
+      {cuidar && (
+        <Link href="/cuidar" onClick={fecha} className={linha}>
+          Cuidar do acervo
+        </Link>
       )}
 
+      {/* ════════════════════════════════════════════════════════════
+          ═══ ESTAS DUAS NÃO EXISTIAM NO CELULAR ═══
+
+          "Quem faz" morava só na coluna do desktop, e a /apoiar só era linkada de
+          DENTRO dela. No telefone, que é metade das pessoas, a ala inteira de quem
+          constrói o Gume (quem faz, o que falta, as insígnias) e o único lugar que
+          pede apoio não tinham caminho nenhum. Não havia botão quebrado: havia
+          botão nenhum, que é o bug que não deixa rastro.
+
+          Quem descobriu foi o dono, usando o app no telefone dele.
+          ════════════════════════════════════════════════════════════ */}
+      <Link href="/contribuidores" onClick={fecha} className={linha}>
+        Quem faz
+      </Link>
+
+      {apoio && (
+        <Link href="/apoiar" onClick={fecha} className={linha}>
+          Apoiar o Gume
+        </Link>
+      )}
+
+      {idealizador && (
+        <Link href="/painel" onClick={fecha} className={linha}>
+          Painel
+        </Link>
+      )}
+
+      <Link href="/sobre" onClick={fecha} className={linha}>
+        Sobre
+      </Link>
+
+      <Tema />
+
       <button
-        onClick={() => setAberto((v) => !v)}
-        aria-expanded={aberto}
-        aria-label="Perfil"
-        className={[
-          "flex flex-col items-center gap-1 rounded-[var(--radius-control)] px-3 py-2 transition-colors",
-          aceso || aberto ? "text-[var(--color-ink)]" : "text-[var(--color-ink-faint)]",
-        ].join(" ")}
+        onClick={onSair}
+        className="flex w-full items-center gap-2 rounded-[var(--radius-2)] px-3 py-2.5 text-left text-[14px] text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)] hover:text-[var(--color-ink)]"
       >
-        <UserRound size={20} strokeWidth={1.5} />
-        <span className="text-[10px] uppercase tracking-[0.12em]">Perfil</span>
+        <LogOut size={15} strokeWidth={1.5} />
+        Sair
       </button>
     </div>
   );
