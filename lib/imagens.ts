@@ -50,6 +50,31 @@ export const FONTES_DE_IMAGEM = [
   { host: "*.gstatic.com", oQueE: "imagens do Google" },
   { host: "s4.anilist.co", oQueE: "capas da AniList" },
   /**
+   * ════════════════════════════════════════════════════════════════════
+   *  AMAZON E SKOOB. Decisão do dono, e o preço está escrito aqui.
+   *
+   *  Entraram porque 231 livros em estante de gente de verdade não têm capa em fonte
+   *  nenhuma das de cima: são edições brasileiras pequenas que a Open Library e o
+   *  Google Books não cobrem. Essas duas cobrem.
+   *
+   *  ═══ O QUE ISSO CUSTA ═══
+   *
+   *  Cada host aqui é um endereço que a política de segurança do navegador passa a
+   *  aceitar como origem de imagem. A lista é curta de propósito: quanto mais larga,
+   *  mais lugares de onde uma imagem pode vir sem ninguém ter olhado.
+   *
+   *  ═══ POR QUE O SKOOB É UM HOST EXATO, E NUNCA `*.amazonaws.com` ═══
+   *
+   *  O S3 é aluguel: `*.amazonaws.com` abriria a porta para QUALQUER PESSOA que
+   *  alugue um balde lá, que é o mundo inteiro. `skoob.s3.amazonaws.com` é o acervo
+   *  do Skoob, e só ele. Um curinga aqui não seria conveniência: seria a lista
+   *  deixando de existir.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  { host: "m.media-amazon.com", oQueE: "capas da Amazon" },
+  { host: "images-na.ssl-images-amazon.com", oQueE: "capas da Amazon" },
+  { host: "skoob.s3.amazonaws.com", oQueE: "capas do Skoob" },
+  /**
    * A CDN da H1 Editora. Entrou na operação que trouxe o catálogo da H1 inteiro
    * (scripts/operacao-mais-capas.mjs): 27 edições com ISBN e capa exata em alta,
    * apontadas POR REFERÊNCIA para o endereço público da editora, como a política
