@@ -2662,3 +2662,18 @@ A ordem contava só "adorei" (veredito 5). O card imprimia "gostaram ou adoraram
 - **Dois números viraram um, e isso é a correção de verdade.** `adoraram` sumiu do código: ele só existia para ordenar, nunca era impresso em tela nenhuma (na página do livro ele era selecionado e descartado). Um número invisível que decide a ordem é uma armadilha esperando o próximo leitor — e o próximo leitor foi o dono.
 - **As duas telas mudaram juntas**, porque a mesma conta vive em `lib/queridinhos.ts` (a lista) e em `app/livro/[slug]/page.tsx` (a coroa e a posição). Os textos mudaram junto: "cada 'adorei' conta um voto" virou "cada 'gostei' e cada 'adorei' conta um voto", e o vazio deixou de dizer "quando alguém adorar".
 - **A trava trocou de alvo em vez de ser apagada.** Ela exigia que `adoraram` e `gostaram` não divergissem em visibilidade; eles deixaram de ser dois. Agora exige que as duas telas usem o MESMO limiar e que nenhuma volte a ordenar por "adorei" sozinho. Ganhou também o caso exato da tela: um livro com um "adorei" e um "gostei" vale dois e passa na frente de quem tem um. Mutada para provar que quebra.
+
+---
+
+**2026-08-01: A capa de uma resenha é o exemplar de quem escreveu.**
+
+O dono abriu o próprio perfil e viu o Frankenstein com **duas capas na mesma página**: a verde da Antofágica em "o que eu adorei", e outra em "o que eu escrevi".
+
+Não era capa errada. Era a mesma pergunta — "qual edição é este livro?" — respondida de dois jeitos na mesma tela. A estante sabe qual edição é a sua e desenha ela. A resenha usava `capaDaObra`, que é "a edição mais antiga que alguém importou" e não tem relação nenhuma com o livro que a pessoa leu.
+
+- **A resposta certa é a que a pessoa já deu.** Uma resenha não é sobre a obra em abstrato: é sobre o exemplar que ela teve na mão, com aquela tradução e aquela capa. Ela escolheu a edição ao pôr na estante. Não existe regra global que acerte mais do que essa escolha — procurar uma "regra melhor" seria inventar critério para uma pergunta que já tinha dono.
+- **A regra da comunidade continua existindo, e continua sendo a mais antiga com capa.** Ela vale onde não há uma pessoa em particular olhando (explorar, quem está lendo). É arbitrária, e é ESTÁVEL — que é o que importa ali: uma capa que muda a cada visita faz a pessoa achar que abriu o livro errado.
+- **O fallback não é zelo.** A escolha pode faltar: quem resenhou sem pôr na estante, ou entrada antiga sem edição gravada — **eram 41 em produção**. Sem o `coalesce`, essas resenhas ficariam sem capa nenhuma, trocando um bug visível por um pior.
+- **Conferido contra produção, não contra o raciocínio.** Das quatro resenhas do dono, só o Frankenstein mudou de capa; as outras três já batiam e continuaram idênticas. Uma correção que muda o que estava certo não é correção, é troca de bug.
+
+**O que isso NÃO conserta, e está aqui para não ser esquecido:** as ~10 outras telas continuam usando a edição mais antiga importada. Para as telas da comunidade isso é certo. Para as telas de uma pessoa (a parede dela, o feed dela) é o mesmo erro do Frankenstein esperando para ser relatado.

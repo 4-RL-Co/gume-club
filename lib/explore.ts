@@ -67,10 +67,53 @@ export type Resenha = {
 
 export type Lendo = { slug: string; title: string; author: string | null; coverUrl: string | null };
 
+/**
+ * A capa que representa uma obra quando NINGUÉM em particular está olhando: as
+ * telas da comunidade (explorar, quem está lendo). A edição mais antiga com capa,
+ * que é arbitrária mas estável — e estável importa, porque uma capa que muda a cada
+ * visita faz a pessoa achar que abriu o livro errado.
+ */
 const capaDaObra = sql`(
   select e.cover_url from editions e
    where e.work_id = w.id and e.cover_url is not null
    order by e.created_at asc limit 1)`;
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  A CAPA DE UMA RESENHA É O EXEMPLAR DE QUEM ESCREVEU.
+ *
+ *  ═══ O BUG ═══
+ *
+ *  O dono abriu o próprio perfil e viu o Frankenstein com DUAS capas: a verde da
+ *  Antofágica em "o que eu adorei", e outra em "o que eu escrevi". Mesmo livro,
+ *  mesma página, duas imagens.
+ *
+ *  Não era capa errada, era pergunta respondida duas vezes. A estante sabe QUAL
+ *  edição é a sua e desenha ela. A resenha usava `capaDaObra` — "a edição mais
+ *  antiga que alguém importou" —, que não tem relação nenhuma com o livro que a
+ *  pessoa leu.
+ *
+ *  ═══ POR QUE A DA PESSOA, E NÃO UMA REGRA MELHOR ═══
+ *
+ *  Uma resenha não é sobre a obra em abstrato: é sobre o exemplar que a pessoa
+ *  teve na mão, com aquela tradução e aquela capa. Ela escolheu a edição quando
+ *  pôs na estante, e essa escolha é a resposta — não há regra global que acerte
+ *  mais do que a pessoa já acertou.
+ *
+ *  O `left join` e o fallback existem porque a escolha pode faltar: quem resenhou
+ *  sem pôr na estante, ou entrada antiga sem edição gravada (eram 41 em produção).
+ *  Aí cai na regra da comunidade, que é o que ela sempre foi.
+ * ════════════════════════════════════════════════════════════════════
+ */
+const capaDeQuemEscreveu = sql`coalesce(
+  (select e.cover_url
+     from library_entries le
+     join editions e on e.id = le.edition_id
+    where le.user_id = reviews.user_id
+      and le.work_id = reviews.work_id
+      and e.cover_url is not null
+    limit 1),
+  ${capaDaObra})`;
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -344,7 +387,7 @@ export async function getResenhasDe(
     -- Sem apelido em "reviews": o visibleTo() emite o nome real da tabela, e um
     -- apelido faz o Postgres não achar a coluna que a regra de visibilidade cita.
     select reviews.id, reviews.body, reviews.created_at, reviews.visibility,
-           w.slug, w.title, ${capaDaObra} as cover_url
+           w.slug, w.title, ${capaDeQuemEscreveu} as cover_url
       from reviews
       join works w on w.id = reviews.work_id
      where reviews.user_id = ${donoId}::uuid
