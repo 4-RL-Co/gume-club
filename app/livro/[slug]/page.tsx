@@ -31,6 +31,7 @@ import { getViewer } from "@/lib/viewer";
 import { getActorOrNull } from "@/lib/actor";
 import { FORMAT_LABEL } from "@/lib/shelf-view";
 import { origemAceita } from "@/lib/imagens";
+import { nomeDoAutor } from "@/lib/autores";
 
 export const dynamic = "force-dynamic";
 
@@ -358,20 +359,22 @@ export default async function BookPage({
                 Antes isto era texto morto: o leitor clicava no nome e não acontecia
                 nada. A página do autor existia — com retrato, biografia e o resto da
                 obra dele — e não tinha entrada. */}
-            {book.author && (
-              <p className="mt-3 text-[15px] text-[var(--color-ink-soft)]">
-                {book.authorSlug ? (
-                  <Link
-                    href={`/autor/${book.authorSlug}`}
-                    className="underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
-                  >
-                    {book.author}
-                  </Link>
-                ) : (
-                  book.author
-                )}
-              </p>
-            )}
+            {/* Sem autor, a tela escreve "Desconhecido" em vez de deixar o espaço
+                vazio: vazio lê como "faltou preencher", e para uma saga anônima isso
+                é falso — a ficha está completa. Sem link, porque não há para onde ir.
+                Ver nomeDoAutor(), em lib/autores.ts. */}
+            <p className="mt-3 text-[15px] text-[var(--color-ink-soft)]">
+              {book.author && book.authorSlug ? (
+                <Link
+                  href={`/autor/${book.authorSlug}`}
+                  className="underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+                >
+                  {book.author}
+                </Link>
+              ) : (
+                nomeDoAutor(book.author)
+              )}
+            </p>
 
             <div className="mt-6">
               <Share titulo={book.title} texto={book.author ?? undefined} />

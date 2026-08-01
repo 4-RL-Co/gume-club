@@ -160,3 +160,36 @@ export function limparNomeDeAutor(bruto: unknown): string | null {
   if (!ehNomeDeAutor(bruto)) return null;
   return String(bruto).trim().replace(/\s+/g, " ");
 }
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  O QUE A TELA ESCREVE QUANDO NÃO SE SABE QUEM ESCREVEU.
+ *
+ *  ═══ POR QUE ISTO EXISTE ═══
+ *
+ *  Obra sem autor desenhava NADA — o espaço do nome ficava vazio, e vazio lê como
+ *  "faltou preencher". Para a Saga de Njáll ou a Vida de Esopo isso é falso: elas
+ *  não têm autor porque são anônimas, e a ficha está completa.
+ *
+ *  ═══ POR QUE NÃO É UM AUTOR CHAMADO "DESCONHECIDO" ═══
+ *
+ *  A saída óbvia seria criar uma linha em `authors` com esse nome. Ela recriaria
+ *  exatamente o registro-lixo que este projeto acabou de apagar: "Jonathan C. Young"
+ *  tinha 53 obras sem relação nenhuma, com página de perfil, nome clicável e lugar na
+ *  busca de autores. Um "Desconhecido" com centenas de obras seria a mesma coisa, só
+ *  que criada de propósito.
+ *
+ *  Então a palavra mora na TELA, e o banco continua dizendo a verdade: `null`, que é
+ *  "não sei". A diferença importa na hora de consertar — dá para listar o que falta
+ *  atribuir; não daria se estivesse tudo pendurado num autor de mentira.
+ *
+ *  E ela nunca é link: não há para onde ir, e um nome sublinhado que não leva a
+ *  lugar nenhum é a promessa quebrada que a página do autor já tinha consertado uma
+ *  vez.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export const AUTOR_DESCONHECIDO = "Desconhecido";
+
+export function nomeDoAutor(nome: string | null | undefined): string {
+  return nome?.trim() ? nome : AUTOR_DESCONHECIDO;
+}

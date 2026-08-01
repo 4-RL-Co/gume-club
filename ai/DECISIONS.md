@@ -2774,3 +2774,26 @@ A fila não estava contando o que falta no acervo: estava contando o que a busca
 - **Os 15 pedidos já atendidos foram MARCADOS, e não apagados.** O histórico do que as pessoas procuraram é o dado mais útil que elas dão de graça, e apagá-lo para deixar a lista bonita seria queimar a única evidência de que a busca falhava. `atendida_por` fica nulo de propósito: ninguém trouxe esses livros — eles já estavam aqui.
 
 **Sobraram 20 pedidos de verdade.** E eles contam outra coisa: metade é digitação parcial ("ux ressea", "veias abrrta", "negocie como sua vida") ou busca por pessoa ("gabistec", "gabisteca"). A fila registra tentativa interrompida como demanda não atendida, e isso ainda infla a lista — assunto próprio, e menor que este.
+
+---
+
+**2026-08-01: "Desconhecido" é o que a TELA escreve. O banco continua dizendo `null`.**
+
+Obra sem autor desenhava nada — o espaço do nome ficava vazio, e vazio lê como "faltou preencher". Para a *Saga de Njáll*, a *Vida de Esopo* ou a *Saga de Gunnlaug* isso é falso: elas são anônimas, e a ficha está completa. O dono pediu "Desconhecido".
+
+- **A saída óbvia era criar um autor com esse nome, e ela foi recusada.** Uma linha em `authors` chamada "Desconhecido" recriaria exatamente o registro-lixo que este mesmo dia apagou: "Jonathan C. Young" tinha 53 obras sem relação nenhuma, com página de perfil, nome clicável e lugar na busca de autores. Um "Desconhecido" com centenas de obras seria a mesma coisa — só que de propósito.
+- **A distinção importa para consertar.** Com `null` dá para listar o que ainda falta atribuir; com um autor de mentira, tudo ficaria pendurado nele e o buraco sumiria de vista. Foi assim que se descobriu que das 5.699 obras sem autor, só **10** estão em estante de alguém.
+- **A palavra nunca é link.** Não há para onde ir, e um nome sublinhado que não leva a lugar nenhum é a promessa quebrada que a página do autor já tinha consertado uma vez.
+
+---
+
+**2026-08-01: Autores duplicados fundidos pela função do app, e não por um script paralelo.**
+
+O acervo tinha **7.917 nomes de autor duplicados, gerando 9.062 registros a mais** de 123.878 — cerca de 7%. A causa é dano de codificação na importação: "Se rgio Buarque de Holanda", "Aure lio", "Jose  Eduardo Agualusa" com espaço duplo, "Maura Lopes Canc̃ado". Sérgio Buarque de Holanda existia **seis vezes**.
+
+- **A fusão em massa dos 7.917 foi recusada.** Nomes que normalizam igual nem sempre são a mesma pessoa, e fundir errado junta a obra de duas pessoas diferentes — estrago pior que a duplicata e mais difícil de desfazer. Foram feitos só os **25 grupos que têm obra em estante de alguém**: é o que aparece na tela hoje, e é revisável a olho.
+- **Rodou pela `fundirAutores()` do app**, e não por um script que replicasse a lógica. Ela recusa quando os dois autores têm o mesmo livro, move as obras ANTES de apagar a linha (`author_id` é `on delete set null`: apagar primeiro deixaria os livros órfãos em silêncio), e guarda o nome que sai como APELIDO buscável do sobrevivente — quem procurar pela grafia velha continua achando. Reescrever isso num script seria criar uma segunda definição de "fundir", que divergiria da primeira: o erro que este dia inteiro passou consertando.
+- **27 fusões, todas no log de correções**, assinadas pelo dono e reversíveis.
+- **Dez grupos foram RECUSADOS pela própria função**, e a recusa está certa: os dois autores têm o mesmo livro, então fundir exige fundir as OBRAS antes. Isso mexe na estante de gente, e é decisão caso a caso — não de varredura.
+
+**A primeira execução estourou o tempo pela metade.** Como cada fusão é uma transação própria, 14 grupos ficaram feitos e 11 não. Foi conferido o estado real antes de repetir, em vez de assumir que nada havia sido aplicado — a segunda passada encontrou 11 grupos, não 25.
