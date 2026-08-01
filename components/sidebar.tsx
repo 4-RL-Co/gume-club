@@ -124,6 +124,43 @@ const CONSTRUIR = [
 
 const ICON = { size: 18, strokeWidth: 1.5 } as const;
 
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  A BARRA DE BAIXO REPARTE A LARGURA. ELA NUNCA TRANSBORDA.
+ *
+ *  ═══ O BUG: O PERFIL CAÍA PARA FORA DA TELA ═══
+ *
+ *  Os seis itens tinham largura própria (`px-3` e o rótulo inteiro) e a barra
+ *  distribuía o que sobrasse. Numa tela de 390pt não sobrava: os seis pediam
+ *  cerca de 460pt, e o último — o PERFIL — ficava DEPOIS da borda direita.
+ *
+ *  Quem estava no telefone via cinco itens e concluía que o perfil não existe.
+ *  Dava para achar dando zoom para trás, porque aí a tela inteira cabe no olho e
+ *  a barra aparece completa. Um item que só existe com zoom não existe.
+ *
+ *  ═══ POR QUE `flex-1`, E NÃO UM RÓTULO MENOR ═══
+ *
+ *  Encolher a letra até caber conserta o telefone que está na mão hoje e quebra no
+ *  telefone menor de amanhã, em silêncio, exatamente como este quebrou. Com
+ *  `flex-1 min-w-0` cada item ganha um sexto EXATO do que existe: não há largura a
+ *  transbordar, porque não há item que peça mais do que lhe cabe. Se a tela for
+ *  estreita demais para a palavra, o rótulo corta com reticências — o item continua
+ *  ali, tocável, visível, e o pior caso vira "EXPLORA…" em vez de nada.
+ *
+ *  ═══ E POR QUE UMA MEDIDA SÓ ═══
+ *
+ *  Os seis itens são três coisas diferentes no código (um link de lugar, o botão da
+ *  busca, o do perfil ou o de entrar). Escritos separados, eles divergem: bastou um
+ *  ganhar um `px` a mais para a conta estourar sem ninguém somar. A medida mora
+ *  aqui, uma vez, e quem entrar na barra amanhã herda ela.
+ * ════════════════════════════════════════════════════════════════════
+ */
+const ITEM_DO_CELULAR =
+  "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[var(--radius-control)] px-0.5 py-2 transition-colors";
+
+/** O rótulo cabe no item, e quando não cabe ele corta em vez de escapar. */
+const ROTULO_DO_CELULAR = "w-full truncate text-center text-[9px] uppercase tracking-[0.08em]";
+
 export function Sidebar({
   eu,
   shelves,
@@ -320,7 +357,7 @@ export function Sidebar({
       {/* ── celular: a coluna vira barra de baixo. Mesma regra, mesmo material. ── */}
       <GlassBar
         as="nav"
-        className="fixed inset-x-3 bottom-3 z-40 flex h-16 items-center justify-around px-2 sm:hidden"
+        className="fixed inset-x-3 bottom-3 z-40 flex h-16 items-center px-1 sm:hidden"
       >
         {LUGARES.map(({ href, label, Icon }) => (
           <Link
@@ -329,12 +366,12 @@ export function Sidebar({
             aria-current={aceso(href) ? "page" : undefined}
             aria-label={label}
             className={[
-              "flex flex-col items-center gap-1 rounded-[var(--radius-control)] px-3 py-2 transition-colors",
+              ITEM_DO_CELULAR,
               aceso(href) ? "text-[var(--color-ink)]" : "text-[var(--color-ink-faint)]",
             ].join(" ")}
           >
             <Icon size={20} strokeWidth={1.5} />
-            <span className="text-[10px] uppercase tracking-[0.12em]">{label}</span>
+            <span className={ROTULO_DO_CELULAR}>{label}</span>
           </Link>
         ))}
 
@@ -357,10 +394,10 @@ export function Sidebar({
         <button
           onClick={abrirBusca}
           aria-label="Buscar"
-          className="flex flex-col items-center gap-1 rounded-[var(--radius-control)] px-3 py-2 text-[var(--color-ink-faint)] transition-colors active:text-[var(--color-ink)]"
+          className={`${ITEM_DO_CELULAR} text-[var(--color-ink-faint)] active:text-[var(--color-ink)]`}
         >
           <Search size={20} strokeWidth={1.5} />
-          <span className="text-[10px] uppercase tracking-[0.12em]">Buscar</span>
+          <span className={ROTULO_DO_CELULAR}>Buscar</span>
         </button>
 
         {/* ═══ O PERFIL DO CELULAR ABRE UM MENU, e não só uma página ═══
@@ -377,14 +414,14 @@ export function Sidebar({
             aria-controls="menu-do-celular"
             aria-label="Perfil"
             className={[
-              "flex flex-col items-center gap-1 rounded-[var(--radius-control)] px-3 py-2 transition-colors",
+              ITEM_DO_CELULAR,
               aceso("/eu") || aceso("/perfil") || menu
                 ? "text-[var(--color-ink)]"
                 : "text-[var(--color-ink-faint)]",
             ].join(" ")}
           >
             <UserRound size={20} strokeWidth={1.5} />
-            <span className="text-[10px] uppercase tracking-[0.12em]">Perfil</span>
+            <span className={ROTULO_DO_CELULAR}>Perfil</span>
           </button>
         ) : (
           <Link
@@ -392,12 +429,12 @@ export function Sidebar({
             aria-current={aceso("/entrar") ? "page" : undefined}
             aria-label="Entrar"
             className={[
-              "flex flex-col items-center gap-1 rounded-[var(--radius-control)] px-3 py-2 transition-colors",
+              ITEM_DO_CELULAR,
               aceso("/entrar") ? "text-[var(--color-ink)]" : "text-[var(--color-ink-faint)]",
             ].join(" ")}
           >
             <LogIn size={20} strokeWidth={1.5} />
-            <span className="text-[10px] uppercase tracking-[0.12em]">Entrar</span>
+            <span className={ROTULO_DO_CELULAR}>Entrar</span>
           </Link>
         )}
       </GlassBar>
