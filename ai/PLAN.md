@@ -140,7 +140,7 @@ Só se as pessoas de fato usarem. Não antes.
 
 _(Convites e linhagem, recomendar um livro, e a fila de moderação **subiram para o v0.1** e já estão feitos — ver Fase 3 e `app/moderacao`.)_
 
-- ~~Cosméticos de apoiador (badge, capa de perfil)~~ — **o apoio está de pé** (2026-07-31): assinatura e apoio avulso pelo Stripe, insígnia e moldura vivas, e a lista de apoiadores como opt-in em `/contribuidores`. Quem apoia é calculado, e não guardado: ver `lib/apoio.ts`, `docs/apoio.md` e a entrada no ai/DECISIONS.md. **A capa de perfil comprada continua não existindo**, e é a única parte desta linha que sobrou.
+- ~~Cosméticos de apoiador (badge, capa de perfil)~~ — **o apoio está de pé** (2026-07-31): assinatura e apoio avulso pelo Stripe, insígnia e moldura vivas, e a lista de apoiadores em `/contribuidores`, que nasce marcada e tem como sair. Quem apoia é calculado, e não guardado: ver `lib/apoio.ts`, `docs/apoio.md` e a entrada no ai/DECISIONS.md. **A capa de perfil comprada continua não existindo**, e é a única parte desta linha que sobrou.
 
 ### Medir uso, sem trair o manifesto
 

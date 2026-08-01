@@ -60,12 +60,17 @@ export const users = pgTable("users", {
    */
   stripeCustomerId: text("stripe_customer_id"),
   /**
-   * APARECER NA LISTA DE APOIADORES. Opt-in, e o padrão é não aparecer.
+   * APARECER NA LISTA DE APOIADORES. Nasce MARCADA, e quem não quiser desmarca.
    *
-   * Pagar não é consentir em ser publicado. Quem quiser aparecer marca a caixa em
-   * /perfil, e /contribuidores só mostra quem marcou.
+   * Nasceu opt-in (migration 0055) e virou opt-out por decisão do dono (0056): uma lista
+   * que existe para agradecer não agradece ninguém se estiver sempre vazia, e com opt-in
+   * o caso comum era a pessoa nunca descobrir que a caixa existia.
+   *
+   * A caixa mora em /perfil, só aparece para quem apoia, e desmarcar tira o nome na hora.
+   * O que a lista mostra é nome e arroba, que já são públicos no perfil. Ela nunca mostra
+   * valor, e nunca ordena por nada que se leia como "este apoia mais".
    */
-  supporterPublic: boolean("supporter_public").notNull().default(false),
+  supporterPublic: boolean("supporter_public").notNull().default(true),
   /**
    * Até quando o apoio AVULSO vale. Cada pagamento empurra 30 dias para frente, e eles
    * somam em vez de se sobrescrever. Ver ehApoiador() e estenderAvulso(), em lib/apoio.ts.

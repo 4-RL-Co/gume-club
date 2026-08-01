@@ -183,24 +183,54 @@ describe("a janela do avulso", () => {
 describe("a lista pública de apoiadores", () => {
   /**
    * ════════════════════════════════════════════════════════════════════
-   *  APARECER É OPT-IN, E O PADRÃO É NÃO APARECER.
+   *  APARECER NASCE MARCADO, E DESMARCAR TIRA.
    *
-   *  Pagar não é consentir em ser publicado. Este é o teste que impede o padrão de virar
-   *  "todo mundo" numa refatoração distraída: quem apoia e não pediu nada continua fora.
+   *  ═══ ESTE TESTE MUDOU DE LADO, DE PROPÓSITO ═══
+   *
+   *  Ele exigia o contrário: quem apoia e não pediu nada ficava FORA. A regra era opt-in
+   *  (migration 0055), e o dono decidiu o oposto (0056), porque uma lista que existe para
+   *  agradecer não agradece ninguém se estiver sempre vazia.
+   *
+   *  O que o teste protege NÃO mudou: continua sendo que a escolha da pessoa mande. Só
+   *  que agora a escolha que precisa funcionar é a de SAIR, e é ela que este par de testes
+   *  prova. Um opt-out cujo botão de sair não funciona é pior que um opt-in.
    * ════════════════════════════════════════════════════════════════════
    */
-  it("quem apoia e não pediu para aparecer fica de fora", async () => {
-    const id = await novoLeitor("calado");
+  it("quem apoia entra na lista sem precisar pedir", async () => {
+    const id = await novoLeitor("padrao");
     await db.execute(sql`
       update users set avulso_badge_until = now() + interval '10 days' where id = ${id}::uuid`);
 
     expect(await apoia(id)).toBe(true);
 
     const lista = await getApoiadores();
-    expect(lista.some((a) => a.handle === `apoio-calado-${marca}`)).toBe(false);
+    expect(
+      lista.some((a) => a.handle === `apoio-padrao-${marca}`),
+      "a caixa deixou de nascer marcada, e a lista de agradecimento voltou a nascer vazia",
+    ).toBe(true);
   });
 
-  it("quem marcou a caixa aparece", async () => {
+  /**
+   * O caminho de saída, e ele é o que segura a decisão inteira: se desmarcar não tirasse
+   * o nome, o app estaria publicando gente sem volta.
+   */
+  it("quem desmarca a caixa sai da lista", async () => {
+    const id = await novoLeitor("saiu");
+    await db.execute(sql`
+      update users
+         set avulso_badge_until = now() + interval '10 days', supporter_public = false
+       where id = ${id}::uuid`);
+
+    expect(await apoia(id)).toBe(true);
+
+    const lista = await getApoiadores();
+    expect(
+      lista.some((a) => a.handle === `apoio-saiu-${marca}`),
+      "desmarcar não tirou o nome da lista: não existe saída, e isso é pior que opt-in",
+    ).toBe(false);
+  });
+
+  it("quem está com a caixa marcada aparece", async () => {
     const id = await novoLeitor("visivel");
     await db.execute(sql`
       update users

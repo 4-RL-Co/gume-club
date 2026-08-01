@@ -8,10 +8,12 @@ import { salvarApoioPublico } from "@/app/perfil/actions";
  *  APARECER NA LISTA DE QUEM APOIA.
  *
  *  Só existe para quem apoia. Quem não apoia não vê esta seção, porque uma caixa
- *  desmarcada perguntando se você quer aparecer numa lista da qual você não faz parte
- *  não é uma opção: é uma cobrança educada.
+ *  perguntando se você quer aparecer numa lista da qual você não faz parte não é uma
+ *  opção: é uma cobrança educada.
  *
- *  E ela nasce desmarcada. Pagar não é consentir em ser publicado.
+ *  Ela nasce MARCADA (ver a migration 0056), e é por isso que ela precisa ser fácil de
+ *  achar: quem já está numa página pública tem que conseguir sair dela num clique, e no
+ *  mesmo dia em que entrou.
  * ════════════════════════════════════════════════════════════════════
  */
 export function ApoioPublico({ aparecendo }: { aparecendo: boolean }) {
@@ -55,7 +57,7 @@ export function ApoioPublico({ aparecendo }: { aparecendo: boolean }) {
           <span className="font-medium text-[var(--color-ink)]">
             Aparecer na lista de quem apoia.
           </span>{" "}
-          Só o seu nome e o seu @, sem quanto você apoia e sem ordem nenhuma. Desmarcado,
+          Só o seu nome e o seu @, sem quanto você apoia e sem ordem nenhuma. Se desmarcar,
           você apoia em silêncio, e a sua insígnia continua igual.
         </span>
       </label>
