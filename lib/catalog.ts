@@ -789,7 +789,23 @@ export async function searchLocal(rawQuery: string): Promise<Hit[]> {
           from editions e
           join works w on w.id = e.work_id
           left join authors a on a.id = w.author_id
+          -- ═══ O ISBN-10 TAMBÉM É UM ISBN ═══
+          --
+          -- Isto comparava só com editions.isbn13. Quem digitasse o número de dez
+          -- dígitos da contracapa (ou o ISBN-13 de uma edição cujo cadastro guardou
+          -- só o de dez) não achava NADA — e a busca então dizia "não temos" e
+          -- registrava um pedido de um livro que está no acervo.
+          --
+          -- A tabela identifiers existe exatamente para isto, e o comentário dela
+          -- no schema já dizia: "um ISBN é o único identificador que o leitor tem na
+          -- mão". A importação a consultava; a BUSCA nunca. São 471 mil linhas
+          -- gravadas, 90 mil delas ISBN-10, sem uso nenhum.
+          --
+          -- "in (subconsulta)" e não "exists" com "or": a chave primária de
+          -- identifiers é (kind, value), então a subconsulta cai direto no índice.
           where e.isbn13 = ${isbn}
+             or e.id in (select i.edition_id from identifiers i
+                          where i.kind in ('isbn13', 'isbn10') and i.value = ${isbn})
           limit 5`
       : sql`
           -- A UNION, not an OR. An OR spanning two joined tables cannot use

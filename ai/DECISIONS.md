@@ -2759,3 +2759,18 @@ Duas dessas obras estavam em estante e foram corrigidas com autor de verdade (Ca
 - **O registro do autor foi apagado**, senão ele continuaria aparecendo na busca de autores sem obra nenhuma.
 
 **Fica registrado, e é maior que isto:** o acervo tem **5.699 obras sem autor**. A varredura por outros registros-lixo com o mesmo padrão não achou nenhum (os nomes com muitas obras são Machado de Assis, Camilo Castelo Branco, Fernando Pessoa — legítimos). O buraco de autores é de cobertura, e não de contaminação.
+
+---
+
+**2026-08-01: A busca passa a olhar a tabela de identificadores. O ISBN-10 existia e era ignorado.**
+
+A fila de pedidos — "cada linha é alguém que procurou um livro e não achou" — tinha 33 entradas. **Treze eram livros que o acervo JÁ TEM.**
+
+A fila não estava contando o que falta no acervo: estava contando o que a busca não acha.
+
+- **A causa: `editions.isbn13`, e só ele.** Quem digitasse o número de dez dígitos impresso na contracapa não achava nada. O app respondia "não temos" e ainda registrava um pedido — a lista do que trazer para o acervo enchia de livro que já está no acervo.
+- **A tabela certa já existia, cheia, e não era consultada.** `identifiers` guarda todo nome externo que uma edição atende, e o comentário dela no schema já dizia o porquê: *"an ISBN is the only identifier a reader can hold in their hand"*. A IMPORTAÇÃO a lia. A BUSCA, nunca. São **471.354 linhas em produção, 90.298 delas ISBN-10**, sem uso nenhum. Não faltava dado — faltava perguntar.
+- **`in (subconsulta)` e não `exists` com `or`:** a chave primária de `identifiers` é (kind, value), então a subconsulta cai direto no índice. Um `or` atravessando duas tabelas unidas não usaria índice nenhum, e a busca roda a cada tecla digitada.
+- **Os 15 pedidos já atendidos foram MARCADOS, e não apagados.** O histórico do que as pessoas procuraram é o dado mais útil que elas dão de graça, e apagá-lo para deixar a lista bonita seria queimar a única evidência de que a busca falhava. `atendida_por` fica nulo de propósito: ninguém trouxe esses livros — eles já estavam aqui.
+
+**Sobraram 20 pedidos de verdade.** E eles contam outra coisa: metade é digitação parcial ("ux ressea", "veias abrrta", "negocie como sua vida") ou busca por pessoa ("gabistec", "gabisteca"). A fila registra tentativa interrompida como demanda não atendida, e isso ainda infla a lista — assunto próprio, e menor que este.
