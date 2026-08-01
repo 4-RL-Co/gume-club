@@ -455,7 +455,7 @@ export default async function BookPage({
                 aparece. Era uma gaveta no porão da página com título e resumo; um
                 erro de ficha se vê NA ficha, e é nela que se conserta. O histórico
                 continua público (é ele que torna vandalismo caro). ═══ */}
-            <Arrumar>
+            <Arrumar semCapa={!cover?.coverUrl}>
             {actor && edition ? (
               <>
                 <Correcao

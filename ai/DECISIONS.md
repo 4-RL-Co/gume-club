@@ -2833,3 +2833,17 @@ Dez fusões de autor estavam travadas pela própria `fundirAutores()`, que recus
 
 - **A obra absorvida é sempre a do autor não-canônico, e é a que está livre**, então nenhuma linha de estante muda de lugar. A trava é uma cláusula na consulta, e não uma boa intenção.
 - **Com as obras fora do caminho, mais 10 autores foram fundidos.** O total do dia é **61 correções no log**, todas assinadas e reversíveis. Sobram 3 grupos, travados pelas 3 obras que estão em estante — e eles ficam assim até alguém decidir caso a caso.
+
+---
+
+**2026-08-01: Livro sem capa PEDE uma, em voz alta.**
+
+Sobraram 231 livros que estão na estante de alguém e não têm capa em fonte pública nenhuma. Foram tentados três caminhos: o ISBN na Open Library, o ISBN no Google Books, e a busca por título e autor nas duas. São edições brasileiras pequenas que essas bases não cobrem. **Não existe API que resolva** — existe gente com o livro na mão.
+
+- **O formulário já existia, e o convite também. Num lugar onde ninguém lê.** O lápis de "arrumar este livro" tinha a dica certa (`title="faltou capa, ou tem algum dado errado? você mesmo ajeita"`), e `title` **não aparece no celular** e ninguém lê no computador. Pedir num lugar invisível é não pedir.
+- **Quem abre a página de um livro sem capa costuma ser exatamente quem o tem.** O pedido vai onde a falta aparece, e abre o formulário que sempre esteve ali. Nenhum mecanismo novo: só uma porta visível para o que já existia.
+- **O convite é CONDICIONAL.** Um pedido permanente em toda página vira ruído, e ruído é o que faz a pessoa parar de ler os avisos do app — aí o próximo, o que importa, também não é lido.
+- **A trava tem três partes**, e a terceira é a que salva: o convite existe, é condicional, **e a página avisa o componente quando a capa falta**. Sem essa última, o convite existiria no código e não apareceria para ninguém.
+- **A trava de VOZ do repo reprovou meu texto**, e com razão: eu usei travessão, que a casa proíbe em texto de tela. Trocado por dois-pontos. É a segunda vez no dia que um teste estrutural pega uma coisa que eu não veria.
+
+**E uma inconsistência minha foi corrigida junto:** o cartão da curadoria ainda dizia "os cem livros que a comunidade mais adorou", texto de antes de o voto virar "gostei ou adorei". Mudar a regra e esquecer a legenda é como o app passa a discordar de si mesmo.
