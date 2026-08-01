@@ -327,10 +327,39 @@ describe("a barra de baixo cabe na tela", () => {
     ).toBe(4);
   });
 
-  /** O rótulo corta em vez de escapar: pior caso "EXPLORA…", nunca um item sumido. */
-  it("o rótulo corta em vez de vazar", () => {
-    const rotulo = fonte.match(/const ROTULO_DO_CELULAR = "([^"]*)"/)?.[1];
-    expect(rotulo, "o rótulo dos itens da barra perdeu a medida única").toBeTruthy();
-    expect(rotulo, "sem truncate o rótulo longo empurra o item e a barra transborda").toContain("truncate");
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  TODO ITEM DA BARRA TEM NOME, E AGORA ELE É O ÚNICO QUE EXISTE.
+   *
+   *  Aqui morava "o rótulo corta em vez de vazar", que protegia a palavra embaixo do
+   *  ícone. **A palavra saiu** — o dono escolheu ícone sem rótulo, contra a minha
+   *  recomendação, e está registrado em ai/DECISIONS.md. Uma trava cujo alvo deixou
+   *  de existir não pode ser apagada e esquecida: ela troca de alvo, e o alvo novo é
+   *  mais duro que o velho.
+   *
+   *  Sem texto na tela, o `aria-label` deixou de ser reforço e virou O ÚNICO NOME de
+   *  cada item. Sem ele, quem usa leitor de tela ouve "link, link, link" seis vezes e
+   *  o app deixa de ter navegação — e ninguém que enxerga a tela jamais perceberia,
+   *  porque para o olho continua tudo no lugar. É o mesmo feitio dos outros bugs
+   *  deste arquivo: o que não deixa rastro.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  it("todo item da barra tem nome, mesmo sem palavra na tela", () => {
+    const barra = barraDoCelular();
+
+    // Nenhum rótulo na tela: é a decisão, e se ela voltar atrás este teste é o lugar
+    // de contar isso, e não um `span` que reaparece sozinho num commit de outra coisa.
+    expect(
+      barra,
+      "voltou rótulo à barra do celular. Se foi de propósito, mude esta trava junto e " +
+        "diga por quê — a decisão de tirar está em ai/DECISIONS.md.",
+    ).not.toContain("uppercase");
+
+    const nomes = barra.match(/aria-label=/g) ?? [];
+    expect(
+      nomes.length,
+      "algum item da barra ficou sem aria-label. Sem palavra na tela, ele é o único " +
+        "nome que o item tem: quem usa leitor de tela ouve 'link' e mais nada.",
+    ).toBe(4); // os quatro lugares (num map), a busca, e o perfil ou o entrar
   });
 });

@@ -2636,3 +2636,15 @@ Os seis itens tinham largura própria (`px-3` mais o rótulo inteiro) e a barra 
 - **A primeira versão do teste contou a tela em vez do código** e quebrou na barra que estava certa: são quatro usos da medida para seis itens, porque os quatro lugares saem de um `.map` e o perfil e o entrar são o mesmo lugar visto por duas pessoas. Está escrito lá, para não custar a mesma meia hora de novo.
 
 **Fica em aberto, e é do dono:** seis itens numa barra de celular é muito. Eles cabem agora, mas o rótulo desceu para 9px para caber. A alternativa é tirar um — e a candidata óbvia, a busca, é a que menos pode sair, porque `lib/celular.test.ts` existe justamente porque ela já foi inalcançável no telefone uma vez.
+
+---
+
+**2026-08-01: A barra do celular perde o rótulo. Eu recomendei o contrário, e o dono decidiu.**
+
+A entrada logo acima deixou uma pergunta em aberto: seis itens cabiam, mas ao custo de a letra descer para 9px. Foram postas três saídas — deixar como estava, tirar a palavra, ou tirar um item. **O dono escolheu tirar a palavra**, e eu tinha recomendado a primeira.
+
+- **O que isso custa está escrito no código, e é real.** Uma bússola e duas pessoas não dizem "explorar" e "amigos" sozinhas. Quem chega pela primeira vez vai tocar para descobrir, e é um custo que a palavra pagava. **A volta atrás é devolver o `<span>`: duas linhas.**
+- **O `aria-label` mudou de papel, e é a parte que não podia passar batida.** Ele era reforço; virou **o único nome** de cada item. Sem ele, quem usa leitor de tela ouve "link" seis vezes e o app deixa de ter navegação — e ninguém que enxerga a tela perceberia, porque para o olho continua tudo no lugar. É o mesmo feitio dos outros bugs deste dia: o que não deixa rastro.
+- **"Onde estou" não pode mais ser só a cor.** Um traço de 1.5px trocando de cinza para branco era um sinal fraco quando havia palavra embaixo confirmando; sozinho é fraco demais. O item aceso ganhou a MESMA superfície que o app inteiro usa para controles (`surface-2`), o traço engrossou (1.5 → 1.75) e o ícone cresceu (20 → 22). **Nada inventado:** é o vocabulário que já existia, e a alternativa seria desenhar um elemento novo para um problema que o sistema já resolve.
+- **A repartição de largura FICA**, mesmo sem a pressão que a justificava. Ela é o que garante que o sexto item exista em qualquer tela, e o dia em que a barra ganhar um sétimo item — ou o rótulo de volta — é justamente o dia em que ninguém vai lembrar de somar.
+- **A trava trocou de alvo em vez de ser apagada.** "O rótulo corta em vez de vazar" protegia uma palavra que não existe mais. No lugar dela, `lib/celular.test.ts` passou a exigir que todo item tenha `aria-label` e que rótulo nenhum volte à tela sem alguém mudar a trava e dizer por quê. É mais duro que a anterior, e não menos. As duas metades foram mutadas para provar que quebram.

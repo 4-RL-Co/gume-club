@@ -143,9 +143,12 @@ const ICON = { size: 18, strokeWidth: 1.5 } as const;
  *  Encolher a letra até caber conserta o telefone que está na mão hoje e quebra no
  *  telefone menor de amanhã, em silêncio, exatamente como este quebrou. Com
  *  `flex-1 min-w-0` cada item ganha um sexto EXATO do que existe: não há largura a
- *  transbordar, porque não há item que peça mais do que lhe cabe. Se a tela for
- *  estreita demais para a palavra, o rótulo corta com reticências — o item continua
- *  ali, tocável, visível, e o pior caso vira "EXPLORA…" em vez de nada.
+ *  transbordar, porque não há item que peça mais do que lhe cabe.
+ *
+ *  O rótulo acabou saindo (ver a nota logo abaixo), e com ele foi embora quase toda
+ *  a pressão de largura. A repartição FICA assim mesmo: ela é o que garante que o
+ *  sexto item exista em qualquer tela, e o dia em que a barra ganhar um sétimo item
+ *  ou um rótulo de volta é justamente o dia em que ninguém vai lembrar de somar.
  *
  *  ═══ E POR QUE UMA MEDIDA SÓ ═══
  *
@@ -156,10 +159,40 @@ const ICON = { size: 18, strokeWidth: 1.5 } as const;
  * ════════════════════════════════════════════════════════════════════
  */
 const ITEM_DO_CELULAR =
-  "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[var(--radius-control)] px-0.5 py-2 transition-colors";
+  "flex min-w-0 flex-1 items-center justify-center rounded-[var(--radius-control)] py-3 transition-colors";
 
-/** O rótulo cabe no item, e quando não cabe ele corta em vez de escapar. */
-const ROTULO_DO_CELULAR = "w-full truncate text-center text-[9px] uppercase tracking-[0.08em]";
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  SEM RÓTULO NO CELULAR. O DONO DECIDIU, E EU TINHA RECOMENDADO O CONTRÁRIO.
+ *
+ *  Eram seis itens com rótulo, e eles não cabiam: o PERFIL caía para fora da tela.
+ *  Repartir a largura fez caber, mas ao custo de a letra descer para 9px. Foram
+ *  postas três saídas, e a escolhida foi tirar a palavra.
+ *
+ *  ═══ O QUE ISSO CUSTA, E ESTÁ ESCRITO AQUI PORQUE É REAL ═══
+ *
+ *  Uma bússola e duas pessoas não dizem "explorar" e "amigos" sozinhas. Quem chega
+ *  pela primeira vez vai tocar para descobrir, e é um custo que a palavra pagava.
+ *  A volta atrás é devolver o `<span>` do rótulo: duas linhas.
+ *
+ *  ═══ O QUE ISSO OBRIGA ═══
+ *
+ *  1. O `aria-label` deixou de ser reforço e virou O ÚNICO NOME de cada item. Sem
+ *     ele, quem usa leitor de tela ouve "link" seis vezes, e o app deixa de ter
+ *     navegação. Não é zelo: é a única coisa que sobrou escrita. Ver a trava em
+ *     lib/celular.test.ts.
+ *  2. "Onde estou" não pode mais ser só a cor. Um traço de 1.5px trocando de cinza
+ *     para branco era um sinal fraco quando havia palavra embaixo dele confirmando,
+ *     e sozinho é fraco demais. O item aceso ganhou a MESMA superfície que o app
+ *     inteiro usa para dizer "você está aqui" (surface-2, o material dos controles),
+ *     e o traço engrossou. Nada inventado: é o vocabulário que já existia.
+ *  3. O ícone cresceu (20 → 22) e a área de toque ficou mais alta. Sem a palavra
+ *     sobra espaço, e o alvo de um dedo é o que ficou no lugar dela.
+ * ════════════════════════════════════════════════════════════════════
+ */
+const ACESO_NO_CELULAR = "surface-2 text-[var(--color-ink)]";
+const APAGADO_NO_CELULAR = "text-[var(--color-ink-faint)]";
+const ICONE_DO_CELULAR = { size: 22, strokeWidth: 1.75 } as const;
 
 export function Sidebar({
   eu,
@@ -367,11 +400,10 @@ export function Sidebar({
             aria-label={label}
             className={[
               ITEM_DO_CELULAR,
-              aceso(href) ? "text-[var(--color-ink)]" : "text-[var(--color-ink-faint)]",
+              aceso(href) ? ACESO_NO_CELULAR : APAGADO_NO_CELULAR,
             ].join(" ")}
           >
-            <Icon size={20} strokeWidth={1.5} />
-            <span className={ROTULO_DO_CELULAR}>{label}</span>
+            <Icon {...ICONE_DO_CELULAR} />
           </Link>
         ))}
 
@@ -394,10 +426,9 @@ export function Sidebar({
         <button
           onClick={abrirBusca}
           aria-label="Buscar"
-          className={`${ITEM_DO_CELULAR} text-[var(--color-ink-faint)] active:text-[var(--color-ink)]`}
+          className={`${ITEM_DO_CELULAR} ${APAGADO_NO_CELULAR} active:text-[var(--color-ink)]`}
         >
-          <Search size={20} strokeWidth={1.5} />
-          <span className={ROTULO_DO_CELULAR}>Buscar</span>
+          <Search {...ICONE_DO_CELULAR} />
         </button>
 
         {/* ═══ O PERFIL DO CELULAR ABRE UM MENU, e não só uma página ═══
@@ -415,13 +446,10 @@ export function Sidebar({
             aria-label="Perfil"
             className={[
               ITEM_DO_CELULAR,
-              aceso("/eu") || aceso("/perfil") || menu
-                ? "text-[var(--color-ink)]"
-                : "text-[var(--color-ink-faint)]",
+              aceso("/eu") || aceso("/perfil") || menu ? ACESO_NO_CELULAR : APAGADO_NO_CELULAR,
             ].join(" ")}
           >
-            <UserRound size={20} strokeWidth={1.5} />
-            <span className={ROTULO_DO_CELULAR}>Perfil</span>
+            <UserRound {...ICONE_DO_CELULAR} />
           </button>
         ) : (
           <Link
@@ -430,11 +458,10 @@ export function Sidebar({
             aria-label="Entrar"
             className={[
               ITEM_DO_CELULAR,
-              aceso("/entrar") ? "text-[var(--color-ink)]" : "text-[var(--color-ink-faint)]",
+              aceso("/entrar") ? ACESO_NO_CELULAR : APAGADO_NO_CELULAR,
             ].join(" ")}
           >
-            <LogIn size={20} strokeWidth={1.5} />
-            <span className={ROTULO_DO_CELULAR}>Entrar</span>
+            <LogIn {...ICONE_DO_CELULAR} />
           </Link>
         )}
       </GlassBar>
