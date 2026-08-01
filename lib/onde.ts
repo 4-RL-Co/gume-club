@@ -19,7 +19,8 @@
 /**
  * O SLUG DO REPOSITÓRIO, NUM LUGAR SÓ.
  *
- * `dono/nome`, e nada mais. O nome do repositório mudou uma vez (ganhou um hífen), e a troca
+ * `dono/nome`, e nada mais. Ele já mudou DUAS vezes: o nome ganhou um hífen, e depois o
+ * repositório trocou de dono. As duas trocas
  * mostrou por que ele precisa morar aqui: o slug não é só um link. `lib/contributors.ts`
  * chama a API do GitHub com ele para saber quem tem PR mesclado (a insígnia de construtor).
  * Com o nome errado, ele bate num repositório que não existe, a /contribuidores esvazia, e
@@ -27,7 +28,7 @@
  * em ausência", disparada por um rename. Um lugar só, e um teste (lib/nome-do-repo.test.ts)
  * que quebra a build se o nome velho voltar a aparecer em qualquer canto.
  */
-export const REPO = "4-RL-Co/gume-club";
+export const REPO = "olegas4real/gume-club";
 
 /** Onde o código mora. Só a página Sobre pode falar disso em voz alta. */
 export const CODIGO = `https://github.com/${REPO}`;

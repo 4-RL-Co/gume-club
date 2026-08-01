@@ -65,7 +65,7 @@ export function apoioLigado(): boolean {
  * O preço de cada plano, vindo do ambiente.
  *
  * São ids (`price_...`), e não segredos: eles aparecem no checkout. Mas moram no
- * ambiente do mesmo jeito, porque são da INSTÂNCIA: os preços da 4/RL Co. não são os de
+ * ambiente do mesmo jeito, porque são da INSTÂNCIA: os preços do gume.club não são os de
  * quem hospeda o próprio Gume, e um id chumbado no código seria a conta de outra pessoa.
  */
 export function precoDo(tier: Tier): string | undefined {

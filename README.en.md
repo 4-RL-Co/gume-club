@@ -9,10 +9,10 @@
 
 An open reading log, built with the people who read it.
 
-[Português](./README.md) · [gume.club](https://gume.club) · [Discussions](https://github.com/4-RL-Co/gume-club/discussions) · [How to contribute](./CONTRIBUTING.md)
+[Português](./README.md) · [gume.club](https://gume.club) · [Discussions](https://github.com/olegas4real/gume-club/discussions) · [How to contribute](./CONTRIBUTING.md)
 
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](./LICENSE)
-[![CI](https://github.com/4-RL-Co/gume-club/actions/workflows/ci.yml/badge.svg)](https://github.com/4-RL-Co/gume-club/actions/workflows/ci.yml)
+[![CI](https://github.com/olegas4real/gume-club/actions/workflows/ci.yml/badge.svg)](https://github.com/olegas4real/gume-club/actions/workflows/ci.yml)
 
 Self-hostable · No ads, no affiliate links, no algorithm
 
@@ -81,14 +81,7 @@ The statistics tell you who you are (the age of the works you read, the countrie
 
 ## How it pays for itself
 
-<a href="https://github.com/4-RL-Co">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./public/logo/4rl-mark-dark.svg">
-    <img src="./public/logo/4rl-mark.svg" alt="4/RL Co." width="44" align="left">
-  </picture>
-</a>
-
-`gume.club` is hosted and paid for by [4/RL Co.](https://github.com/4-RL-Co) One day there will be a way to support the project, and it will be optional and **cosmetic**: a badge on the profile, and nothing beyond that. Support unlocks no features: people who pay and people who don't use exactly the same Gume. This is written here on purpose, because it's a promise.
+`gume.club` is hosted and paid for so the app stays free for readers. Anyone who wants to help with the bill can **support it**, and support is optional and **cosmetic**: a badge on the profile, and your name on the supporters list. Support unlocks no features: people who pay and people who don't use exactly the same Gume. This is written here on purpose, because it's a promise.
 
 The license is the guarantee. If the hosted instance ever stops honoring the list above, you can take the code, take your data, and run your own. The exit is the point: it's what makes the promises real instead of merely pretty.
 
@@ -97,7 +90,7 @@ The license is the guarantee. If the hosted instance ever stops honoring the lis
 Two commands, and they have to work on a clean machine.
 
 ```bash
-git clone https://github.com/4-RL-Co/gume-club.git
+git clone https://github.com/olegas4real/gume-club.git
 cd gume-club
 ```
 
@@ -140,7 +133,7 @@ For those who will write code, especially welcome:
 - **Polished PT-BR.** The priority is the app flawless in Brazilian Portuguese. Translating to other languages comes much later, once BR is solid. It's not the time.
 - **Design.** The bar is in [docs/design.md](./docs/design.md). If you can beat it, please do.
 
-Issues tagged `good first issue` are real: each one says what it is, why it matters, which file to touch, and how to test. The larger ones already have their full text ready in [`.github/ISSUE_DRAFTS/`](./.github/ISSUE_DRAFTS). Read [CONTRIBUTING.md](./CONTRIBUTING.md) and the [Code of Conduct](./CODE_OF_CONDUCT.md) first. And **you can ask before you start**, in the [Discussions](https://github.com/4-RL-Co/gume-club/discussions).
+Issues tagged `good first issue` are real: each one says what it is, why it matters, which file to touch, and how to test. The larger ones already have their full text ready in [`.github/ISSUE_DRAFTS/`](./.github/ISSUE_DRAFTS). Read [CONTRIBUTING.md](./CONTRIBUTING.md) and the [Code of Conduct](./CODE_OF_CONDUCT.md) first. And **you can ask before you start**, in the [Discussions](https://github.com/olegas4real/gume-club/discussions).
 
 ## The catalog is common, and it's the hard part
 

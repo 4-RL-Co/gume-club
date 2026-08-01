@@ -50,7 +50,7 @@ describe("os endereços de fora", () => {
         .replace(/\/\*[\s\S]*?\*\//g, " ")
         .replace(/(^|[^:])\/\/.*$/gm, "$1");
 
-      if (/github\.com\/4-RL-Co\/gume-club/.test(codigo)) {
+      if (/github\.com\/[\w-]+\/gume-club/.test(codigo)) {
         naMao.push(
           `${arquivo.replace(process.cwd() + "/", "")} escreve o endereço à mão. ` +
             "Use CODIGO ou CONVERSA, de lib/onde.ts: um endereço em quatro telas muda em " +
