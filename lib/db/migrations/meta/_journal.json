@@ -386,6 +386,13 @@
       "when": 1784700817007,
       "tag": "0054_a_foto_da_estante",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1784700817008,
+      "tag": "0055_quem_paga_a_conta",
+      "breakpoints": true
     }
   ]
 }

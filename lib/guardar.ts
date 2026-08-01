@@ -12,12 +12,10 @@ import { put } from "@vercel/blob";
  *  A foto era gravada em `public/uploads`, no disco da máquina. Isso está certo num
  *  servidor de verdade, e é o que faz o auto-hospedar funcionar sem contratar nada.
  *
- *  Em serverless, o disco:
- *
- *    1. é SOMENTE LEITURA fora de `/tmp` — então `writeFile` levanta, e **toda foto de
- *       perfil falharia ao subir**, para todo mundo, desde o primeiro minuto; e
- *    2. some entre uma requisição e outra — então, mesmo que gravasse, a foto viraria um
- *       endereço 404 assim que a instância morresse.
+ *  Num container sem disco preservado, o que for gravado no disco **some no próximo
+ *  deploy**. A foto subiria, apareceria, e viraria um endereço quebrado dias depois, sem
+ *  ninguém ter feito nada. E se o dia chegar em que exista mais de uma réplica, fica pior
+ *  na hora: a foto gravada numa instância não existe para as outras.
  *
  *  Nenhum teste pegaria isso: em desenvolvimento o disco existe e é gravável. É um bug
  *  que só aparece em produção, no dia do lançamento, na cara da primeira pessoa que
@@ -71,9 +69,9 @@ export async function guardarImagem(
 
   if (process.env.NODE_ENV === "production") {
     throw new Error(
-      "Não há onde guardar a foto: falta BLOB_READ_WRITE_TOKEN. Em serverless o disco é " +
-        "somente leitura e some entre requisições, então gravar em disco aqui seria " +
-        "prometer uma foto que não existiria daqui a um minuto.",
+      "Não há onde guardar a foto: falta BLOB_READ_WRITE_TOKEN. Sem um disco que " +
+        "sobreviva ao deploy, gravar em disco aqui seria prometer uma foto que sumiria " +
+        "sozinha na próxima subida.",
     );
   }
 

@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { HeartHandshake } from "lucide-react";
 import { getApoiadores, getCatalogo, getCodigo } from "@/lib/contributors";
+import { apoioLigado } from "@/lib/stripe";
 import { Cabecalho, Portas } from "@/components/casa-de-quem-faz";
 import { Avatar } from "@/components/avatar";
 import { Empty } from "@/components/empty";
@@ -19,6 +21,13 @@ export const dynamic = "force-dynamic";
  */
 export default async function Contribuidores() {
   const [catalogo, apoiadores] = await Promise.all([getCatalogo(), getApoiadores()]);
+
+  /**
+   * Esta instância aceita apoio? Quem hospeda o próprio Gume não tem conta de pagamento,
+   * e para ele a seção inteira não existe: um convite para apoiar que leva a uma página
+   * que responde "não encontrado" é pior do que convite nenhum.
+   */
+  const podeApoiar = apoioLigado();
 
   /**
    * "Ninguém contribuiu" e "não consegui perguntar" são coisas OPOSTAS, e a tela precisa
@@ -183,34 +192,69 @@ export default async function Contribuidores() {
           Então o reconhecimento acontece, e a confusão continua impossível: seção
           separada, título que diz o que é, e NENHUM NÚMERO. Não existe "quem apoiou
           mais". A ordem é de chegada, que é um fato sobre o tempo e não sobre o bolso. */}
-      {apoiadores.length > 0 && (
+      {/* ═══ A SEÇÃO NÃO DEPENDE MAIS DE A LISTA TER GENTE ═══
+
+          Ela só aparecia com `apoiadores.length > 0`, e aparecer na lista virou uma
+          escolha (opt-in): pagar não é consentir em ser publicado. Com a condição antiga,
+          uma lista vazia levaria embora também o convite para apoiar, e a porta sumiria
+          justamente enquanto ninguém tivesse entrado por ela.
+
+          Agora a seção existe sempre que esta instância aceita apoio, e a lista é a parte
+          opcional dela. */}
+      {podeApoiar && (
         <section className="mt-20 border-t border-[var(--color-rule)] pt-12">
           <Titulo>quem paga a conta</Titulo>
 
           <p className="mt-5 max-w-2xl text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
-            Servidor custa dinheiro, e o Gume não tem anúncio. Estas pessoas pagam a conta para
+            Servidor custa dinheiro, e o Gume não tem anúncio. Quem apoia paga a conta para
             que ele seja de graça para todo mundo, e isso não é menos do que escrever código: é o
             que mantém o código no ar.
           </p>
 
-          <ul className="mt-8 flex flex-wrap gap-3">
-            {apoiadores.map((p) => (
-              <li key={p.handle}>
-                <Link
-                  href={`/@${p.handle}`}
-                  className="surface surface-hover flex items-center gap-3 py-2.5 pl-2.5 pr-5"
-                >
-                  <Avatar src={p.image} name={p.name} handle={p.handle} size={34} />
-                  <span className="text-[15px] text-[var(--color-ink)]">
-                    {p.name ?? p.handle}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          {apoiadores.length > 0 && (
+            <>
+              <ul className="mt-8 flex flex-wrap gap-3">
+                {apoiadores.map((p) => (
+                  <li key={p.handle}>
+                    <Link
+                      href={`/@${p.handle}`}
+                      className="surface surface-hover flex items-center gap-3 py-2.5 pl-2.5 pr-5"
+                    >
+                      <Avatar src={p.image} name={p.name} handle={p.handle} size={34} />
+                      <span className="text-[15px] text-[var(--color-ink)]">
+                        {p.name ?? p.handle}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
 
-          <p className="mt-8 max-w-2xl text-[13px] leading-relaxed text-[var(--color-ink-faint)]">
-            Quem paga a conta do servidor, por ordem de chegada. Apoiar é sim ou não.
+              <p className="mt-8 max-w-2xl text-[13px] leading-relaxed text-[var(--color-ink-faint)]">
+                Quem apoia e quis aparecer aqui, por ordem de chegada. Apoiar é sim ou não.
+              </p>
+            </>
+          )}
+
+          {/* ═══ ELE ERA UM CARTÃO CINZA, E SUMIA ═══
+
+              Este é o único lugar do app que pede dinheiro, e ele estava desenhado como
+              todo o resto: uma superfície neutra no meio de uma página de superfícies
+              neutras. Uma porta que ninguém enxerga é uma porta fechada.
+
+              Agora ele é sólido, na cor de "quem faz". É o único botão preenchido desta
+              tela, e é de propósito: se houvesse dois, nenhum chamaria. */}
+          <Link
+            href="/apoiar"
+            className="mt-8 inline-flex items-center gap-2 rounded-[var(--radius-control)] px-5 py-3 text-[15px] font-medium transition-opacity hover:opacity-90"
+            style={{ background: "var(--color-colaborar)", color: "#1a1a18" }}
+          >
+            <HeartHandshake size={17} strokeWidth={1.75} />
+            Apoiar o Gume
+          </Link>
+
+          <p className="mt-4 max-w-2xl text-[13px] leading-relaxed text-[var(--color-ink-faint)]">
+            Você ganha uma insígnia no perfil, e o seu nome nesta lista se quiser. Nenhuma
+            função do app fica atrás de pagamento.
           </p>
         </section>
       )}

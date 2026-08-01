@@ -15,11 +15,14 @@ import { db } from "@/lib/db";
  *  uma contagem. E o comentário antigo dizia, com todas as letras, que com duas
  *  instâncias "o limite efetivo dobra".
  *
- *  Ele subestimava. O deploy é em serverless, onde não existe "o processo": existe um
- *  processo novo, ou um de uma dúzia mornos, a cada requisição. Um script que tenta mil
- *  senhas se espalha por cinquenta instâncias; cada uma conta vinte, nenhuma passa do
- *  teto de dez, e **quinhentas tentativas de senha passam**. O limite não afrouxa: ele
- *  para de existir, e continua PARECENDO que existe.
+ *  Ele subestimava, e o erro não depende de onde o app roda: basta existir mais de uma
+ *  instância. Um script que tenta mil senhas se espalha pelas réplicas; cada uma conta o
+ *  seu punhado, nenhuma passa do teto de dez, e **centenas de tentativas de senha
+ *  passam**. O limite não afrouxa: ele para de existir, e continua PARECENDO que existe.
+ *
+ *  Hoje o Gume roda em container, com uma réplica. É exatamente o cenário em que o `Map`
+ *  ainda funcionaria, e é por isso que ele é perigoso: ele volta a mentir no dia em que
+ *  alguém subir a segunda réplica, e esse dia não vem com aviso.
  *
  *  ═══ POR QUE O BANCO, E ONDE ELE PASSOU A SER CHAMADO ═══
  *
@@ -27,8 +30,8 @@ import { db } from "@/lib/db";
  *  instâncias. Um Redis resolveria o mesmo e cobraria um serviço novo, uma conta nova e
  *  um segredo novo — por uma tabela de três colunas.
  *
- *  E o limite MUDOU DE LUGAR, não só de caixa: ele era chamado no `middleware.ts`, e na
- *  Vercel o middleware roda no runtime Edge, que **não fala com o Postgres**. Então quem
+ *  E o limite MUDOU DE LUGAR, não só de caixa: ele era chamado no `middleware.ts`, e o
+ *  middleware do Next roda no runtime Edge, que **não fala com o Postgres**. Então quem
  *  chama agora é quem roda em Node e é dono do risco:
  *
  *      /api/auth/*      força bruta de senha, fazenda de cadastro, enxurrada de código
@@ -167,9 +170,9 @@ export async function limitar(key: string, regra: Regra): Promise<Verdict> {
  * Sem isto, um atacante com mil IPs deixa mil linhas mortas para trás: ele não passa de
  * limite nenhum, e enche a tabela devagar, para sempre.
  *
- * Roda por sorteio, uma vez a cada duzentas chamadas, porque em serverless um contador de
- * módulo não sobrevive à requisição — o processo morre, e o contador morre com ele. Um
- * dado de duzentas faces é a única memória que atravessa instância.
+ * Roda por sorteio, uma vez a cada duzentas chamadas, e não por um contador de módulo: um
+ * contador vive na memória de UM processo, e não atravessa réplica nem reinício. Um dado
+ * de duzentas faces funciona igual em qualquer instância, sem nada guardado.
  *
  * E ela nunca derruba a chamada de quem pediu: uma faxina que falha é uma faxina, e não
  * um login negado.
@@ -185,20 +188,67 @@ export async function varrer(): Promise<void> {
 }
 
 /**
- * Quem está batendo na porta.
+ * ════════════════════════════════════════════════════════════════════
+ *  QUEM ESTÁ BATENDO NA PORTA.
  *
- * `x-real-ip` PRIMEIRO, e de propósito: é o cabeçalho que a plataforma (Vercel,
- * nginx com a config padrão) escreve com o IP que ELA viu na borda, e que o
- * cliente não consegue forjar. O `x-forwarded-for` é uma lista que proxies vão
- * ACRESCENTANDO — se a borda acrescenta em vez de substituir, o primeiro item é
- * o que o atacante mandou, e cada requisição com um valor novo cairia num balde
- * novo: o limite de força bruta pareceria limitar e não limitaria. Auditoria de
- * 2026-07-22. Quem hospedar atrás de um proxy que não põe `x-real-ip` cai no
- * primeiro `x-forwarded-for`, que é o melhor que aquele ambiente oferece.
+ *  O balde conta por endereço, e este é o único lugar que decide qual endereço é esse.
+ *  Errar aqui não afrouxa o limite: **muda em quem ele bate.**
+ *
+ *  ═══ POR QUE O PADRÃO É `x-real-ip` ═══
+ *
+ *  É o cabeçalho que o proxy da frente escreve com o endereço que ELE viu na borda, e o
+ *  cliente não consegue forjar. O `x-forwarded-for` é uma LISTA que proxies vão
+ *  ACRESCENTANDO: se a borda acrescenta em vez de apagar, o primeiro item é o que o
+ *  atacante mandou, e cada requisição com um valor novo cai num balde novo. O limite
+ *  pareceria limitar e não limitaria. Auditoria de 2026-07-22.
+ *
+ *  É o certo atrás de um nginx com a config padrão, que é o caso de quem auto-hospeda.
+ *
+ *  ═══ E POR QUE ELE PRECISOU VIRAR CONFIGURÁVEL ═══
+ *
+ *  Em algumas plataformas o `x-real-ip` NÃO é o endereço da pessoa. No Railway ele vem
+ *  com o endereço da borda da CDN, e a própria equipe deles chama isso de bug conhecido:
+ *
+ *      "X-Real-Ip currently gets set to the CDN edge IP rather than the true client IP.
+ *       This is a bug on our side that we're tracking to fix."
+ *
+ *  Isso é pior do que parece, e o estrago não cai no atacante: se todo mundo chega com o
+ *  MESMO endereço, todo mundo divide o MESMO balde. Como o limite de login é dez a cada
+ *  cinco minutos, bastariam algumas pessoas entrando ao mesmo tempo para **trancar todos
+ *  os leitores para fora ao mesmo tempo**. Um limite que existe para proteger a porta
+ *  passaria a ser quem a fecha.
+ *
+ *  Lá, a recomendação da plataforma é o primeiro item do `x-forwarded-for`, e ali ele é
+ *  confiável porque a borda deles APAGA o que o cliente mandar antes de acrescentar o
+ *  endereço de verdade.
+ *
+ *  ═══ POR QUE UMA VARIÁVEL, E NÃO UM `if` COM O NOME DA PLATAFORMA ═══
+ *
+ *  Porque o Gume roda em lugares que a gente não conhece. Um `if (railway)` estaria
+ *  errado no dia seguinte, e não ajudaria ninguém atrás de um proxy diferente. A variável
+ *  descreve o AMBIENTE ("quem está na minha frente escreve este cabeçalho"), que é um
+ *  fato que só quem faz o deploy sabe.
+ *
+ *  O padrão continua sendo o seguro para quem não configurar nada. Ver .env.example.
+ * ════════════════════════════════════════════════════════════════════
  */
 export function quem(req: Request): string {
+  const primeiroDaLista = () =>
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "";
+
+  /**
+   * A plataforma da frente apaga o `x-forwarded-for` do cliente e acrescenta o endereço
+   * verdadeiro. Então o primeiro item é a pessoa, e o `x-real-ip` NÃO serve de reserva:
+   * onde esta opção é necessária, ele é justamente o cabeçalho que mente. Cair nele
+   * mandaria todo mundo para o mesmo balde, que é o problema que esta opção resolve.
+   */
+  if (process.env.IP_HEADER?.trim().toLowerCase() === "x-forwarded-for") {
+    return primeiroDaLista() || "sem-ip";
+  }
+
   const real = req.headers.get("x-real-ip")?.trim();
   if (real) return real;
-  const encaminhado = req.headers.get("x-forwarded-for");
-  return encaminhado?.split(",")[0]?.trim() || "sem-ip";
+
+  // Sem `x-real-ip`, o primeiro `x-forwarded-for` é o melhor que aquele ambiente oferece.
+  return primeiroDaLista() || "sem-ip";
 }

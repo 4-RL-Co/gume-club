@@ -14,15 +14,14 @@ import { imgSrc } from "@/lib/imagens";
  *       POST cobre todas elas de uma vez, inclusive as que ainda não foram escritas.
  *       Uma ação nova nasce protegida sem ninguém lembrar."
  *
- *  Só que o balde vivia na MEMÓRIA DO PROCESSO, e o deploy vai ser em serverless. Lá não
- *  existe "o processo": existe um processo novo, ou um de uma dúzia mornos, a cada
- *  requisição. Mil tentativas de senha se espalham por cinquenta instâncias, cada uma
- *  conta vinte, nenhuma passa do teto de dez, e **as mil passam**.
+ *  Só que o balde vivia na MEMÓRIA DO PROCESSO, e memória de processo só conta enquanto
+ *  existe UM processo. Assim que há réplicas, mil tentativas de senha se espalham entre
+ *  elas, cada uma conta o seu punhado, nenhuma passa do teto de dez, e **as mil passam**.
  *
  *  O limite não afrouxava. Ele deixava de existir, e continuava parecendo que existia —
  *  que é a pior das duas coisas, porque ninguém vai conferir o que já está escrito.
  *
- *  E não dava para só trocar o Map pelo Postgres AQUI: na Vercel, o middleware roda no
+ *  E não dava para só trocar o Map pelo Postgres AQUI: o middleware do Next roda no
  *  runtime **Edge**, que não abre conexão com banco. O limite não podia ficar.
  *
  *  ═══ PARA ONDE ELE FOI ═══

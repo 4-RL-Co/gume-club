@@ -15,9 +15,8 @@ import { limitarEscrita } from "@/lib/escrita";
  * ═══ E É AQUI QUE A ESCRITA É CONTADA ═══
  *
  * O limite de escrita morava no `middleware.ts`, e cobria toda ação de servidor de uma
- * vez, porque toda ação é um POST. Isso morreu no deploy em serverless: o middleware roda
- * no Edge, que não fala com o Postgres, e um balde na memória de um processo efêmero não
- * conta nada.
+ * vez, porque toda ação é um POST. Isso morreu quando o limite foi para o banco: o
+ * middleware roda no runtime Edge, que não fala com o Postgres. Ver lib/rate-limit.ts.
  *
  * Ele desceu para cá, que é o portão por onde toda mutação já passava — e o comentário
  * acima já dizia isso desde sempre: "every mutation resolves the actor here".

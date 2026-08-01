@@ -11,6 +11,7 @@ import { Avatar, AvatarLink } from "@/components/avatar";
 import { Resume } from "@/components/resume";
 import { FourRL } from "@/components/four-rl";
 import { CODIGO, CONVERSA } from "@/lib/onde";
+import { getCapasDaParede } from "@/lib/parede";
 
 export const dynamic = "force-dynamic";
 
@@ -40,99 +41,15 @@ export default async function Home() {
  */
 async function Manifesto() {
   /**
-   * A parede NUNCA é sorteada no acervo cru.
+   * A parede NUNCA é sorteada no acervo cru, e a regra de o que pode aparecer nela mora
+   * em lib/parede.ts: primeiro o que está nas estantes das pessoas, depois o cânone como
+   * remendo, e só capa com imagem de verdade.
    *
-   * Sortear no meio de 262 mil obras devolve anais de congresso, relatório de ministério e
-   * digitalização com acento quebrado. Numa parede que é a primeira coisa que alguém vê na
-   * vida, isso não é honestidade: é ruído, e a pessoa passa a julgar o Gume pelo título
-   * estranho em vez de pelo que ele é.
-   *
-   * A ordem está logo abaixo, em `parede`: primeiro o que está nas estantes das pessoas,
-   * depois o cânone como remendo. Toda capa aqui tem imagem de verdade — uma capa
-   * tipográfica gerada na parede diz "este catálogo está vazio", que é o contrário do que a
-   * dobra está dizendo.
+   * Ela saiu daqui quando a tela de apoiar precisou das mesmas capas. Duas cópias da
+   * consulta seriam duas respostas para "o que é o acervo do Gume", e um dia elas
+   * discordariam sem ninguém saber qual estava certa.
    */
-  const capas = await db.execute<{
-    title: string; author: string | null; cover_url: string | null; ordem: number; n: number;
-  }>(sql`
-    with das_estantes as (
-      select w.id, w.title, a.name as author,
-             (select e.cover_url from editions e
-               where e.work_id = w.id and e.cover_url is not null
-               order by e.created_at limit 1) as cover_url,
-             0 as ordem,
-             count(*)::int as n
-        from works w
-        join library_entries le on le.work_id = w.id
-        left join authors a on a.id = w.author_id
-       where le.visibility = 'public'
-         and exists (select 1 from editions e where e.work_id = w.id and e.cover_url is not null)
-       group by w.id, w.title, a.name
-    ),
-    canone as (
-      select w.id, w.title, a.name as author,
-             (select e.cover_url from editions e
-               where e.work_id = w.id and e.cover_url is not null
-               order by e.created_at limit 1) as cover_url,
-             1 as ordem, 0 as n
-        from works w
-        join authors a on a.id = w.author_id
-       where a.name ~* ${CANON}
-         and exists (select 1 from editions e where e.work_id = w.id and e.cover_url is not null)
-    ),
-    manga as (
-      select w.id, w.title, a.name as author,
-             (select e.cover_url from editions e
-               where e.work_id = w.id and e.cover_url is not null
-               order by e.created_at limit 1) as cover_url,
-             1 as ordem, 0 as n
-        from works w
-        left join authors a on a.id = w.author_id
-       where w.title ~* ${MANGA}
-         and exists (select 1 from editions e where e.work_id = w.id and e.cover_url is not null)
-    )
-    select distinct on (id) title, author, cover_url, ordem, n
-      from (select * from das_estantes union all select * from canone union all select * from manga) t
-     where title !~ '\ufffd'
-     order by id, ordem
-     limit 200`);
-
-  /**
-   * ════════════════════════════════════════════════════════════════════
-   *  A PAREDE É A ESTANTE DE VERDADE. O CÂNONE SÓ COMPLETA O QUE FALTA.
-   *
-   *  ═══ O QUE ELA ERA ═══
-   *
-   *  Uma lista de quinze nomes escritos à mão neste arquivo — Machado, Clarice, Kafka,
-   *  Tolkien — sorteada a cada carga. Era honesta e era MINHA: aquilo é o que EU acho que
-   *  representa o Gume, e não o que as pessoas que usam o Gume de fato leem.
-   *
-   *  ═══ O QUE ELA É ═══
-   *
-   *  Os livros que mais aparecem nas estantes públicas, na ordem em que aparecem. A parede
-   *  passa a dizer uma coisa verdadeira e verificável: "isto aqui é o que se lê no Gume".
-   *  E ela muda sozinha conforme as pessoas leem, sem ninguém editar este arquivo.
-   *
-   *  ═══ E ISTO NÃO É UM PLACAR ═══
-   *
-   *  A regra da casa é que **nada ordena GENTE por quanto ela leu** (ver as três estantes
-   *  logo abaixo, que são sorteadas justamente por isso). Ordenar LIVRO por quantas
-   *  estantes ele está em é outra coisa: ninguém sobe, ninguém desce, ninguém é comparado
-   *  com ninguém. É uma prateleira dos mais lidos, e não um pódio de leitores.
-   *
-   *  Nenhum número aparece na tela: a contagem decide a ORDEM, e some.
-   *
-   *  ═══ O CÂNONE CONTINUA, E COMO REMENDO ═══
-   *
-   *  Com poucas estantes públicas, a parede ficaria com seis capas e um buraco. Então o
-   *  cânone entra DEPOIS, embaralhado, só para encher as três fileiras. Conforme as
-   *  estantes crescerem, ele vai sendo empurrado para fora sozinho.
-   * ════════════════════════════════════════════════════════════════════
-   */
-  const parede = capas
-    .filter((c) => c.cover_url)
-    .sort((a, b) => a.ordem - b.ordem || b.n - a.n || Math.random() - 0.5)
-    .slice(0, 30);
+  const parede = await getCapasDaParede(30);
 
   /**
    * ═══ TRÊS ESTANTES PÚBLICAS, E NÃO AS TRÊS MAIORES ═══
@@ -397,23 +314,6 @@ async function Manifesto() {
   );
 }
 
-/**
- * O cânone da parede. Nomes como o dump da Open Library os escreve, e é por isso
- * que "Dostoyevsky" está aqui com y: a grafia é a do catálogo, não a nossa.
- *
- * Vagabond e Fullmetal Alchemist NÃO estão: eles não existem no dump em português,
- * e uma parede não pode mostrar um livro que o app não tem. No dia em que
- * entrarem no catálogo, entram aqui.
- */
-const CANON = [
-  "machado de assis", "clarice lispector", "graciliano ramos", "franz kafka",
-  "dostoyevsky", "dostoiévski", "josé saramago", "carlos drummond",
-  "lima barreto", "euclides da cunha", "gabriel garcía márquez",
-  "j.r.r. tolkien", "george orwell", "jorge amado", "cecília meireles",
-].join("|");
-
-/** Mangá, por título: o autor vem grafado em japonês no dump, e o título não. */
-const MANGA = "berserk|akira|vagabond|fullmetal";
 
 /**
  * O que o Gume recusa. É a dobra mais forte do manifesto, e é a única que os

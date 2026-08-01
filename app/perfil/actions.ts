@@ -8,6 +8,32 @@ import { getActor } from "@/lib/actor";
 import { LIMITS, clamp } from "@/lib/limits";
 import { assertOwner, type Viewer } from "@/lib/authz";
 
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  APARECER, OU NÃO, NA LISTA DE QUEM APOIA.
+ *
+ *  A caixa nasce desmarcada, e a decisão é essa: pagar não é consentir em ser
+ *  publicado. Quem apoia e não marca nada apoia em silêncio, e o app não conta a
+ *  ninguém.
+ *
+ *  Marcar não dá nada além de aparecer. A lista não tem valor, não tem ordem de
+ *  grandeza e não tem posição: ela é por ordem de chegada, que é um fato sobre o
+ *  tempo e não sobre o bolso. Ver lib/contributors.ts.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export async function salvarApoioPublico(
+  aparecer: boolean,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const actor = await getActor();
+  assertOwner(actor as Viewer, { userId: actor.id });
+
+  await db.update(users).set({ supporterPublic: aparecer }).where(eq(users.id, actor.id));
+
+  revalidatePath("/perfil");
+  revalidatePath("/contribuidores");
+  return { ok: true };
+}
+
 /** A handle is the reader's public address. Lowercase, no accents, no surprises. */
 function cleanHandle(raw: string): string {
   return raw

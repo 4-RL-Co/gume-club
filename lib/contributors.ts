@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { REPO } from "@/lib/onde";
+import { ehApoiador } from "@/lib/apoio";
 
 /**
  * O GitHub recusou. Isso NÃO é "ninguém contribuiu".
@@ -266,7 +267,16 @@ export async function getApoiadores(): Promise<Apoiador[]> {
            u.display_name as name,
            u.image
       from users u
-     where u.is_supporter = true
+     -- Quem apoia HOJE, perguntado na hora. Ver lib/apoio.ts: a insígnia, a moldura e
+     -- esta lista usam a mesma regra, e é por isso que ninguém aparece aqui no dia
+     -- seguinte ao apoio acabar.
+     where ${ehApoiador(sql`u`)}
+       -- ═══ E SÓ QUEM PEDIU PARA APARECER ═══
+       --
+       -- Pagar não é consentir em ser publicado. A caixa mora em /perfil, e nasce
+       -- desmarcada: uma lista pública que nasce cheia põe o nome de alguém numa página
+       -- que ele não pediu, por ter apoiado.
+       and u.supporter_public = true
        and u.deleted_at is null
      -- POR ORDEM DE CHEGADA. Nunca por valor, nunca por tempo de apoio, nunca por nada
      -- que possa ser lido como "este apoia mais". Não existe apoiar mais.

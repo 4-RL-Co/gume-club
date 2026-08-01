@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { RATES, limitar } from "@/lib/rate-limit";
+import { RATES, limitar, quem } from "@/lib/rate-limit";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -12,10 +12,9 @@ import { RATES, limitar } from "@/lib/rate-limit";
  *
  *  O limitador era um `Map` na memória. Num servidor só, isso está certo.
  *
- *  No deploy em serverless, não existe "o processo": existe um processo novo, ou um de
- *  uma dúzia mornos, a cada requisição. Um script que tenta mil senhas se espalha por
- *  cinquenta instâncias, cada uma conta vinte, nenhuma passa do teto de dez, e **as mil
- *  tentativas de senha passam**.
+ *  Com mais de uma instância, o balde vira um balde POR INSTÂNCIA. Um script que tenta
+ *  mil senhas se espalha entre as réplicas, cada uma conta o seu punhado, nenhuma passa
+ *  do teto de dez, e **as mil tentativas de senha passam**.
  *
  *  O limite não afrouxa: ele deixa de existir, e continua PARECENDO que existe.
  *
@@ -156,7 +155,7 @@ describe("onde o limite mora", () => {
 
     expect(
       /\blimitar\s*\(|\bhit\s*\(/.test(mw),
-      "o limite voltou para o middleware. Na Vercel ele roda no Edge, que não fala com o " +
+      "o limite voltou para o middleware. Ele roda no runtime Edge, que não fala com o " +
         "Postgres: ou ele quebra, ou alguém o 'conserta' com um Map na memória e o limite " +
         "silenciosamente para de existir de novo.",
     ).toBe(false);
@@ -175,5 +174,101 @@ describe("onde o limite mora", () => {
       'a rota de entrada precisa de runtime = "nodejs". No Edge o limitador não alcança o ' +
         "Postgres, e o limite de força bruta some sem quebrar nada.",
     ).toMatch(/runtime\s*=\s*"nodejs"/);
+  });
+});
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  DE QUEM É O BALDE.
+ *
+ *  ═══ O BUG QUE ESTES TESTES EXISTEM PARA IMPEDIR ═══
+ *
+ *  Não é o atacante que passa: é o LEITOR que não entra.
+ *
+ *  Se `quem()` devolver o mesmo valor para todo mundo, todo mundo divide o mesmo balde.
+ *  Com o teto de dez tentativas de login a cada cinco minutos, bastam algumas pessoas
+ *  entrando ao mesmo tempo para trancar TODOS os leitores para fora de uma vez. O limite
+ *  que existe para proteger a porta vira quem a fecha.
+ *
+ *  E foi por um triz: em algumas plataformas o `x-real-ip` não é o endereço da pessoa, e
+ *  sim o da borda da CDN. No Railway isso é bug conhecido e assumido por eles. Com o
+ *  padrão antigo, o Gume subiria lá com um balde só para o mundo inteiro.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("quem está batendo na porta", () => {
+  const ORIGINAL = process.env.IP_HEADER;
+
+  afterEach(() => {
+    if (ORIGINAL === undefined) delete process.env.IP_HEADER;
+    else process.env.IP_HEADER = ORIGINAL;
+  });
+
+  const pedido = (cabecalhos: Record<string, string>) =>
+    new Request("http://localhost/", { headers: cabecalhos });
+
+  describe("no padrão, atrás de um proxy que escreve x-real-ip", () => {
+    beforeEach(() => delete process.env.IP_HEADER);
+
+    it("usa o x-real-ip", () => {
+      expect(quem(pedido({ "x-real-ip": "203.0.113.7" }))).toBe("203.0.113.7");
+    });
+
+    /**
+     * O `x-forwarded-for` é uma lista que proxies ACRESCENTAM. Se a borda acrescenta em
+     * vez de apagar, o primeiro item é o que o atacante mandou: preferi-lo aqui daria um
+     * balde novo a cada tentativa, e a força bruta passaria inteira.
+     */
+    it("ignora o x-forwarded-for que o cliente mandou", () => {
+      const chave = quem(
+        pedido({ "x-real-ip": "203.0.113.7", "x-forwarded-for": "1.1.1.1, 203.0.113.7" }),
+      );
+      expect(chave, "o valor forjado pelo cliente virou a chave do balde").toBe("203.0.113.7");
+    });
+
+    it("sem x-real-ip, cai no primeiro da lista", () => {
+      expect(quem(pedido({ "x-forwarded-for": "198.51.100.9, 10.0.0.1" }))).toBe("198.51.100.9");
+    });
+  });
+
+  describe("quando a plataforma manda usar o x-forwarded-for", () => {
+    beforeEach(() => {
+      process.env.IP_HEADER = "x-forwarded-for";
+    });
+
+    it("usa o primeiro da lista", () => {
+      expect(quem(pedido({ "x-forwarded-for": "198.51.100.9, 10.0.0.1" }))).toBe("198.51.100.9");
+    });
+
+    /**
+     * ═══ O TESTE QUE JUSTIFICA A OPÇÃO INTEIRA ═══
+     *
+     * Onde esta opção é necessária, o `x-real-ip` é justamente o cabeçalho que mente: ele
+     * chega igual para todo mundo. Cair nele como reserva devolveria o balde único, que é
+     * exatamente o que esta opção existe para evitar.
+     */
+    it("NÃO cai no x-real-ip, que ali é o endereço da borda e é igual para todos", () => {
+      const a = quem(pedido({ "x-real-ip": "66.33.22.11", "x-forwarded-for": "198.51.100.9" }));
+      const b = quem(pedido({ "x-real-ip": "66.33.22.11", "x-forwarded-for": "203.0.113.7" }));
+
+      expect(a).toBe("198.51.100.9");
+      expect(b).toBe("203.0.113.7");
+      expect(a, "duas pessoas diferentes caíram no mesmo balde: uma tranca a outra").not.toBe(b);
+    });
+  });
+
+  /**
+   * Duas pessoas nunca podem compartilhar balde por acidente. Este é o teste que pega a
+   * regressão pelo SINTOMA, e não pela implementação: seja qual for o cabeçalho escolhido,
+   * endereços diferentes têm que dar chaves diferentes.
+   */
+  it("endereços diferentes nunca dividem o mesmo balde", () => {
+    for (const modo of [undefined, "x-forwarded-for"]) {
+      if (modo) process.env.IP_HEADER = modo;
+      else delete process.env.IP_HEADER;
+
+      const a = quem(pedido({ "x-real-ip": "1.2.3.4", "x-forwarded-for": "1.2.3.4" }));
+      const b = quem(pedido({ "x-real-ip": "5.6.7.8", "x-forwarded-for": "5.6.7.8" }));
+      expect(a, `modo ${modo ?? "padrão"}`).not.toBe(b);
+    }
   });
 });

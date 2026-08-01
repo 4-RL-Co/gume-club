@@ -66,8 +66,8 @@ const caixa = new AsyncLocalStorage<{ resultado: Envio | null }>();
  * mil códigos para o e-mail da vítima, e a caixa de entrada dela viraria um ataque — e um
  * dos códigos, o que ela por acaso digitasse.
  *
- * A contagem é no banco, e não na memória: em serverless, memória de processo é memória
- * de ninguém. Ver lib/rate-limit.ts.
+ * A contagem é no banco, e não na memória: com mais de uma instância, memória de processo
+ * é memória de ninguém. Ver lib/rate-limit.ts.
  *
  * Cinco pedidos em dez minutos. É generoso para quem não recebeu o primeiro, e é
  * ridículo para um script.

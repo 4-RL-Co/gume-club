@@ -13,6 +13,8 @@ import { CodigoPorEmail } from "@/components/codigo-email";
 import { TrocarSenha } from "@/components/trocar-senha";
 import { ProfileForm } from "@/components/profile-form";
 import { HeraldSeal } from "@/components/herald-seal";
+import { ApoioPublico } from "@/components/apoio-publico";
+import { ehApoiador } from "@/lib/apoio";
 
 export const dynamic = "force-dynamic";
 
@@ -44,12 +46,17 @@ export default async function Perfil() {
     image: string | null;
     email: string;
     two_factor_enabled: boolean;
+    /** Apoia HOJE. Calculado, e não guardado: ver lib/apoio.ts. */
+    apoia: boolean;
+    supporter_public: boolean;
     livros: number;
     lidos: number;
     tem: number;
     autores: number;
   }>(sql`
     select u.handle, u.display_name, u.bio, u.image, u.email, u."twoFactorEnabled" as two_factor_enabled,
+           ${ehApoiador(sql`u`)} as apoia,
+           u.supporter_public,
            (select count(*) from library_entries le where le.user_id = u.id)::int as livros,
            (select count(*) from library_entries le
              where le.user_id = u.id and le.status = 'read')::int as lidos,
@@ -132,6 +139,10 @@ export default async function Perfil() {
       <TrocarSenha />
 
       {podeConectarGithub && <ConectarGithub ligado={githubLigado} />}
+
+      {/* Só para quem apoia. Perguntar a quem não apoia se ele quer aparecer numa lista
+          da qual não faz parte não é uma opção, é uma cobrança educada. */}
+      {me.apoia && <ApoioPublico aparecendo={Boolean(me.supporter_public)} />}
 
       <dl className="surface mt-6 flex flex-wrap gap-x-12 gap-y-8 p-6">
         <Stat n={me.livros} label="na estante" />

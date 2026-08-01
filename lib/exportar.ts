@@ -189,8 +189,8 @@ type Linha = {
  *
  *  ═══ POR QUE UM GERADOR, E NÃO UM ARRAY ═══
  *
- *  Alguém com cinco mil livros não pode montar o arquivo inteiro na memória de um processo
- *  serverless: ele estoura, e estoura JUSTAMENTE para quem mais precisa da exportação —
+ *  Alguém com cinco mil livros não pode ter o arquivo inteiro montado na memória do
+ *  servidor: ela estoura, e estoura JUSTAMENTE para quem mais precisa da exportação —
  *  quem tem uma vida de leitura ali dentro.
  *
  *  O gerador entrega um lote por vez, e quem escreve o arquivo já empurrou o lote anterior

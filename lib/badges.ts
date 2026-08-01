@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { ehBibliotecario, CORRECOES_PARA_BIBLIOTECARIO } from "@/lib/librarian";
+import { ehApoiador } from "@/lib/apoio";
 import {
   CORTE_FUNDADOR, CORRECOES_PARA_ZELADOR, AMIGOS_PARA_ARAUTO, LIVROS_DO_AMIGO,
 } from "@/lib/regras";
@@ -234,7 +235,12 @@ export async function getBadgesOf(userIds: string[]): Promise<Record<string, Ins
        * a revogar, nada a limpar, e nenhum bibliotecário decidindo quem ainda merece.
        * Ver ai/DECISIONS.md.
        */
-      coalesce(u.is_supporter, false) as apoiador,
+      -- Era um booleano guardado (is_supporter). Virou uma pergunta
+      -- respondida na hora (assinatura viva, ou avulso ainda no prazo) porque a coluna
+      -- não conseguia cumprir o "ela é viva" que está escrito logo acima: o avulso vence
+      -- em 30 dias, e no dia 31 o Stripe não manda evento nenhum, porque não aconteceu
+      -- nada. A regra mora em lib/apoio.ts, e é a mesma que a moldura e a lista usam.
+      ${ehApoiador(sql`u`)} as apoiador,
 
       /**
        * O NÚMERO DE CHEGADA. "membro fundador #7".

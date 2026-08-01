@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { coroaDe, posicaoDe, type Coroa, type Posicao } from "@/lib/honras";
+import { ehApoiador } from "@/lib/apoio";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -58,7 +59,7 @@ export async function getEscadas(userId: string): Promise<Escadas> {
     select
       -- Uma obra terminada é UMA leitura, mesmo relida cinco vezes. Reler não infla honra.
       count(*) filter (where le.status = 'read')::int as lidos,
-      (select u.is_supporter from users u where u.id = ${userId}::uuid) as apoia,
+      (select ${ehApoiador(sql`u`)} from users u where u.id = ${userId}::uuid) as apoia,
       (select u.moldura      from users u where u.id = ${userId}::uuid) as moldura
     from library_entries le
    where le.user_id = ${userId}::uuid`);
@@ -130,7 +131,7 @@ async function coroas(
   }>(sql`
     select u.id,
            u.handle::text as handle,
-           u.is_supporter as apoia,
+           ${ehApoiador(sql`u`)} as apoia,
            u.moldura,
            count(le.id) filter (where le.status = 'read')::int as lidos
       from users u
@@ -138,7 +139,9 @@ async function coroas(
       -- com a pessoa do feed, e a moldura dela viraria um buraco.
       left join library_entries le on le.user_id = u.id
      where ${quem}
-     group by u.id, u.handle, u.is_supporter, u.moldura`);
+     -- Só a chave: agrupado pela primária, o Postgres deixa ler as outras colunas de
+     -- users (e o exists de apoio) sem repeti-las aqui.
+     group by u.id`);
 
   const fora: Record<string, Coroa> = {};
 
