@@ -12,9 +12,8 @@ import { assertOwner, type Viewer } from "@/lib/authz";
  * ════════════════════════════════════════════════════════════════════
  *  APARECER, OU NÃO, NA LISTA DE QUEM APOIA.
  *
- *  A caixa nasce desmarcada, e a decisão é essa: pagar não é consentir em ser
- *  publicado. Quem apoia e não marca nada apoia em silêncio, e o app não conta a
- *  ninguém.
+ *  A caixa nasce MARCADA, e desmarcar tira o nome na hora. Quem apoia e desmarca apoia
+ *  em silêncio, e o app não conta a ninguém.
  *
  *  Marcar não dá nada além de aparecer. A lista não tem valor, não tem ordem de
  *  grandeza e não tem posição: ela é por ordem de chegada, que é um fato sobre o

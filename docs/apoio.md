@@ -41,10 +41,19 @@ dia. Calculado, ela sai sozinha, e ninguém precisa manter uma faxina viva.
 A mesma função serve a insígnia, a moldura do perfil e a lista de apoiadores. Uma regra de
 produto escrita três vezes é uma regra que vai divergir.
 
-## Aparecer na lista é opt-in
+## Aparecer na lista nasce marcado
 
-`users.supporter_public` nasce `false`. **Pagar não é consentir em ser publicado.** Quem
-quiser aparecer marca a caixa em `/perfil`, e `/contribuidores` mostra só quem marcou.
+`users.supporter_public` nasce `true`, e quem não quiser aparecer **desmarca** em
+`/perfil`. `/contribuidores` mostra só quem não desmarcou.
+
+Nasceu ao contrário (migration `0055`, opt-in) e virou opt-out na `0056`, por decisão do
+dono: uma lista que existe para agradecer não agradece ninguém se estiver sempre vazia, e
+com opt-in o caso comum era a pessoa pagar e nunca descobrir que a caixa existia.
+
+O que a lista mostra é **nome e arroba**, que já são públicos no perfil de quem apoia. E
+sair tem que funcionar: `lib/apoio.sql.test.ts` prova os dois lados (entra sem pedir, sai
+ao desmarcar), e a trava foi mutada para confirmar que ela pega. Um opt-out cujo botão de
+sair não funciona é pior que um opt-in.
 
 A lista nunca mostra valor, nunca ordena por valor, e não tem posição: ela é por ordem de
 chegada, que é um fato sobre o tempo e não sobre o bolso. `lib/contributors.sql.test.ts`

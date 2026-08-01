@@ -160,8 +160,8 @@ export default async function Apoiar({
                 Seu nome na lista de quem apoia
               </span>
               <span className="mt-1.5 block text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
-                Se você quiser: a caixa nasce desmarcada, e você marca quando der vontade.
-                Sem valor ao lado do nome, e sem ordem de quem apoia mais.
+                Só o nome e o arroba, sem valor ao lado e sem ordem de quem apoia mais.
+                Se preferir apoiar em silêncio, é uma caixa para desmarcar no seu perfil.
               </span>
             </span>
           </li>

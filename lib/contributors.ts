@@ -271,11 +271,11 @@ export async function getApoiadores(): Promise<Apoiador[]> {
      -- esta lista usam a mesma regra, e é por isso que ninguém aparece aqui no dia
      -- seguinte ao apoio acabar.
      where ${ehApoiador(sql`u`)}
-       -- ═══ E SÓ QUEM PEDIU PARA APARECER ═══
+       -- ═══ E SÓ QUEM NÃO DESMARCOU ═══
        --
-       -- Pagar não é consentir em ser publicado. A caixa mora em /perfil, e nasce
-       -- desmarcada: uma lista pública que nasce cheia põe o nome de alguém numa página
-       -- que ele não pediu, por ter apoiado.
+       -- A caixa mora em /perfil e nasce marcada (migration 0056). Desmarcar tira o nome
+       -- daqui na hora, e é por isso que este filtro existe: sem ele, sair da lista seria
+       -- impossível.
        and u.supporter_public = true
        and u.deleted_at is null
      -- POR ORDEM DE CHEGADA. Nunca por valor, nunca por tempo de apoio, nunca por nada
