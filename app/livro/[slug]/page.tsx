@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { sql } from "drizzle-orm";
@@ -23,7 +23,7 @@ import { getCorrecoes, souBibliotecario } from "@/lib/corrections";
 import { getFollowees, getRecommender } from "@/lib/social";
 import { getShelvesOf, getCollections } from "@/lib/curation";
 import { getFriendRatings } from "@/lib/ratings";
-import { getBook } from "@/lib/book";
+import { getBook, slugAtualDe } from "@/lib/book";
 import { AvatarLink } from "@/components/avatar";
 import { RememberBook } from "@/components/remember-book";
 import { VerdictOf } from "@/components/veredito";
@@ -31,6 +31,7 @@ import { getViewer } from "@/lib/viewer";
 import { getActorOrNull } from "@/lib/actor";
 import { FORMAT_LABEL } from "@/lib/shelf-view";
 import { origemAceita } from "@/lib/imagens";
+import { nomeDoAutor } from "@/lib/autores";
 
 export const dynamic = "force-dynamic";
 
@@ -73,7 +74,31 @@ export default async function BookPage({
   const [viewer, actor] = await Promise.all([getViewer(), getActorOrNull()]);
   const book = await getBook(slug, viewer, actor?.id ?? null);
 
-  if (!book) notFound();
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  ANTES DE DIZER "NÃO ENCONTRADO", PERGUNTE SE ESTE ENDEREÇO JÁ EXISTIU.
+   *
+   *  O endereço de uma obra carrega o nome do autor, e autor errado acontece: a
+   *  importação gravou a TRADUTORA da Metamorfose como autora, e o endereço nasceu
+   *  `metamorfose-sheila-koerich`. Corrigir a ficha não conserta o endereço — e o
+   *  endereço é a parte que as pessoas copiam e mandam uma para a outra.
+   *
+   *  Sem esta consulta, arrumar o autor QUEBRA todo link já compartilhado, e quem
+   *  clica vê "não encontrado" sem entender por quê. Um link quebrado é pior que um
+   *  link feio: o feio ainda leva ao livro.
+   *
+   *  `permanentRedirect` (308) e não `redirect` (307), porque a mudança é definitiva:
+   *  o navegador e os buscadores passam a guardar o endereço novo em vez de bater
+   *  aqui para sempre. É o que diz a verdade sobre o que aconteceu.
+   *
+   *  Só custa uma consulta a mais no caminho do 404, que é o caminho raro.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  if (!book) {
+    const agora = await slugAtualDe(slug);
+    if (agora) permanentRedirect(`/livro/${agora}${volta ? `?de=${encodeURIComponent(de as string)}` : ""}`);
+    notFound();
+  }
 
   const [friends, recommender, shelves, todasAsEstantes, opinions] = await Promise.all([
     actor ? getFollowees(actor.id) : Promise.resolve([]),
@@ -124,9 +149,13 @@ export default async function BookPage({
      * compara as duas e quebra o build se elas divergirem.
      */
     db
-      .execute<{ leram: number; estantes: number; gostaram: number; adoraram: number; posicao: number | null }>(sql`
+      .execute<{ leram: number; estantes: number; gostaram: number; posicao: number | null }>(sql`
         with publico as (
-          select r.work_id, count(*) filter (where r.value = 5)::int as adoraram
+          -- GOSTEI OU ADOREI, e é o mesmo voto que ordena /queridinhos. Era só
+          -- "adorei" (value = 5) aqui e na lista, enquanto as duas telas imprimiam
+          -- "gostaram ou adoraram": ordenavam por um número que não mostravam.
+          -- Agora o número da tela É o número da posição. Ver lib/queridinhos.ts.
+          select r.work_id, count(*) filter (where r.value >= 4)::int as gostaram
             from ratings r
             join users u on u.id = r.user_id
            where u.deleted_at is null and u.banned_at is null
@@ -156,21 +185,18 @@ export default async function BookPage({
                 and c.visibility = 'public'
                 and u.deleted_at is null and u.banned_at is null
            ) donos) as estantes,
-          (select count(*)::int from ratings r
-             join users u on u.id = r.user_id
-            where r.work_id = ${book.workId}::uuid
-              and r.value >= 4
-              and u.deleted_at is null and u.banned_at is null) as gostaram,
-          coalesce((select p.adoraram from publico p where p.work_id = ${book.workId}::uuid), 0) as adoraram,
-          (select case when meu.adoraram is null or meu.adoraram = 0 then null else (
+          -- O número impresso na tela sai da MESMA conta que dá a posição. Ele era
+          -- uma consulta à parte, e foi essa separação que deixou os dois discordarem.
+          coalesce((select p.gostaram from publico p where p.work_id = ${book.workId}::uuid), 0) as gostaram,
+          (select case when meu.gostaram is null or meu.gostaram = 0 then null else (
              select 1 + count(*)::int from publico p
                join works w2 on w2.id = p.work_id
-              where p.adoraram > meu.adoraram
-                 or (p.adoraram = meu.adoraram and w2.title < (select w3.title from works w3 where w3.id = ${book.workId}::uuid))
+              where p.gostaram > meu.gostaram
+                 or (p.gostaram = meu.gostaram and w2.title < (select w3.title from works w3 where w3.id = ${book.workId}::uuid))
            ) end
-           from (select p2.adoraram from publico p2 where p2.work_id = ${book.workId}::uuid) meu) as posicao
+           from (select p2.gostaram from publico p2 where p2.work_id = ${book.workId}::uuid) meu) as posicao
       `)
-      .then((r) => r[0] ?? { leram: 0, estantes: 0, gostaram: 0, adoraram: 0, posicao: null }),
+      .then((r) => r[0] ?? { leram: 0, estantes: 0, gostaram: 0, posicao: null }),
   ]);
 
   /**
@@ -333,20 +359,22 @@ export default async function BookPage({
                 Antes isto era texto morto: o leitor clicava no nome e não acontecia
                 nada. A página do autor existia — com retrato, biografia e o resto da
                 obra dele — e não tinha entrada. */}
-            {book.author && (
-              <p className="mt-3 text-[15px] text-[var(--color-ink-soft)]">
-                {book.authorSlug ? (
-                  <Link
-                    href={`/autor/${book.authorSlug}`}
-                    className="underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
-                  >
-                    {book.author}
-                  </Link>
-                ) : (
-                  book.author
-                )}
-              </p>
-            )}
+            {/* Sem autor, a tela escreve "Desconhecido" em vez de deixar o espaço
+                vazio: vazio lê como "faltou preencher", e para uma saga anônima isso
+                é falso — a ficha está completa. Sem link, porque não há para onde ir.
+                Ver nomeDoAutor(), em lib/autores.ts. */}
+            <p className="mt-3 text-[15px] text-[var(--color-ink-soft)]">
+              {book.author && book.authorSlug ? (
+                <Link
+                  href={`/autor/${book.authorSlug}`}
+                  className="underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+                >
+                  {book.author}
+                </Link>
+              ) : (
+                nomeDoAutor(book.author)
+              )}
+            </p>
 
             <div className="mt-6">
               <Share titulo={book.title} texto={book.author ?? undefined} />
@@ -427,7 +455,7 @@ export default async function BookPage({
                 aparece. Era uma gaveta no porão da página com título e resumo; um
                 erro de ficha se vê NA ficha, e é nela que se conserta. O histórico
                 continua público (é ele que torna vandalismo caro). ═══ */}
-            <Arrumar>
+            <Arrumar semCapa={!cover?.coverUrl}>
             {actor && edition ? (
               <>
                 <Correcao

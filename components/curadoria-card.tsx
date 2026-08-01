@@ -31,8 +31,9 @@ export async function CuradoriaCard({ compacto = false }: { compacto?: boolean }
       </span>
       {!compacto && (
         <span className="mt-2 block max-w-lg text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
-          Os cem livros que a comunidade mais adorou, na ordem do amor recebido.
-          Ninguém edita: cada veredito conta, e a lista se refaz sozinha.
+          Os cem livros que a comunidade mais amou, na ordem do amor recebido.
+          Ninguém edita: cada &quot;gostei&quot; e cada &quot;adorei&quot; conta um voto, e a
+          lista se refaz sozinha.
         </span>
       )}
 

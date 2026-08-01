@@ -2,6 +2,7 @@ import { sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { assertIdealizador, type Viewer } from "@/lib/authz";
 import { FUSO } from "@/lib/datas";
+import { podeSerDescoberto } from "@/lib/descoberta";
 import { getCodigo, GitHubRecusou } from "@/lib/contributors";
 
 /**
@@ -225,8 +226,124 @@ export type Painel = {
     semAutor: number;
     buscasVazias: { termo: string; quantas: number }[];
   };
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  A BASE, PESSOA A PESSOA.
+   *
+   *  ═══ ISTO É PRIVADO, E TEM QUE CONTINUAR SENDO ═══
+   *
+   *  O Gume se recusa a ordenar GENTE por esforço — está escrito em
+   *  lib/queridinhos.ts e vale para todo o produto: "quem leu mais livros" é placar,
+   *  e placar transforma ler numa competição. Esta lista existe porque o painel é a
+   *  sala privada de quem sustenta o projeto, atrás de assertIdealizador(), e saber
+   *  quem está usando é o mínimo para decidir o que construir.
+   *
+   *  **Ela nunca pode virar tela pública.** No dia em que alguém quiser reaproveitar
+   *  esta consulta noutro lugar, a resposta é não. O que aqui é diagnóstico, lá vira
+   *  ranking de leitor.
+   *
+   *  ═══ E-MAIL AQUI, E SÓ AQUI ═══
+   *
+   *  É o dado mais sensível do banco. Ele aparece porque o dono precisa falar com quem
+   *  usa (o leitor de 503 livros que não confirmou o e-mail é um caso concreto), e
+   *  porque esta sala já é a única que mostra o backup inteiro.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  pessoas: Pessoa[];
   insights: string[];
 };
+
+/**
+ * O ENGAJAMENTO É UMA DESCRIÇÃO, E NÃO UMA NOTA.
+ *
+ * Não é 0 a 100 nem estrelinha: são quatro estados que dizem o que a pessoa ESTÁ
+ * FAZENDO, porque é isso que responde "o que eu construo agora". Um número diria
+ * quem é "melhor", e não existe leitor melhor que outro.
+ *
+ *  - `sumiu`      — não aparece há mais de 30 dias (ou nunca voltou)
+ *  - `espiando`   — volta, mas quase não tem estante: o app ainda não pegou
+ *  - `lendo`      — estante de verdade, e aparece
+ *  - `construindo`— além disso, escreve: resenha ou conserto de ficha
+ */
+export type Engajamento = "sumiu" | "espiando" | "lendo" | "construindo";
+
+export type Pessoa = {
+  handle: string;
+  nome: string | null;
+  email: string;
+  emailVerificado: boolean;
+  /**
+   * Está fora do explorar, das listas e dos buscadores AGORA.
+   *
+   * NÃO é "não confirmou o e-mail": a estante também prova (lib/descoberta.ts), e o
+   * leitor dos 503 livros aparece hoje mesmo sem ter confirmado. Uma coluna que
+   * olhasse só o e-mail chamaria de invisível quem está visível — o painel mentiria
+   * na cara do dono, que é o erro que este dia inteiro passou consertando.
+   */
+  invisivel: boolean;
+  entrouEm: Date;
+  /** Última vez que apareceu. `null` = nunca voltou depois de se cadastrar. */
+  ultimaVez: Date | null;
+  livros: number;
+  resenhas: number;
+  correcoes: number;
+  engajamento: Engajamento;
+};
+
+/**
+ * A base, pessoa a pessoa. Uma consulta só: são dezenas de contas hoje, e mesmo com
+ * milhares isto é uma varredura por leitor, não por livro.
+ *
+ * O engajamento é derivado AQUI, no SQL, e não na tela: a mesma classificação vai
+ * para o relatório em markdown que o painel exporta, e duas definições de "engajado"
+ * divergiriam no primeiro dia.
+ */
+async function getPessoas(hojeSP: SQL): Promise<Pessoa[]> {
+  const rows = await db.execute<{
+    handle: string; nome: string | null; email: string; email_verificado: boolean;
+    entrou_em: Date; ultima_vez: Date | null; invisivel: boolean;
+    livros: number; resenhas: number; correcoes: number; engajamento: Engajamento;
+  }>(sql`
+    with base as (
+      select u.handle, u.display_name as nome, u.email, u.email_verified as email_verificado,
+             u.created_at as entrou_em, u.last_seen_on as ultima_vez,
+             (select count(*) from library_entries le where le.user_id = u.id)::int as livros,
+             (select count(*) from reviews r
+               where r.user_id = u.id and r.deleted_at is null)::int as resenhas,
+             (select count(*) from revisions rv
+               where rv.user_id = u.id and rv.reverted_at is null)::int as correcoes,
+             (u.last_seen_on is null or u.last_seen_on < ${hojeSP} - 30) as sumido,
+             -- A MESMA régua de lib/descoberta.ts: e-mail confirmado OU estante que prova.
+             not (${podeSerDescoberto}) as invisivel
+        from users u
+       where u.deleted_at is null
+    )
+    select base.*,
+           case
+             -- Sumido vem PRIMEIRO: quem não volta há um mês não é "construindo"
+             -- por causa de uma resenha de abril. O estado é sobre agora.
+             when sumido then 'sumiu'
+             when resenhas > 0 or correcoes > 0 then 'construindo'
+             when livros >= 3 then 'lendo'
+             else 'espiando'
+           end as engajamento
+      from base
+     order by livros desc, entrou_em desc`);
+
+  return rows.map((r) => ({
+    handle: r.handle,
+    nome: r.nome,
+    email: r.email,
+    emailVerificado: r.email_verificado,
+    invisivel: r.invisivel,
+    entrouEm: r.entrou_em,
+    ultimaVez: r.ultima_vez,
+    livros: r.livros,
+    resenhas: r.resenhas,
+    correcoes: r.correcoes,
+    engajamento: r.engajamento,
+  }));
+}
 
 // ─────────────────────────────────────────────────────────────── ENTRADA
 
@@ -243,13 +360,14 @@ export async function getPainel(viewer: Viewer, filtro: Filtro = FILTRO_PADRAO):
 export async function coletarPainel(filtro: Filtro = FILTRO_PADRAO): Promise<Painel> {
   const hojeSP = sql`(now() at time zone ${FUSO})::date`;
 
-  const [gente, uso, contribuicao, convite, catalogo, codigo] = await Promise.all([
+  const [gente, uso, contribuicao, convite, catalogo, codigo, pessoas] = await Promise.all([
     getGente(hojeSP, filtro),
     getUso(),
     getContribuicao(filtro),
     getConvite(),
     getCatalogo(),
     getCodigoContagem(),
+    getPessoas(hojeSP),
   ]);
 
   const metas = {
@@ -265,6 +383,7 @@ export async function coletarPainel(filtro: Filtro = FILTRO_PADRAO): Promise<Pai
     contribuicao: { ...contribuicao, codigo },
     convite,
     catalogo,
+    pessoas,
     insights: [],
   };
   painel.insights = gerarInsights(painel);

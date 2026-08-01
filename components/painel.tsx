@@ -54,7 +54,26 @@ function Bloco({ titulo, desc, children }: { titulo: string; desc?: string; chil
 }
 
 /** Um cartão de meta: uma barra que enche até o alvo, e o alvo sobe sozinho quando bate. */
-function CartaoMeta({ titulo, meta }: { titulo: string; meta: Meta }) {
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  O CARTÃO DIZ O QUE ELE CONTA. "CONTRIBUIDORES" NÃO DIZIA.
+ *
+ *  O dono olhou "contribuidores: 2" e estranhou: no GitHub só ele tinha
+ *  contribuído. O número estava CERTO — são duas pessoas que consertaram fichas
+ *  de livro dentro do app —, e a palavra é que estava errada.
+ *
+ *  Num projeto cuja tese é "um app que se constrói", "contribuidor" é justamente
+ *  a palavra que significa as duas coisas ao mesmo tempo. E o painel já mostra a
+ *  outra num indicador separado ("escreveram código"), então a mesma tela usava um
+ *  termo guarda-chuva ao lado do termo específico — e quem lê junta os dois.
+ *
+ *  Um número certo com nome ambíguo é pior que um número errado: no errado a
+ *  pessoa desconfia, no ambíguo ela acredita na leitura que fez.
+ *
+ *  O `nota` existe para isso: dizer o que entra na conta, embaixo do número.
+ * ════════════════════════════════════════════════════════════════════
+ */
+function CartaoMeta({ titulo, meta, nota }: { titulo: string; meta: Meta; nota?: string }) {
   const pct = Math.min(100, pctDe(meta.atual, meta.alvo));
   const faltam = Math.max(0, meta.alvo - meta.atual);
   return (
@@ -77,6 +96,7 @@ function CartaoMeta({ titulo, meta }: { titulo: string; meta: Meta }) {
       <div className="mt-2 text-[12px] text-[var(--color-ink-soft)]">
         {faltam === 0 ? "meta batida, mirando na próxima" : `${pct}%, faltam ${n(faltam)}`}
       </div>
+      {nota && <div className="mt-1 text-[11px] text-[var(--color-ink-faint)]">{nota}</div>}
     </div>
   );
 }
@@ -230,8 +250,90 @@ const PERIODOS = [
   { key: "custom", label: "escolher" },
 ] as const;
 
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  A BASE, PESSOA A PESSOA. E O ENGAJAMENTO É UMA DESCRIÇÃO, NÃO UMA NOTA.
+ *
+ *  ═══ POR QUE NÃO É UM PLACAR ═══
+ *
+ *  O Gume se recusa a ordenar GENTE por esforço — está escrito em lib/queridinhos.ts
+ *  e vale para o produto inteiro. Aqui a ordem é por tamanho de estante porque isso
+ *  responde "quem já construiu alguma coisa", e o rótulo diz o que a pessoa ESTÁ
+ *  FAZENDO, não quanto ela vale: `espiando` não é pior que `lendo`, é outro momento.
+ *
+ *  Uma nota de 0 a 100 diria quem é "melhor leitor", e não existe leitor melhor.
+ *
+ *  ═══ ISTO É A SALA PRIVADA, E TEM QUE CONTINUAR SENDO ═══
+ *
+ *  Mostra e-mail. Está atrás de assertIdealizador() no servidor, e o que aqui é
+ *  diagnóstico vira, em qualquer outra tela, ranking de leitor. Não reaproveite.
+ *
+ *  ═══ A COLUNA "INVISÍVEL" ═══
+ *
+ *  Quem não confirmou o e-mail e não tem estante grande some do explorar, das listas
+ *  e dos buscadores. Era um estado que ninguém enxergava — a maior estante do site
+ *  ficou escondida assim. Agora ele tem uma coluna, para o dono ver de fora o que a
+ *  pessoa não vê de dentro. Ver lib/descoberta.ts.
+ * ════════════════════════════════════════════════════════════════════
+ */
+const COR_ENGAJAMENTO: Record<string, string> = {
+  construindo: "#4da76a",
+  lendo: "#4a9dc9",
+  espiando: "#e8843c",
+  sumiu: "var(--color-ink-faint)",
+};
+
+function BaseDeGente({ pessoas }: { pessoas: Dados["pessoas"] }) {
+  const quando = (d: Date | null) =>
+    d ? new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "nunca voltou";
+
+  return (
+    <div className="overflow-x-auto rounded-2xl border" style={{ borderColor: "var(--color-rule)" }}>
+      <table className="w-full min-w-[760px] text-[13px]">
+        <thead>
+          <tr className="text-left text-[11px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)]">
+            <th className="px-4 py-3 font-medium">quem</th>
+            <th className="px-4 py-3 font-medium">e-mail</th>
+            <th className="tabular px-4 py-3 text-right font-medium">livros</th>
+            <th className="tabular px-4 py-3 text-right font-medium">escreveu</th>
+            <th className="px-4 py-3 font-medium">última vez</th>
+            <th className="px-4 py-3 font-medium">está</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pessoas.map((p) => (
+            <tr key={p.handle} className="border-t" style={{ borderColor: "var(--color-rule)" }}>
+              <td className="px-4 py-3">
+                <span className="text-[var(--color-ink)]">{p.nome ?? p.handle}</span>
+                <span className="ml-2 text-[var(--color-ink-faint)]">@{p.handle}</span>
+                {/* Fora do explorar, das listas e dos buscadores AGORA — pela régua de
+                    lib/descoberta.ts, que aceita e-mail confirmado OU estante que prove.
+                    Olhar só o e-mail marcaria de invisível quem já está visível. */}
+                {p.invisivel && (
+                  <span className="ml-2 text-[11px]" style={{ color: "#e8843c" }}>
+                    invisível
+                  </span>
+                )}
+              </td>
+              <td className="px-4 py-3 text-[var(--color-ink-soft)]">{p.email}</td>
+              <td className="tabular px-4 py-3 text-right text-[var(--color-ink)]">{p.livros}</td>
+              <td className="tabular px-4 py-3 text-right text-[var(--color-ink-soft)]">
+                {p.resenhas + p.correcoes}
+              </td>
+              <td className="px-4 py-3 text-[var(--color-ink-soft)]">{quando(p.ultimaVez)}</td>
+              <td className="px-4 py-3">
+                <span style={{ color: COR_ENGAJAMENTO[p.engajamento] }}>{p.engajamento}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function Painel({ dados }: { dados: Dados }) {
-  const { filtro, metas, gente, uso, contribuicao, convite, catalogo, insights } = dados;
+  const { filtro, metas, gente, uso, contribuicao, convite, catalogo, pessoas, insights } = dados;
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -296,8 +398,17 @@ export function Painel({ dados }: { dados: Dados }) {
       <Bloco titulo="metas" desc="o alvo sobe quando você bate nele">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <CartaoMeta titulo="usuários" meta={metas.usuarios} />
-          <CartaoMeta titulo="contribuidores" meta={metas.contribuidores} />
+          <CartaoMeta
+            titulo="consertaram o acervo"
+            meta={metas.contribuidores}
+            nota="quem mandou correção de ficha ou capa. quem escreve código é outro número, mais abaixo."
+          />
         </div>
+      </Bloco>
+
+      {/* ─────────────────────────────── A BASE, PESSOA A PESSOA */}
+      <Bloco titulo="a base" desc="quem está aqui, e o que cada um está fazendo">
+        <BaseDeGente pessoas={pessoas} />
       </Bloco>
 
       {/* ─────────────────────────────── INSIGHTS */}

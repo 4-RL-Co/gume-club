@@ -2648,3 +2648,202 @@ A entrada logo acima deixou uma pergunta em aberto: seis itens cabiam, mas ao cu
 - **"Onde estou" não pode mais ser só a cor.** Um traço de 1.5px trocando de cinza para branco era um sinal fraco quando havia palavra embaixo confirmando; sozinho é fraco demais. O item aceso ganhou a MESMA superfície que o app inteiro usa para controles (`surface-2`), o traço engrossou (1.5 → 1.75) e o ícone cresceu (20 → 22). **Nada inventado:** é o vocabulário que já existia, e a alternativa seria desenhar um elemento novo para um problema que o sistema já resolve.
 - **A repartição de largura FICA**, mesmo sem a pressão que a justificava. Ela é o que garante que o sexto item exista em qualquer tela, e o dia em que a barra ganhar um sétimo item — ou o rótulo de volta — é justamente o dia em que ninguém vai lembrar de somar.
 - **A trava trocou de alvo em vez de ser apagada.** "O rótulo corta em vez de vazar" protegia uma palavra que não existe mais. No lugar dela, `lib/celular.test.ts` passou a exigir que todo item tenha `aria-label` e que rótulo nenhum volte à tela sem alguém mudar a trava e dizer por quê. É mais duro que a anterior, e não menos. As duas metades foram mutadas para provar que quebram.
+
+---
+
+**2026-08-01: O Top 100 ordena pelo número que ele mostra. O voto passa a ser "gostei ou adorei".**
+
+O dono viu livros com o coração marcando DOIS embaixo de livros com o coração marcando UM, e relatou como erro de ordenação. Não era: **a lista ordenava por um número que ela nunca mostrava.**
+
+A ordem contava só "adorei" (veredito 5). O card imprimia "gostaram ou adoraram" (veredito 4 ou 5). A Saga de Njáll, com um "adorei" e um "gostei", valia UM voto e mostrava DOIS corações.
+
+- **Estava certo pela régua velha, e era ilegível para qualquer pessoa.** Inclusive para quem escreveu a régua: o dono leu a própria tela como todo mundo leria — o coração é o voto. Ninguém abre o código para entender uma lista. A pessoa conclui que o app não sabe contar.
+- **A saída escolhida pelo dono foi ordenar pelo número exibido**, e não exibir o número que ordenava. O voto agora é "gostei (4) ou adorei (5)", em um número só. **O custo: "gostei" pesa igual a "adorei", e um livro muito gostado passa um livro pouco adorado.** Aceito em troca de uma lista que se lê sem nota de rodapé.
+- **Dois números viraram um, e isso é a correção de verdade.** `adoraram` sumiu do código: ele só existia para ordenar, nunca era impresso em tela nenhuma (na página do livro ele era selecionado e descartado). Um número invisível que decide a ordem é uma armadilha esperando o próximo leitor — e o próximo leitor foi o dono.
+- **As duas telas mudaram juntas**, porque a mesma conta vive em `lib/queridinhos.ts` (a lista) e em `app/livro/[slug]/page.tsx` (a coroa e a posição). Os textos mudaram junto: "cada 'adorei' conta um voto" virou "cada 'gostei' e cada 'adorei' conta um voto", e o vazio deixou de dizer "quando alguém adorar".
+- **A trava trocou de alvo em vez de ser apagada.** Ela exigia que `adoraram` e `gostaram` não divergissem em visibilidade; eles deixaram de ser dois. Agora exige que as duas telas usem o MESMO limiar e que nenhuma volte a ordenar por "adorei" sozinho. Ganhou também o caso exato da tela: um livro com um "adorei" e um "gostei" vale dois e passa na frente de quem tem um. Mutada para provar que quebra.
+
+---
+
+**2026-08-01: A capa de uma resenha é o exemplar de quem escreveu.**
+
+O dono abriu o próprio perfil e viu o Frankenstein com **duas capas na mesma página**: a verde da Antofágica em "o que eu adorei", e outra em "o que eu escrevi".
+
+Não era capa errada. Era a mesma pergunta — "qual edição é este livro?" — respondida de dois jeitos na mesma tela. A estante sabe qual edição é a sua e desenha ela. A resenha usava `capaDaObra`, que é "a edição mais antiga que alguém importou" e não tem relação nenhuma com o livro que a pessoa leu.
+
+- **A resposta certa é a que a pessoa já deu.** Uma resenha não é sobre a obra em abstrato: é sobre o exemplar que ela teve na mão, com aquela tradução e aquela capa. Ela escolheu a edição ao pôr na estante. Não existe regra global que acerte mais do que essa escolha — procurar uma "regra melhor" seria inventar critério para uma pergunta que já tinha dono.
+- **A regra da comunidade continua existindo, e continua sendo a mais antiga com capa.** Ela vale onde não há uma pessoa em particular olhando (explorar, quem está lendo). É arbitrária, e é ESTÁVEL — que é o que importa ali: uma capa que muda a cada visita faz a pessoa achar que abriu o livro errado.
+- **O fallback não é zelo.** A escolha pode faltar: quem resenhou sem pôr na estante, ou entrada antiga sem edição gravada — **eram 41 em produção**. Sem o `coalesce`, essas resenhas ficariam sem capa nenhuma, trocando um bug visível por um pior.
+- **Conferido contra produção, não contra o raciocínio.** Das quatro resenhas do dono, só o Frankenstein mudou de capa; as outras três já batiam e continuaram idênticas. Uma correção que muda o que estava certo não é correção, é troca de bug.
+
+**O que isso NÃO conserta, e está aqui para não ser esquecido:** as ~10 outras telas continuam usando a edição mais antiga importada. Para as telas da comunidade isso é certo. Para as telas de uma pessoa (a parede dela, o feed dela) é o mesmo erro do Frankenstein esperando para ser relatado.
+
+---
+
+**2026-08-01: Pôr na estante grava QUAL edição. Ela vinha sendo descartada.**
+
+O dono buscou pelo ISBN da Metamorfose da Antofágica, achou, pôs na estante — e a página do livro mostrou uma edição da Leya de 2013, com a capa de uma terceira. Ele não errou nada.
+
+`shelve()` gravava só (usuário, obra, status). **A edição que o leitor acabou de identificar era descartada na última linha do caminho** — o `editionId` estava em mãos na função que chama, e nem era passado adiante.
+
+- **O estrago não aparece onde nasce.** Nasce ao prateleirar e aparece noutra tela, outro dia, como "este app mostra o livro errado". Sem edição gravada, a página do livro cai na "primeira edição que tiver capa", e uma obra empacota edições de editoras diferentes — há obra no acervo com 36 editoras juntas.
+- **A importação sempre gravou** (`lib/import/aplicar.ts`), e é por isso que o buraco era pequeno em produção — 41 de 793 — e passou despercebido: quem importa a estante inteira fica bem; quem cadastra um livro à mão fica com o registro cego. Um bug que só atinge o caminho manual é um bug que o dono encontra sozinho, tarde.
+- **O `coalesce` é quem manda, e é a parte que quase não existiu.** O conserto óbvio — gravar a edição no conflito — traz um bug pior de brinde: quem escolheu a edição a dedo no "qual é a sua" perderia a escolha ao clicar em "lido", porque reprateleirar reescreveria a linha com o palpite da busca. Trocar "o app esqueceu a sua edição" por "o app desfez a sua escolha" é andar para trás. O palpite preenche o branco e nunca sobrescreve uma decisão.
+- **A trava mora em `lib/prateleirar.sql.test.ts`**, contra o Postgres de verdade, porque é lá que o conflito acontece. Quatro casos: a edição entra; reprateleirar não desfaz a escolha; o status muda mesmo assim (proteger a edição não pode congelar outra coisa); e prateleirar SEM edição não apaga a que já existia. Mutado: trocar o `coalesce` por `excluded.edition_id` derruba dois dos quatro.
+
+---
+
+**2026-08-01: O endereço antigo de uma obra continua chegando nela. Migration 0057.**
+
+O endereço de uma obra carrega o nome do autor. Quando o autor está errado — e estava, a importação gravou a TRADUTORA da Metamorfose como autora —, corrigir a ficha **não conserta o endereço**: `metamorfose-sheila-koerich` continuava na barra do navegador, com o nome de quem não escreveu o livro.
+
+O dono pediu para trocar. Trocar e pronto seria substituir uma verruga visível por uma perda silenciosa.
+
+- **Um link quebrado é pior que um link feio.** O feio ainda leva ao livro. Todo link já compartilhado — num grupo, num favorito, num buscador — passaria a dar "não encontrado", e quem clicou não teria como saber por quê. O ganho seria estético e o custo, de outra pessoa.
+- **É TABELA, e não uma coluna `slug_antigo`.** Uma obra pode ser renomeada mais de uma vez, e cada endereço que ela já teve precisa continuar chegando. Uma coluna guardaria só o penúltimo, e o antepenúltimo — que também está no histórico de alguém — morreria em silêncio.
+- **A chave primária é o slug**, então dois endereços iguais não podem apontar para obras diferentes. O banco recusa antes de a gente ter chance de errar, e o redirecionamento nunca vira sorteio.
+- **`renomearObra()` faz as duas coisas numa transação só**, porque são uma coisa. Gravar o novo sem registrar o velho deixa links órfãos; registrar o velho sem trocar o novo deixa uma obra redirecionando para si mesma. Separadas, uma delas falha sozinha um dia e o sintoma aparece no navegador de outra pessoa, meses depois.
+- **O caso que transforma o conserto num bug pior: renomear A→B→A.** Sem cuidado, "A" fica registrado como endereço antigo de uma obra que agora se chama "A", e a página redireciona A para A — laço. O navegador desiste e mostra erro no lugar de um livro que existe: pior que o original, porque antes o link ao menos abria alguma coisa. Por isso o `delete` do endereço novo dentro da transação.
+- **É 308 e não 307.** A mudança é definitiva: buscador e navegador passam a guardar o endereço novo em vez de bater aqui para sempre. O código de status é uma afirmação sobre o mundo, e essa é a verdadeira.
+- **A trava (`lib/enderecos.sql.test.ts`) cobre os dois lados**: o banco (o antigo chega, o laço não nasce) e a TELA — que a página realmente pergunte antes de desistir. Sem essa última, a tabela existiria, os testes passariam, e o leitor continuaria vendo "não encontrado": a trava inteira viraria enfeite. As duas foram mutadas.
+
+**Aplicado em produção:** três obras renomeadas, com os endereços antigos guardados e redirecionando.
+
+---
+
+**2026-08-01: A estante também prova que tem gente aqui. E quem está invisível passa a saber.**
+
+O dono relatou que "tem várias pessoas com estante que não aparecem no explorar". A causa era um campo: `email_verified`.
+
+Quem entra por Google ou GitHub ganha a verificação de graça — o provedor confirma. Quem entra por e-mail e senha precisa clicar num link, e **em produção quatro dos sete nunca clicaram**. Um deles tinha montado a **maior estante do site: 503 livros**, 278 públicos e com capa.
+
+Ele estava fora do explorar, fora das listas, fora do "pessoas" e fora dos buscadores. **Nenhuma tela do app dizia isso a ele.** Não havia erro nem aviso: ele simplesmente não existia para os outros, e o único sintoma era ninguém nunca segui-lo. Uma cidadania de segunda invisível, que só dá para enxergar de fora — e foi de fora que o dono viu.
+
+Foram apresentadas três saídas (avisar; aceitar a estante como prova; exigir verificação para usar o app). O dono escolheu **as duas primeiras juntas**, e é a combinação certa: avisar sozinho deixaria a melhor estante do site esperando um clique que não acontece há meses; aceitar a estante sozinho consertaria em silêncio, e silêncio foi o que criou o problema.
+
+- **O portão continua existindo.** A resposta preguiçosa seria remover o filtro. A nota original tem razão: com cadastro aberto, o explorar é a vitrine, e uma vitrine sem portão vira fazenda de spam. Remover resolve hoje e apodrece a tela no dia em que o cadastro abrir.
+- **A estante é uma prova mais cara que o clique.** O e-mail verificado prova que existe uma caixa de entrada. Vinte livros públicos com capa provam que alguém sentou e montou. Exigir só o primeiro era confundir o MEIO com o FIM. Contra os dados reais o corte separa bem: o leitor dos 503 entra, e os dois cadastros com dois livros cada continuam fora — dois livros não distinguem uma pessoa de um ruído.
+- **A regra estava escrita à mão em QUATRO consultas**, e é por isso que ninguém mediu o buraco: consertar uma não consertava as outras três. Agora mora em `lib/descoberta.ts`, uma vez.
+- **O aviso fala de gente, não de cadastro.** Não é "verifique sua conta", é "a sua estante não está aparecendo para quem ainda não te conhece" — a primeira é burocracia, a segunda é o que está acontecendo de fato. Ele não se fecha (fechar não conserta nada), aparece só para a própria pessoa (contar a um visitante que o dono da página tem pendência seria expor a pendência dele), e diz **quantos livros faltam** pelo outro caminho.
+- **O reenvio não aceita endereço como parâmetro.** Ele reenvia para o e-mail da SESSÃO. Uma ação que aceitasse um endereço seria um cano para mandar e-mail em nome do Gume para qualquer pessoa: máquina de spam gratuita, assinada por nós.
+- **Uma trava foi corrigida por reprovar o código certo.** A primeira versão procurava `users u` nos 1200 caracteres antes de cada uso, e reprovava `lib/listas.ts`, onde o join mora dentro de um helper. Fingir que uma busca de texto entende SQL montado por funções é uma trava que reprova o certo e acaba afrouxada por irritação — que é como travas morrem. Ela passou a verificar o que enxerga de verdade, e quem prova que a regra roda são os três testes contra o banco.
+
+---
+
+**2026-08-01: O painel ganha a base pessoa a pessoa. E o cartão passa a dizer o que conta.**
+
+Duas coisas do painel, no mesmo dia.
+
+**1. "Contribuidores: 2" estava certo, e o nome estava errado.** O dono estranhou o número porque no GitHub só ele tinha contribuído. Os 2 são ele e o `lucas`, que consertaram fichas de livro DENTRO do app. O painel já mostra os do GitHub num indicador separado ("escreveram código"), então a mesma tela usava o termo guarda-chuva ao lado do termo específico — e num projeto cuja tese é "um app que se constrói", "contribuidor" é justamente a palavra que significa as duas coisas. **Um número certo com nome ambíguo é pior que um número errado: no errado a pessoa desconfia; no ambíguo ela acredita na leitura que fez.** O cartão virou "consertaram o acervo", com uma linha dizendo o que entra na conta.
+
+**2. A base, pessoa a pessoa,** pedida pelo dono: quem está aqui, e-mail, tamanho da estante, última vez, e se está engajado.
+
+- **O engajamento é uma DESCRIÇÃO, e não uma nota.** Quatro estados — `sumiu`, `espiando`, `lendo`, `construindo` — que dizem o que a pessoa está fazendo, porque é isso que responde "o que eu construo agora". Uma nota de 0 a 100 diria quem é "melhor leitor", e não existe leitor melhor que outro. `espiando` não é pior que `lendo`: é outro momento.
+- **Sumido vem primeiro na classificação**, de propósito: quem não volta há um mês não é "construindo" por causa de uma resenha de abril. O estado é sobre agora.
+- **A regra vive no SQL, e não na tela**, porque a mesma classificação vai para o relatório em markdown que o painel exporta. Duas definições de "engajado" divergiriam no primeiro dia.
+- **Isto é a sala privada, e tem que continuar sendo.** Mostra e-mail, e o Gume se recusa a ordenar gente por esforço em qualquer superfície do produto (`lib/queridinhos.ts`). Está atrás de `assertIdealizador()`. O que aqui é diagnóstico vira, em qualquer outra tela, ranking de leitor: está escrito no código para quem for reaproveitar a consulta.
+- **A coluna "invisível" quase nasceu mentindo.** Ela ia olhar só `email_verified` — e depois da mudança de hoje o leitor dos 503 livros aparece SEM ter confirmado, porque a estante prova. Uma coluna assim chamaria de invisível quem está visível: o painel mentindo na cara do dono, que é exatamente o erro que este dia inteiro passou consertando. Ela usa a mesma régua de `lib/descoberta.ts`, e foi conferida contra produção.
+
+---
+
+**2026-08-01: O autor-lixo foi apagado, e não adivinhado. Autor nenhum é honesto; autor errado é mentira.**
+
+"Jonathan C. Young" tinha **53 obras** no acervo, sem relação nenhuma entre si: *Antifrágil* (Taleb), *A Torre Negra* (King), *Cartas de um Diabo a seu Aprendiz* (C.S. Lewis), *As armas da persuasão* (Cialdini). É um registro genérico da Open Library que a importação trouxe e espalhou.
+
+Duas dessas obras estavam em estante e foram corrigidas com autor de verdade (Cathy O'Neil, Stephen Hawking), porque para elas havia resposta confiável. As outras 51, não.
+
+- **A opção óbvia era buscar o autor certo de cada uma, e ela foi recusada.** A auditoria do mesmo dia mostrou o que a fonte externa devolve: tradutor no lugar do autor, editora ("Random House Mondadori" como autor de *Orientalismo*), fotógrafo, e `[author not identified]`. Em 28 divergências de autor, **~22 eram erro da fonte, não do Gume**. Trocar 51 autores por palpites dessa qualidade seria substituir uma mentira conhecida por 51 mentiras novas, mais difíceis de achar porque parecem plausíveis.
+- **Autor nenhum é um estado honesto.** A ficha fica incompleta e diz que está incompleta; alguém pode consertar depois, e o app já tem correção de ficha por leitor. Autor errado é uma afirmação falsa que o leitor acredita — e ninguém confere o que não parece suspeito.
+- **Nenhuma das 51 estava em estante, coleção ou resenha.** Foi verificado ANTES de tocar: zero, zero, zero. Elas só sujavam a busca. Se alguma estivesse na estante de alguém, a decisão teria sido outra — mexer no livro que alguém diz ter lido é mexer na memória dele.
+- **22 endereços carregavam o nome errado e foram limpos**, com o antigo guardado e redirecionando (migration 0057). **Dois não foram**: o endereço limpo já estava ocupado por outra obra, e o guarda de colisão preferiu manter a verruga a derrubar a transação inteira por causa de dois casos.
+- **O registro do autor foi apagado**, senão ele continuaria aparecendo na busca de autores sem obra nenhuma.
+
+**Fica registrado, e é maior que isto:** o acervo tem **5.699 obras sem autor**. A varredura por outros registros-lixo com o mesmo padrão não achou nenhum (os nomes com muitas obras são Machado de Assis, Camilo Castelo Branco, Fernando Pessoa — legítimos). O buraco de autores é de cobertura, e não de contaminação.
+
+---
+
+**2026-08-01: A busca passa a olhar a tabela de identificadores. O ISBN-10 existia e era ignorado.**
+
+A fila de pedidos — "cada linha é alguém que procurou um livro e não achou" — tinha 33 entradas. **Treze eram livros que o acervo JÁ TEM.**
+
+A fila não estava contando o que falta no acervo: estava contando o que a busca não acha.
+
+- **A causa: `editions.isbn13`, e só ele.** Quem digitasse o número de dez dígitos impresso na contracapa não achava nada. O app respondia "não temos" e ainda registrava um pedido — a lista do que trazer para o acervo enchia de livro que já está no acervo.
+- **A tabela certa já existia, cheia, e não era consultada.** `identifiers` guarda todo nome externo que uma edição atende, e o comentário dela no schema já dizia o porquê: *"an ISBN is the only identifier a reader can hold in their hand"*. A IMPORTAÇÃO a lia. A BUSCA, nunca. São **471.354 linhas em produção, 90.298 delas ISBN-10**, sem uso nenhum. Não faltava dado — faltava perguntar.
+- **`in (subconsulta)` e não `exists` com `or`:** a chave primária de `identifiers` é (kind, value), então a subconsulta cai direto no índice. Um `or` atravessando duas tabelas unidas não usaria índice nenhum, e a busca roda a cada tecla digitada.
+- **Os 15 pedidos já atendidos foram MARCADOS, e não apagados.** O histórico do que as pessoas procuraram é o dado mais útil que elas dão de graça, e apagá-lo para deixar a lista bonita seria queimar a única evidência de que a busca falhava. `atendida_por` fica nulo de propósito: ninguém trouxe esses livros — eles já estavam aqui.
+
+**Sobraram 20 pedidos de verdade.** E eles contam outra coisa: metade é digitação parcial ("ux ressea", "veias abrrta", "negocie como sua vida") ou busca por pessoa ("gabistec", "gabisteca"). A fila registra tentativa interrompida como demanda não atendida, e isso ainda infla a lista — assunto próprio, e menor que este.
+
+---
+
+**2026-08-01: "Desconhecido" é o que a TELA escreve. O banco continua dizendo `null`.**
+
+Obra sem autor desenhava nada — o espaço do nome ficava vazio, e vazio lê como "faltou preencher". Para a *Saga de Njáll*, a *Vida de Esopo* ou a *Saga de Gunnlaug* isso é falso: elas são anônimas, e a ficha está completa. O dono pediu "Desconhecido".
+
+- **A saída óbvia era criar um autor com esse nome, e ela foi recusada.** Uma linha em `authors` chamada "Desconhecido" recriaria exatamente o registro-lixo que este mesmo dia apagou: "Jonathan C. Young" tinha 53 obras sem relação nenhuma, com página de perfil, nome clicável e lugar na busca de autores. Um "Desconhecido" com centenas de obras seria a mesma coisa — só que de propósito.
+- **A distinção importa para consertar.** Com `null` dá para listar o que ainda falta atribuir; com um autor de mentira, tudo ficaria pendurado nele e o buraco sumiria de vista. Foi assim que se descobriu que das 5.699 obras sem autor, só **10** estão em estante de alguém.
+- **A palavra nunca é link.** Não há para onde ir, e um nome sublinhado que não leva a lugar nenhum é a promessa quebrada que a página do autor já tinha consertado uma vez.
+
+---
+
+**2026-08-01: Autores duplicados fundidos pela função do app, e não por um script paralelo.**
+
+O acervo tinha **7.917 nomes de autor duplicados, gerando 9.062 registros a mais** de 123.878 — cerca de 7%. A causa é dano de codificação na importação: "Se rgio Buarque de Holanda", "Aure lio", "Jose  Eduardo Agualusa" com espaço duplo, "Maura Lopes Canc̃ado". Sérgio Buarque de Holanda existia **seis vezes**.
+
+- **A fusão em massa dos 7.917 foi recusada.** Nomes que normalizam igual nem sempre são a mesma pessoa, e fundir errado junta a obra de duas pessoas diferentes — estrago pior que a duplicata e mais difícil de desfazer. Foram feitos só os **25 grupos que têm obra em estante de alguém**: é o que aparece na tela hoje, e é revisável a olho.
+- **Rodou pela `fundirAutores()` do app**, e não por um script que replicasse a lógica. Ela recusa quando os dois autores têm o mesmo livro, move as obras ANTES de apagar a linha (`author_id` é `on delete set null`: apagar primeiro deixaria os livros órfãos em silêncio), e guarda o nome que sai como APELIDO buscável do sobrevivente — quem procurar pela grafia velha continua achando. Reescrever isso num script seria criar uma segunda definição de "fundir", que divergiria da primeira: o erro que este dia inteiro passou consertando.
+- **27 fusões, todas no log de correções**, assinadas pelo dono e reversíveis.
+- **Dez grupos foram RECUSADOS pela própria função**, e a recusa está certa: os dois autores têm o mesmo livro, então fundir exige fundir as OBRAS antes. Isso mexe na estante de gente, e é decisão caso a caso — não de varredura.
+
+**A primeira execução estourou o tempo pela metade.** Como cada fusão é uma transação própria, 14 grupos ficaram feitos e 11 não. Foi conferido o estado real antes de repetir, em vez de assumir que nada havia sido aplicado — a segunda passada encontrou 11 grupos, não 25.
+
+---
+
+**2026-08-01: Os 16 livros de 2016-2017 entraram. Viraram 15, e a data é um ANO.**
+
+O dono passou uma lista com 16 livros que leu entre 2016 e 2017 e nunca cadastrou.
+
+- **Passou pelo `aplicar()` do app**, o mesmo caminho do Goodreads e do StoryGraph, e não por `insert` à mão. Ele acha ou cria a obra, grava a EDIÇÃO, abre a leitura e devolve relatório do que perdeu. Escrever isso à parte seria uma segunda definição de "importar". Resultado: **15 entraram, nenhuma ficha nova** — o acervo já tinha todos os 15.
+- **Dezesseis viraram quinze, e está certo.** Os itens 4 e 7 eram *Aleph* e *O Aleph*: a MESMA edição da Sextante, mesmo ISBN, com duas artes de capa. `editions.isbn13` é único, e deve ser: duas artes não são duas edições.
+- **A data é 2017 com precisão de ANO**, e o caminho para lá importa. Passar "2017-01-01" pelo importador gravaria precisão `day`, e o app passaria a acreditar que os quinze foram terminados em 1º de janeiro — a estatística de paciência contaria um dia inventado, que é exatamente o que a migration 0051 criou a coluna de precisão para impedir. Então a leitura entrou SEM data e o ano foi gravado depois, com `ended_precision = 'year'`.
+- **O parser de CSV do app faz a mesma recusa, e está certo:** ele devolve `null` para "2019" em vez de inventar um dia. Meio ano de erro possível, declarado, contra a alternativa de o livro não existir na estante.
+- **O `update` só tocou leitura sem data nenhuma.** Uma leitura antiga do dono, de 2022 e já com precisão de ano, ficou intacta — foi conferido depois de rodar. Um `update` largo teria trocado um fato por um palpite.
+- **As capas da lista foram IGNORADAS de propósito.** Elas vinham da Amazon e do Skoob, e nenhum dos dois está na lista de origens aceitas de `lib/imagens.ts`: a CSP bloquearia, a capa entraria no banco e não apareceria na tela. **Pior que capa nenhuma, porque parece que funcionou.** Buscadas nas fontes permitidas pelo ISBN, só 1 das 10 tinha capa — as outras 9 são edição brasileira que nem Google nem Open Library cobrem, o mesmo muro dos outros 231.
+
+---
+
+**2026-08-01: Dá para guardar a curadoria da casa. Migration 0058.**
+
+Guardar a lista de outra pessoa já existia; a curadoria do Gume não tinha o gesto. O dono pediu "igual já fizemos com as listas das pessoas".
+
+- **Não deu para usar `collection_saves`, e o motivo é o que a curadoria É.** A chave estrangeira dela aponta para `collections`, e o Top 100 **não é uma coleção**: ele é calculado a cada visita, sem linha em tabela nenhuma — e é exatamente isso que garante que ninguém o edita e que ele se refaz quando a comunidade muda de gosto. Materializá-lo numa coleção para caber no mecanismo antigo seria **mudar o que a coisa é para caber no jeito de guardar**. A lista continua calculada; o que se guarda é o ponteiro.
+- **A chave é o NOME da lista, e não um booleano no usuário.** `guardou_os_queridinhos boolean` resolveria hoje e travaria amanhã: a segunda lista editorial exigiria outra coluna. Com a chave, uma lista nova é uma linha em `CURADORIAS`, e não uma migration.
+- **Sem chave estrangeira, a validação tem que ter DUAS pontas.** O banco aceitaria `chave = 'qualquer-coisa'`, e uma linha órfã não é abstração: é um item guardado que aparece no perfil de alguém e não abre. Então a ESCRITA recusa chave desconhecida **e** a LEITURA filtra o que não reconhece — porque o dado sobrevive ao código, e uma lista editorial aposentada amanhã deixa linhas para trás. A linha continua no banco (o dado é da pessoa; apagar em silêncio seria pior), só não vira card quebrado. As duas pontas foram mutadas.
+- **No perfil ela é uma LINHA, e não um card.** Ela não tem dono para creditar (é da casa) nem capas próprias — as capas dela são as do momento e mudam sozinhas, e um card com capas que trocam sem ninguém mexer parece defeito.
+- **A trava do repo pegou um buraco meu.** As duas ações de servidor nasceram com `getViewer()`, que só diz quem está olhando. `lib/acoes.test.ts` reprovou com a frase certa: *uma escrita sem teto é um formulário de spam*. Viraram `getActor()`, que conta a escrita por dentro. **Quem percebeu foi o teste, e não eu.**
+
+---
+
+**2026-08-01: As obras duplicadas fundidas — só as que não estão na estante de ninguém.**
+
+Dez fusões de autor estavam travadas pela própria `fundirAutores()`, que recusa quando os dois autores têm o mesmo livro. Destravar exigia fundir as OBRAS antes.
+
+**A regra veio do dono: fundir obra que alguém tem na estante mexe no livro dele, e isso não se faz por varredura.** Das 24 obras que travavam, **21 não estavam na estante de ninguém** e foram fundidas; as 3 restantes (*O cortiço*, *80 anos de poesia*, *Raízes do Brasil*) ficaram intocadas.
+
+- **A obra absorvida é sempre a do autor não-canônico, e é a que está livre**, então nenhuma linha de estante muda de lugar. A trava é uma cláusula na consulta, e não uma boa intenção.
+- **Com as obras fora do caminho, mais 10 autores foram fundidos.** O total do dia é **61 correções no log**, todas assinadas e reversíveis. Sobram 3 grupos, travados pelas 3 obras que estão em estante — e eles ficam assim até alguém decidir caso a caso.
+
+---
+
+**2026-08-01: Livro sem capa PEDE uma, em voz alta.**
+
+Sobraram 231 livros que estão na estante de alguém e não têm capa em fonte pública nenhuma. Foram tentados três caminhos: o ISBN na Open Library, o ISBN no Google Books, e a busca por título e autor nas duas. São edições brasileiras pequenas que essas bases não cobrem. **Não existe API que resolva** — existe gente com o livro na mão.
+
+- **O formulário já existia, e o convite também. Num lugar onde ninguém lê.** O lápis de "arrumar este livro" tinha a dica certa (`title="faltou capa, ou tem algum dado errado? você mesmo ajeita"`), e `title` **não aparece no celular** e ninguém lê no computador. Pedir num lugar invisível é não pedir.
+- **Quem abre a página de um livro sem capa costuma ser exatamente quem o tem.** O pedido vai onde a falta aparece, e abre o formulário que sempre esteve ali. Nenhum mecanismo novo: só uma porta visível para o que já existia.
+- **O convite é CONDICIONAL.** Um pedido permanente em toda página vira ruído, e ruído é o que faz a pessoa parar de ler os avisos do app — aí o próximo, o que importa, também não é lido.
+- **A trava tem três partes**, e a terceira é a que salva: o convite existe, é condicional, **e a página avisa o componente quando a capa falta**. Sem essa última, o convite existiria no código e não apareceria para ninguém.
+- **A trava de VOZ do repo reprovou meu texto**, e com razão: eu usei travessão, que a casa proíbe em texto de tela. Trocado por dois-pontos. É a segunda vez no dia que um teste estrutural pega uma coisa que eu não veria.
+
+**E uma inconsistência minha foi corrigida junto:** o cartão da curadoria ainda dizia "os cem livros que a comunidade mais adorou", texto de antes de o voto virar "gostei ou adorei". Mudar a regra e esquecer a legenda é como o app passa a discordar de si mesmo.

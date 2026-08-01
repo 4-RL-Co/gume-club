@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import type { Viewer } from "@/lib/authz";
 import {
   works, authors, editions, libraryEntries, ownedCopies,
-  ratings, reviews,
+  ratings, reviews, workOldSlugs,
 } from "@/lib/db/schema";
 
 /** Server only. The book page. */
@@ -69,6 +69,62 @@ export type Book = {
     editionId: string | null;
   } | null;
 };
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  PARA ONDE UM ENDEREÇO ANTIGO LEVA HOJE. `null` se ele nunca existiu.
+ *
+ *  O endereço de uma obra carrega o nome do autor, e autor errado acontece: a
+ *  importação gravou a TRADUTORA da Metamorfose como autora, e o endereço virou
+ *  `metamorfose-sheila-koerich`. Corrigir a ficha não conserta o endereço, e o
+ *  endereço é o que as pessoas copiam e mandam uma para a outra.
+ *
+ *  Renomear sem isto troca uma verruga visível por uma perda silenciosa: o link que
+ *  alguém compartilhou passa a dar "não encontrado" e ninguém entende por quê.
+ *  Um link quebrado é pior que um link feio — o feio ainda leva ao livro.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export async function slugAtualDe(slugAntigo: string): Promise<string | null> {
+  const [row] = await db
+    .select({ slug: works.slug })
+    .from(workOldSlugs)
+    .innerJoin(works, eq(works.id, workOldSlugs.workId))
+    .where(eq(workOldSlugs.slug, slugAntigo))
+    .limit(1);
+
+  return row?.slug ?? null;
+}
+
+/**
+ * Troca o endereço de uma obra E GUARDA O ANTIGO, numa transação só.
+ *
+ * As duas coisas são uma coisa. Gravar o endereço novo sem registrar o velho deixa
+ * links órfãos pelo mundo; registrar o velho sem trocar o novo deixa um
+ * redirecionamento de uma obra para ela mesma, que é um laço. Separadas, uma delas
+ * falha sozinha um dia e ninguém percebe — o sintoma aparece no navegador de outra
+ * pessoa, meses depois.
+ *
+ * O endereço antigo entra com `on conflict do nothing`: renomear A→B→A faria a linha
+ * de A já existir, e isso não é erro, é uma obra que voltou ao nome de antes.
+ */
+export async function renomearObra(workId: string, slugNovo: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [obra] = await tx
+      .select({ slug: works.slug })
+      .from(works)
+      .where(eq(works.id, workId))
+      .limit(1);
+
+    if (!obra || obra.slug === slugNovo) return;
+
+    await tx.insert(workOldSlugs).values({ slug: obra.slug, workId }).onConflictDoNothing();
+    await tx.update(works).set({ slug: slugNovo }).where(eq(works.id, workId));
+
+    // O endereço novo não pode continuar listado como "antigo" de ninguém: se ele
+    // estivesse, a página redirecionaria para si mesma e o navegador entraria em laço.
+    await tx.delete(workOldSlugs).where(eq(workOldSlugs.slug, slugNovo));
+  });
+}
 
 export async function getBook(slug: string, viewer: Viewer, actorId: string | null): Promise<Book | null> {
   const [work] = await db

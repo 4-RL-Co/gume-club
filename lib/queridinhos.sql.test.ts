@@ -35,6 +35,7 @@ import { getQueridinhos } from "@/lib/queridinhos";
 const marca = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 const criados: string[] = [];
 let obraAmada: string;
+let obraMista: string;
 let obraMorna: string;
 
 beforeAll(async () => {
@@ -57,17 +58,30 @@ beforeAll(async () => {
     .insert(works)
     .values({ slug: `quer-amada-${marca}`, title: `zz amada ${marca}` })
     .returning({ id: works.id });
+  const [mista] = await db
+    .insert(works)
+    .values({ slug: `quer-mista-${marca}`, title: `zz mista ${marca}` })
+    .returning({ id: works.id });
   const [morna] = await db
     .insert(works)
     .values({ slug: `quer-morna-${marca}`, title: `zz morna ${marca}` })
     .returning({ id: works.id });
   obraAmada = amada!.id;
+  obraMista = mista!.id;
   obraMorna = morna!.id;
 
-  // A AMADA tem dois "adorei", e UM DELES É PRIVADO. É o caso da Saga de Njáll.
   await db.insert(ratings).values([
+    // A AMADA tem dois "adorei", e UM DELES É PRIVADO. É o caso da Saga de Njáll.
     { userId: ana, workId: obraAmada, value: 5, visibility: "public" },
     { userId: bruno, workId: obraAmada, value: 5, visibility: "private" },
+    /**
+     * A MISTA tem um "adorei" e um "gostei", e é O CASO QUE O DONO VIU NA TELA:
+     * o coração dela marcava DOIS e ela aparecia embaixo de livros com o coração
+     * marcando UM, porque a ordem contava só os "adorei". Dois vereditos de 4 ou 5
+     * valem dois votos, e ela passa na frente de quem tem um.
+     */
+    { userId: ana, workId: obraMista, value: 5, visibility: "public" },
+    { userId: bruno, workId: obraMista, value: 4, visibility: "public" },
     // A MORNA tem um só, público.
     { userId: ana, workId: obraMorna, value: 5, visibility: "public" },
   ]);
@@ -85,7 +99,7 @@ describe("o veredito privado conta no Top 100", () => {
 
     expect(amada, "a obra amada sumiu do top").toBeTruthy();
     expect(
-      amada!.adoraram,
+      amada!.gostaram,
       "o adorei privado não foi contado: é o bug da Saga de Njáll de volta",
     ).toBe(2);
   });
@@ -103,6 +117,42 @@ describe("o veredito privado conta no Top 100", () => {
       amada < morna,
       "o livro com dois adorei ficou abaixo do com um. A ordenação está por título, " +
         "e não por amor: é exatamente o sintoma que o leitor relatou.",
+    ).toBe(true);
+  });
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  O NÚMERO DO CORAÇÃO É O NÚMERO QUE ORDENA.
+   *
+   *  A lista ordenava por "adorei" (5) e o card imprimia "gostaram ou adoraram"
+   *  (4 ou 5). Ordenava por um número que não mostrava, e mostrava um que não
+   *  ordenava nada. Um livro com um "adorei" e um "gostei" aparecia com o coração
+   *  marcando DOIS, embaixo de livros com o coração marcando UM.
+   *
+   *  Estava certo pela régua velha e era ilegível para qualquer pessoa — inclusive
+   *  para o dono, que escreveu a régua e mesmo assim leu a tela como todo mundo
+   *  leria. Ninguém abre o código para entender uma lista: conclui que o app não
+   *  sabe contar.
+   *
+   *  Este teste amarra as duas pontas de uma vez: o número exibido E a posição.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  it("um livro com um adorei e um gostei vale DOIS, e passa na frente de quem tem um", async () => {
+    const lista = await getQueridinhos(1000);
+    const mista = lista.find((l) => l.slug === `quer-mista-${marca}`);
+
+    expect(mista, "a obra mista sumiu do top").toBeTruthy();
+    expect(
+      mista!.gostaram,
+      "o 'gostei' não virou voto: o coração vai marcar dois e a posição valer um, " +
+        "que é exatamente o que o dono viu na tela.",
+    ).toBe(2);
+
+    const pos = (slug: string) => lista.findIndex((l) => l.slug === slug);
+    expect(
+      pos(`quer-mista-${marca}`) < pos(`quer-morna-${marca}`),
+      "o livro com dois votos ficou abaixo do com um voto. É o sintoma relatado: " +
+        "coração 2 embaixo de coração 1.",
     ).toBe(true);
   });
 
@@ -143,19 +193,58 @@ describe("o veredito privado conta no Top 100", () => {
   it("a página do livro não voltou a filtrar veredito por visibilidade", () => {
     const src = readFileSync("app/livro/[slug]/page.tsx", "utf8");
 
-    const cte = src.slice(src.indexOf("with publico as"), src.indexOf("group by r.work_id"));
+    const abre = src.indexOf("with publico as");
+    const fecha = src.indexOf("group by r.work_id");
+    // A TRAVA DA TRAVA: um indexOf que não acha devolve -1, o slice sai torto e o
+    // teste aprova o que não leu. Já aconteceu neste repo mais de uma vez.
+    expect(abre, "não achei a consulta da coroa: este teste está cego").toBeGreaterThan(-1);
+    expect(fecha, "não achei o fim da consulta da coroa: este teste está cego").toBeGreaterThan(abre);
+
     expect(
-      /r\.visibility = 'public'/.test(cte),
-      "a página do livro voltou a contar só adorei público. A coroa dela vai " +
+      /r\.visibility = 'public'/.test(src.slice(abre, fecha)),
+      "a página do livro voltou a contar só veredito público. A coroa dela vai " +
         "discordar da lista de /queridinhos, e ninguém vai entender por quê.",
     ).toBe(false);
+  });
 
-    const gostaram = src.slice(src.indexOf("and r.value >= 4"), src.indexOf("as gostaram"));
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  AS DUAS TELAS ORDENAM PELO MESMO VOTO, E O VOTO É O NÚMERO EXIBIDO.
+   *
+   *  Aqui morava uma trava sobre "adoraram" e "gostaram" serem duas contagens que
+   *  não podiam divergir em visibilidade. **Elas deixaram de ser duas.** O voto
+   *  virou um número só (gostei ou adorei), justamente porque ter dois — um que
+   *  ordenava e outro que aparecia — foi o que produziu o bug.
+   *
+   *  A trava troca de alvo em vez de ser apagada, e fica mais dura: as duas telas
+   *  têm que usar o MESMO limiar, e nenhuma delas pode voltar a ordenar por
+   *  "adorei" sozinho. Se uma voltar, a coroa da página do livro diz um número e a
+   *  lista põe o livro noutro lugar.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  it("as duas telas contam o mesmo voto: gostei OU adorei", () => {
+    const lista = readFileSync("lib/queridinhos.ts", "utf8");
+    const pagina = readFileSync("app/livro/[slug]/page.tsx", "utf8");
+
     expect(
-      /r\.visibility = 'public'/.test(gostaram),
-      "o 'gostaram' da página do livro voltou a filtrar por visibilidade, e o " +
-        "'adoraram' não. Como gostaram inclui os adorei, a tela pode mostrar " +
-        "3 adoraram ao lado de 2 gostaram, que é impossível.",
-    ).toBe(false);
+      /where r\.value >= 4/.test(lista),
+      "a lista deixou de contar 'gostei ou adorei'. O card mostra esse número: se a " +
+        "ordem usar outro, volta o coração 2 embaixo do coração 1.",
+    ).toBe(true);
+
+    expect(
+      /count\(\*\) filter \(where r\.value >= 4\)/.test(pagina),
+      "a página do livro deixou de contar 'gostei ou adorei'. A coroa e a posição " +
+        "dela vão discordar da lista de /queridinhos.",
+    ).toBe(true);
+
+    // E ninguém voltou a ordenar por "adorei" sozinho, dos dois lados.
+    for (const [nome, src] of [["a lista", lista], ["a página do livro", pagina]] as const) {
+      expect(
+        /r\.value = 5/.test(src),
+        `${nome} voltou a contar só "adorei". O número impresso na tela é "gostaram ou ` +
+          `adoraram": ordenar por outro faz a tela discordar de si mesma.`,
+      ).toBe(false);
+    }
   });
 });

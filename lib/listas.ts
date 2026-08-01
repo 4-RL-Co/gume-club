@@ -5,6 +5,7 @@ import {
 } from "@/lib/authz";
 import { collections, collectionSaves } from "@/lib/db/schema";
 import { LIMITS, clamp } from "@/lib/limits";
+import { podeSerDescoberto } from "@/lib/descoberta";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -176,7 +177,7 @@ export async function getListasGuardadas(viewer: Viewer, ownerId: string): Promi
 export async function getListasParaExplorar(viewer: Viewer, limite = 6): Promise<ListaCard[]> {
   const rows = await db.execute<CardRow>(sql`
     ${cardSelect(viewer)}
-       and u.email_verified = true
+       and ${podeSerDescoberto}
        and (select count(*) from collection_items ci
              where ci.collection_id = collections.id) >= 3
        ${viewer ? sql`and collections.user_id <> ${viewer.id}::uuid` : sql``}
@@ -194,7 +195,7 @@ export async function getListasParaExplorar(viewer: Viewer, limite = 6): Promise
 export async function getTodasAsListas(viewer: Viewer, limite = 100): Promise<ListaCard[]> {
   const rows = await db.execute<CardRow>(sql`
     ${cardSelect(viewer)}
-       and u.email_verified = true
+       and ${podeSerDescoberto}
        and exists (select 1 from collection_items ci where ci.collection_id = collections.id)
      order by collections.created_at desc
      limit ${limite}`);

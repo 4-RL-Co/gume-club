@@ -1,7 +1,22 @@
 node_modules/
 .next/
-.env
-.env.local
+
+# ════════════════════════════════════════════════════════════════════
+#  TODO .env FICA FORA. A regra é o CURINGA, e não a lista.
+#
+#  Aqui estavam só `.env` e `.env.local`. Um `.env.production` — que é o nome
+#  óbvio para quem vai mexer no banco de verdade — passava direto, e ESTE REPO É
+#  PÚBLICO: a senha do banco de produção entraria num commit e ficaria publicada
+#  para sempre. Segredo vazado não se desfaz com `git rm`; se troca.
+#
+#  Uma lista de nomes proibidos só protege dos nomes que alguém lembrou de
+#  escrever. O curinga protege dos que ninguém pensou ainda, que são justamente
+#  os perigosos. O `.env.example` é a única exceção, e ele não tem segredo nenhum:
+#  é o molde que ensina quais chaves existem.
+# ════════════════════════════════════════════════════════════════════
+.env*
+!.env.example
+
 *.log
 .DS_Store
 coverage/

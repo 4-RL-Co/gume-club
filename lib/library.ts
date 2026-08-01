@@ -348,17 +348,53 @@ export function hitToWork(hit: Hit) {
   };
 }
 
-/** Puts a work on the actor's shelf. One row per (user, work): re-adding moves the status. */
-export async function shelve(actor: { id: string }, workId: string, status: Status): Promise<void> {
+/**
+ * Puts a work on the actor's shelf. One row per (user, work): re-adding moves the status.
+ *
+ * ════════════════════════════════════════════════════════════════════
+ *  ═══ E GRAVA QUAL EDIÇÃO. ELA VINHA SENDO JOGADA FORA ═══
+ *
+ *  O leitor buscava pelo ISBN da edição que tinha na mão, achava, e punha na
+ *  estante — e esta função gravava só (usuário, obra, status). **A edição que ele
+ *  acabou de identificar era descartada na última linha do caminho.**
+ *
+ *  O estrago aparece depois, noutra tela: sem edição gravada, a página do livro cai
+ *  na "primeira edição que tiver capa", e uma obra empacota edições de editoras
+ *  diferentes. Foi assim que um ISBN da Antofágica virou uma edição Leya de 2013 na
+ *  tela do dono, com a capa de uma terceira. Ele não errou nada: o app é que
+ *  esqueceu a resposta que ele deu.
+ *
+ *  A importação sempre gravou (ver lib/import/aplicar.ts) — por isso o buraco era
+ *  pequeno em produção (41 de 793) e passou despercebido: quem importa a estante
+ *  inteira fica bem, quem cadastra um livro à mão fica com o registro cego.
+ *
+ *  ═══ O `coalesce` NÃO É DETALHE: É QUEM MANDA ═══
+ *
+ *  Ao reprateleirar, a edição só é preenchida SE ESTIVER VAZIA. Quem escolheu a
+ *  edição de propósito (o "qual é a sua", em escolherEdicao) escolheu, e um clique
+ *  em "lido" não pode desfazer isso em silêncio. O palpite da busca preenche o
+ *  branco; ele nunca sobrescreve a decisão de alguém.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export async function shelve(
+  actor: { id: string },
+  workId: string,
+  status: Status,
+  editionId: string | null = null,
+): Promise<void> {
   // The row we are about to write is the actor's own. Asserted, not assumed.
   assertOwner(actor as Viewer, { userId: actor.id });
 
   await db
     .insert(libraryEntries)
-    .values({ userId: actor.id, workId, status })
+    .values({ userId: actor.id, workId, status, editionId })
     .onConflictDoUpdate({
       target: [libraryEntries.userId, libraryEntries.workId],
-      set: { status, statusAt: new Date() },
+      set: {
+        status,
+        statusAt: new Date(),
+        editionId: sql`coalesce(${libraryEntries.editionId}, excluded.edition_id)`,
+      },
     });
 }
 

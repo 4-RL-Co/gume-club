@@ -6,6 +6,7 @@ import { Avatar, AvatarStack } from "@/components/avatar";
 import { STATUS_LABEL, type ShelfBook } from "@/lib/shelf-view";
 import type { Opinion } from "@/lib/ratings";
 import { theirs } from "@/lib/veredito";
+import { nomeDoAutor } from "@/lib/autores";
 
 /**
  * A book is a card, and the cover floats inside it.
@@ -195,11 +196,9 @@ export function BookCard({
         <span className="voice mt-6 line-clamp-2 text-[15px] leading-snug text-[var(--color-ink)]">
           {book.title}
         </span>
-        {book.author && (
-          <span className="mt-1 line-clamp-1 text-[12px] text-[var(--color-ink-faint)]">
-            {book.author}
-          </span>
-        )}
+        <span className="mt-1 line-clamp-1 text-[12px] text-[var(--color-ink-faint)]">
+          {nomeDoAutor(book.author)}
+        </span>
 
         {/* O que VOCÊ achou, em palavra, e as caras de quem também leu. Nenhum
             número: nem nota, nem média, nem contagem. mt-auto prende os dois no

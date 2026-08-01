@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ehNomeDeAutor, limparNomeDeAutor } from "@/lib/autores";
+import { ehNomeDeAutor, limparNomeDeAutor, nomeDoAutor } from "@/lib/autores";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -103,5 +103,34 @@ describe("limparNomeDeAutor devolve NULO, e não uma etiqueta", () => {
     expect(limparNomeDeAutor("[author not identified]")).toBeNull();
     expect(limparNomeDeAutor("Portugal.")).toBeNull();
     expect(limparNomeDeAutor("  Machado   de  Assis  ")).toBe("Machado de Assis");
+  });
+});
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  OBRA SEM AUTOR ESCREVE "DESCONHECIDO", E O BANCO CONTINUA DIZENDO `null`.
+ *
+ *  Vazio na tela lê como "faltou preencher". Para a Saga de Njáll ou a Vida de Esopo
+ *  isso é falso: elas são anônimas, e a ficha está completa.
+ *
+ *  A palavra mora na TELA de propósito. Criar um autor chamado "Desconhecido" seria
+ *  recriar o "Jonathan C. Young" — 53 obras sem relação penduradas num registro, com
+ *  página de perfil e lugar na busca — só que de propósito desta vez. E `null` no
+ *  banco é o que permite listar depois o que ainda falta atribuir.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("o nome que a tela escreve quando não se sabe quem escreveu", () => {
+  it("nome de verdade passa intacto", () => {
+    expect(nomeDoAutor("Clarice Lispector")).toBe("Clarice Lispector");
+  });
+
+  it("sem autor vira Desconhecido", () => {
+    expect(nomeDoAutor(null)).toBe("Desconhecido");
+    expect(nomeDoAutor(undefined)).toBe("Desconhecido");
+  });
+
+  /** Nome só com espaços é o mesmo que nome nenhum, e já apareceu em ficha importada. */
+  it("nome em branco também", () => {
+    expect(nomeDoAutor("   ")).toBe("Desconhecido");
   });
 });
