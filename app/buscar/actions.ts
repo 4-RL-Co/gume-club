@@ -21,7 +21,9 @@ export async function addFromSearch(hit: Hit, status: Status): Promise<Added> {
   if (!isStatus(status)) throw new Error("status inválido");
 
   const { workId, editionId } = await findOrCreateWork(hitToWork(hit));
-  await shelve(actor, workId, status);
+  // A edição vai junto: é a que o leitor acabou de identificar, e sem ela a página
+  // do livro escolhe uma qualquer. Ver shelve(), em lib/library.ts.
+  await shelve(actor, workId, status, editionId);
 
   revalidatePath("/");
   revalidatePath("/estante");
@@ -173,7 +175,7 @@ export async function addByHand(form: {
     needsReview: true, // é um livro de verdade na estante enquanto isso, e não um de segunda
   });
 
-  await shelve(actor, workId, form.status);
+  await shelve(actor, workId, form.status, editionId);
   revalidatePath("/");
   revalidatePath("/estante");
   return { workId, editionId, title };
@@ -222,8 +224,8 @@ export async function addMany(hits: Hit[], status: Status): Promise<number> {
 
   let n = 0;
   for (const hit of hits.slice(0, 100)) {
-    const { workId } = await findOrCreateWork(hitToWork(hit));
-    await shelve(actor, workId, status);
+    const { workId, editionId } = await findOrCreateWork(hitToWork(hit));
+    await shelve(actor, workId, status, editionId);
     n++;
   }
 

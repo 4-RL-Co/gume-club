@@ -2677,3 +2677,16 @@ Não era capa errada. Era a mesma pergunta — "qual edição é este livro?" �
 - **Conferido contra produção, não contra o raciocínio.** Das quatro resenhas do dono, só o Frankenstein mudou de capa; as outras três já batiam e continuaram idênticas. Uma correção que muda o que estava certo não é correção, é troca de bug.
 
 **O que isso NÃO conserta, e está aqui para não ser esquecido:** as ~10 outras telas continuam usando a edição mais antiga importada. Para as telas da comunidade isso é certo. Para as telas de uma pessoa (a parede dela, o feed dela) é o mesmo erro do Frankenstein esperando para ser relatado.
+
+---
+
+**2026-08-01: Pôr na estante grava QUAL edição. Ela vinha sendo descartada.**
+
+O dono buscou pelo ISBN da Metamorfose da Antofágica, achou, pôs na estante — e a página do livro mostrou uma edição da Leya de 2013, com a capa de uma terceira. Ele não errou nada.
+
+`shelve()` gravava só (usuário, obra, status). **A edição que o leitor acabou de identificar era descartada na última linha do caminho** — o `editionId` estava em mãos na função que chama, e nem era passado adiante.
+
+- **O estrago não aparece onde nasce.** Nasce ao prateleirar e aparece noutra tela, outro dia, como "este app mostra o livro errado". Sem edição gravada, a página do livro cai na "primeira edição que tiver capa", e uma obra empacota edições de editoras diferentes — há obra no acervo com 36 editoras juntas.
+- **A importação sempre gravou** (`lib/import/aplicar.ts`), e é por isso que o buraco era pequeno em produção — 41 de 793 — e passou despercebido: quem importa a estante inteira fica bem; quem cadastra um livro à mão fica com o registro cego. Um bug que só atinge o caminho manual é um bug que o dono encontra sozinho, tarde.
+- **O `coalesce` é quem manda, e é a parte que quase não existiu.** O conserto óbvio — gravar a edição no conflito — traz um bug pior de brinde: quem escolheu a edição a dedo no "qual é a sua" perderia a escolha ao clicar em "lido", porque reprateleirar reescreveria a linha com o palpite da busca. Trocar "o app esqueceu a sua edição" por "o app desfez a sua escolha" é andar para trás. O palpite preenche o branco e nunca sobrescreve uma decisão.
+- **A trava mora em `lib/prateleirar.sql.test.ts`**, contra o Postgres de verdade, porque é lá que o conflito acontece. Quatro casos: a edição entra; reprateleirar não desfaz a escolha; o status muda mesmo assim (proteger a edição não pode congelar outra coisa); e prateleirar SEM edição não apaga a que já existia. Mutado: trocar o `coalesce` por `excluded.edition_id` derruba dois dos quatro.
