@@ -2727,3 +2727,19 @@ Foram apresentadas três saídas (avisar; aceitar a estante como prova; exigir v
 - **O aviso fala de gente, não de cadastro.** Não é "verifique sua conta", é "a sua estante não está aparecendo para quem ainda não te conhece" — a primeira é burocracia, a segunda é o que está acontecendo de fato. Ele não se fecha (fechar não conserta nada), aparece só para a própria pessoa (contar a um visitante que o dono da página tem pendência seria expor a pendência dele), e diz **quantos livros faltam** pelo outro caminho.
 - **O reenvio não aceita endereço como parâmetro.** Ele reenvia para o e-mail da SESSÃO. Uma ação que aceitasse um endereço seria um cano para mandar e-mail em nome do Gume para qualquer pessoa: máquina de spam gratuita, assinada por nós.
 - **Uma trava foi corrigida por reprovar o código certo.** A primeira versão procurava `users u` nos 1200 caracteres antes de cada uso, e reprovava `lib/listas.ts`, onde o join mora dentro de um helper. Fingir que uma busca de texto entende SQL montado por funções é uma trava que reprova o certo e acaba afrouxada por irritação — que é como travas morrem. Ela passou a verificar o que enxerga de verdade, e quem prova que a regra roda são os três testes contra o banco.
+
+---
+
+**2026-08-01: O painel ganha a base pessoa a pessoa. E o cartão passa a dizer o que conta.**
+
+Duas coisas do painel, no mesmo dia.
+
+**1. "Contribuidores: 2" estava certo, e o nome estava errado.** O dono estranhou o número porque no GitHub só ele tinha contribuído. Os 2 são ele e o `lucas`, que consertaram fichas de livro DENTRO do app. O painel já mostra os do GitHub num indicador separado ("escreveram código"), então a mesma tela usava o termo guarda-chuva ao lado do termo específico — e num projeto cuja tese é "um app que se constrói", "contribuidor" é justamente a palavra que significa as duas coisas. **Um número certo com nome ambíguo é pior que um número errado: no errado a pessoa desconfia; no ambíguo ela acredita na leitura que fez.** O cartão virou "consertaram o acervo", com uma linha dizendo o que entra na conta.
+
+**2. A base, pessoa a pessoa,** pedida pelo dono: quem está aqui, e-mail, tamanho da estante, última vez, e se está engajado.
+
+- **O engajamento é uma DESCRIÇÃO, e não uma nota.** Quatro estados — `sumiu`, `espiando`, `lendo`, `construindo` — que dizem o que a pessoa está fazendo, porque é isso que responde "o que eu construo agora". Uma nota de 0 a 100 diria quem é "melhor leitor", e não existe leitor melhor que outro. `espiando` não é pior que `lendo`: é outro momento.
+- **Sumido vem primeiro na classificação**, de propósito: quem não volta há um mês não é "construindo" por causa de uma resenha de abril. O estado é sobre agora.
+- **A regra vive no SQL, e não na tela**, porque a mesma classificação vai para o relatório em markdown que o painel exporta. Duas definições de "engajado" divergiriam no primeiro dia.
+- **Isto é a sala privada, e tem que continuar sendo.** Mostra e-mail, e o Gume se recusa a ordenar gente por esforço em qualquer superfície do produto (`lib/queridinhos.ts`). Está atrás de `assertIdealizador()`. O que aqui é diagnóstico vira, em qualquer outra tela, ranking de leitor: está escrito no código para quem for reaproveitar a consulta.
+- **A coluna "invisível" quase nasceu mentindo.** Ela ia olhar só `email_verified` — e depois da mudança de hoje o leitor dos 503 livros aparece SEM ter confirmado, porque a estante prova. Uma coluna assim chamaria de invisível quem está visível: o painel mentindo na cara do dono, que é exatamente o erro que este dia inteiro passou consertando. Ela usa a mesma régua de `lib/descoberta.ts`, e foi conferida contra produção.
