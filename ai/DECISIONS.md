@@ -2797,3 +2797,16 @@ O acervo tinha **7.917 nomes de autor duplicados, gerando 9.062 registros a mais
 - **Dez grupos foram RECUSADOS pela própria função**, e a recusa está certa: os dois autores têm o mesmo livro, então fundir exige fundir as OBRAS antes. Isso mexe na estante de gente, e é decisão caso a caso — não de varredura.
 
 **A primeira execução estourou o tempo pela metade.** Como cada fusão é uma transação própria, 14 grupos ficaram feitos e 11 não. Foi conferido o estado real antes de repetir, em vez de assumir que nada havia sido aplicado — a segunda passada encontrou 11 grupos, não 25.
+
+---
+
+**2026-08-01: Os 16 livros de 2016-2017 entraram. Viraram 15, e a data é um ANO.**
+
+O dono passou uma lista com 16 livros que leu entre 2016 e 2017 e nunca cadastrou.
+
+- **Passou pelo `aplicar()` do app**, o mesmo caminho do Goodreads e do StoryGraph, e não por `insert` à mão. Ele acha ou cria a obra, grava a EDIÇÃO, abre a leitura e devolve relatório do que perdeu. Escrever isso à parte seria uma segunda definição de "importar". Resultado: **15 entraram, nenhuma ficha nova** — o acervo já tinha todos os 15.
+- **Dezesseis viraram quinze, e está certo.** Os itens 4 e 7 eram *Aleph* e *O Aleph*: a MESMA edição da Sextante, mesmo ISBN, com duas artes de capa. `editions.isbn13` é único, e deve ser: duas artes não são duas edições.
+- **A data é 2017 com precisão de ANO**, e o caminho para lá importa. Passar "2017-01-01" pelo importador gravaria precisão `day`, e o app passaria a acreditar que os quinze foram terminados em 1º de janeiro — a estatística de paciência contaria um dia inventado, que é exatamente o que a migration 0051 criou a coluna de precisão para impedir. Então a leitura entrou SEM data e o ano foi gravado depois, com `ended_precision = 'year'`.
+- **O parser de CSV do app faz a mesma recusa, e está certo:** ele devolve `null` para "2019" em vez de inventar um dia. Meio ano de erro possível, declarado, contra a alternativa de o livro não existir na estante.
+- **O `update` só tocou leitura sem data nenhuma.** Uma leitura antiga do dono, de 2022 e já com precisão de ano, ficou intacta — foi conferido depois de rodar. Um `update` largo teria trocado um fato por um palpite.
+- **As capas da lista foram IGNORADAS de propósito.** Elas vinham da Amazon e do Skoob, e nenhum dos dois está na lista de origens aceitas de `lib/imagens.ts`: a CSP bloquearia, a capa entraria no banco e não apareceria na tela. **Pior que capa nenhuma, porque parece que funcionou.** Buscadas nas fontes permitidas pelo ISBN, só 1 das 10 tinha capa — as outras 9 são edição brasileira que nem Google nem Open Library cobrem, o mesmo muro dos outros 231.
