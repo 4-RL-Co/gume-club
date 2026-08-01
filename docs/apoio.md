@@ -29,7 +29,7 @@ Os três planos dão a **mesma** insígnia. A diferença é só o valor.
 Não existe `users.is_supporter`. Quem apoia é calculado na hora, por `ehApoiador()` em
 `lib/apoio.ts`:
 
-```
+```text
 existe assinatura com status active ou trialing   OU   avulso_badge_until > now()
 ```
 
@@ -126,6 +126,13 @@ As rotas de checkout usam o `limitar()` de `lib/rate-limit.ts`, que conta **no b
 não na memória do processo. Não é preferência: um balde em memória vira um balde por
 instância, e com mais de uma réplica o limite não afrouxa, ele para de existir e continua
 parecendo que existe. Ver a migration `0048`.
+
+**E ele conta por endereço, então `IP_HEADER` importa.** No Railway, ponha
+`IP_HEADER=x-forwarded-for`: lá o `x-real-ip` chega com o endereço da borda da CDN, e não
+o da pessoa (bug conhecido e assumido por eles). Sem isso, todo mundo divide o mesmo
+balde, e como o teto do login é dez a cada cinco minutos, algumas pessoas entrando ao
+mesmo tempo trancam todas as outras para fora. `lib/rate-limit.test.ts` prova os dois
+modos, e a trava foi mutada para confirmar que ela pega.
 
 O webhook não tem rate limit por IP, e é de propósito: quem bate nele é o Stripe, e
 limitar o Stripe é jogar fora aviso de pagamento. Quem não é o Stripe não passa do HMAC.

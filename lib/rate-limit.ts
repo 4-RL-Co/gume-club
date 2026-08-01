@@ -188,28 +188,67 @@ export async function varrer(): Promise<void> {
 }
 
 /**
- * Quem está batendo na porta.
+ * ════════════════════════════════════════════════════════════════════
+ *  QUEM ESTÁ BATENDO NA PORTA.
  *
- * `x-real-ip` PRIMEIRO, e de propósito: é o cabeçalho que o proxy da frente escreve
- * com o IP que ELE viu na borda, e que o cliente não consegue forjar. O
- * `x-forwarded-for` é uma lista que proxies vão ACRESCENTANDO — se a borda
- * acrescenta em vez de substituir, o primeiro item é o que o atacante mandou, e
- * cada requisição com um valor novo cairia num balde novo: o limite de força bruta
- * pareceria limitar e não limitaria. Auditoria de 2026-07-22.
+ *  O balde conta por endereço, e este é o único lugar que decide qual endereço é esse.
+ *  Errar aqui não afrouxa o limite: **muda em quem ele bate.**
  *
- * ═══ E ISTO DEPENDE DE QUEM ESTÁ NA FRENTE ═══
+ *  ═══ POR QUE O PADRÃO É `x-real-ip` ═══
  *
- * Quem hospedar atrás de um proxy que NÃO põe `x-real-ip` cai no primeiro
- * `x-forwarded-for`, que é o melhor que aquele ambiente oferece, e é mais fraco.
- * Não é uma escolha nossa: é o que sobra.
+ *  É o cabeçalho que o proxy da frente escreve com o endereço que ELE viu na borda, e o
+ *  cliente não consegue forjar. O `x-forwarded-for` é uma LISTA que proxies vão
+ *  ACRESCENTANDO: se a borda acrescenta em vez de apagar, o primeiro item é o que o
+ *  atacante mandou, e cada requisição com um valor novo cai num balde novo. O limite
+ *  pareceria limitar e não limitaria. Auditoria de 2026-07-22.
  *
- * **Confira no seu ambiente antes de abrir ao público.** Se o proxy da frente não
- * escrever `x-real-ip`, o limite de força bruta fica mais frouxo do que este
- * arquivo faz parecer, e ninguém vai notar pela tela.
+ *  É o certo atrás de um nginx com a config padrão, que é o caso de quem auto-hospeda.
+ *
+ *  ═══ E POR QUE ELE PRECISOU VIRAR CONFIGURÁVEL ═══
+ *
+ *  Em algumas plataformas o `x-real-ip` NÃO é o endereço da pessoa. No Railway ele vem
+ *  com o endereço da borda da CDN, e a própria equipe deles chama isso de bug conhecido:
+ *
+ *      "X-Real-Ip currently gets set to the CDN edge IP rather than the true client IP.
+ *       This is a bug on our side that we're tracking to fix."
+ *
+ *  Isso é pior do que parece, e o estrago não cai no atacante: se todo mundo chega com o
+ *  MESMO endereço, todo mundo divide o MESMO balde. Como o limite de login é dez a cada
+ *  cinco minutos, bastariam algumas pessoas entrando ao mesmo tempo para **trancar todos
+ *  os leitores para fora ao mesmo tempo**. Um limite que existe para proteger a porta
+ *  passaria a ser quem a fecha.
+ *
+ *  Lá, a recomendação da plataforma é o primeiro item do `x-forwarded-for`, e ali ele é
+ *  confiável porque a borda deles APAGA o que o cliente mandar antes de acrescentar o
+ *  endereço de verdade.
+ *
+ *  ═══ POR QUE UMA VARIÁVEL, E NÃO UM `if` COM O NOME DA PLATAFORMA ═══
+ *
+ *  Porque o Gume roda em lugares que a gente não conhece. Um `if (railway)` estaria
+ *  errado no dia seguinte, e não ajudaria ninguém atrás de um proxy diferente. A variável
+ *  descreve o AMBIENTE ("quem está na minha frente escreve este cabeçalho"), que é um
+ *  fato que só quem faz o deploy sabe.
+ *
+ *  O padrão continua sendo o seguro para quem não configurar nada. Ver .env.example.
+ * ════════════════════════════════════════════════════════════════════
  */
 export function quem(req: Request): string {
+  const primeiroDaLista = () =>
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "";
+
+  /**
+   * A plataforma da frente apaga o `x-forwarded-for` do cliente e acrescenta o endereço
+   * verdadeiro. Então o primeiro item é a pessoa, e o `x-real-ip` NÃO serve de reserva:
+   * onde esta opção é necessária, ele é justamente o cabeçalho que mente. Cair nele
+   * mandaria todo mundo para o mesmo balde, que é o problema que esta opção resolve.
+   */
+  if (process.env.IP_HEADER?.trim().toLowerCase() === "x-forwarded-for") {
+    return primeiroDaLista() || "sem-ip";
+  }
+
   const real = req.headers.get("x-real-ip")?.trim();
   if (real) return real;
-  const encaminhado = req.headers.get("x-forwarded-for");
-  return encaminhado?.split(",")[0]?.trim() || "sem-ip";
+
+  // Sem `x-real-ip`, o primeiro `x-forwarded-for` é o melhor que aquele ambiente oferece.
+  return primeiroDaLista() || "sem-ip";
 }
