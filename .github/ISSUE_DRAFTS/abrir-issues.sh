@@ -11,7 +11,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-REPO="4-RL-Co/gume-club"
+REPO="olegas4real/gume-club"
 
 # As labels primeiro. `--force` atualiza se já existir, em vez de falhar.
 gh label create "good first issue" --repo "$REPO" --color 7057ff --force \

@@ -9,7 +9,6 @@ import { Cover } from "@/components/cover";
 import { Mark } from "@/components/logo";
 import { Avatar, AvatarLink } from "@/components/avatar";
 import { Resume } from "@/components/resume";
-import { FourRL } from "@/components/four-rl";
 import { CODIGO, CONVERSA } from "@/lib/onde";
 import { getCapasDaParede } from "@/lib/parede";
 
@@ -295,20 +294,14 @@ async function Manifesto() {
           <Mark size={20} className="text-[var(--color-ink-faint)]" />
         </div>
 
-        {/* ── o selo de quem mantém isto de pé ──────────────────────────
-            Num bloco PRÓPRIO, separado do conteúdo do Gume por um filete. É uma
-            assinatura, e assinatura não grita: quem chegou aqui veio pelos livros,
-            e não pela empresa.
+        {/* ── O SELO DE QUEM MANTINHA ISTO DE PÉ SAIU DAQUI ──────────────
+            Havia uma assinatura de empresa neste rodapé, com a marca de outra
+            companhia, e ela era o ÚNICO lugar do produto com cor que não era a capa
+            de um livro. A marca guarda-chuva foi aposentada, e ela foi junto.
 
-            É o único lugar do produto onde existe cor que não é a capa de um livro.
-            A exceção é honesta e está explicada em components/four-rl.tsx: a marca
-            é de OUTRA empresa, e marca de outra pessoa não se recolore para caber
-            na paleta de quem a hospeda. */}
-        <div className="border-t border-[var(--color-rule)]">
-          <div className="mx-auto max-w-5xl px-6 py-7">
-            <FourRL />
-          </div>
-        </div>
+            E não entrou nada no lugar, de propósito: um rodapé de produto não
+            precisa dizer quem paga a conta. Quem quiser saber tem a página /sobre,
+            e quem apoia tem a /apoiar. Esta tela é sobre livros. */}
       </footer>
     </main>
   );

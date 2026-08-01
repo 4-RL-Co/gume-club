@@ -9,10 +9,10 @@
 
 Um registro de leitura aberto, construído com quem lê.
 
-[English](./README.en.md) · [gume.club](https://gume.club) · [Discussões](https://github.com/4-RL-Co/gume-club/discussions) · [Como contribuir](./CONTRIBUTING.md)
+[English](./README.en.md) · [gume.club](https://gume.club) · [Discussões](https://github.com/olegas4real/gume-club/discussions) · [Como contribuir](./CONTRIBUTING.md)
 
 [![Licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue.svg)](./LICENSE)
-[![CI](https://github.com/4-RL-Co/gume-club/actions/workflows/ci.yml/badge.svg)](https://github.com/4-RL-Co/gume-club/actions/workflows/ci.yml)
+[![CI](https://github.com/olegas4real/gume-club/actions/workflows/ci.yml/badge.svg)](https://github.com/olegas4real/gume-club/actions/workflows/ci.yml)
 
 Auto-hospedável · Sem anúncios, sem links de afiliado, sem algoritmo
 
@@ -81,14 +81,7 @@ As estatísticas dizem quem você é (a idade das obras que você lê, os paíse
 
 ## Como isso se paga
 
-<a href="https://github.com/4-RL-Co">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./public/logo/4rl-mark-dark.svg">
-    <img src="./public/logo/4rl-mark.svg" alt="4/RL Co." width="44" align="left">
-  </picture>
-</a>
-
-O `gume.club` é hospedado e pago pela [4/RL Co.](https://github.com/4-RL-Co). Um dia vai existir um jeito de apoiar o projeto, e ele vai ser opcional e **cosmético**: um selo no perfil, e nada além disso. Apoio não destrava função: quem paga e quem não paga usam exatamente o mesmo Gume. Isso está escrito aqui de propósito, porque é uma promessa.
+O `gume.club` é hospedado e pago para que o app seja de graça para quem lê. Quem quiser ajudar com a conta pode **apoiar**, e o apoio é opcional e **cosmético**: uma insígnia no perfil, e o nome na lista de quem apoia. Apoio não destrava função nenhuma: quem paga e quem não paga usam exatamente o mesmo Gume. Isso está escrito aqui de propósito, porque é uma promessa.
 
 A licença é a garantia. Se a instância hospedada um dia deixar de honrar a lista acima, você pode pegar o código, pegar os seus dados e rodar por conta própria. A saída é o ponto: é ela que torna as promessas reais, em vez de só bonitas.
 
@@ -97,7 +90,7 @@ A licença é a garantia. Se a instância hospedada um dia deixar de honrar a li
 Dois comandos, e eles têm que funcionar numa máquina limpa.
 
 ```bash
-git clone https://github.com/4-RL-Co/gume-club.git
+git clone https://github.com/olegas4real/gume-club.git
 cd gume-club
 ```
 
@@ -144,7 +137,7 @@ Para quem vai escrever código, especialmente bem-vindos:
 - **PT-BR redondo.** A prioridade é o app impecável em português do Brasil. Traduzir para outros idiomas fica para muito depois, quando o BR estiver sólido. Não é a hora.
 - **Design.** A régua está em [docs/design.md](./docs/design.md). Se você conseguir superá-la, por favor supere.
 
-As issues marcadas com `good first issue` são de verdade: cada uma diz o que é, por que importa, qual arquivo mexer, e como testar. As maiores já têm o texto inteiro pronto em [`.github/ISSUE_DRAFTS/`](./.github/ISSUE_DRAFTS). Leia o [CONTRIBUTING.md](./CONTRIBUTING.md) e o [Código de Conduta](./CODE_OF_CONDUCT.md) antes. E **você pode perguntar antes de começar**, nas [Discussões](https://github.com/4-RL-Co/gume-club/discussions).
+As issues marcadas com `good first issue` são de verdade: cada uma diz o que é, por que importa, qual arquivo mexer, e como testar. As maiores já têm o texto inteiro pronto em [`.github/ISSUE_DRAFTS/`](./.github/ISSUE_DRAFTS). Leia o [CONTRIBUTING.md](./CONTRIBUTING.md) e o [Código de Conduta](./CODE_OF_CONDUCT.md) antes. E **você pode perguntar antes de começar**, nas [Discussões](https://github.com/olegas4real/gume-club/discussions).
 
 ## O catálogo é comum, e é a parte difícil
 

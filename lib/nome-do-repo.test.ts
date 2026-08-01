@@ -66,4 +66,44 @@ describe("o nome do repositório é gume-club, com hífen", () => {
         "/contribuidores em silêncio. Use REPO, de lib/onde.ts.",
     ).toEqual([]);
   });
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  E O DONO TAMBÉM MUDOU. A TRAVA PROTEGIA METADE DO ENDEREÇO.
+   *
+   *  O slug é `dono/nome`, e este arquivo só vigiava o NOME. Quando a organização
+   *  `4-RL-Co` saiu (a marca guarda-chuva foi aposentada), o repositório passou a viver
+   *  em outro dono, e o endereço velho quebra do mesmo jeito que o nome velho quebrava:
+   *
+   *    · o badge do CI no README aponta para um lugar que não é mais o nosso
+   *    · o comando de clone leva para o endereço antigo
+   *    · e a chamada de API em lib/contributors.ts bate num repositório errado, a
+   *      /contribuidores esvazia, e a insígnia de construtor some sem um erro sequer
+   *
+   *  O GitHub redireciona o endereço antigo por um tempo, e é justamente isso que torna
+   *  a regressão silenciosa: tudo parece funcionar até o dia em que para.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  it("o dono velho (4-RL-Co) não aparece em lugar nenhum", () => {
+    const culpados: string[] = [];
+
+    for (const arquivo of varrer(process.cwd())) {
+      /**
+       * O ai/DECISIONS.md fica de fora, e é a mesma razão das migrations: ele é o
+       * REGISTRO do que foi decidido, e as entradas antigas citam a marca porque ela
+       * existia quando foram escritas. Reescrever histórico para caber numa regra nova
+       * é apagar o motivo de a regra ter mudado.
+       */
+      if (arquivo === "ai/DECISIONS.md") continue;
+
+      if (/4-RL-Co|4\/RL|\b4RL\b/i.test(readFileSync(arquivo, "utf8"))) culpados.push(arquivo);
+    }
+
+    expect(
+      culpados,
+      "o dono antigo do repositório (4-RL-Co) voltou. O endereço é `dono/nome`, e errar " +
+        "o dono quebra igual a errar o nome: o GitHub redireciona por um tempo, então " +
+        "parece funcionar até o dia em que para. Use REPO, de lib/onde.ts.",
+    ).toEqual([]);
+  });
 });

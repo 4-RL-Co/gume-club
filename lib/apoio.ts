@@ -25,7 +25,7 @@ import { sql, type SQL } from "drizzle-orm";
  * Os três planos. Mesmo preço da insígnia para todos: ela é a mesma.
  *
  * O `price` vem do ambiente porque ele é da INSTÂNCIA, e não do código: quem
- * auto-hospeda o Gume não tem os preços da 4/RL Co., e não deveria ter.
+ * auto-hospeda o Gume não tem os preços do gume.club, e não deveria ter.
  */
 export const TIERS = ["marcador", "lombada", "capadura"] as const;
 export type Tier = (typeof TIERS)[number];

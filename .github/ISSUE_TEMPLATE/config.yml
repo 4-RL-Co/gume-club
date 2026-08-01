@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: Vulnerabilidade de segurança
-    url: https://github.com/4-RL-Co/gume-club/security/advisories/new
+    url: https://github.com/olegas4real/gume-club/security/advisories/new
     about: Por favor, reporte de forma privada, não como uma issue pública. Ver SECURITY.md.
   - name: Uma feature que a gente não vai construir
-    url: https://github.com/4-RL-Co/gume-club#o-que-não-vai-ser
+    url: https://github.com/olegas4real/gume-club#o-que-não-vai-ser
     about: Curtidas, ofensivas (streaks), feeds algorítmicos e IA generativa são recusas, não backlog. Leia isto antes.

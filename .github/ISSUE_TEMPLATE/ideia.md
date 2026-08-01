@@ -22,5 +22,5 @@ nota em número e IA generativa **não são backlog, são recusas**, e estão ex
 "O que não vai ser" do README. Se a ideia esbarrar numa delas, a resposta provável é "não",
 e não é nada pessoal.
 
-E se for mais conversa que proposta, as [Discussões](https://github.com/4-RL-Co/gume-club/discussions)
+E se for mais conversa que proposta, as [Discussões](https://github.com/olegas4real/gume-club/discussions)
 são o lugar mais barato de descobrir se alguém já pensou nisso.

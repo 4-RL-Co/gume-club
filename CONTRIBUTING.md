@@ -4,7 +4,7 @@ Sem CLA. Sem checklist de dez itens. Sem pedir permissão pra começar.
 
 O caminho do primeiro PR tem quatro passos, e eles estão logo abaixo.
 
-**E tem um atalho pra tudo: as [Discussões](https://github.com/4-RL-Co/gume-club/discussions).**
+**E tem um atalho pra tudo: as [Discussões](https://github.com/olegas4real/gume-club/discussions).**
 É onde a gente conversa sobre o que vem em seguida, e é o lugar mais barato de descobrir que a
 sua ideia já foi discutida, ou que alguém já está mexendo naquilo. Bug, dúvida, ideia, ou só
 "esse comando não rodou aqui": fala lá. **Você não precisa passar por lá pra abrir um PR**, mas
@@ -20,7 +20,7 @@ poder ser encontrada por quem chegar depois, e não sumir na rolagem de um chat.
 ### 1. Rode
 
 ```bash
-git clone https://github.com/4-RL-Co/gume-club.git
+git clone https://github.com/olegas4real/gume-club.git
 cd gume-club
 cp .env.example .env
 docker compose up -d      # sobe o Postgres
@@ -175,9 +175,8 @@ escolha oposta.
 
 ## Governança, sem rodeios
 
-A [4/RL Co.](https://github.com/4-RL-Co) mantém o Gume e roda a instância hospedada em
-gume.club. Ela tem a palavra final sobre as promessas de produto e o rumo. Todo o resto é
-conversa.
+Quem mantém o Gume roda a instância hospedada em gume.club e tem a palavra final sobre as
+promessas de produto e o rumo. Todo o resto é conversa.
 
 O código é AGPL-3.0. Se esse arranjo não funciona pra você, **faça um fork**: a licença é
 escrita pra que você possa, e pra que quem fizer um fork do seu mantenha os mesmos direitos que

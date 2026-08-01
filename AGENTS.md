@@ -6,7 +6,7 @@ Docs companheiros: [ai/PRD.md](./ai/PRD.md) (o quê) · [ai/PLAN.md](./ai/PLAN.m
 
 ## O que é isto
 
-Gume: um registro de leitura de código aberto. Web primeiro, PWA, auto-hospedável. AGPL-3.0. Instância hospedada em gume.club, tocada pela 4/RL Co.
+Gume: um registro de leitura de código aberto. Web primeiro, PWA, auto-hospedável. AGPL-3.0. Instância hospedada em gume.club.
 
 ## Stack
 
