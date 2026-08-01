@@ -2743,3 +2743,19 @@ Duas coisas do painel, no mesmo dia.
 - **A regra vive no SQL, e não na tela**, porque a mesma classificação vai para o relatório em markdown que o painel exporta. Duas definições de "engajado" divergiriam no primeiro dia.
 - **Isto é a sala privada, e tem que continuar sendo.** Mostra e-mail, e o Gume se recusa a ordenar gente por esforço em qualquer superfície do produto (`lib/queridinhos.ts`). Está atrás de `assertIdealizador()`. O que aqui é diagnóstico vira, em qualquer outra tela, ranking de leitor: está escrito no código para quem for reaproveitar a consulta.
 - **A coluna "invisível" quase nasceu mentindo.** Ela ia olhar só `email_verified` — e depois da mudança de hoje o leitor dos 503 livros aparece SEM ter confirmado, porque a estante prova. Uma coluna assim chamaria de invisível quem está visível: o painel mentindo na cara do dono, que é exatamente o erro que este dia inteiro passou consertando. Ela usa a mesma régua de `lib/descoberta.ts`, e foi conferida contra produção.
+
+---
+
+**2026-08-01: O autor-lixo foi apagado, e não adivinhado. Autor nenhum é honesto; autor errado é mentira.**
+
+"Jonathan C. Young" tinha **53 obras** no acervo, sem relação nenhuma entre si: *Antifrágil* (Taleb), *A Torre Negra* (King), *Cartas de um Diabo a seu Aprendiz* (C.S. Lewis), *As armas da persuasão* (Cialdini). É um registro genérico da Open Library que a importação trouxe e espalhou.
+
+Duas dessas obras estavam em estante e foram corrigidas com autor de verdade (Cathy O'Neil, Stephen Hawking), porque para elas havia resposta confiável. As outras 51, não.
+
+- **A opção óbvia era buscar o autor certo de cada uma, e ela foi recusada.** A auditoria do mesmo dia mostrou o que a fonte externa devolve: tradutor no lugar do autor, editora ("Random House Mondadori" como autor de *Orientalismo*), fotógrafo, e `[author not identified]`. Em 28 divergências de autor, **~22 eram erro da fonte, não do Gume**. Trocar 51 autores por palpites dessa qualidade seria substituir uma mentira conhecida por 51 mentiras novas, mais difíceis de achar porque parecem plausíveis.
+- **Autor nenhum é um estado honesto.** A ficha fica incompleta e diz que está incompleta; alguém pode consertar depois, e o app já tem correção de ficha por leitor. Autor errado é uma afirmação falsa que o leitor acredita — e ninguém confere o que não parece suspeito.
+- **Nenhuma das 51 estava em estante, coleção ou resenha.** Foi verificado ANTES de tocar: zero, zero, zero. Elas só sujavam a busca. Se alguma estivesse na estante de alguém, a decisão teria sido outra — mexer no livro que alguém diz ter lido é mexer na memória dele.
+- **22 endereços carregavam o nome errado e foram limpos**, com o antigo guardado e redirecionando (migration 0057). **Dois não foram**: o endereço limpo já estava ocupado por outra obra, e o guarda de colisão preferiu manter a verruga a derrubar a transação inteira por causa de dois casos.
+- **O registro do autor foi apagado**, senão ele continuaria aparecendo na busca de autores sem obra nenhuma.
+
+**Fica registrado, e é maior que isto:** o acervo tem **5.699 obras sem autor**. A varredura por outros registros-lixo com o mesmo padrão não achou nenhum (os nomes com muitas obras são Machado de Assis, Camilo Castelo Branco, Fernando Pessoa — legítimos). O buraco de autores é de cobertura, e não de contaminação.
