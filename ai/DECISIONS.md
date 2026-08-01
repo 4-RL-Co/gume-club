@@ -2847,3 +2847,23 @@ Sobraram 231 livros que estão na estante de alguém e não têm capa em fonte p
 - **A trava de VOZ do repo reprovou meu texto**, e com razão: eu usei travessão, que a casa proíbe em texto de tela. Trocado por dois-pontos. É a segunda vez no dia que um teste estrutural pega uma coisa que eu não veria.
 
 **E uma inconsistência minha foi corrigida junto:** o cartão da curadoria ainda dizia "os cem livros que a comunidade mais adorou", texto de antes de o voto virar "gostei ou adorei". Mudar a regra e esquecer a legenda é como o app passa a discordar de si mesmo.
+
+---
+
+**2026-08-01: Amazon e Skoob entram nas origens de imagem. E as 3 fusões que tocam estante foram feitas.**
+
+Duas autorizações do dono, no fim do dia.
+
+**1. A lista de origens de imagem cresceu, e o preço está escrito nela.** 231 livros em estante de gente de verdade não tinham capa em fonte nenhuma das permitidas: são edições brasileiras pequenas que a Open Library e o Google Books não cobrem. A Amazon e o Skoob cobrem.
+
+- **Cada host aqui é um endereço que o navegador passa a aceitar como origem de imagem.** A lista é curta de propósito: quanto mais larga, mais lugares de onde uma imagem pode vir sem ninguém ter olhado. Foi por isso que ela não foi mexida antes de o dono decidir.
+- **`skoob.s3.amazonaws.com` é o host EXATO, e nunca `*.amazonaws.com`.** O S3 é aluguel: o curinga abriria a porta para qualquer pessoa que alugue um balde lá, que é o mundo inteiro. Um curinga ali não seria conveniência — seria a lista deixando de existir.
+- **11 capas da lista original do dono entraram** assim que a porta abriu. Elas tinham sido deliberadamente ignoradas na importação, porque uma capa que o navegador bloqueia é pior que capa nenhuma: parece que funcionou.
+
+**2. As 3 obras duplicadas que estavam em estante foram fundidas** — *O cortiço* (brunoanken), *80 anos de poesia* (alexssander), *Raízes do Brasil* (o dono).
+
+- **A conferência foi feita ANTES, e é a que importava:** nenhuma das três pessoas tinha as DUAS fichas. `fundirObras()` recusaria nesse caso, e com razão — seria um livro colidindo com ele mesmo na estante de alguém.
+- **A contagem de livros de cada pessoa foi medida antes e depois de cada fusão, uma a uma.** 503, 126 e 157: iguais dos dois lados. Fundir não pode custar um livro a ninguém, e "não pode" só vale se alguém conferir.
+- **Com elas fora do caminho, os últimos 3 autores duplicados foram fundidos.** Não sobra nenhum grupo duplicado entre os autores que têm obra em estante. O *Raízes do Brasil* do dono agora aponta para o Sérgio Buarque de Holanda de verdade, com 29 obras, em vez do registro de 2 obras com o nome sem acento.
+
+**67 correções no log hoje**, todas assinadas e reversíveis.
