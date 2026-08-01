@@ -407,6 +407,13 @@
       "when": 1784700817010,
       "tag": "0057_o_endereco_antigo_ainda_chega",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1784700817011,
+      "tag": "0058_guardar_a_curadoria_da_casa",
+      "breakpoints": true
     }
   ]
 }

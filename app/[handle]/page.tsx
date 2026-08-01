@@ -1,4 +1,4 @@
-import { Pencil } from "lucide-react";
+import { Pencil, Crown } from "lucide-react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getViewer } from "@/lib/viewer";
@@ -18,6 +18,7 @@ import { chegadaDe, getBadges } from "@/lib/badges";
 import { BadgesExplicadas } from "@/components/badges";
 import { getListasDe, getListasGuardadas } from "@/lib/listas";
 import { CuradoriaCard } from "@/components/curadoria-card";
+import { getCuradoriasGuardadas } from "@/lib/curadoria-guardada";
 import { souIdealizador } from "@/lib/authz";
 import { ListaGrid } from "@/components/lista-card";
 import { getResenhasDe } from "@/lib/explore";
@@ -102,7 +103,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
   const viewer = await getViewer();
   const mine = viewer?.id === profile.id;
 
-  const [books, counts, following, badges, shelves, guardadas, resenhas] = await Promise.all([
+  const [books, counts, following, badges, shelves, guardadas, resenhas, curadorias] = await Promise.all([
     getShelf(viewer, profile.id, { filter: "tudo", sort: "adicionado" }),
     getShelfCounts(viewer, profile.id),
     viewer && !mine ? isFollowing(viewer.id, profile.id) : Promise.resolve(false),
@@ -116,6 +117,9 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
     // As resenhas DELA, e a consulta é quem decide quais: privada nunca sai daqui.
     // Ver getResenhasDe() em lib/explore.ts e SECURITY.md.
     getResenhasDe(viewer, profile.id),
+    // E a curadoria da casa que ela guardou. Ela não é uma coleção (o Top 100 é
+    // calculado a cada visita), então vem de outra tabela. Ver lib/curadoria-guardada.ts.
+    getCuradoriasGuardadas(profile.id),
   ]);
 
   // A HONRA. Uma escada só: livros, HQs e cada volume de mangá contam juntos. Ver
@@ -335,14 +339,37 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
       {/* As que ela GUARDOU. O crédito no card é de quem montou, por nome e rosto:
           guardar é apontar para o trabalho de outra pessoa, e o gesto só faz sentido
           se quem fez aparecer. Quantas pessoas guardaram não existe em tela nenhuma. */}
-      {guardadas.length > 0 && (
+      {(guardadas.length > 0 || curadorias.length > 0) && (
         <section className="mt-5">
           <h2 className={EYEBROW}>
             {mine ? "coleções que eu guardei" : `coleções que ${primeiroNome} guardou`}
           </h2>
-          <div className="mt-4">
-            <ListaGrid listas={guardadas} />
-          </div>
+
+          {/* A curadoria da casa vem PRIMEIRO e como uma linha, e não como card: ela
+              não tem dono para creditar (é da casa) nem capas próprias para mostrar —
+              as capas dela são as do momento, e mudam sozinhas. Um card com capas que
+              trocam sem ninguém mexer parece defeito. */}
+          {curadorias.length > 0 && (
+            <ul className="mt-4 flex flex-col gap-2">
+              {curadorias.map((c) => (
+                <li key={c.chave}>
+                  <Link
+                    href={c.href}
+                    className="surface surface-hover flex items-center gap-2.5 px-5 py-4 text-[15px] text-[var(--color-ink)]"
+                  >
+                    <Crown size={14} strokeWidth={1.75} aria-hidden style={{ color: "#d9a520" }} />
+                    {c.titulo}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {guardadas.length > 0 && (
+            <div className="mt-4">
+              <ListaGrid listas={guardadas} />
+            </div>
+          )}
         </section>
       )}
 

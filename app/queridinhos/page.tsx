@@ -6,6 +6,8 @@ import { Empty } from "@/components/empty";
 import { getViewer } from "@/lib/viewer";
 import { getQueridinhos } from "@/lib/queridinhos";
 import { origemAceita } from "@/lib/imagens";
+import { jaGuardei } from "@/lib/curadoria-guardada";
+import { GuardarCuradoria } from "@/components/guardar-curadoria";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +26,9 @@ export const dynamic = "force-dynamic";
 export default async function Queridinhos() {
   // Resolve quem olha por costume da casa (toda superfície resolve o ator), ainda
   // que a lista seja a mesma para todo mundo: ela só carrega o que é público.
-  await getViewer();
+  // E agora ele serve para uma coisa a mais: saber se ESTA pessoa já guardou a lista.
+  const viewer = await getViewer();
+  const guardada = await jaGuardei(viewer, "queridinhos");
 
   const livros = await getQueridinhos(100);
 
@@ -51,6 +55,15 @@ export default async function Queridinhos() {
         <h1 className="voice mt-3 max-w-3xl text-[40px] leading-[1.04] tracking-[-0.015em] sm:text-[52px]">
           Top 100: os queridinhos do Gume
         </h1>
+        {/* GUARDAR, o mesmo gesto de guardar a estante de alguém. Só para quem entrou:
+            guardar é uma coisa que pertence a uma conta, e oferecer o botão a quem não
+            entrou seria um convite que termina numa tela de login. */}
+        {viewer && (
+          <div className="mt-6">
+            <GuardarCuradoria chave="queridinhos" guardada={guardada} />
+          </div>
+        )}
+
         <p className="voice mt-5 max-w-2xl text-[17px] leading-relaxed text-[var(--color-ink-soft)]">
           Os livros que a comunidade mais amou, na ordem do amor recebido. Ninguém edita esta
           lista: cada &quot;gostei&quot; e cada &quot;adorei&quot; conta um voto, e ela se refaz

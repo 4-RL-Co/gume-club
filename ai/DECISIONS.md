@@ -2810,3 +2810,26 @@ O dono passou uma lista com 16 livros que leu entre 2016 e 2017 e nunca cadastro
 - **O parser de CSV do app faz a mesma recusa, e está certo:** ele devolve `null` para "2019" em vez de inventar um dia. Meio ano de erro possível, declarado, contra a alternativa de o livro não existir na estante.
 - **O `update` só tocou leitura sem data nenhuma.** Uma leitura antiga do dono, de 2022 e já com precisão de ano, ficou intacta — foi conferido depois de rodar. Um `update` largo teria trocado um fato por um palpite.
 - **As capas da lista foram IGNORADAS de propósito.** Elas vinham da Amazon e do Skoob, e nenhum dos dois está na lista de origens aceitas de `lib/imagens.ts`: a CSP bloquearia, a capa entraria no banco e não apareceria na tela. **Pior que capa nenhuma, porque parece que funcionou.** Buscadas nas fontes permitidas pelo ISBN, só 1 das 10 tinha capa — as outras 9 são edição brasileira que nem Google nem Open Library cobrem, o mesmo muro dos outros 231.
+
+---
+
+**2026-08-01: Dá para guardar a curadoria da casa. Migration 0058.**
+
+Guardar a lista de outra pessoa já existia; a curadoria do Gume não tinha o gesto. O dono pediu "igual já fizemos com as listas das pessoas".
+
+- **Não deu para usar `collection_saves`, e o motivo é o que a curadoria É.** A chave estrangeira dela aponta para `collections`, e o Top 100 **não é uma coleção**: ele é calculado a cada visita, sem linha em tabela nenhuma — e é exatamente isso que garante que ninguém o edita e que ele se refaz quando a comunidade muda de gosto. Materializá-lo numa coleção para caber no mecanismo antigo seria **mudar o que a coisa é para caber no jeito de guardar**. A lista continua calculada; o que se guarda é o ponteiro.
+- **A chave é o NOME da lista, e não um booleano no usuário.** `guardou_os_queridinhos boolean` resolveria hoje e travaria amanhã: a segunda lista editorial exigiria outra coluna. Com a chave, uma lista nova é uma linha em `CURADORIAS`, e não uma migration.
+- **Sem chave estrangeira, a validação tem que ter DUAS pontas.** O banco aceitaria `chave = 'qualquer-coisa'`, e uma linha órfã não é abstração: é um item guardado que aparece no perfil de alguém e não abre. Então a ESCRITA recusa chave desconhecida **e** a LEITURA filtra o que não reconhece — porque o dado sobrevive ao código, e uma lista editorial aposentada amanhã deixa linhas para trás. A linha continua no banco (o dado é da pessoa; apagar em silêncio seria pior), só não vira card quebrado. As duas pontas foram mutadas.
+- **No perfil ela é uma LINHA, e não um card.** Ela não tem dono para creditar (é da casa) nem capas próprias — as capas dela são as do momento e mudam sozinhas, e um card com capas que trocam sem ninguém mexer parece defeito.
+- **A trava do repo pegou um buraco meu.** As duas ações de servidor nasceram com `getViewer()`, que só diz quem está olhando. `lib/acoes.test.ts` reprovou com a frase certa: *uma escrita sem teto é um formulário de spam*. Viraram `getActor()`, que conta a escrita por dentro. **Quem percebeu foi o teste, e não eu.**
+
+---
+
+**2026-08-01: As obras duplicadas fundidas — só as que não estão na estante de ninguém.**
+
+Dez fusões de autor estavam travadas pela própria `fundirAutores()`, que recusa quando os dois autores têm o mesmo livro. Destravar exigia fundir as OBRAS antes.
+
+**A regra veio do dono: fundir obra que alguém tem na estante mexe no livro dele, e isso não se faz por varredura.** Das 24 obras que travavam, **21 não estavam na estante de ninguém** e foram fundidas; as 3 restantes (*O cortiço*, *80 anos de poesia*, *Raízes do Brasil*) ficaram intocadas.
+
+- **A obra absorvida é sempre a do autor não-canônico, e é a que está livre**, então nenhuma linha de estante muda de lugar. A trava é uma cláusula na consulta, e não uma boa intenção.
+- **Com as obras fora do caminho, mais 10 autores foram fundidos.** O total do dia é **61 correções no log**, todas assinadas e reversíveis. Sobram 3 grupos, travados pelas 3 obras que estão em estante — e eles ficam assim até alguém decidir caso a caso.

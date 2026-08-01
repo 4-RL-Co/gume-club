@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   pgEnum, pgTable, text, timestamp, uuid, boolean, smallint, integer,
-  numeric, date, jsonb, uniqueIndex, unique, index, customType, check,
+  numeric, date, jsonb, uniqueIndex, unique, index, customType, check, primaryKey,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
@@ -590,6 +590,29 @@ export const collectionSaves = pgTable("collection_saves", {
   uniqueIndex("collection_saves_pk").on(t.userId, t.collectionId),
   index("collection_saves_col_idx").on(t.collectionId),
 ]);
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  GUARDAR A CURADORIA DA CASA. O Top 100 não é uma coleção.
+ *
+ *  `collection_saves` aponta para `collections`, e a curadoria da casa não tem linha
+ *  em tabela nenhuma: ela é CALCULADA a cada visita, e é isso que garante que ninguém
+ *  a edita e que ela se refaz quando a comunidade muda de gosto.
+ *
+ *  Fazê-la virar uma coleção só para caber no mecanismo antigo seria mudar o que a
+ *  coisa É para caber no jeito de guardar. A lista continua calculada; o que se guarda
+ *  é o ponteiro para ela.
+ *
+ *  A chave é o NOME da lista, e não um id: uma lista editorial nova é uma linha, e não
+ *  uma migration. Sem chave estrangeira, porque não há para onde apontar — ver
+ *  lib/curadoria-guardada.ts, onde mora a lista de chaves que o app reconhece.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export const curationSaves = pgTable("curation_saves", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  chave: text("chave").notNull(),
+  savedAt: timestamp("saved_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [primaryKey({ name: "curation_saves_pk", columns: [t.userId, t.chave] })]);
 
 export const collectionItems = pgTable("collection_items", {
   collectionId: uuid("collection_id").notNull().references(() => collections.id, { onDelete: "cascade" }),
