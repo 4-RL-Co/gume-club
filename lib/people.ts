@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import type { Viewer } from "@/lib/authz";
+import { podeSerDescoberto } from "@/lib/descoberta";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -65,7 +66,7 @@ export async function searchPeople(
        -- perfil dele é noindex. Com cadastro aberto, esse é o portão anti-spam
        -- inteiro. Uma conta que ninguém acha e que o Google não indexa não serve
        -- para spam nenhum.
-       and u.email_verified = true
+       and ${podeSerDescoberto}
        -- Uma conta privada não aparece na busca de ninguém. Ela não é um
        -- resultado "escondido": ela não é um resultado.
        and u.is_private = false

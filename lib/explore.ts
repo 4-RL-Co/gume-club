@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { visibleTo, type Viewer } from "@/lib/authz";
 import { libraryEntries, reviews } from "@/lib/db/schema";
+import { podeSerDescoberto } from "@/lib/descoberta";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -177,7 +178,7 @@ export async function getEstantes(viewer: Viewer, limite = 12): Promise<Estante[
        -- Com cadastro aberto, o explorar é a vitrine, e uma vitrine sem portão vira
        -- fazenda de spam. Ver lib/people.ts e app/[handle]/page.tsx.
        and u.banned_at is null
-       and u.email_verified = true
+       and ${podeSerDescoberto}
        and ${visibleTo(viewer, libraryEntries.userId, libraryEntries.visibility)}
        ${viewer ? sql`and u.id <> ${viewer.id}::uuid
        and not exists (

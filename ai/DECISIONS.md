@@ -2708,3 +2708,22 @@ O dono pediu para trocar. Trocar e pronto seria substituir uma verruga visível 
 - **A trava (`lib/enderecos.sql.test.ts`) cobre os dois lados**: o banco (o antigo chega, o laço não nasce) e a TELA — que a página realmente pergunte antes de desistir. Sem essa última, a tabela existiria, os testes passariam, e o leitor continuaria vendo "não encontrado": a trava inteira viraria enfeite. As duas foram mutadas.
 
 **Aplicado em produção:** três obras renomeadas, com os endereços antigos guardados e redirecionando.
+
+---
+
+**2026-08-01: A estante também prova que tem gente aqui. E quem está invisível passa a saber.**
+
+O dono relatou que "tem várias pessoas com estante que não aparecem no explorar". A causa era um campo: `email_verified`.
+
+Quem entra por Google ou GitHub ganha a verificação de graça — o provedor confirma. Quem entra por e-mail e senha precisa clicar num link, e **em produção quatro dos sete nunca clicaram**. Um deles tinha montado a **maior estante do site: 503 livros**, 278 públicos e com capa.
+
+Ele estava fora do explorar, fora das listas, fora do "pessoas" e fora dos buscadores. **Nenhuma tela do app dizia isso a ele.** Não havia erro nem aviso: ele simplesmente não existia para os outros, e o único sintoma era ninguém nunca segui-lo. Uma cidadania de segunda invisível, que só dá para enxergar de fora — e foi de fora que o dono viu.
+
+Foram apresentadas três saídas (avisar; aceitar a estante como prova; exigir verificação para usar o app). O dono escolheu **as duas primeiras juntas**, e é a combinação certa: avisar sozinho deixaria a melhor estante do site esperando um clique que não acontece há meses; aceitar a estante sozinho consertaria em silêncio, e silêncio foi o que criou o problema.
+
+- **O portão continua existindo.** A resposta preguiçosa seria remover o filtro. A nota original tem razão: com cadastro aberto, o explorar é a vitrine, e uma vitrine sem portão vira fazenda de spam. Remover resolve hoje e apodrece a tela no dia em que o cadastro abrir.
+- **A estante é uma prova mais cara que o clique.** O e-mail verificado prova que existe uma caixa de entrada. Vinte livros públicos com capa provam que alguém sentou e montou. Exigir só o primeiro era confundir o MEIO com o FIM. Contra os dados reais o corte separa bem: o leitor dos 503 entra, e os dois cadastros com dois livros cada continuam fora — dois livros não distinguem uma pessoa de um ruído.
+- **A regra estava escrita à mão em QUATRO consultas**, e é por isso que ninguém mediu o buraco: consertar uma não consertava as outras três. Agora mora em `lib/descoberta.ts`, uma vez.
+- **O aviso fala de gente, não de cadastro.** Não é "verifique sua conta", é "a sua estante não está aparecendo para quem ainda não te conhece" — a primeira é burocracia, a segunda é o que está acontecendo de fato. Ele não se fecha (fechar não conserta nada), aparece só para a própria pessoa (contar a um visitante que o dono da página tem pendência seria expor a pendência dele), e diz **quantos livros faltam** pelo outro caminho.
+- **O reenvio não aceita endereço como parâmetro.** Ele reenvia para o e-mail da SESSÃO. Uma ação que aceitasse um endereço seria um cano para mandar e-mail em nome do Gume para qualquer pessoa: máquina de spam gratuita, assinada por nós.
+- **Uma trava foi corrigida por reprovar o código certo.** A primeira versão procurava `users u` nos 1200 caracteres antes de cada uso, e reprovava `lib/listas.ts`, onde o join mora dentro de um helper. Fingir que uma busca de texto entende SQL montado por funções é uma trava que reprova o certo e acaba afrouxada por irritação — que é como travas morrem. Ela passou a verificar o que enxerga de verdade, e quem prova que a regra roda são os três testes contra o banco.

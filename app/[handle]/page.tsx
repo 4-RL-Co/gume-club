@@ -5,6 +5,8 @@ import { getViewer } from "@/lib/viewer";
 import { getProfile, isFollowing } from "@/lib/social";
 import { getShelf, getShelfCounts } from "@/lib/shelf";
 import { getFriendRatings } from "@/lib/ratings";
+import { ConfirmeSeuEmail } from "@/components/confirme-seu-email";
+import { estaInvisivel, contarLivrosQueProvam, LIVROS_QUE_PROVAM } from "@/lib/descoberta";
 import { Share } from "@/components/share";
 import { Report } from "@/components/report";
 import { PerfilEstante } from "@/components/perfil-estante";
@@ -134,6 +136,20 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
   // (filtro "tudo") sem query nova.
   const adorou = books.filter((b) => b.rating === 5);
 
+  /**
+   * ═══ VOCÊ ESTÁ INVISÍVEL, E O APP TEM QUE CONTAR ═══
+   *
+   * Quem não confirmou o e-mail some do explorar, das listas, do "pessoas" e dos
+   * buscadores — e nada na tela dizia isso. O único sintoma era ninguém nunca
+   * seguir a pessoa, e ela não tinha como ligar uma coisa à outra.
+   *
+   * A conta é a MESMA de lib/descoberta.ts: uma estante pública de verdade também
+   * abre a porta, então quem já está perto sabe quanto falta em vez de ouvir só
+   * "confirme seu e-mail".
+   */
+  const livrosQueProvam = mine ? await contarLivrosQueProvam(profile.id) : 0;
+  const invisivel = mine && estaInvisivel(profile.emailVerified, livrosQueProvam);
+
   return (
     <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
       <div className="surface mt-16 flex items-start gap-6 p-7 sm:mt-24 sm:gap-8 sm:p-8">
@@ -227,6 +243,8 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
           </div>
         </div>
       </div>
+
+      {invisivel && <ConfirmeSeuEmail faltam={LIVROS_QUE_PROVAM - livrosQueProvam} />}
 
       {/* No começo do perfil, logo abaixo do nome: a vitrine dos "adorei". */}
       {adorou.length > 0 && (
