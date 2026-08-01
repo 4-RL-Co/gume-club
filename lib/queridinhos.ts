@@ -12,6 +12,27 @@ import { db } from "@/lib/db";
  *  adoraram Dom Casmurro" é da primeira família; "quem leu mais livros" é da
  *  segunda, e continua proibida.
  *
+ *  ═══ O VOTO É "GOSTEI OU ADOREI", E É O NÚMERO QUE A TELA MOSTRA ═══
+ *
+ *  Isto ordenava só por "adorei" (veredito 5), e o card mostrava "gostaram ou
+ *  adoraram" (veredito 4 ou 5). **A lista ordenava por um número que ela nunca
+ *  mostrava, e mostrava um número que não ordenava nada.**
+ *
+ *  O sintoma: a Saga de Njáll, com um "adorei" e um "gostei", aparecia com o
+ *  coração marcando DOIS, embaixo de livros com o coração marcando UM. Estava
+ *  certo pela regra velha e era ilegível para qualquer pessoa — inclusive para o
+ *  dono, que escreveu a regra e mesmo assim leu a tela como todo mundo leria: o
+ *  coração é o voto.
+ *
+ *  Um ranking que discorda do número impresso ao lado dele não parece um ranking
+ *  com outra régua: parece um ranking quebrado. E ninguém pede explicação para uma
+ *  lista, ninguém abre o código: a pessoa conclui que o app não sabe contar.
+ *
+ *  Agora é um número só. O que ordena é o que aparece: gostei (4) ou adorei (5).
+ *  Decisão do dono. O custo é que "gostei" pesa igual a "adorei", e um livro muito
+ *  gostado passa um livro pouco adorado — aceito em troca de a lista poder ser lida
+ *  sem nota de rodapé. Ver ai/DECISIONS.md.
+ *
  *  ═══ O VEREDITO CONTA SEMPRE. A ESTANTE, SÓ SE FOR PÚBLICA ═══
  *
  *  Isto contava só nota pública, e a lista saía errada: um livro com dois
@@ -54,11 +75,13 @@ export type Queridinho = {
   title: string;
   author: string | null;
   coverUrl: string | null;
-  /** Quantas pessoas adoraram. Contagem sobre um LIVRO, nunca sobre gente. */
-  adoraram: number;
   /** Quantas leram (status lido, público). */
   leram: number;
-  /** Gostaram OU adoraram (veredito 4 ou 5, público). */
+  /**
+   * Gostaram OU adoraram (veredito 4 ou 5). **É O VOTO**: é este número que ordena
+   * a lista, e é este que o card mostra no coração. Um só, de propósito — ver o
+   * cabeçalho. Contagem sobre um LIVRO, nunca sobre gente.
+   */
   gostaram: number;
   /** Em quantas estantes ele mora: gente com o livro na própria estante (qualquer
       status) ou numa estante montada, tudo público. */
@@ -73,20 +96,17 @@ export async function getQueridinhos(limite = 100): Promise<Queridinho[]> {
            (select e.cover_url from editions e
              where e.work_id = w.id and e.cover_url is not null
              order by e.created_at asc limit 1) as "coverUrl",
-           count(*)::int as adoraram,
-           -- Os números do card: leram, gostaram ou adoraram, e em quantas estantes
-           -- mora. Tudo sobre o LIVRO, nunca sobre gente. O veredito conta sempre;
-           -- as duas contagens de ESTANTE continuam só sobre estante pública.
+           -- O VOTO, e é UM SÓ: o mesmo count que ordena a lista lá embaixo é o que
+           -- o card imprime no coração. Eram dois números diferentes, e a lista
+           -- ordenava pelo que ela não mostrava. Ver o cabeçalho.
+           count(*)::int as gostaram,
+           -- Os outros números do card: quantos leram e em quantas estantes mora.
+           -- Tudo sobre o LIVRO, nunca sobre gente. O veredito conta sempre; as duas
+           -- contagens de ESTANTE continuam só sobre estante pública.
            (select count(*)::int from library_entries le
               join users u2 on u2.id = le.user_id
              where le.work_id = w.id and le.status = 'read' and le.visibility = 'public'
                and u2.deleted_at is null and u2.banned_at is null) as leram,
-           (select count(*)::int from ratings r2
-              join users u3 on u3.id = r2.user_id
-             -- Sem filtro de visibilidade, e ela anda junto com 'adoraram' por
-             -- ARITMÉTICA: gostaram é value >= 4, que inclui os adorei. Ver o topo.
-             where r2.work_id = w.id and r2.value >= 4
-               and u3.deleted_at is null and u3.banned_at is null) as gostaram,
            (select count(distinct dono)::int from (
               select le2.user_id as dono from library_entries le2
                 join users u4 on u4.id = le2.user_id
@@ -103,7 +123,8 @@ export async function getQueridinhos(limite = 100): Promise<Queridinho[]> {
       join users u on u.id = r.user_id
       join works w on w.id = r.work_id
       left join authors a on a.id = w.author_id
-     where r.value = 5
+     -- GOSTEI OU ADOREI. O voto é este, e é o número que o card mostra.
+     where r.value >= 4
        and u.deleted_at is null
        and u.banned_at is null
      group by w.id, w.slug, w.title, a.name
@@ -117,7 +138,6 @@ export async function getQueridinhos(limite = 100): Promise<Queridinho[]> {
     title: r.title,
     author: r.author,
     coverUrl: r.coverUrl,
-    adoraram: r.adoraram,
     leram: r.leram,
     gostaram: r.gostaram,
     estantes: r.estantes,

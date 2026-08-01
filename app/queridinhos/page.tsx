@@ -52,15 +52,16 @@ export default async function Queridinhos() {
           Top 100: os queridinhos do Gume
         </h1>
         <p className="voice mt-5 max-w-2xl text-[17px] leading-relaxed text-[var(--color-ink-soft)]">
-          Os livros que a comunidade mais adorou, na ordem do amor recebido. Ninguém edita esta
-          lista: cada &quot;adorei&quot; conta um voto, e ela se refaz a cada visita.
+          Os livros que a comunidade mais amou, na ordem do amor recebido. Ninguém edita esta
+          lista: cada &quot;gostei&quot; e cada &quot;adorei&quot; conta um voto, e ela se refaz
+          a cada visita.
         </p>
       </header>
 
       {livros.length === 0 ? (
         <div className="mt-10">
           <Empty>
-            Ainda não tem queridinho por aqui. Quando alguém adorar um livro, ele aparece.
+            Ainda não tem queridinho por aqui. Quando alguém gostar ou adorar um livro, ele aparece.
           </Empty>
         </div>
       ) : (

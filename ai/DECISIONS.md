@@ -2648,3 +2648,17 @@ A entrada logo acima deixou uma pergunta em aberto: seis itens cabiam, mas ao cu
 - **"Onde estou" não pode mais ser só a cor.** Um traço de 1.5px trocando de cinza para branco era um sinal fraco quando havia palavra embaixo confirmando; sozinho é fraco demais. O item aceso ganhou a MESMA superfície que o app inteiro usa para controles (`surface-2`), o traço engrossou (1.5 → 1.75) e o ícone cresceu (20 → 22). **Nada inventado:** é o vocabulário que já existia, e a alternativa seria desenhar um elemento novo para um problema que o sistema já resolve.
 - **A repartição de largura FICA**, mesmo sem a pressão que a justificava. Ela é o que garante que o sexto item exista em qualquer tela, e o dia em que a barra ganhar um sétimo item — ou o rótulo de volta — é justamente o dia em que ninguém vai lembrar de somar.
 - **A trava trocou de alvo em vez de ser apagada.** "O rótulo corta em vez de vazar" protegia uma palavra que não existe mais. No lugar dela, `lib/celular.test.ts` passou a exigir que todo item tenha `aria-label` e que rótulo nenhum volte à tela sem alguém mudar a trava e dizer por quê. É mais duro que a anterior, e não menos. As duas metades foram mutadas para provar que quebram.
+
+---
+
+**2026-08-01: O Top 100 ordena pelo número que ele mostra. O voto passa a ser "gostei ou adorei".**
+
+O dono viu livros com o coração marcando DOIS embaixo de livros com o coração marcando UM, e relatou como erro de ordenação. Não era: **a lista ordenava por um número que ela nunca mostrava.**
+
+A ordem contava só "adorei" (veredito 5). O card imprimia "gostaram ou adoraram" (veredito 4 ou 5). A Saga de Njáll, com um "adorei" e um "gostei", valia UM voto e mostrava DOIS corações.
+
+- **Estava certo pela régua velha, e era ilegível para qualquer pessoa.** Inclusive para quem escreveu a régua: o dono leu a própria tela como todo mundo leria — o coração é o voto. Ninguém abre o código para entender uma lista. A pessoa conclui que o app não sabe contar.
+- **A saída escolhida pelo dono foi ordenar pelo número exibido**, e não exibir o número que ordenava. O voto agora é "gostei (4) ou adorei (5)", em um número só. **O custo: "gostei" pesa igual a "adorei", e um livro muito gostado passa um livro pouco adorado.** Aceito em troca de uma lista que se lê sem nota de rodapé.
+- **Dois números viraram um, e isso é a correção de verdade.** `adoraram` sumiu do código: ele só existia para ordenar, nunca era impresso em tela nenhuma (na página do livro ele era selecionado e descartado). Um número invisível que decide a ordem é uma armadilha esperando o próximo leitor — e o próximo leitor foi o dono.
+- **As duas telas mudaram juntas**, porque a mesma conta vive em `lib/queridinhos.ts` (a lista) e em `app/livro/[slug]/page.tsx` (a coroa e a posição). Os textos mudaram junto: "cada 'adorei' conta um voto" virou "cada 'gostei' e cada 'adorei' conta um voto", e o vazio deixou de dizer "quando alguém adorar".
+- **A trava trocou de alvo em vez de ser apagada.** Ela exigia que `adoraram` e `gostaram` não divergissem em visibilidade; eles deixaram de ser dois. Agora exige que as duas telas usem o MESMO limiar e que nenhuma volte a ordenar por "adorei" sozinho. Ganhou também o caso exato da tela: um livro com um "adorei" e um "gostei" vale dois e passa na frente de quem tem um. Mutada para provar que quebra.

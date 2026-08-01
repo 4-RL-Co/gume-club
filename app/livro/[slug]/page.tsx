@@ -124,9 +124,13 @@ export default async function BookPage({
      * compara as duas e quebra o build se elas divergirem.
      */
     db
-      .execute<{ leram: number; estantes: number; gostaram: number; adoraram: number; posicao: number | null }>(sql`
+      .execute<{ leram: number; estantes: number; gostaram: number; posicao: number | null }>(sql`
         with publico as (
-          select r.work_id, count(*) filter (where r.value = 5)::int as adoraram
+          -- GOSTEI OU ADOREI, e é o mesmo voto que ordena /queridinhos. Era só
+          -- "adorei" (value = 5) aqui e na lista, enquanto as duas telas imprimiam
+          -- "gostaram ou adoraram": ordenavam por um número que não mostravam.
+          -- Agora o número da tela É o número da posição. Ver lib/queridinhos.ts.
+          select r.work_id, count(*) filter (where r.value >= 4)::int as gostaram
             from ratings r
             join users u on u.id = r.user_id
            where u.deleted_at is null and u.banned_at is null
@@ -156,21 +160,18 @@ export default async function BookPage({
                 and c.visibility = 'public'
                 and u.deleted_at is null and u.banned_at is null
            ) donos) as estantes,
-          (select count(*)::int from ratings r
-             join users u on u.id = r.user_id
-            where r.work_id = ${book.workId}::uuid
-              and r.value >= 4
-              and u.deleted_at is null and u.banned_at is null) as gostaram,
-          coalesce((select p.adoraram from publico p where p.work_id = ${book.workId}::uuid), 0) as adoraram,
-          (select case when meu.adoraram is null or meu.adoraram = 0 then null else (
+          -- O número impresso na tela sai da MESMA conta que dá a posição. Ele era
+          -- uma consulta à parte, e foi essa separação que deixou os dois discordarem.
+          coalesce((select p.gostaram from publico p where p.work_id = ${book.workId}::uuid), 0) as gostaram,
+          (select case when meu.gostaram is null or meu.gostaram = 0 then null else (
              select 1 + count(*)::int from publico p
                join works w2 on w2.id = p.work_id
-              where p.adoraram > meu.adoraram
-                 or (p.adoraram = meu.adoraram and w2.title < (select w3.title from works w3 where w3.id = ${book.workId}::uuid))
+              where p.gostaram > meu.gostaram
+                 or (p.gostaram = meu.gostaram and w2.title < (select w3.title from works w3 where w3.id = ${book.workId}::uuid))
            ) end
-           from (select p2.adoraram from publico p2 where p2.work_id = ${book.workId}::uuid) meu) as posicao
+           from (select p2.gostaram from publico p2 where p2.work_id = ${book.workId}::uuid) meu) as posicao
       `)
-      .then((r) => r[0] ?? { leram: 0, estantes: 0, gostaram: 0, adoraram: 0, posicao: null }),
+      .then((r) => r[0] ?? { leram: 0, estantes: 0, gostaram: 0, posicao: null }),
   ]);
 
   /**
