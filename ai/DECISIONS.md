@@ -2620,3 +2620,31 @@ A barra descobria quem estava logado com `useSession()`, um hook que vai ao serv
 - **A identidade chega pronta**, do `getUser()` que já estava no `lib/viewer.ts`, no mesmo `Promise.all` do resto do layout. Não há estado de carregando porque não há nada a carregar, e `useSession` deixou de ser importado no app inteiro.
 - **De quebra, a inicial do avatar ficou certa.** Ela era `handle={name ?? "eu"}`, porque o hook não trazia handle nenhum: quem não tinha nome nem foto ganhava a inicial de "eu", um "E" que não era dele. `getUser()` já devolvia o handle; passou a devolver a `image` também.
 - **A trava é `lib/celular.test.ts`**: nada de `useSession` na barra, a identidade tem que chegar por prop, e o layout tem que passá-la. As três foram mutadas para provar que quebram. A primeira sozinha não bastava — não ter `useSession` é fácil se a barra não souber de ninguém; um teste que só proíbe não garante que sobrou o certo no lugar.
+
+---
+
+**2026-08-01: A barra de baixo reparte a largura. Nenhum item pede mais do que lhe cabe.**
+
+Terceiro relato do dono no mesmo dia, e o mais simples dos três: **o PERFIL ficava depois da borda direita da tela.** Ele aparecia dando zoom para trás, porque aí a barra inteira cabe no olho. Um item que só existe com zoom não existe.
+
+Os seis itens tinham largura própria (`px-3` mais o rótulo inteiro) e a barra distribuía o que sobrasse, com `justify-around`. Numa tela de 390pt não sobrava: medindo pela foto, os centros iam de ~50pt a ~345pt com passo de ~74pt, então o sexto cairia em ~424pt — 34pt fora da tela.
+
+- **A causa não é o zoom nem o `viewport`.** O `width=device-width` está lá (padrão do Next). O que estourava era a soma: seis itens pediam cerca de 460pt numa barra de 358pt.
+- **`flex-1 min-w-0`, e não uma letra menor.** Encolher o rótulo até caber conserta o telefone que está na mão hoje e quebra no telefone menor de amanhã, **em silêncio, exatamente como este quebrou**. Repartindo, cada item ganha um sexto EXATO do que existe: não há sobra a transbordar porque não há item que peça mais do que lhe cabe. Numa tela estreita demais o rótulo corta com reticências — o pior caso vira "EXPLORA…" em vez de um item sumido.
+- **Uma medida só, para itens que são três coisas no código.** Um link de lugar, o botão da busca, o do perfil ou o de entrar: escritos separados, divergem, e bastou um `px` a mais para a conta estourar sem ninguém somar.
+- **A trava não mede pixel, de propósito.** Medir largura de texto exigiria fonte, motor de layout e um aparelho concreto — e amarraria o teste ao telefone de hoje, que é o erro que produziu o bug. `lib/celular.test.ts` garante o que vale em qualquer largura: que nenhum item peça mais do que lhe cabe, que todos usem a mesma medida, e que o rótulo corte em vez de vazar.
+- **A primeira versão do teste contou a tela em vez do código** e quebrou na barra que estava certa: são quatro usos da medida para seis itens, porque os quatro lugares saem de um `.map` e o perfil e o entrar são o mesmo lugar visto por duas pessoas. Está escrito lá, para não custar a mesma meia hora de novo.
+
+**Fica em aberto, e é do dono:** seis itens numa barra de celular é muito. Eles cabem agora, mas o rótulo desceu para 9px para caber. A alternativa é tirar um — e a candidata óbvia, a busca, é a que menos pode sair, porque `lib/celular.test.ts` existe justamente porque ela já foi inalcançável no telefone uma vez.
+
+---
+
+**2026-08-01: A barra do celular perde o rótulo. Eu recomendei o contrário, e o dono decidiu.**
+
+A entrada logo acima deixou uma pergunta em aberto: seis itens cabiam, mas ao custo de a letra descer para 9px. Foram postas três saídas — deixar como estava, tirar a palavra, ou tirar um item. **O dono escolheu tirar a palavra**, e eu tinha recomendado a primeira.
+
+- **O que isso custa está escrito no código, e é real.** Uma bússola e duas pessoas não dizem "explorar" e "amigos" sozinhas. Quem chega pela primeira vez vai tocar para descobrir, e é um custo que a palavra pagava. **A volta atrás é devolver o `<span>`: duas linhas.**
+- **O `aria-label` mudou de papel, e é a parte que não podia passar batida.** Ele era reforço; virou **o único nome** de cada item. Sem ele, quem usa leitor de tela ouve "link" seis vezes e o app deixa de ter navegação — e ninguém que enxerga a tela perceberia, porque para o olho continua tudo no lugar. É o mesmo feitio dos outros bugs deste dia: o que não deixa rastro.
+- **"Onde estou" não pode mais ser só a cor.** Um traço de 1.5px trocando de cinza para branco era um sinal fraco quando havia palavra embaixo confirmando; sozinho é fraco demais. O item aceso ganhou a MESMA superfície que o app inteiro usa para controles (`surface-2`), o traço engrossou (1.5 → 1.75) e o ícone cresceu (20 → 22). **Nada inventado:** é o vocabulário que já existia, e a alternativa seria desenhar um elemento novo para um problema que o sistema já resolve.
+- **A repartição de largura FICA**, mesmo sem a pressão que a justificava. Ela é o que garante que o sexto item exista em qualquer tela, e o dia em que a barra ganhar um sétimo item — ou o rótulo de volta — é justamente o dia em que ninguém vai lembrar de somar.
+- **A trava trocou de alvo em vez de ser apagada.** "O rótulo corta em vez de vazar" protegia uma palavra que não existe mais. No lugar dela, `lib/celular.test.ts` passou a exigir que todo item tenha `aria-label` e que rótulo nenhum volte à tela sem alguém mudar a trava e dizer por quê. É mais duro que a anterior, e não menos. As duas metades foram mutadas para provar que quebram.

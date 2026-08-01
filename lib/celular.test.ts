@@ -262,3 +262,104 @@ describe("a barra sabe quem entrou sem perguntar ao navegador", () => {
     expect(layout, "o layout parou de dizer à barra quem entrou").toMatch(/<Sidebar[\s\S]*?\beu=\{/);
   });
 });
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  A BARRA DE BAIXO REPARTE A LARGURA, E POR ISSO NUNCA TRANSBORDA.
+ *
+ *  ═══ O BUG: O PERFIL FICAVA DEPOIS DA BORDA DA TELA ═══
+ *
+ *  Os seis itens tinham largura própria e a barra distribuía o que sobrasse. Numa
+ *  tela de 390pt não sobrava: os seis pediam cerca de 460pt, e o último — o PERFIL
+ *  — caía para fora. Quem estava no telefone via cinco e concluía que o perfil não
+ *  existe. Aparecia dando zoom para trás, porque aí a barra inteira cabe no olho.
+ *
+ *  ═══ POR QUE ESTE TESTE NÃO MEDE PIXEL ═══
+ *
+ *  Medir largura de texto num teste exigiria fonte, motor de layout e um aparelho
+ *  concreto — e amarraria a trava ao telefone de hoje, que é exatamente o erro que
+ *  produziu o bug. O que dá para garantir sem nada disso é mais forte: que nenhum
+ *  item peça mais do que lhe cabe. Com `flex-1 min-w-0` a conta não pode estourar,
+ *  em nenhuma largura, porque não existe sobra a transbordar.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("a barra de baixo cabe na tela", () => {
+  const fonte = semComentario(readFileSync("components/sidebar.tsx", "utf8"));
+
+  function barraDoCelular(): string {
+    const inicio = fonte.indexOf('as="nav"');
+    expect(inicio, "não achei a barra de baixo do celular: este teste está cego").toBeGreaterThan(0);
+    const fim = fonte.indexOf("</GlassBar>", inicio);
+    expect(fim, "não achei o fim da barra do celular: este teste está cego").toBeGreaterThan(inicio);
+    return fonte.slice(inicio, fim);
+  }
+
+  it("nenhum item pede mais largura do que lhe cabe", () => {
+    const medida = fonte.match(/const ITEM_DO_CELULAR =\s*\n?\s*"([^"]*)"/)?.[1];
+    expect(medida, "a medida única dos itens da barra sumiu").toBeTruthy();
+    expect(
+      medida,
+      "os itens da barra voltaram a ter largura própria. Numa tela estreita eles " +
+        "somam mais que a barra e o último cai para fora — foi assim que o PERFIL " +
+        "sumiu do telefone.",
+    ).toContain("flex-1");
+    // Sem `min-w-0` o conteúdo segura o item aberto e o `flex-1` não encolhe nada:
+    // é a metade da trava que ninguém lembra, e sozinha a outra não funciona.
+    expect(medida, "sem min-w-0 o flex-1 não consegue encolher o item").toContain("min-w-0");
+  });
+
+  /**
+   * E TODOS usam ela. Um item escrito à mão no meio dos outros volta a ter largura
+   * própria, e basta um para a conta estourar de novo.
+   *
+   * São QUATRO usos no código para seis itens na tela: os quatro lugares saem de um
+   * `.map` e dividem uma linha só, e o perfil e o entrar são o mesmo lugar da barra
+   * visto por quem entrou e por quem não entrou. Contar seis aqui é contar a tela e
+   * não o código — foi o que a primeira versão deste teste fez, e ela quebrou na
+   * própria barra que estava certa.
+   */
+  it("todos os itens usam a mesma medida", () => {
+    const usos = barraDoCelular().match(/ITEM_DO_CELULAR/g) ?? [];
+    expect(
+      usos.length,
+      "algum item da barra de baixo deixou de usar a medida comum: os quatro lugares " +
+        "(num map), a busca, e o perfil ou o entrar",
+    ).toBe(4);
+  });
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  TODO ITEM DA BARRA TEM NOME, E AGORA ELE É O ÚNICO QUE EXISTE.
+   *
+   *  Aqui morava "o rótulo corta em vez de vazar", que protegia a palavra embaixo do
+   *  ícone. **A palavra saiu** — o dono escolheu ícone sem rótulo, contra a minha
+   *  recomendação, e está registrado em ai/DECISIONS.md. Uma trava cujo alvo deixou
+   *  de existir não pode ser apagada e esquecida: ela troca de alvo, e o alvo novo é
+   *  mais duro que o velho.
+   *
+   *  Sem texto na tela, o `aria-label` deixou de ser reforço e virou O ÚNICO NOME de
+   *  cada item. Sem ele, quem usa leitor de tela ouve "link, link, link" seis vezes e
+   *  o app deixa de ter navegação — e ninguém que enxerga a tela jamais perceberia,
+   *  porque para o olho continua tudo no lugar. É o mesmo feitio dos outros bugs
+   *  deste arquivo: o que não deixa rastro.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  it("todo item da barra tem nome, mesmo sem palavra na tela", () => {
+    const barra = barraDoCelular();
+
+    // Nenhum rótulo na tela: é a decisão, e se ela voltar atrás este teste é o lugar
+    // de contar isso, e não um `span` que reaparece sozinho num commit de outra coisa.
+    expect(
+      barra,
+      "voltou rótulo à barra do celular. Se foi de propósito, mude esta trava junto e " +
+        "diga por quê — a decisão de tirar está em ai/DECISIONS.md.",
+    ).not.toContain("uppercase");
+
+    const nomes = barra.match(/aria-label=/g) ?? [];
+    expect(
+      nomes.length,
+      "algum item da barra ficou sem aria-label. Sem palavra na tela, ele é o único " +
+        "nome que o item tem: quem usa leitor de tela ouve 'link' e mais nada.",
+    ).toBe(4); // os quatro lugares (num map), a busca, e o perfil ou o entrar
+  });
+});
