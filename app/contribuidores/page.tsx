@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HeartHandshake } from "lucide-react";
 import { getApoiadores, getCatalogo, getCodigo } from "@/lib/contributors";
 import { apoioLigado } from "@/lib/stripe";
 import { Cabecalho, Portas } from "@/components/casa-de-quem-faz";
@@ -234,16 +235,26 @@ export default async function Contribuidores() {
             </>
           )}
 
+          {/* ═══ ELE ERA UM CARTÃO CINZA, E SUMIA ═══
+
+              Este é o único lugar do app que pede dinheiro, e ele estava desenhado como
+              todo o resto: uma superfície neutra no meio de uma página de superfícies
+              neutras. Uma porta que ninguém enxerga é uma porta fechada.
+
+              Agora ele é sólido, na cor de "quem faz". É o único botão preenchido desta
+              tela, e é de propósito: se houvesse dois, nenhum chamaria. */}
           <Link
             href="/apoiar"
-            className="surface surface-hover mt-8 inline-flex px-5 py-3 text-[15px] text-[var(--color-ink)]"
+            className="mt-8 inline-flex items-center gap-2 rounded-[var(--radius-control)] px-5 py-3 text-[15px] font-medium transition-opacity hover:opacity-90"
+            style={{ background: "var(--color-colaborar)", color: "#1a1a18" }}
           >
+            <HeartHandshake size={17} strokeWidth={1.75} />
             Apoiar o Gume
           </Link>
 
           <p className="mt-4 max-w-2xl text-[13px] leading-relaxed text-[var(--color-ink-faint)]">
-            Apoiar não destrava nada. Não tem função extra, não tem tela escondida, e quem
-            não apoia enxerga o Gume inteiro do mesmo jeito.
+            Você ganha uma insígnia no perfil, e o seu nome nesta lista se quiser. Nenhuma
+            função do app fica atrás de pagamento.
           </p>
         </section>
       )}

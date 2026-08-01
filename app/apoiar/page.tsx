@@ -63,7 +63,12 @@ export default async function Apoiar({
   const viewer = await getViewer();
 
   const [capas, me] = await Promise.all([
-    getCapasDaParede(16),
+    /**
+     * Pede com folga: a fita descarta a capa cuja imagem não vier, e as seguintes
+     * fecham o buraco. Nesta tela não pode aparecer livro sem capa, então é melhor
+     * sobrar candidata do que a fileira terminar curta. Ver components/fita-de-capas.tsx.
+     */
+    getCapasDaParede(30),
     viewer
       ? db
           .execute<{ apoia: boolean }>(
