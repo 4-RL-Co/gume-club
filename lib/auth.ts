@@ -398,6 +398,47 @@ export const auth = betterAuth({
 
   // Cookies: secure, httpOnly, sameSite. The pre-launch checklist in SECURITY.md.
   advanced: {
+    /**
+     * ════════════════════════════════════════════════════════════════════
+     *  DE ONDE VEM QUEM CHEGA. Sem isto, o limite de login era de TODO MUNDO JUNTO.
+     *
+     *  ═══ O BUG ═══
+     *
+     *  O Better Auth não conseguia descobrir o IP de quem chega e caía num balde único
+     *  por rota. Não é lentidão nem imprecisão: significa que **quem martelar o login
+     *  derruba o login de todos os leitores**, porque o limite é compartilhado. Uma
+     *  negação de serviço na porta de entrada, ao alcance de qualquer um.
+     *
+     *  A causa está no código dele: sem `trustedProxies`, uma cadeia de
+     *  `x-forwarded-for` com mais de um salto é DESCARTADA — o primeiro IP da lista é
+     *  escrito por quem manda a requisição, e ele se recusa a adivinhar. Aqui a cadeia
+     *  tem dois saltos, então ele descartava.
+     *
+     *  ═══ POR QUE `x-real-ip`, E POR QUE ISTO NÃO É CHUTE ═══
+     *
+     *  Foi MEDIDO em produção, com um log temporário, e o que chega é:
+     *
+     *      x-forwarded-for : "187.35.254.151, 152.233.23.194"   (dois saltos)
+     *      x-real-ip       : "187.35.254.151"                    (um valor só)
+     *
+     *  Valor único é aceito sem `trustedProxies`. Mas só serve se ele não puder ser
+     *  forjado — e isso também foi medido: uma requisição com `x-real-ip: 1.2.3.4` e
+     *  `x-forwarded-for: 9.9.9.9` chegou aqui com o IP REAL nos dois. **O Railway
+     *  sobrescreve os dois cabeçalhos e joga fora o que o cliente escreveu.**
+     *
+     *  A alternativa era listar o IP do proxy em `trustedProxies`, e ela é pior: os
+     *  endereços de borda do Railway são vários e mudam, e uma lista desatualizada
+     *  falha fechado, voltando ao balde compartilhado sem ninguém notar.
+     *
+     *  ═══ QUEM HOSPEDA O PRÓPRIO GUME ═══
+     *
+     *  Atrás de outro proxy, o cabeçalho pode ser outro. Se ele não chegar, o Better
+     *  Auth volta ao balde compartilhado: o mesmo comportamento de antes, e nunca um
+     *  limite falsificável. Degradar para o que já existia é seguro; degradar para
+     *  "cada um escolhe o próprio balde" não seria.
+     * ════════════════════════════════════════════════════════════════════
+     */
+    ipAddress: { ipAddressHeaders: ["x-real-ip"] },
     // users.id is a uuid, so every id Better Auth mints has to be one too.
     // The default is a random string, which a uuid column rejects outright.
     database: { generateId: () => randomUUID() },

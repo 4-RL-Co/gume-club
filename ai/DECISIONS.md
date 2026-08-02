@@ -2867,3 +2867,23 @@ Duas autorizações do dono, no fim do dia.
 - **Com elas fora do caminho, os últimos 3 autores duplicados foram fundidos.** Não sobra nenhum grupo duplicado entre os autores que têm obra em estante. O *Raízes do Brasil* do dono agora aponta para o Sérgio Buarque de Holanda de verdade, com 29 obras, em vez do registro de 2 obras com o nome sem acento.
 
 **67 correções no log hoje**, todas assinadas e reversíveis.
+
+---
+
+**2026-08-01: O limite de login volta a ser por pessoa. `x-real-ip`, medido e não chutado.**
+
+Um aviso nos logs do Railway dizia que o Better Auth não conseguia descobrir o IP de quem chega e caía num balde único por rota. Traduzido: **quem martelasse o login derrubaria o login de todos os leitores.** Uma negação de serviço na porta de entrada, ao alcance de qualquer um, e invisível — nada na tela diz que o limite é compartilhado.
+
+- **A causa está no código do Better Auth**, e não numa suposição: sem `trustedProxies`, uma cadeia de `x-forwarded-for` com mais de um salto é DESCARTADA, porque o primeiro IP é escrito por quem manda a requisição. Aqui a cadeia tem dois saltos.
+- **Este conserto ficou pendente o dia inteiro por recusa em chutar**, e a recusa estava certa: errar o valor para mais é PIOR que não fazer nada — qualquer um forjaria o cabeçalho, ganharia um balde só seu, e o limite deixaria de existir com cara de configurado.
+- **Então foi medido**, com um log temporário em produção:
+
+  ```
+  x-forwarded-for : "187.35.254.151, 152.233.23.194"   (dois saltos)
+  x-real-ip       : "187.35.254.151"                    (um valor só)
+  ```
+
+- **E a medição que decidiu foi a segunda:** valor único só serve se não puder ser forjado. Uma requisição enviada com `x-real-ip: 1.2.3.4` e `x-forwarded-for: 9.9.9.9` chegou ao app com o IP REAL nos dois. **O Railway sobrescreve os dois cabeçalhos e joga fora o que o cliente escreveu.** Sem esse segundo teste, a configuração seria uma porta aberta com aparência de fechadura.
+- **`trustedProxies` com o IP do proxy foi descartado:** os endereços de borda do Railway são vários e mudam, e uma lista desatualizada falha fechado — voltando ao balde compartilhado sem ninguém notar.
+- **Degradação segura para quem hospeda o próprio Gume:** atrás de outro proxy o cabeçalho pode não chegar, e aí o Better Auth volta ao balde compartilhado — o mesmo comportamento de antes, e nunca um limite falsificável. Degradar para o que já existia é seguro; degradar para "cada um escolhe o próprio balde" não seria.
+- **A trava existe porque é uma linha que não faz nada de visível.** Se ela sumir, o app continua abrindo, o login continua funcionando, e a proteção evapora em silêncio. `lib/limite-de-login.test.ts` também proíbe `x-forwarded-for` ali (seria pior que nada) e verifica que o log temporário da medição saiu.

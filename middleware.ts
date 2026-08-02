@@ -37,38 +37,9 @@ import { imgSrc } from "@/lib/imagens";
  * ════════════════════════════════════════════════════════════════════
  */
 
-export function middleware(req: NextRequest) {
+export function middleware(_req: NextRequest) {
   const res = NextResponse.next();
 
-  /**
-   * ════════════════════════════════════════════════════════════════════
-   *  MEDIÇÃO TEMPORÁRIA. **TIRAR DEPOIS DE LER O LOG.**
-   *
-   *  O limite de tentativas de login está valendo para TODO MUNDO JUNTO: o Better Auth
-   *  não consegue descobrir o IP de quem chega e cai num balde único por rota. Na
-   *  prática, quem martelar o login derruba o login de todos os leitores.
-   *
-   *  A causa está lida no código dele: sem `trustedProxies`, uma cadeia de
-   *  `x-forwarded-for` com mais de um salto é DESCARTADA — o primeiro IP da lista é
-   *  falsificável, então ele se recusa a adivinhar. A correção é dizer quais saltos são
-   *  do Railway.
-   *
-   *  E esse valor não pode ser CHUTADO: errar para mais torna o limite falsificável
-   *  (qualquer um forja o IP e ganha um balde só seu), errar para menos deixa tudo como
-   *  está. Então isto aqui mede, uma vez, o que chega de verdade.
-   *
-   *  Só o formato interessa, e nada disto é dado de leitor: são os endereços dos
-   *  intermediários entre o navegador e este servidor.
-   * ════════════════════════════════════════════════════════════════════
-   */
-  if (req.nextUrl.pathname === "/") {
-    console.log("[medindo-proxy]", JSON.stringify({
-      xff: req.headers.get("x-forwarded-for"),
-      xRealIp: req.headers.get("x-real-ip"),
-      envoy: req.headers.get("x-envoy-external-address"),
-      cf: req.headers.get("cf-connecting-ip"),
-    }));
-  }
 
   /**
    * Os cabeçalhos.
