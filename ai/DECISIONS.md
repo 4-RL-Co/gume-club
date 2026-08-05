@@ -2887,3 +2887,20 @@ Um aviso nos logs do Railway dizia que o Better Auth não conseguia descobrir o 
 - **`trustedProxies` com o IP do proxy foi descartado:** os endereços de borda do Railway são vários e mudam, e uma lista desatualizada falha fechado — voltando ao balde compartilhado sem ninguém notar.
 - **Degradação segura para quem hospeda o próprio Gume:** atrás de outro proxy o cabeçalho pode não chegar, e aí o Better Auth volta ao balde compartilhado — o mesmo comportamento de antes, e nunca um limite falsificável. Degradar para o que já existia é seguro; degradar para "cada um escolhe o próprio balde" não seria.
 - **A trava existe porque é uma linha que não faz nada de visível.** Se ela sumir, o app continua abrindo, o login continua funcionando, e a proteção evapora em silêncio. `lib/limite-de-login.test.ts` também proíbe `x-forwarded-for` ali (seria pior que nada) e verifica que o log temporário da medição saiu.
+
+---
+
+**2026-08-01: A vitrine de gente sobe a régua, e quem chega abre na curadoria.**
+
+O dono relatou: *"quando a pessoa loga e não segue ninguém, primeira vez, aparecem um monte de estante/perfil de gente aleatória, sem foto."*
+
+Medido em produção: três estantes de verdade (316, 142 e 99 livros) misturadas com **seis quase vazias**, de 2 a 5 livros, a maioria sem foto e sem bio. Uma delas era de alguém que **nunca voltou** depois de se cadastrar.
+
+- **O corte era DOIS livros com capa.** Ele foi feito para barrar o vazio absoluto, e não para curar uma vitrine. Agora são **dez livros com capa e visto nos últimos 90 dias**.
+- **O sinal de vida é a metade que importa.** Convidar alguém a seguir uma conta morta é o pior que esta tela pode fazer: a pessoa segue, o feed não enche nunca, e ela conclui que o app é vazio. O livro na estante diz que houve alguém; a última visita diz que ainda há.
+- **O dono sugeriu duas saídas, e as duas eram necessárias — mas a primeira sozinha seria uma troca ruim.** Apertar a régua faz a vitrine mostrar TRÊS pessoas, e uma vitrine com três caras parece site abandonado. Trocar "fantasma" por "vazio" não é ganho. Por isso a segunda: **quem ainda não segue ninguém abre na CURADORIA**, que é a coisa mais cheia que o Gume tem — cem capas, uma lista que se refaz sozinha. Ele quer livro, e não uma lista de estranhos; gente vem depois, quando ele já tem motivo.
+- **Muda só a ORDEM, e nunca o conteúdo.** As estantes continuam na mesma tela, logo abaixo, e quem sai da vitrine continua achável pela busca e pelo link direto. Some da vitrine ≠ deixa de existir.
+
+**E o teste pegou um erro que a minha conferência não pegava.** A régua foi verificada com `psql`, escrevendo o 90 à mão, e passou. Na consulta de verdade o número vai como PARÂMETRO, e o Postgres recusou com `date >= integer`: **o Explorar daria erro 500 em produção**. Um `psql` com literal inline não reproduz o caminho real, porque lá o valor já chega tipado. A correção é um `::int`, e o comentário ao lado dele existe para ninguém "limpar" isso depois.
+
+**E uma condição minha era enfeite.** O `u.last_seen_on is not null` ao lado da comparação não filtrava nada — `null >= data` já é falso. Descobri mutando: tirar aquela linha não quebrava teste nenhum. Saiu.

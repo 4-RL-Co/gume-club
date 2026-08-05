@@ -147,8 +147,52 @@ const capaDeQuemEscreveu = sql`coalesce(
  *
  *  Quem você já segue não aparece: sugerir alguém que você já segue é ocupar a vitrine com
  *  uma coisa que já é sua.
+ *
+ *  ═══ E A RÉGUA SUBIU, PORQUE A VITRINE ESTAVA CHEIA DE FANTASMA ═══
+ *
+ *  O corte era DOIS livros com capa. Ele foi feito para barrar o vazio absoluto, e não
+ *  para curar uma vitrine — e o resultado, medido em produção, era três estantes de
+ *  verdade (316, 142 e 99 livros) misturadas com seis quase vazias, de 2 a 5 livros,
+ *  a maioria sem foto e sem bio.
+ *
+ *  Uma delas era de alguém que **nunca voltou** depois de se cadastrar. Convidar um
+ *  leitor novo a seguir uma conta morta é o pior que esta tela pode fazer: ele segue,
+ *  o feed não enche nunca, e ele conclui que o app é vazio.
+ *
+ *  Agora são DEZ livros com capa e SINAL DE VIDA (visto nos últimos 90 dias). Não é
+ *  mérito nem placar: é a diferença entre uma estante que dá para olhar e uma conta
+ *  que ainda não começou.
+ *
+ *  ═══ O QUE ISSO CUSTA, E POR QUE VALE ═══
+ *
+ *  Com os dados de hoje a vitrine mostra TRÊS pessoas em vez de nove. É pouco, e é
+ *  melhor: quem sai da lista não deixa de existir — continua achável pela busca e pelo
+ *  link direto. O que ele perde é ser oferecido a estranhos antes de ter o que mostrar.
+ *
+ *  Trocar "fantasma" por "vazio" não seria ganho. Por isso a tela abre na CURADORIA,
+ *  que é a coisa mais cheia que o Gume tem, e gente vem depois. Ver app/explorar.
  * ════════════════════════════════════════════════════════════════════
  */
+/** Livros COM CAPA para a estante valer uma vitrine. Ver a nota acima. */
+const LIVROS_PARA_A_VITRINE = 10;
+/** E sinal de vida: uma estante de quem sumiu é uma porta para um quarto vazio. */
+const DIAS_DE_VIDA = 90;
+/**
+ * Esta pessoa já segue alguém?
+ *
+ * A resposta muda a ORDEM da tela de explorar, e não o conteúdo: quem ainda não segue
+ * ninguém abre na curadoria da casa, e não numa lista de estranhos. Ver components/explore.tsx.
+ */
+export async function seguindoAlguem(viewer: Viewer): Promise<boolean> {
+  if (!viewer) return false;
+  const [row] = await db.execute<{ tem: boolean }>(sql`
+    select exists (
+      select 1 from follows f
+       where f.follower_id = ${viewer.id}::uuid and f.state = 'accepted'
+    ) as tem`);
+  return Boolean(row?.tem);
+}
+
 export async function getEstantes(viewer: Viewer, limite = 12): Promise<Estante[]> {
   const rows = await db.execute<Estante & { ultima: Date }>(sql`
     select u.handle,
@@ -186,8 +230,14 @@ export async function getEstantes(viewer: Viewer, limite = 12): Promise<Estante[
           where f.follower_id = ${viewer.id}::uuid
             and f.followee_id = u.id
             and f.state = 'accepted')` : sql``}
+       -- SINAL DE VIDA. Sem isto, a vitrine oferece contas que nunca voltaram.
+       and u.last_seen_on is not null
+       -- O ::int não é enfeite: sem ele o parâmetro chega sem tipo e o Postgres
+       -- recusa com "date >= integer". Um psql com o número escrito à mão não
+       -- reproduz isso, porque lá o literal já vem tipado.
+       and u.last_seen_on >= (now() at time zone 'America/Sao_Paulo')::date - ${DIAS_DE_VIDA}::int
      group by u.id
-    having count(*) filter (where ${capaDaObra} is not null) >= 2
+    having count(*) filter (where ${capaDaObra} is not null) >= ${LIVROS_PARA_A_VITRINE}
      -- SORTEIA, e não ordena por atividade. Ver a nota acima: ordenar por atividade
      -- premia quem cadastra livro toda semana, e some com quem lê devagar.
      order by random()
