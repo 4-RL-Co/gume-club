@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getEstantes, getAfinidade, getResenhas, getLendoAgora } from "@/lib/explore";
+import { getEstantes, getAfinidade, getResenhas, getLendoAgora, seguindoAlguem } from "@/lib/explore";
 import { getListasParaExplorar } from "@/lib/listas";
 import { CuradoriaCard } from "@/components/curadoria-card";
 import { ListaGrid } from "@/components/lista-card";
@@ -30,7 +30,7 @@ import type { Viewer } from "@/lib/authz";
  * na mesa de alguém agora. Ver ai/DECISIONS.md, a entrada que tirou a praça.
  */
 export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; soPessoas?: boolean }) {
-  const [estantes, listas, afinidade, resenhas, lendo] = await Promise.all([
+  const [estantes, listas, afinidade, resenhas, lendo, jaSegue] = await Promise.all([
     getEstantes(viewer),
     // As coleções MONTADAS, com nome e recorte. Sorteadas como tudo aqui: "as mais
     // guardadas" seria um ranking de popularidade, e é a coisa que esta tela recusa.
@@ -38,6 +38,24 @@ export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; s
     getAfinidade(viewer),
     getResenhas(viewer),
     getLendoAgora(viewer),
+    /**
+     * ════════════════════════════════════════════════════════════════════
+     *  QUEM AINDA NÃO SEGUE NINGUÉM ABRE NA CURADORIA, E NÃO EM GENTE.
+     *
+     *  Um leitor que acaba de entrar caía numa lista de estranhos — e, com a régua
+     *  antiga, de estranhos com dois livros e sem foto. Ele não tem como escolher
+     *  entre pessoas que não conhece, e a primeira impressão do Gume virava uma
+     *  galeria de contas quase vazias.
+     *
+     *  Ele quer LIVRO. O Top 100 é a coisa mais cheia que existe aqui: cem capas,
+     *  uma lista que se refaz sozinha. Gente vem depois, quando ele já tem motivo
+     *  para querer saber quem lê o quê.
+     *
+     *  Muda só a ORDEM, e nunca o conteúdo: as estantes continuam na mesma tela,
+     *  logo abaixo. Esconder gente de quem chega seria trocar um problema por outro.
+     * ════════════════════════════════════════════════════════════════════
+     */
+    seguindoAlguem(viewer),
   ]);
 
   /**
@@ -120,6 +138,11 @@ export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; s
         </div>
       ) : (
         <div className="mt-10 flex flex-col gap-10">
+          {/* A curadoria SOBE para o topo de quem ainda não segue ninguém. Ver a nota
+              na consulta, lá em cima. Para quem já segue alguém ela fica no lugar de
+              sempre, mais abaixo: aí o que interessa é gente, e não a vitrine da casa. */}
+          {!jaSegue && <CuradoriaCard />}
+
           {/* ── 1. ESTANTES PARA DESCOBRIR: o coração da tela ────────── */}
           <section>
             <Titulo>estantes para descobrir</Titulo>
@@ -204,8 +227,9 @@ export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; s
             </section>
           )}
 
-          {/* A curadoria da casa: um componente só para as três vitrines. */}
-          <CuradoriaCard />
+          {/* A curadoria da casa: um componente só para as três vitrines. Para quem
+              ainda não segue ninguém ela já apareceu no topo, e repetir seria eco. */}
+          {jaSegue && <CuradoriaCard />}
 
           {/* ── 2. QUEM LÊ O QUE VOCÊ LÊ ─────────────────────────────── */}
           {afinidade.length > 0 && (
