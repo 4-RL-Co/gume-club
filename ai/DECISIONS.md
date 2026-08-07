@@ -2904,3 +2904,20 @@ Medido em produção: três estantes de verdade (316, 142 e 99 livros) misturada
 **E o teste pegou um erro que a minha conferência não pegava.** A régua foi verificada com `psql`, escrevendo o 90 à mão, e passou. Na consulta de verdade o número vai como PARÂMETRO, e o Postgres recusou com `date >= integer`: **o Explorar daria erro 500 em produção**. Um `psql` com literal inline não reproduz o caminho real, porque lá o valor já chega tipado. A correção é um `::int`, e o comentário ao lado dele existe para ninguém "limpar" isso depois.
 
 **E uma condição minha era enfeite.** O `u.last_seen_on is not null` ao lado da comparação não filtrava nada — `null >= data` já é falso. Descobri mutando: tirar aquela linha não quebrava teste nenhum. Saiu.
+
+---
+
+**2026-08-06: A coleção vira um LUGAR. Ter não é ler, e agora dá para dizer isso.**
+
+O dono coleciona livros, e disse a frase que faltava: *"tem livros que eu li e não tenho na estante"*. O contrário também — livros que ele tem e talvez nunca leia.
+
+**O modelo já separava as duas coisas desde sempre.** `owned_copies` é uma tabela própria, com estado, procedência e a EDIÇÃO específica (o exemplar, não a obra), e "ter não é ler" está escrito no schema. O que não existia era **um jeito de dizer "eu tenho"**: a única forma de nascer uma linha ali era como efeito colateral de escrever a nota "de onde veio". Quem não contasse a história do exemplar nunca registrava a posse. Em produção eram **29 exemplares, de 4 pessoas** — não por falta de interesse, mas por falta de porta.
+
+- **Foram apresentadas duas saídas, e o dono escolheu LUGAR.** A regra da casa diz que recorte não é lugar (foi por isso que "lendo" e "lidos" saíram da navegação), e ela vale para recortes de LEITURA. Coleção não é um deles: a estante responde "o que eu li", a coleção responde "o que eu tenho", e as duas se cruzam sem se conter. Forçar a segunda a ser filtro da primeira é o que já produzia o **"esperando" mentiroso** — um livro comprado e nunca aberto virava uma intenção de ler que ninguém teve.
+- **Os dois eixos são independentes, e a trava prova nos dois sentidos.** Marcar "tenho" não mexe na prateleira; prateleirar não cria exemplar. O segundo é o mais importante: **inventar posse é inventar patrimônio** — o app afirmaria que a pessoa tem um livro que ela leu emprestado.
+- **"Quero ter" não é "quero ler".** A prateleira já tem "esperando", que é querer ler. Este é o desejo pelo OBJETO: a edição bonita de um livro já lido em pdf, o volume que falta na coleção. Um colecionador sabe a diferença melhor que ninguém.
+- **Desmarcar APAGA a linha**, em vez de gravar um estado "não tenho". A ausência já significa isso, e um terceiro estado seria uma linha por livro que ninguém tem, no acervo inteiro.
+- **A coleção é sua, e de mais ninguém.** O cabeçalho de `lib/copies.ts` já dizia que nada ali é lido por outra pessoa; agora isso vale de propósito e não por acaso. A coluna `visibility` tem `public` como padrão e **nenhuma consulta a lê** — se a coleção virasse pública porque um padrão de coluna dizia isso, o app publicaria o que as pessoas têm em casa sem ninguém ter escolhido. "O que eu tenho guardado" não é "o que eu li". Quando alguém quiser mostrar, vai ser um botão que ela aperta. A trava foi mutada: tirar o filtro por dono derruba o teste.
+- **A única contagem da tela é "tenho e ainda não li"**, que é a pergunta de quem coleciona. Não há placar de quantos livros você tem: isso seria medir a pessoa pela pilha, e este app se recusa a ordenar gente por esforço.
+
+**Não precisou de migration.** A tabela existia, com os quatro estados. Foram usados dois; `lent_out` e `gone` ficam para quando alguém pedir — construir tela para estado que ninguém usou ainda é inventar necessidade.

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home, Library, Users, Search, LogIn, LogOut, Info, UserRound, HeartHandshake,
-  MessagesSquare, ArrowUpRight, ChevronUp, BarChart3, Compass,
+  MessagesSquare, ArrowUpRight, ChevronUp, BarChart3, Compass, Package,
 } from "lucide-react";
 import { CONVERSA } from "@/lib/onde";
 import { GlassBar } from "@/components/glass-bar";
@@ -84,9 +84,24 @@ export type QuemEntrou = {
  * saiu da barra uma vez (virou aba de /pessoas) e voltou quando cresceu em galeria:
  * estantes montadas, queridinhos, curadores. Ver ai/DECISIONS.md.
  */
+/**
+ * ═══ COLEÇÃO É UM LUGAR, E NÃO UM RECORTE DA ESTANTE ═══
+ *
+ * A regra desta barra é que recorte mora na tela que ele recorta — foi por isso que
+ * "lendo" e "lidos" saíram daqui. Ela vale para recortes de LEITURA.
+ *
+ * Coleção não é um deles. A estante responde "o que eu li"; a coleção responde "o que
+ * eu tenho", e as duas se cruzam sem se conter: dá para ter lido sem ter o livro, e
+ * para ter sem nunca abrir. Quem coleciona vive na segunda, e ela não cabe como filtro
+ * da primeira — foi tentando isso que um livro comprado e nunca aberto virou
+ * "esperando", que é uma intenção de ler que ninguém teve.
+ *
+ * Ela fica DEPOIS da estante porque ler é o produto e ter é o acompanhamento.
+ */
 const LUGARES = [
   { href: "/", label: "Início", Icon: Home },
   { href: "/estante", label: "Estante", Icon: Library },
+  { href: "/colecao", label: "Coleção", Icon: Package },
   { href: "/pessoas", label: "Amigos", Icon: Users },
   { href: "/explorar", label: "Explorar", Icon: Compass },
 ];

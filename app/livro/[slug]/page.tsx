@@ -9,6 +9,8 @@ import { Prosa } from "@/components/prosa";
 import { Gaveta } from "@/components/gaveta";
 import { Share } from "@/components/share";
 import { BookPanel } from "@/components/book-panel";
+import { Tenho } from "@/components/tenho";
+import { getMinhaCopia } from "@/lib/copies";
 import { Leituras } from "@/components/leituras";
 import { resumoDasLeituras } from "@/lib/leituras-view";
 import { getLeituras } from "@/lib/leituras";
@@ -100,7 +102,7 @@ export default async function BookPage({
     notFound();
   }
 
-  const [friends, recommender, shelves, todasAsEstantes, opinions] = await Promise.all([
+  const [friends, recommender, shelves, todasAsEstantes, opinions, minhaCopia] = await Promise.all([
     actor ? getFollowees(actor.id) : Promise.resolve([]),
     actor ? getRecommender(actor.id, book.workId) : Promise.resolve(null),
     /** As estantes suas em que ESTE livro já está. */
@@ -115,6 +117,8 @@ export default async function BookPage({
      */
     actor ? getCollections(viewer, actor.id) : Promise.resolve([]),
     getFriendRatings(viewer, [book.workId]),
+    // O exemplar: é SEU, e ninguém mais lê. Ver lib/copies.ts.
+    getMinhaCopia(actor, book.workId),
   ]);
 
   const opinion = opinions[book.workId];
@@ -544,6 +548,19 @@ export default async function BookPage({
                 slug={slug}
                 shelves={shelves}
                 todas={todasAsEstantes.map((e) => e.name)}
+              />
+
+              {/* A COLEÇÃO é um cartão à parte, e não mais um estado da prateleira.
+                  Ter e ler são duas perguntas que se cruzam: dá para ter lido sem ter
+                  o livro, e para ter sem nunca abrir. Juntar os dois no mesmo controle
+                  ensinaria que ter é um jeito de ler. Ver components/tenho.tsx. */}
+              <Tenho
+                slug={slug}
+                workId={book.workId}
+                editionId={book.mine?.editionId ?? edition?.id ?? null}
+                posse={(minhaCopia?.state === "owned" || minhaCopia?.state === "wanted")
+                  ? minhaCopia.state
+                  : null}
               />
 
               {/* QUANDO você leu, em UMA LINHA discreta, encostada no painel: o resumo
