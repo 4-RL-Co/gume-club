@@ -2921,3 +2921,25 @@ O dono coleciona livros, e disse a frase que faltava: *"tem livros que eu li e n
 - **A única contagem da tela é "tenho e ainda não li"**, que é a pergunta de quem coleciona. Não há placar de quantos livros você tem: isso seria medir a pessoa pela pilha, e este app se recusa a ordenar gente por esforço.
 
 **Não precisou de migration.** A tabela existia, com os quatro estados. Foram usados dois; `lent_out` e `gone` ficam para quando alguém pedir — construir tela para estado que ninguém usou ainda é inventar necessidade.
+
+---
+
+**2026-08-06: A coleção conta CONJUNTOS. É isso que separa colecionar de possuir.**
+
+A primeira versão listava livros, e o dono leu como inventário: *"queria que fosse pra colecionador mesmo, tipo edição deluxe, colecionador etc (meio vibe quem gosta de carta pokemon tcg)"*.
+
+**A diferença não está num rótulo — está no que a tela CONTA.** A estante conta livros lidos; uma lista de "coisas que eu tenho" também conta livros, e por isso lia como estoque. Uma coleção conta conjuntos: "4 de 14". Ninguém que coleciona pensa "tenho 340 cartas"; pensa **"falta uma"**.
+
+- **O que eu NÃO fiz: uma caixinha "isto é item de colecionador?".** Seria um formulário pedindo à pessoa para classificar, e este repo já tem a frase contra isso — *"um formulário fingindo ser memória"*. A pessoa põe o livro na coleção; se ele for volume de algo, a tela sabe.
+- **O conjunto é da EDIÇÃO, e nunca da série.** A frase já estava no schema desde a migration 0038: a Panini publica Berserk em duas edições, e o "volume 25" de uma não é o "volume 25" da outra. Para quem coleciona isso não é detalhe — juntar a Deluxe com a normal estraga exatamente a coisa que a pessoa cuida. A trava tem um teste só para isso.
+- **O que falta CONTINUA na tela, apagado.** Escondê-lo deixaria só o que você tem, que é inventário de novo. **A lacuna é o assunto**: o volume 7 em cinza no meio dos coloridos é a própria vontade de completar. É a gramática que o dono trouxe da referência (item bloqueado fica em preto e branco, a cor é a recompensa).
+- **Isso obriga os volumes que faltam a EXISTIREM no acervo.** Sem as fichas dos onze que faltam, "3 de 14" não teria o que desenhar. Por isso os conjuntos entram inteiros, e não só o que a pessoa marcou.
+- **O selo só aparece completo**, e é a única coisa dourada da tela. Selo pela metade é enfeite, não conquista. Mutado: fazer o selo aparecer com um volume derruba dois testes.
+- **A tela não compara ninguém com ninguém.** Não há "você é o 3º que mais completou" nem quantas pessoas têm o conjunto. Placar transforma colecionar em competição, e é o que este app recusa em toda superfície.
+- **Livro avulso não ganha barra nem cobrança.** Inventar um conjunto de um volume só para toda obra encheria a tela de barras completas, que não dizem nada.
+
+**O dado já existia e estava dormindo.** `colecoes` tem 415 conjuntos (Naruto com 72 volumes, Bleach com 74), vindos da AniList, e **nenhuma tela os lia**. Faltava ligar os livros de quem usa: `0` obras em estante de alguém tinham série ou conjunto.
+
+Foram ligados os dois casos do dono — Vagabond Definitive Edition (6 volumes) e Berserk Deluxe Edition (14) —, com os ISBN conferidos um a um na Open Library. **Nenhum ISBN foi deduzido em sequência a partir do primeiro:** numerar ISBN é uma boa forma de inventar livro que não existe.
+
+**E o resultado expôs o problema original:** o dono tem 4 volumes de Berserk Deluxe na estante e o app só sabia de 3 — porque a posse só era registrada como efeito colateral da nota "de onde veio".
