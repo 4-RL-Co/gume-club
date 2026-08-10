@@ -414,6 +414,13 @@
       "when": 1784700817011,
       "tag": "0058_guardar_a_curadoria_da_casa",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1784700817012,
+      "tag": "0059_quem_trouxe_o_livro",
+      "breakpoints": true
     }
   ]
 }

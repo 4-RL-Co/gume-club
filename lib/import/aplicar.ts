@@ -69,6 +69,9 @@ export async function aplicar(
         // confere a ficha depois. O livro já está na estante da pessoa enquanto
         // isso, e não é um livro de segunda classe.
         needsReview: true,
+        // Importar uma estante TRAZ livro para o acervo, e isso é contribuição igual
+        // ao cadastro a mão: as fichas que nascem aqui servem todo mundo depois.
+        criadoPor: actor.id,
       });
 
       // ── a estante ──────────────────────────────────────────────────

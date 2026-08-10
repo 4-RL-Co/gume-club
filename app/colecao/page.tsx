@@ -76,6 +76,21 @@ export default async function Colecao({
   const emConjunto = new Set(conjuntos.flatMap((c) => c.volumes.map((v) => v.slug)));
   const avulsos = itens.filter((i) => !emConjunto.has(i.slug));
 
+  /**
+   * O QUE A LISTA DE BAIXO DESENHA, e é ele que decide se ela existe.
+   *
+   * A condição olhava `itens` (tudo que você tem) e renderizava `avulsos` (o que não
+   * está em conjunto). Com todos os volumes dentro de um conjunto — o caso de quem
+   * coleciona, que é para quem esta tela existe — sobrava uma GRADE VAZIA embaixo do
+   * cartão, e o "nenhum livro ainda" não aparecia nunca.
+   *
+   * Uma condição que pergunta de uma lista e desenha outra é um bug esperando o dado
+   * certo para aparecer.
+   */
+  const lista = quero ? itens : avulsos;
+  /** E o vazio da tela é sobre a COLEÇÃO INTEIRA, e não sobre os avulsos. */
+  const vazia = conjuntos.length === 0 && lista.length === 0;
+
   return (
     <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
       <ScreenHeader title="Coleção" meta={["o que você tem", "ter não é ler"]} />
@@ -127,7 +142,7 @@ export default async function Colecao({
         </h2>
       )}
 
-      {itens.length === 0 ? (
+      {vazia && (
         <div className="mt-10">
           <Empty>
             {quero
@@ -135,9 +150,11 @@ export default async function Colecao({
               : "Nenhum livro marcado como seu ainda. Marque “tenho” na página de um livro."}
           </Empty>
         </div>
-      ) : (
+      )}
+
+      {lista.length > 0 && (
         <ul className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {(quero ? itens : avulsos).map((i) => (
+          {lista.map((i) => (
             <li key={i.slug}>
               <Link href={`/livro/${i.slug}`} className="card group flex h-full flex-col p-5">
                 <span className="cover-lift block w-[58%] self-center">

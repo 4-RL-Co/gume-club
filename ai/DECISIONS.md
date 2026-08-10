@@ -2958,3 +2958,29 @@ Escrever "ganhei da minha irmã" fazia o livro entrar na coleção sozinho, com 
 - **Duas travas, e as duas mutadas:** a nota não cria exemplar; e ela guarda a história de um exemplar que existe. A segunda importa tanto quanto a primeira — um conserto que só proíbe pode ter quebrado o caso legítimo, e ninguém notaria.
 
 **E a trava dos limites do repo pegou um descuido meu:** escrevi `maxLength={140}` cravado no campo novo, e `nenhum teto é um número digitado à mão` reprovou. Passou a usar `LIMITS.provenance`. É a terceira vez nesta sessão que um teste estrutural vê o que eu não vi.
+
+---
+
+**2026-08-06: Trazer um livro é contribuir. Migration 0059, e três números em vez de um.**
+
+O dono perguntou se quem cria livro, manda capa ou preenche informação que faltava conta como contribuição. **Não contava.** A página somava CORREÇÕES, e mais nada.
+
+E o buraco era maior que a tela: **`works` não guardava quem criou a ficha.** Em produção, **3.307 obras foram criadas por leitores e nenhuma tem dono**. Não é a página que esquecia de mostrar — o dado nunca existiu.
+
+Isso contradizia a tese escrita no próprio arquivo: *"quem conserta uma capa vale o que vale quem faz um commit"*. Só conserto valia.
+
+- **A consulta partia de `revisions`, e por isso quem só traz livro não existia na página** — nem com zero. Alguém que trouxesse cinquenta livros e nunca corrigisse um campo não aparecia. Agora ela parte de `users` e entra quem fez qualquer uma das três coisas.
+- **As 3.307 ficam órfãs, de propósito.** Não dá para recuperar quem as criou. Atribuir por palpite (o primeiro que pôs na estante, digamos) daria crédito errado a uma pessoa de verdade, numa página cujo assunto é justamente reconhecer quem fez. A contagem começa em zero e honesta.
+- **Três números, e não um.** Somar tudo seria simples e esconderia a natureza do trabalho — que é exatamente o que esta página existe para dar a ver. Trazer um livro, mandar uma capa e consertar um campo são esforços diferentes; a tela mostra os três e não decide qual vale mais. A SOMA ordena, porque uma lista precisa de ordem. Continua sem posição ordinal, sem pódio e sem medalha.
+- **Cada número só aparece se houver.** Uma linha de zeros não informa nada.
+- **Importar uma estante também conta.** As fichas que nascem ali servem todo mundo depois, igual ao cadastro à mão.
+- **`on delete set null`, e nunca cascade.** Quem apaga a conta leva os próprios dados, e não o livro que trouxe: a ficha serve todo mundo, e apagá-la tiraria o livro da estante de terceiros. O nome sai; o livro fica.
+- **As três contagens são subconsultas, e não `join`.** Um join entre elas multiplicaria as linhas umas pelas outras — trinta correções virariam trezentas por causa de dez livros, e ninguém desconfia de um número grande numa página de reconhecimento. Tem teste só para isso.
+
+---
+
+**2026-08-06: A coleção mostrava uma grade vazia para quem coleciona.**
+
+A tela decidia se desenhava a lista de baixo olhando `itens` (tudo que você tem) e renderizava `avulsos` (o que não está em conjunto). Com todos os volumes dentro de conjuntos — **o caso de quem coleciona, que é para quem a tela existe** — sobrava uma grade vazia embaixo do cartão, e o "nenhum livro ainda" nunca aparecia.
+
+Uma condição que pergunta de uma lista e desenha outra é um bug esperando o dado certo para aparecer. Achado ao conferir se o botão realmente levava o livro para a tela — e a resposta era sim, com uma grade vazia de brinde.

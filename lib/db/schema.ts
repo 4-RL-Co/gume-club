@@ -211,6 +211,18 @@ export const works = pgTable("works", {
    * Ver a migration 0038.
    */
   colecaoId: uuid("colecao_id"),
+  /**
+   * QUEM TROUXE ESTE LIVRO para o acervo.
+   *
+   * A página de contribuidores contava só CORREÇÕES, e quem cria a ficha de um livro
+   * que faltava — o trabalho mais valioso para um catálogo — era invisível. Não por
+   * esquecimento da tela: o dado não era gravado.
+   *
+   * `set null` e nunca cascade: quem apaga a conta leva os próprios dados, e não o
+   * livro que trouxe. A ficha serve todo mundo, e apagá-la tiraria o livro da estante
+   * de terceiros. O nome sai; o livro fica.
+   */
+  createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
   volume: numeric("volume", { precision: 6, scale: 1 }),
   /** The year it was WRITTEN. Not the year this edition was printed. */
   firstPublished: integer("first_published"),

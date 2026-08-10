@@ -49,7 +49,28 @@ export type DoCatalogo = {
   name: string | null;
   image: string | null;
   librarian: boolean;
-  /** Correções que sobreviveram. Nunca ordena a lista. */
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  TRÊS NÚMEROS, E NÃO UM. Cada trabalho aparece pelo que ele é.
+   *
+   *  A página contava só CORREÇÕES. Quem TROUXE um livro que faltava no acervo — o
+   *  trabalho mais valioso que existe para um catálogo — era invisível, e quem mandou
+   *  uma capa também.
+   *
+   *  Somar tudo num número só seria simples e esconderia a natureza do trabalho, que
+   *  é exatamente o que esta página existe para dar a ver. Trazer um livro, mandar uma
+   *  capa e consertar um campo são esforços diferentes, e a tela não precisa decidir
+   *  qual vale mais para mostrar os três.
+   *
+   *  A ORDEM usa a soma, porque uma lista precisa de uma ordem. Continua sem posição
+   *  ordinal, sem pódio e sem medalha: ela é ordenada, e não premiada.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  /** Fichas de livro que nasceram com esta pessoa. Ver a migration 0059. */
+  livros: number;
+  /** Capas que ela mandou e foram aceitas. */
+  capas: number;
+  /** Correções que sobreviveram. */
   correcoes: number;
   desde: Date;
 };
@@ -94,25 +115,43 @@ export type DoCodigo = {
  * desempate.
  */
 export async function getCatalogo(): Promise<DoCatalogo[]> {
+  /**
+   * As três contagens saem de tabelas diferentes, então cada uma é uma subconsulta:
+   * juntá-las com `join` multiplicaria as linhas umas pelas outras e daria números
+   * inventados — trinta correções virariam trezentas por causa de dez livros.
+   *
+   * A pessoa entra na lista se fez QUALQUER uma das três. Antes, só quem corrigia
+   * entrava: quem trouxe cinquenta livros e nunca corrigiu um campo não existia nesta
+   * página.
+   */
   const rows = await db.execute<{
     handle: string; name: string | null; image: string | null;
-    librarian_tier: number; correcoes: number; desde: Date;
+    librarian_tier: number; livros: number; capas: number; correcoes: number; desde: Date;
   }>(sql`
-    select u.handle, u.display_name as name, u.image, u.librarian_tier,
-           count(r.id)::int as correcoes,
-           u.created_at as desde
-      from revisions r
-      join users u on u.id = r.user_id
-     where r.reverted_at is null
-       and u.deleted_at is null
-     group by u.id
-     order by count(r.id) desc, u.created_at asc`);
+    with contagens as (
+      select u.id, u.handle, u.display_name as name, u.image, u.librarian_tier, u.created_at as desde,
+             (select count(*) from works w
+               where w.created_by = u.id)::int as livros,
+             (select count(*) from cover_proposals cp
+               where cp.user_id = u.id and cp.state = 'accepted')::int as capas,
+             (select count(*) from revisions r
+               where r.user_id = u.id and r.reverted_at is null)::int as correcoes
+        from users u
+       where u.deleted_at is null
+    )
+    select * from contagens
+     where livros + capas + correcoes > 0
+     -- A soma ORDENA, e os três aparecem separados na tela. O desempate é a chegada:
+     -- entre duas pessoas com o mesmo total, quem chegou primeiro vem primeiro.
+     order by (livros + capas + correcoes) desc, desde asc`);
 
   return rows.map((r) => ({
     handle: r.handle,
     name: r.name,
     image: r.image,
     librarian: (r.librarian_tier ?? 0) > 0,
+    livros: r.livros,
+    capas: r.capas,
     correcoes: r.correcoes,
     desde: r.desde,
   }));
