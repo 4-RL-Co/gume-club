@@ -3012,3 +3012,21 @@ O dono pediu *"uma tela um pouco glamurosa"*, com as edições pendentes em pret
 - **O conjunto completo ganha um fio dourado na borda**, além do selo. É a única cor da tela.
 
 **E o primeiro conjunto completo é real:** Hellsing Deluxe Edition, 3 de 3.
+
+---
+
+**2026-08-06: A coleção aparece no perfil, e a tela para de se explicar.**
+
+Dois recados do dono, e o primeiro é sobre a minha escrita.
+
+**1. "Ter não é ler: isto é sobre o exemplar" saiu da tela.** Ele cortou com a razão certa: *"pra quê ficar sempre descrevendo assim? a pessoa sabe que isso é coleção"*.
+
+Uma frase que explica a própria tela é a tela desconfiando de quem a olha — e num lugar que existe para dar orgulho, isso soa a manual. **O erro é recorrente meu:** legendar o óbvio, e chamar isso de clareza. O que ficou foi o FATO ("uma coleção completa"), que informa sem ensinar.
+
+**2. A coleção passou a aparecer no perfil**, e o dono chamou isso de "a graça". Ele está certo, e isso **reverte uma decisão que eu tinha tomado sozinho**: eu fiz a coleção privada, argumentando que "o que eu tenho guardado em casa" não é "o que eu li". O argumento continua verdadeiro; ele só não é o único. Colecionar é para mostrar, e uma coleção que só o dono vê é um armário trancado.
+
+- **A coluna `visibility` finalmente significa alguma coisa.** Ela existia com `public` no padrão e **nenhuma consulta a lia**. Publicar sem filtrar seria transformar um padrão de coluna na decisão de quem nunca foi perguntado. Agora quem olha o próprio perfil vê tudo; quem visita vê só o público. Mutado: tirar o filtro derruba o teste.
+- **Fica registrado que as 27 posses que já existem, de 5 pessoas, herdaram esse padrão** — ninguém escolheu publicá-las, e o comentário do código dizia o contrário. Elas continuam públicas porque a coluna diz isso; se isso incomodar, a volta é um `update` e um botão.
+- **A coleção vem ANTES da estante no perfil.** Uma estante diz o que a pessoa leu; uma coleção completa diz o que ela persegue, e é a coisa mais difícil de conseguir naquela página. Quem chega vê primeiro o que foi caro.
+
+**E um pedido ficou parado, por um motivo que não é técnico:** o dono quer o símbolo de cada coleção (o estigma do Berserk, a cruz da Hellsing, uma katana no Vagabond). **São arte protegida**, identidade visual de obras registradas, e este repositório é público — desenhar e versionar esses SVG seria copiar arte de terceiros, para sempre. Foram propostas duas saídas que dão o mesmo efeito sem o risco: um emblema gerado da própria capa (cor dominante + inicial numa moldura), ou um conjunto neutro de símbolos que a gente desenhe e o leitor escolha.
