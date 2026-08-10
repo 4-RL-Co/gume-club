@@ -102,7 +102,7 @@ export default async function BookPage({
     notFound();
   }
 
-  const [friends, recommender, shelves, todasAsEstantes, opinions, minhaCopia] = await Promise.all([
+  const [friends, recommender, shelves, todasAsEstantes, opinions, minhaCopia, conjuntoDoLivro] = await Promise.all([
     actor ? getFollowees(actor.id) : Promise.resolve([]),
     actor ? getRecommender(actor.id, book.workId) : Promise.resolve(null),
     /** As estantes suas em que ESTE livro já está. */
@@ -119,6 +119,15 @@ export default async function BookPage({
     getFriendRatings(viewer, [book.workId]),
     // O exemplar: é SEU, e ninguém mais lê. Ver lib/copies.ts.
     getMinhaCopia(actor, book.workId),
+    /**
+     * O CONJUNTO DE EDIÇÃO a que este volume pertence, se pertence. É catálogo, e não
+     * preferência: "Hellsing Deluxe tem 3 volumes" vale para todo mundo.
+     */
+    book.colecaoId
+      ? db.execute<{ title: string; total_volumes: number | null }>(sql`
+          select title, total_volumes from colecoes where id = ${book.colecaoId}::uuid`)
+          .then((r) => (r[0] ? { titulo: r[0].title, total: r[0].total_volumes } : null))
+      : Promise.resolve(null),
   ]);
 
   const opinion = opinions[book.workId];
@@ -562,6 +571,8 @@ export default async function BookPage({
                   ? minhaCopia.state
                   : null}
                 historia={minhaCopia?.acquiredNote ?? null}
+                conjunto={conjuntoDoLivro}
+                volume={book.volume === null ? null : Number(book.volume)}
               />
 
               {/* QUANDO você leu, em UMA LINHA discreta, encostada no painel: o resumo

@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users, works, editions } from "@/lib/db/schema";
 import { marcarPosse, getConjuntos } from "@/lib/copies";
+import { ligarAoConjunto, soltarDoConjunto, buscarConjuntos } from "@/lib/conjuntos";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -116,5 +117,67 @@ describe("a coleção por conjuntos", () => {
         "outra, e juntá-las estraga a coisa que a pessoa cuida.",
     ).toBe(false);
     expect(daNormal?.tenho).toBe(1);
+  });
+});
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  QUEM MONTA UM CONJUNTO, E POR QUE ISSO É CATÁLOGO.
+ *
+ *  Os conjuntos vinham todos da AniList, e só cobriam mangá conhecido. O dono tinha
+ *  três volumes de Hellsing Deluxe fora de conjunto — livros de verdade, na estante
+ *  dele, e o app não sabia que eram uma coleção.
+ *
+ *  ═══ ELE NÃO É "PRÓPRIO", E ISSO IMPORTA ═══
+ *
+ *  "Hellsing Deluxe tem 3 volumes" é um FATO SOBRE O MUNDO, como o autor ou a editora.
+ *  Se o conjunto fosse pessoal, cada colecionador recadastraria os mesmos volumes, e o
+ *  app teria N versões da mesma verdade — a duplicata que este acervo passou o dia
+ *  consertando.
+ *
+ *  Sendo catálogo, ele vai para o LOG, com nome e reversível: é o histórico público
+ *  que torna vandalismo caro, e não uma permissão que faria do dono um porteiro.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("montar um conjunto de edição", () => {
+  it("criar liga o volume e fica no log de correções", async () => {
+    const [w] = await db.insert(works)
+      .values({ slug: `mont-${marca}`, title: `zz montar ${marca}` })
+      .returning({ id: works.id });
+
+    await ligarAoConjunto({ id: leitor }, w!.id, { titulo: `zz conj ${marca}`, total: 3, publisher: "Editora" }, 1);
+
+    const [obra] = await db.execute<{ colecao_id: string | null; volume: string | null }>(sql`
+      select colecao_id, volume from works where id = ${w!.id}::uuid`);
+    expect(obra?.colecao_id, "o volume não foi ligado ao conjunto").toBeTruthy();
+    expect(Number(obra?.volume), "o número do volume não foi gravado: sem ele o conjunto é uma pilha").toBe(1);
+
+    const [rev] = await db.execute<{ n: number }>(sql`
+      select count(*)::int as n from revisions
+       where target_id = ${w!.id}::uuid and user_id = ${leitor}::uuid`);
+    expect(
+      rev?.n,
+      "ligar um volume não entrou no log. Ligar ao conjunto errado estraga a coleção " +
+        "de quem coleciona, e o histórico público é a única defesa que não vira porteiro.",
+    ).toBe(1);
+  });
+
+  /** Achar antes de criar: sem isso, o segundo colecionador duplica o conjunto. */
+  it("procurar acha o que já existe", async () => {
+    const achados = await buscarConjuntos(`zz conj ${marca}`.slice(0, 12));
+    expect(
+      achados.some((a) => a.titulo === `zz conj ${marca}`),
+      "a busca não acha o conjunto que existe, e o próximo colecionador cria outro igual",
+    ).toBe(true);
+  });
+
+  it("soltar desfaz, e desfazer não é mais difícil que fazer", async () => {
+    const [w] = await db.execute<{ id: string }>(sql`
+      select id from works where slug = ${`mont-${marca}`}`);
+    await soltarDoConjunto({ id: leitor }, w!.id);
+
+    const [obra] = await db.execute<{ colecao_id: string | null }>(sql`
+      select colecao_id from works where id = ${w!.id}::uuid`);
+    expect(obra?.colecao_id, "soltar não soltou").toBeNull();
   });
 });
