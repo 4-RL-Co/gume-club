@@ -61,6 +61,18 @@ export async function getMinhaCopia(
  * Ninguém ganhou um livro de "subscription_box": ganhou a caixa de janeiro do clube de
  * filosofia, ou a irmã deu. Nunca obrigatório, nunca cobrado.
  */
+/**
+ * ═══ ELA NÃO PÕE O LIVRO NA COLEÇÃO. SÓ O BOTÃO FAZ ISSO ═══
+ *
+ * Isto era um `insert ... state: 'owned'`: escrever "ganhei da minha irmã" fazia o
+ * livro entrar na coleção sozinho. Era a ÚNICA porta que existia, e por isso foi
+ * construída assim — mas agora existe um botão, e uma porta lateral que faz a mesma
+ * coisa sem pedir vira uma coleção que a pessoa não montou.
+ *
+ * Agora é um `update`: a nota se agarra a um exemplar que já é seu, e não cria um.
+ * Se você não marcou "tenho", não há exemplar para ter história, e nada acontece —
+ * é por isso que a tela só oferece o campo depois do botão. Ver components/tenho.tsx.
+ */
 export async function guardarHistoria(
   actor: { id: string },
   workId: string,
@@ -70,11 +82,10 @@ export async function guardarHistoria(
   const limpo = nota.trim().slice(0, 140);
 
   await db.execute(sql`
-    insert into owned_copies (user_id, work_id, edition_id, state, acquired_note)
-    values (${actor.id}::uuid, ${workId}::uuid, ${editionId}::uuid, 'owned', ${limpo || null})
-    on conflict (user_id, work_id)
-      do update set acquired_note = excluded.acquired_note,
-                    edition_id    = coalesce(excluded.edition_id, owned_copies.edition_id)`);
+    update owned_copies
+       set acquired_note = ${limpo || null},
+           edition_id    = coalesce(${editionId}::uuid, edition_id)
+     where user_id = ${actor.id}::uuid and work_id = ${workId}::uuid`);
 }
 
 /**

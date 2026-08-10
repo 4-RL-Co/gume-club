@@ -8,11 +8,10 @@ import { VERDICTS } from "@/lib/veredito";
 import { GLIFO, TRACO } from "@/components/veredito";
 import { FolderPlus } from "lucide-react";
 import { Quando } from "@/components/quando";
-import { Gaveta } from "@/components/gaveta";
 import { Campo } from "@/components/campo";
 import { LIMITS } from "@/lib/limits";
 import {
-  setStatus, setRating, clearRating, updateProvenance, saveReview,
+  setStatus, setRating, clearRating, saveReview,
 } from "@/app/livro/[slug]/actions";
 import { saveShelves } from "@/app/livro/[slug]/curation-actions";
 
@@ -151,41 +150,9 @@ export function BookPanel({
 
       <Verdicts value={mine.rating} pending={pending} slug={slug} workId={book.workId} act={act} />
 
-      {/* ═══ "DE ONDE VEIO" É UMA GAVETA ═══
-          É uma frase bonita de ter, e quase ninguém escreve na primeira visita. Ocupava
-          um cartão inteiro no meio do caminho entre a nota e a resenha — e um campo
-          vazio no meio do caminho é um cadastro pedindo para ser preenchido.
-          Quem quiser contar, abre. Ver components/gaveta.tsx. */}
-      <Gaveta
-        titulo="de onde veio"
-        resumo={mine.acquiredNote ?? "presente? sebo? herança? conte a história desse exemplar"}
-        abertaPorPadrao={Boolean(mine.acquiredNote)}
-      >
-        {/* Free text, never a dropdown. Nobody acquired a book "subscription_box":
-            they got the January box from the philosophy club, or their sister gave
-            it to them. Never required, never nagged for. */}
-        <form
-          className="flex flex-wrap items-center gap-2"
-          action={(data: FormData) =>
-            act(() => updateProvenance(slug, book.workId, mine.editionId, String(data.get("nota") ?? "")))
-          }
-        >
-          <input
-            name="nota"
-            defaultValue={mine.acquiredNote ?? ""}
-            maxLength={LIMITS.provenance}
-            placeholder="de onde veio esse livro?"
-            className="min-w-0 flex-1 rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[14px] outline-none placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-ink)]"
-          />
-          <button
-            type="submit"
-            disabled={pending}
-            className="shrink-0 rounded-[var(--radius-control)] border border-[var(--color-rule)] px-3 py-2 text-[13px] text-[var(--color-ink-soft)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] disabled:opacity-40"
-          >
-            guardar
-          </button>
-        </form>
-      </Gaveta>
+      {/* A PROCEDÊNCIA saiu daqui. Ela é sobre o EXEMPLAR, e não sobre a leitura:
+          mora no cartão da coleção, e só depois de você dizer que tem o livro.
+          Ver components/tenho.tsx. */}
 
       <Review book={book} slug={slug} pending={pending} act={act} />
     </div>

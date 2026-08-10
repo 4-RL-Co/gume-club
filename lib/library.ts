@@ -510,11 +510,19 @@ export async function setProvenance(
   assertOwner(actor as Viewer, { userId: actor.id });
   const clean = note?.trim().slice(0, 140) || null;
 
+  /**
+   * ═══ A PROCEDÊNCIA NÃO PÕE O LIVRO NA COLEÇÃO ═══
+   *
+   * Isto era um `insert` com `state: "owned"`: escrever "ganhei da minha irmã" fazia o
+   * livro entrar na coleção sozinho. Era a única porta que existia, e por isso nasceu
+   * assim — mas agora existe um botão, e uma porta lateral que faz a mesma coisa sem
+   * pedir produz uma coleção que a pessoa não montou.
+   *
+   * Virou `update`: a história se agarra a um exemplar que JÁ é seu. Sem exemplar, não
+   * há o que ter história — e a tela por isso só oferece o campo depois do botão.
+   */
   await db
-    .insert(ownedCopies)
-    .values({ userId: actor.id, workId, editionId, state: "owned", acquiredNote: clean })
-    .onConflictDoUpdate({
-      target: [ownedCopies.userId, ownedCopies.workId],
-      set: { acquiredNote: clean, editionId },
-    });
+    .update(ownedCopies)
+    .set({ acquiredNote: clean, editionId })
+    .where(and(eq(ownedCopies.userId, actor.id), eq(ownedCopies.workId, workId)));
 }

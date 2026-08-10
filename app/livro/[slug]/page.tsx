@@ -561,6 +561,7 @@ export default async function BookPage({
                 posse={(minhaCopia?.state === "owned" || minhaCopia?.state === "wanted")
                   ? minhaCopia.state
                   : null}
+                historia={minhaCopia?.acquiredNote ?? null}
               />
 
               {/* QUANDO você leu, em UMA LINHA discreta, encostada no painel: o resumo

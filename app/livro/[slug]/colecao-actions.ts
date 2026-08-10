@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getActor } from "@/lib/actor";
-import { marcarPosse, type Posse } from "@/lib/copies";
+import { marcarPosse, guardarHistoria, type Posse } from "@/lib/copies";
 
 /**
  * Marcar que um livro é seu (ou que você quer que seja).
@@ -19,6 +19,24 @@ export async function marcar(
 ): Promise<void> {
   const actor = await getActor();
   await marcarPosse(actor, workId, editionId, posse);
+  revalidatePath(`/livro/${slug}`);
+  revalidatePath("/colecao");
+}
+
+/**
+ * A história do exemplar. Ela ATUALIZA um exemplar que já é seu, e nunca cria um.
+ *
+ * Antes, escrever aqui punha o livro na coleção sozinho — era a única porta que
+ * existia. Agora existe um botão, e a nota se agarra ao que ele criou.
+ */
+export async function guardarProcedencia(
+  slug: string,
+  workId: string,
+  editionId: string | null,
+  nota: string,
+): Promise<void> {
+  const actor = await getActor();
+  await guardarHistoria(actor, workId, editionId, nota);
   revalidatePath(`/livro/${slug}`);
   revalidatePath("/colecao");
 }
