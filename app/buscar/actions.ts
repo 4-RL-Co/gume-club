@@ -23,7 +23,7 @@ export async function addFromSearch(hit: Hit, status: Status): Promise<Added> {
   const actor = await getActor();
   if (!isStatus(status)) throw new Error("status inválido");
 
-  const { workId, editionId } = await findOrCreateWork(hitToWork(hit));
+  const { workId, editionId } = await findOrCreateWork({ ...hitToWork(hit), criadoPor: actor.id });
   // A edição vai junto: é a que o leitor acabou de identificar, e sem ela a página
   // do livro escolhe uma qualquer. Ver shelve(), em lib/library.ts.
   await shelve(actor, workId, status, editionId);
@@ -227,7 +227,7 @@ export async function addMany(hits: Hit[], status: Status): Promise<number> {
 
   let n = 0;
   for (const hit of hits.slice(0, 100)) {
-    const { workId, editionId } = await findOrCreateWork(hitToWork(hit));
+    const { workId, editionId } = await findOrCreateWork({ ...hitToWork(hit), criadoPor: actor.id });
     await shelve(actor, workId, status, editionId);
     n++;
   }
@@ -265,9 +265,9 @@ export async function addMany(hits: Hit[], status: Status): Promise<number> {
  * ════════════════════════════════════════════════════════════════════
  */
 export async function abrirDaBusca(hit: Hit): Promise<string | null> {
-  await getActor();
+  const actor = await getActor();
 
-  const { workId } = await findOrCreateWork(hitToWork(hit));
+  const { workId } = await findOrCreateWork({ ...hitToWork(hit), criadoPor: actor.id });
 
   const [obra] = await db
     .select({ slug: works.slug })

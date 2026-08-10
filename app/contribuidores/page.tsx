@@ -100,10 +100,39 @@ export default async function Contribuidores() {
                       </span>
 
                       <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12px] text-[var(--color-ink-faint)]">
-                        {/* O número vive AQUI, e só aqui. Nunca no perfil, nunca no feed. */}
-                        <span className="tabular">
-                          {p.correcoes} {p.correcoes === 1 ? "correção" : "correções"}
-                        </span>
+                        {/* ════════════════════════════════════════════════════
+                            OS TRÊS TRABALHOS, SEPARADOS. E os números vivem AQUI,
+                            e só aqui: nunca no perfil, nunca no feed.
+
+                            Era só "correções". Quem TROUXE um livro que faltava no
+                            acervo — o trabalho mais valioso para um catálogo — não
+                            aparecia, e quem mandou capa também não.
+
+                            Somar tudo num número esconderia a natureza do trabalho,
+                            que é o que esta página existe para dar a ver. Cada um só
+                            aparece se houver: uma linha de zeros não informa nada.
+                            ════════════════════════════════════════════════════ */}
+                        {p.livros > 0 && (
+                          <span className="tabular">
+                            {p.livros} {p.livros === 1 ? "livro" : "livros"}
+                          </span>
+                        )}
+                        {p.capas > 0 && (
+                          <>
+                            {p.livros > 0 && <span aria-hidden>·</span>}
+                            <span className="tabular">
+                              {p.capas} {p.capas === 1 ? "capa" : "capas"}
+                            </span>
+                          </>
+                        )}
+                        {p.correcoes > 0 && (
+                          <>
+                            {(p.livros > 0 || p.capas > 0) && <span aria-hidden>·</span>}
+                            <span className="tabular">
+                              {p.correcoes} {p.correcoes === 1 ? "correção" : "correções"}
+                            </span>
+                          </>
+                        )}
 
                         {p.librarian && (
                           <>

@@ -139,6 +139,14 @@ export async function findOrCreateWork(input: {
   coverUrl?: string | null;
   openlibraryWorkKey?: string | null;
   needsReview?: boolean;
+  /**
+   * QUEM está trazendo este livro para o acervo.
+   *
+   * Só é gravado quando a ficha NASCE aqui: casar com uma obra que já existe não é
+   * trazer nada, e dar crédito por isso encheria a contagem de trabalho que ninguém
+   * fez. Ver a migration 0059 e lib/contributors.ts.
+   */
+  criadoPor?: string | null;
   /** Capa dura, brochura, e-book. Vem do "Binding" do Goodreads. */
   formato?: "hardcover" | "paperback" | "ebook" | "audiobook" | "other" | null;
 }): Promise<{ workId: string; editionId: string | null; como: Casamento }> {
@@ -225,6 +233,7 @@ export async function findOrCreateWork(input: {
         firstPublished: input.firstPublished ?? null,
         openlibraryKey: input.openlibraryWorkKey ?? null,
         needsReview: input.needsReview ?? false,
+        createdBy: input.criadoPor ?? null,
       })
       .returning({ id: works.id });
     if (!created) throw new Error("não deu para gravar a obra");
