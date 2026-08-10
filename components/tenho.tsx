@@ -5,6 +5,7 @@ import { BookMarked, Package } from "lucide-react";
 import { marcar, guardarProcedencia } from "@/app/livro/[slug]/colecao-actions";
 import type { Posse } from "@/lib/copies";
 import { LIMITS } from "@/lib/limits";
+import { ConjuntoDoLivro } from "@/components/conjunto-do-livro";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -31,7 +32,7 @@ import { LIMITS } from "@/lib/limits";
  * ════════════════════════════════════════════════════════════════════
  */
 export function Tenho({
-  slug, workId, editionId, posse, historia,
+  slug, workId, editionId, posse, historia, conjunto, volume,
 }: {
   slug: string;
   workId: string;
@@ -39,6 +40,9 @@ export function Tenho({
   posse: Posse;
   /** "de onde veio esse livro". Só existe para um exemplar que já é seu. */
   historia: string | null;
+  /** O conjunto de edição, se este volume já pertence a um. */
+  conjunto: { titulo: string; total: number | null } | null;
+  volume: number | null;
 }) {
   const [atual, setAtual] = useState<Posse>(posse);
   const [pending, start] = useTransition();
@@ -84,6 +88,11 @@ export function Tenho({
       <p className="mt-3 text-[13px] leading-relaxed text-[var(--color-ink-faint)]">
         Ter não é ler: isto vale para o exemplar, e não muda a sua prateleira.
       </p>
+
+      {/* O CONJUNTO é catálogo, e não preferência: "Hellsing Deluxe tem 3 volumes"
+          vale para todo mundo, e por isso a mudança vai para o log com nome e é
+          reversível. Ver lib/conjuntos.ts. */}
+      <ConjuntoDoLivro slug={slug} workId={workId} atual={conjunto} volumeAtual={volume} />
 
       {/* ════════════════════════════════════════════════════════════════
           DE ONDE VEIO. Só depois do botão, e nunca antes.

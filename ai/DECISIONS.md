@@ -2984,3 +2984,31 @@ Isso contradizia a tese escrita no próprio arquivo: *"quem conserta uma capa va
 A tela decidia se desenhava a lista de baixo olhando `itens` (tudo que você tem) e renderizava `avulsos` (o que não está em conjunto). Com todos os volumes dentro de conjuntos — **o caso de quem coleciona, que é para quem a tela existe** — sobrava uma grade vazia embaixo do cartão, e o "nenhum livro ainda" nunca aparecia.
 
 Uma condição que pergunta de uma lista e desenha outra é um bug esperando o dado certo para aparecer. Achado ao conferir se o botão realmente levava o livro para a tela — e a resposta era sim, com uma grade vazia de brinde.
+
+---
+
+**2026-08-06: Quem monta um conjunto de edição. E ele é CATÁLOGO, não preferência.**
+
+O dono tinha três volumes de Hellsing Deluxe fora de conjunto e disse: *"acho que tem que ser possível a pessoa criar seus próprios conjuntos"*. Os conjuntos vinham todos da AniList, e só cobriam mangá conhecido.
+
+- **Ele não é "próprio", e a distinção é o desenho inteiro.** *"Hellsing Deluxe tem 3 volumes"* é um FATO SOBRE O MUNDO, como o autor ou a editora — não é opinião de ninguém. Se o conjunto fosse pessoal, cada colecionador recadastraria os mesmos volumes por conta própria, e o app teria N versões da mesma verdade: exatamente a duplicata que este acervo passou o dia consertando.
+- **Agrupamento pessoal já existe e continua valendo:** são as estantes que a pessoa monta ("meus livros de capa dura"). Aquilo é gosto; isto é ficha.
+- **Sendo catálogo, vai para o LOG de revisões**, com nome e reversível. Ligar um volume ao conjunto errado estraga a coleção de quem coleciona, e a defesa contra isso é o histórico público — a mesma que protege a ficha do livro. Uma permissão faria do dono um porteiro. Mutado: tirar o registro do log derruba o teste.
+- **Procurar vem antes de criar, e é isso que impede a duplicata.** O campo busca o que já existe e só oferece "criar" depois. Sem isso, o segundo colecionador de Hellsing cadastra o mesmo conjunto de novo.
+- **O número do volume não é opcional.** Um conjunto sem número é uma pilha: a tela não sabe ordenar nem dizer qual falta, e "3 de 10" apareceria em ordem aleatória.
+- **Soltar é tão fácil quanto ligar.** Erra-se ao ligar, e desfazer não pode custar mais que fazer.
+
+**Achado no caminho: `lib/db/schema.ts` não descreve a coluna `slug` de `series`, e a produção tem ela** — com o índice único que o `on conflict` precisa acertar. O arquivo derivou do banco. Escrever pelo construtor daria erro de tipo por uma coluna que existe de verdade, e "consertar" removendo o slug faria o conflito bater no lugar errado. Ficou SQL cru, com o motivo escrito ao lado.
+
+---
+
+**2026-08-06: A coleção ganhou a cara que ela merecia.**
+
+O dono pediu *"uma tela um pouco glamurosa"*, com as edições pendentes em preto e branco e selo para as completas.
+
+- **Nada foi inventado:** a aura da capa no topo é o mesmo material da tela de queridinhos, e o dourado é o mesmo da curadoria da casa. Uma tela nova com vocabulário novo seria um segundo sistema visual dentro do mesmo app.
+- **A capa que banha o topo é a do conjunto MAIS ADIANTADO**, e não a primeira que veio. É esse que a pessoa está montando; uma capa qualquer ali seria enfeite, e essa é a coleção olhando de volta para quem a montou.
+- **O que falta volta a ter cor no hover.** A lacuna é o assunto, e espiar o que falta é metade do prazer de colecionar.
+- **O conjunto completo ganha um fio dourado na borda**, além do selo. É a única cor da tela.
+
+**E o primeiro conjunto completo é real:** Hellsing Deluxe Edition, 3 de 3.

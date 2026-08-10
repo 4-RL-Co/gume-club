@@ -57,6 +57,9 @@ export type Book = {
   genre: string | null;
   subject: string | null;
   needsReview: boolean;
+  /** O conjunto de edição a que este volume pertence. Ver lib/conjuntos.ts. */
+  colecaoId: string | null;
+  volume: string | null;
   editions: BookEdition[];
   /** The reader's own rows. Null when nobody is logged in. */
   mine: {
@@ -144,6 +147,9 @@ export async function getBook(slug: string, viewer: Viewer, actorId: string | nu
       genre: works.genre,
       subject: works.subject,
       needsReview: works.needsReview,
+      /** O conjunto de edição a que este volume pertence, e o número dele nele. */
+      colecaoId: works.colecaoId,
+      volume: works.volume,
     })
     .from(works)
     .leftJoin(authors, eq(authors.id, works.authorId))

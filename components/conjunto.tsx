@@ -32,10 +32,15 @@ export function ConjuntoCard({ c }: { c: Conjunto }) {
   const pct = c.total > 0 ? Math.round((c.tenho / c.total) * 100) : 0;
 
   return (
-    <section className="surface p-6 sm:p-7">
+    <section
+      className="surface p-6 sm:p-7"
+      /* O conjunto completo ganha um fio dourado na borda — o mesmo dourado do selo,
+         e a ÚNICA cor da tela. Quem completou merece que a moldura saiba. */
+      style={c.completo ? { borderColor: "color-mix(in srgb, #d9a520 45%, transparent)" } : undefined}
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="voice text-[19px] leading-snug text-[var(--color-ink)]">{c.titulo}</h2>
+          <h2 className="voice text-[22px] leading-snug text-[var(--color-ink)] sm:text-[26px]">{c.titulo}</h2>
           <p className="mt-1 text-[13px] text-[var(--color-ink-faint)]">
             <span className="tabular">{c.tenho} de {c.total}</span>
             {c.publisher ? ` · ${c.publisher}` : ""}
@@ -63,14 +68,16 @@ export function ConjuntoCard({ c }: { c: Conjunto }) {
 
       <ul className="mt-5 flex flex-wrap gap-3">
         {c.volumes.map((v) => (
-          <li key={v.slug} className="w-[68px] sm:w-[76px]">
+          <li key={v.slug} className="w-[84px] sm:w-[104px]">
             <Link href={`/livro/${v.slug}`} className="block" title={v.title}>
               {/* O QUE FALTA CONTINUA NA TELA, apagado. É a lacuna que move quem
                   coleciona, e escondê-la devolveria a tela ao inventário. */}
               <span
                 className={[
-                  "cover-lift block transition-all",
-                  v.tenho ? "" : "opacity-45 grayscale",
+                  "cover-lift block transition-all duration-300",
+                  // O que falta fica em preto e branco, e volta a cor no hover: a
+                  // lacuna é o assunto, e espiar o que falta é metade do prazer.
+                  v.tenho ? "" : "opacity-40 grayscale hover:opacity-70 hover:grayscale-0",
                 ].join(" ")}
               >
                 <Cover title={v.title} src={v.coverUrl} />

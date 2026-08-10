@@ -1,6 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Package } from "lucide-react";
-import { ScreenHeader } from "@/components/screen-header";
+import { origemAceita } from "@/lib/imagens";
 import { Empty } from "@/components/empty";
 import { Cover } from "@/components/cover";
 import { getActorOrNull } from "@/lib/actor";
@@ -48,7 +49,9 @@ export default async function Colecao({
   if (!actor) {
     return (
       <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
-        <ScreenHeader title="Coleção" />
+        <h1 className="voice mt-16 text-[40px] leading-[1.04] tracking-[-0.015em] sm:mt-24 sm:text-[52px]">
+          Coleção
+        </h1>
         <div className="mt-10">
           <Empty>
             <Link href="/entrar" className="underline decoration-[var(--color-ink)] underline-offset-4">
@@ -91,9 +94,51 @@ export default async function Colecao({
   /** E o vazio da tela é sobre a COLEÇÃO INTEIRA, e não sobre os avulsos. */
   const vazia = conjuntos.length === 0 && lista.length === 0;
 
+  /**
+   * A CAPA QUE BANHA O TOPO. A do conjunto mais completo, e não a primeira que veio.
+   *
+   * Uma coleção é um objeto de orgulho, e a tela precisava parecer isso — o dono pediu
+   * "um pouco glamurosa". A aura é o mesmo material da tela de queridinhos: nada
+   * inventado, o vocabulário que a casa já tem.
+   *
+   * Ela escolhe o conjunto mais adiantado porque é ele que a pessoa está montando, e
+   * porque uma capa qualquer no topo é enfeite, enquanto essa é a coleção olhando de
+   * volta para quem a montou.
+   */
+  const heroi = [...conjuntos]
+    .sort((a, b) => b.tenho / Math.max(1, b.total) - a.tenho / Math.max(1, a.total))
+    .flatMap((c) => c.volumes.filter((v) => v.tenho && v.coverUrl))[0]?.coverUrl
+    ?? itens.find((i) => i.coverUrl)?.coverUrl
+    ?? null;
+
+  const completas = conjuntos.filter((c) => c.completo).length;
+
   return (
-    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
-      <ScreenHeader title="Coleção" meta={["o que você tem", "ter não é ler"]} />
+    <main className="relative mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+      {heroi && origemAceita(heroi) && (
+        <div className="aura-capa" aria-hidden>
+          <Image src={heroi} alt="" fill sizes="128px" quality={30} className="object-cover" />
+        </div>
+      )}
+
+      {/* O CABEÇALHO EDITORIAL: a coleção abre como uma sala, e não como uma tabela.
+          A serifa da voz, o número que importa, e nada de placar de quantos livros. */}
+      <header className="mt-16 sm:mt-24">
+        <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-[var(--color-ink-faint)]">
+          <Package size={14} strokeWidth={1.75} aria-hidden />
+          a sua coleção
+        </p>
+        <h1 className="voice mt-3 max-w-3xl text-[40px] leading-[1.04] tracking-[-0.015em] sm:text-[52px]">
+          O que você tem
+        </h1>
+        <p className="voice mt-5 max-w-2xl text-[17px] leading-relaxed text-[var(--color-ink-soft)]">
+          {completas > 0
+            ? completas === 1
+              ? "Uma coleção completa, e o resto a caminho. Ter não é ler: isto é sobre o exemplar."
+              : `${completas} coleções completas, e o resto a caminho. Ter não é ler: isto é sobre o exemplar.`
+            : "O que está na sua estante de verdade, em papel. Ter não é ler: isto é sobre o exemplar."}
+        </p>
+      </header>
 
       <nav className="mt-8 flex flex-wrap gap-2">
         {[
