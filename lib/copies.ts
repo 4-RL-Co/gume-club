@@ -61,6 +61,18 @@ export async function getMinhaCopia(
  * Ninguém ganhou um livro de "subscription_box": ganhou a caixa de janeiro do clube de
  * filosofia, ou a irmã deu. Nunca obrigatório, nunca cobrado.
  */
+/**
+ * ═══ ELA NÃO PÕE O LIVRO NA COLEÇÃO. SÓ O BOTÃO FAZ ISSO ═══
+ *
+ * Isto era um `insert ... state: 'owned'`: escrever "ganhei da minha irmã" fazia o
+ * livro entrar na coleção sozinho. Era a ÚNICA porta que existia, e por isso foi
+ * construída assim — mas agora existe um botão, e uma porta lateral que faz a mesma
+ * coisa sem pedir vira uma coleção que a pessoa não montou.
+ *
+ * Agora é um `update`: a nota se agarra a um exemplar que já é seu, e não cria um.
+ * Se você não marcou "tenho", não há exemplar para ter história, e nada acontece —
+ * é por isso que a tela só oferece o campo depois do botão. Ver components/tenho.tsx.
+ */
 export async function guardarHistoria(
   actor: { id: string },
   workId: string,
@@ -70,11 +82,10 @@ export async function guardarHistoria(
   const limpo = nota.trim().slice(0, 140);
 
   await db.execute(sql`
-    insert into owned_copies (user_id, work_id, edition_id, state, acquired_note)
-    values (${actor.id}::uuid, ${workId}::uuid, ${editionId}::uuid, 'owned', ${limpo || null})
-    on conflict (user_id, work_id)
-      do update set acquired_note = excluded.acquired_note,
-                    edition_id    = coalesce(excluded.edition_id, owned_copies.edition_id)`);
+    update owned_copies
+       set acquired_note = ${limpo || null},
+           edition_id    = coalesce(${editionId}::uuid, edition_id)
+     where user_id = ${actor.id}::uuid and work_id = ${workId}::uuid`);
 }
 
 /**
@@ -233,4 +244,123 @@ export async function contarColecao(
     quero: row?.quero ?? 0,
     tenhoENaoLi: row?.tenho_e_nao_li ?? 0,
   };
+}
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  A COLEÇÃO POR CONJUNTOS. É isto que separa colecionar de possuir.
+ *
+ *  ═══ O QUE A TELA CONTA MUDA O QUE ELA SIGNIFICA ═══
+ *
+ *  A estante conta LIVROS LIDOS. Uma lista de "coisas que eu tenho" também conta
+ *  livros, e por isso lia como inventário — o dono viu isso na primeira versão.
+ *
+ *  Uma coleção conta CONJUNTOS: "4 de 14". Ninguém que coleciona pensa "tenho 340
+ *  cartas"; pensa "falta uma". **A lacuna é o assunto**, e é ela que a tela precisa
+ *  desenhar.
+ *
+ *  ═══ O CONJUNTO É DA EDIÇÃO, E NUNCA DA SÉRIE ═══
+ *
+ *  A frase já estava no schema: a Panini publica Berserk em duas edições, e o "volume
+ *  25" de uma não é o "volume 25" da outra. Para quem coleciona isso não é detalhe: a
+ *  Definitive Edition e o Vagabond normal são conjuntos diferentes, e um NÃO completa
+ *  o outro. Juntá-los seria estragar exatamente a coisa que a pessoa cuida.
+ *
+ *  ═══ OS VOLUMES QUE FALTAM PRECISAM EXISTIR NO ACERVO ═══
+ *
+ *  A tela mostra o conjunto INTEIRO, com o que você tem em cor e o resto apagado. Isso
+ *  só funciona se as fichas dos que faltam existirem — senão "4 de 14" não teria os
+ *  dez para desenhar, e a lacuna, que é o assunto, ficaria invisível.
+ *
+ *  ═══ E O QUE NÃO É DE CONJUNTO NENHUM CONTINUA VALENDO ═══
+ *
+ *  Um livro avulso não ganha barra nem cobrança: ele é um item, e ponto. Inventar um
+ *  conjunto de um volume só para toda obra transformaria a tela numa lista de barras
+ *  cheias, que não diz nada.
+ * ════════════════════════════════════════════════════════════════════
+ */
+
+export type VolumeDoConjunto = {
+  slug: string;
+  title: string;
+  volume: number | null;
+  coverUrl: string | null;
+  /** Você tem este volume. É ele que sai do preto e branco. */
+  tenho: boolean;
+  /** Você marcou que quer. Continua apagado, mas o app sabe. */
+  quero: boolean;
+};
+
+export type Conjunto = {
+  id: string;
+  titulo: string;
+  publisher: string | null;
+  total: number;
+  tenho: number;
+  /** Completo: todos os volumes conhecidos são seus. É o que ganha selo. */
+  completo: boolean;
+  volumes: VolumeDoConjunto[];
+};
+
+/**
+ * Os conjuntos que a sua coleção toca, com TODOS os volumes de cada um.
+ *
+ * Um conjunto entra na lista se você tem (ou quer) ao menos um volume dele: a tela é
+ * da sua coleção, e não um catálogo de tudo que existe.
+ */
+export async function getConjuntos(actor: { id: string } | null): Promise<Conjunto[]> {
+  if (!actor) return [];
+
+  const rows = await db.execute<{
+    id: string; titulo: string; publisher: string | null; total: number | null;
+    slug: string; title: string; volume: string | null; cover_url: string | null;
+    tenho: boolean; quero: boolean;
+  }>(sql`
+    with meus as (
+      select distinct w.colecao_id
+        from owned_copies oc
+        join works w on w.id = oc.work_id
+       where oc.user_id = ${actor.id}::uuid and w.colecao_id is not null
+    )
+    select c.id, c.title as titulo, c.publisher, c.total_volumes as total,
+           w.slug, w.title, w.volume::text as volume,
+           (select e.cover_url from editions e
+             where e.work_id = w.id and e.cover_url is not null
+             order by e.created_at asc limit 1) as cover_url,
+           coalesce(oc.state = 'owned', false)  as tenho,
+           coalesce(oc.state = 'wanted', false) as quero
+      from colecoes c
+      join meus m on m.colecao_id = c.id
+      join works w on w.colecao_id = c.id
+      left join owned_copies oc on oc.work_id = w.id and oc.user_id = ${actor.id}::uuid
+     order by c.title asc, w.volume asc nulls last`);
+
+  const porConjunto = new Map<string, Conjunto>();
+  for (const r of rows) {
+    let c = porConjunto.get(r.id);
+    if (!c) {
+      c = {
+        id: r.id, titulo: r.titulo, publisher: r.publisher,
+        total: r.total ?? 0, tenho: 0, completo: false, volumes: [],
+      };
+      porConjunto.set(r.id, c);
+    }
+    c.volumes.push({
+      slug: r.slug, title: r.title,
+      volume: r.volume === null ? null : Number(r.volume),
+      coverUrl: r.cover_url, tenho: r.tenho, quero: r.quero,
+    });
+    if (r.tenho) c.tenho++;
+  }
+
+  for (const c of porConjunto.values()) {
+    // O total do conjunto manda; se ele não for conhecido, o que existe no acervo é a
+    // melhor verdade disponível — e nunca um número inventado.
+    if (!c.total) c.total = c.volumes.length;
+    // Completo é ter TODOS, e não "ter o total": um conjunto com o total errado não
+    // pode ganhar selo por acidente de contagem.
+    c.completo = c.total > 0 && c.tenho >= c.total;
+  }
+
+  return [...porConjunto.values()].sort((a, b) => a.titulo.localeCompare(b.titulo, "pt-BR"));
 }

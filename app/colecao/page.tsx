@@ -4,7 +4,8 @@ import { ScreenHeader } from "@/components/screen-header";
 import { Empty } from "@/components/empty";
 import { Cover } from "@/components/cover";
 import { getActorOrNull } from "@/lib/actor";
-import { getColecao, contarColecao } from "@/lib/copies";
+import { getColecao, contarColecao, getConjuntos } from "@/lib/copies";
+import { ConjuntoCard } from "@/components/conjunto";
 import { nomeDoAutor } from "@/lib/autores";
 
 export const dynamic = "force-dynamic";
@@ -60,10 +61,20 @@ export default async function Colecao({
     );
   }
 
-  const [itens, contas] = await Promise.all([
+  const [itens, contas, conjuntos] = await Promise.all([
     getColecao(actor, quero ? "wanted" : "owned"),
     contarColecao(actor),
+    // Os CONJUNTOS abrem a tela: é o que separa colecionar de possuir. Ver lib/copies.ts.
+    getConjuntos(actor),
   ]);
+
+  /**
+   * Os avulsos são o que NÃO pertence a conjunto nenhum. Eles continuam na tela, sem
+   * barra e sem cobrança: inventar um conjunto de um volume só para toda obra encheria
+   * a tela de barras completas, que não dizem nada.
+   */
+  const emConjunto = new Set(conjuntos.flatMap((c) => c.volumes.map((v) => v.slug)));
+  const avulsos = itens.filter((i) => !emConjunto.has(i.slug));
 
   return (
     <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
@@ -99,6 +110,23 @@ export default async function Colecao({
         </p>
       )}
 
+      {/* ═══ OS CONJUNTOS PRIMEIRO ═══
+          A estante conta livros lidos; a coleção conta CONJUNTOS. "4 de 14" é a
+          gramática de quem coleciona, e é ela que precisa abrir a tela. */}
+      {!quero && conjuntos.length > 0 && (
+        <div className="mt-8 flex flex-col gap-5">
+          {conjuntos.map((c) => (
+            <ConjuntoCard key={c.id} c={c} />
+          ))}
+        </div>
+      )}
+
+      {!quero && conjuntos.length > 0 && avulsos.length > 0 && (
+        <h2 className="mt-10 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+          fora de conjunto
+        </h2>
+      )}
+
       {itens.length === 0 ? (
         <div className="mt-10">
           <Empty>
@@ -108,8 +136,8 @@ export default async function Colecao({
           </Empty>
         </div>
       ) : (
-        <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {itens.map((i) => (
+        <ul className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {(quero ? itens : avulsos).map((i) => (
             <li key={i.slug}>
               <Link href={`/livro/${i.slug}`} className="card group flex h-full flex-col p-5">
                 <span className="cover-lift block w-[58%] self-center">

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, CornerDownLeft, Plus } from "lucide-react";
 import { Cover } from "@/components/cover";
 import { Avatar } from "@/components/avatar";
-import { addFromSearch } from "@/app/buscar/actions";
+import { addFromSearch, abrirDaBusca } from "@/app/buscar/actions";
 import { lastBook } from "@/lib/last-book";
 import type { Hit, Autor } from "@/lib/catalog";
 
@@ -170,6 +170,42 @@ export function Command() {
     [router],
   );
 
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  ABRIR UM LIVRO. E ABRIR NÃO É GUARDAR.
+   *
+   *  Um resultado que já está no acervo tem endereço, e ir para ele é imediato.
+   *  Um que veio de fora ainda não tem ficha — e a versão antiga resolvia isso
+   *  PRATELEIRANDO o livro como "quero ler". Quem só queria olhar saía com um livro
+   *  na estante que não escolheu.
+   *
+   *  Agora a ficha é criada e a pessoa é levada para ela. Criar é do CATÁLOGO (o
+   *  livro passa a existir para quem buscar depois); prateleirar é da PESSOA, e
+   *  continua a um clique, na página do livro.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const abrir = useCallback(
+    async (hit: Hit) => {
+      if (hit.slug) {
+        router.push(`/livro/${hit.slug}`);
+        setOpen(false);
+        return;
+      }
+
+      setDone("abrindo…");
+      const slug = await abrirDaBusca(hit);
+      // Sem endereço, a ficha não nasceu: melhor a barra continuar aberta com o
+      // resultado à vista do que fechar e deixar a pessoa sem nada e sem explicação.
+      if (!slug) {
+        setDone("não consegui abrir esse livro. Tente de novo.");
+        return;
+      }
+      router.push(`/livro/${slug}`);
+      setOpen(false);
+    },
+    [router],
+  );
+
   const onKeyDown = (e: React.KeyboardEvent) => {
     const down = e.key === "ArrowDown" || (e.ctrlKey && e.key === "n");
     const up = e.key === "ArrowUp" || (e.ctrlKey && e.key === "p");
@@ -184,10 +220,12 @@ export function Command() {
       e.preventDefault();
       const livro = livros[cursor];
       const pessoa = pessoas[cursor - livros.length];
-      if (livro?.slug) router.push(`/livro/${livro.slug}`);
-      else if (livro) void shelve(livro, "want_to_read");
-      else if (pessoa) router.push(`/@${pessoa.handle}`);
-      if (livro?.slug || pessoa) setOpen(false);
+      // Enter ABRE, sempre. Prateleirar é o 1/2/3, que é uma tecla deliberada.
+      if (livro) void abrir(livro);
+      else if (pessoa) {
+        router.push(`/@${pessoa.handle}`);
+        setOpen(false);
+      }
     } else if (["1", "2", "3"].includes(e.key) && livros[cursor]) {
       e.preventDefault();
       const shelf = SHELVES.find((s) => s.key === e.key)!;
@@ -366,14 +404,7 @@ export function Command() {
                    * O autor fechava. A pessoa fechava. O livro, que é o que quase todo
                    * mundo clica, era o único que não fechava.
                    */
-                  onClick={() => {
-                    if (!h.slug) {
-                      void shelve(h, "want_to_read");
-                      return;
-                    }
-                    router.push(`/livro/${h.slug}`);
-                    setOpen(false);
-                  }}
+                  onClick={() => void abrir(h)}
                   className={[
                     "flex w-full cursor-pointer items-center gap-4 px-6 py-3 text-left transition-colors",
                     i === cursor ? "bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)]" : "",

@@ -2,7 +2,7 @@ import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users, works, editions } from "@/lib/db/schema";
-import { marcarPosse, getColecao, contarColecao, getMinhaCopia } from "@/lib/copies";
+import { marcarPosse, getColecao, contarColecao, getMinhaCopia, guardarHistoria } from "@/lib/copies";
 import { shelve } from "@/lib/library";
 
 /**
@@ -131,5 +131,51 @@ describe("a coleção é um eixo à parte da estante", () => {
       "a coleção de um vazou para outra conta: 'o que eu tenho guardado' não é " +
         "'o que eu li', e nunca foi escolha de ninguém publicar isso.",
     ).toBe(0);
+  });
+});
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  SÓ O BOTÃO PÕE O LIVRO NA COLEÇÃO.
+ *
+ *  ═══ O QUE ISTO IMPEDE DE VOLTAR ═══
+ *
+ *  Escrever "ganhei da minha irmã" criava o exemplar sozinho, com `state: 'owned'`.
+ *  Era a ÚNICA porta que existia quando o campo nasceu, e por isso foi construída
+ *  assim — mas com um botão na tela, uma porta lateral que faz a mesma coisa sem
+ *  pedir produz uma coleção que a pessoa não montou.
+ *
+ *  O dono foi direto ao ponto: *"não quero que seja pego de onde veio e sim clicando
+ *  em algum botão"*.
+ *
+ *  A nota agora se AGARRA a um exemplar que já existe. Sem exemplar, não há o que ter
+ *  história — e é por isso que a tela só oferece o campo depois do botão.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("a procedência não põe o livro na coleção", () => {
+  it("escrever a história de um livro que não é seu não cria exemplar", async () => {
+    const [w] = await db.insert(works)
+      .values({ slug: `proc-${marca}`, title: `zz proc ${marca}` })
+      .returning({ id: works.id });
+
+    await guardarHistoria({ id: leitor }, w!.id, null, "ganhei da minha irmã");
+
+    expect(
+      await getMinhaCopia({ id: leitor }, w!.id),
+      "a nota de procedência criou o exemplar sozinha: a coleção passa a ter livro " +
+        "que a pessoa nunca disse que tinha.",
+    ).toBeNull();
+  });
+
+  it("mas ela guarda a história de um exemplar que É seu", async () => {
+    const [w] = await db.insert(works)
+      .values({ slug: `proc2-${marca}`, title: `zz proc2 ${marca}` })
+      .returning({ id: works.id });
+
+    await marcarPosse({ id: leitor }, w!.id, null, "owned");
+    await guardarHistoria({ id: leitor }, w!.id, null, "sebo da Praça XI, 2019");
+
+    const copia = await getMinhaCopia({ id: leitor }, w!.id);
+    expect(copia?.acquiredNote, "a história se perdeu num exemplar que existe").toBe("sebo da Praça XI, 2019");
   });
 });

@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { BookMarked, Package } from "lucide-react";
-import { marcar } from "@/app/livro/[slug]/colecao-actions";
+import { marcar, guardarProcedencia } from "@/app/livro/[slug]/colecao-actions";
 import type { Posse } from "@/lib/copies";
+import { LIMITS } from "@/lib/limits";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -30,12 +31,14 @@ import type { Posse } from "@/lib/copies";
  * ════════════════════════════════════════════════════════════════════
  */
 export function Tenho({
-  slug, workId, editionId, posse,
+  slug, workId, editionId, posse, historia,
 }: {
   slug: string;
   workId: string;
   editionId: string | null;
   posse: Posse;
+  /** "de onde veio esse livro". Só existe para um exemplar que já é seu. */
+  historia: string | null;
 }) {
   const [atual, setAtual] = useState<Posse>(posse);
   const [pending, start] = useTransition();
@@ -81,6 +84,46 @@ export function Tenho({
       <p className="mt-3 text-[13px] leading-relaxed text-[var(--color-ink-faint)]">
         Ter não é ler: isto vale para o exemplar, e não muda a sua prateleira.
       </p>
+
+      {/* ════════════════════════════════════════════════════════════════
+          DE ONDE VEIO. Só depois do botão, e nunca antes.
+
+          Este campo morava no painel de LEITURA, e escrever nele punha o livro na
+          coleção sozinho — era a única porta que existia. Agora existe um botão, e
+          uma porta lateral que faz a mesma coisa sem pedir produz uma coleção que a
+          pessoa não montou.
+
+          Ele é sobre o EXEMPLAR: perguntar "de onde veio" sobre um livro que não é
+          seu é uma pergunta sem dono. Por isso só aparece com "tenho" marcado.
+
+          Texto livre, e nunca uma lista: ninguém ganhou um livro de "subscription_box"
+          — ganhou a caixa de janeiro do clube de filosofia, ou a irmã deu.
+          ════════════════════════════════════════════════════════════════ */}
+      {atual === "owned" && (
+        <form
+          className="mt-5 flex flex-wrap items-center gap-2 border-t border-[var(--color-rule)] pt-5"
+          action={(data: FormData) =>
+            start(async () => {
+              await guardarProcedencia(slug, workId, editionId, String(data.get("nota") ?? ""));
+            })
+          }
+        >
+          <input
+            name="nota"
+            defaultValue={historia ?? ""}
+            maxLength={LIMITS.provenance}
+            placeholder="de onde veio esse livro?"
+            className="min-w-0 flex-1 rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[14px] outline-none placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-ink)]"
+          />
+          <button
+            type="submit"
+            disabled={pending}
+            className="shrink-0 rounded-[var(--radius-control)] border border-[var(--color-rule)] px-3 py-2 text-[13px] text-[var(--color-ink-soft)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] disabled:opacity-40"
+          >
+            guardar
+          </button>
+        </form>
+      )}
     </section>
   );
 }

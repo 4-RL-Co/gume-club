@@ -2,6 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { getActor } from "@/lib/actor";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { works } from "@/lib/db/schema";
 import { LIMITS, clamp, clampRequired } from "@/lib/limits";
 import {
   findOrCreateWork, hitToWork, shelve, setProvenance,
@@ -232,4 +235,45 @@ export async function addMany(hits: Hit[], status: Status): Promise<number> {
   revalidatePath("/");
   revalidatePath("/estante");
   return n;
+}
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  ABRIR UM LIVRO DA BUSCA. E ABRIR NÃO É GUARDAR.
+ *
+ *  ═══ O BUG ═══
+ *
+ *  Clicar num resultado que JÁ estava no acervo abria a página do livro. Clicar num
+ *  que veio de fora — que o Gume ainda não tinha — **punha o livro na estante**, como
+ *  "quero ler", e nem avisava direito.
+ *
+ *  A razão era boa e o resultado era errado: sem estar no acervo, o livro não tem
+ *  página, então a única forma de "ver" era criar a ficha, e criar estava amarrado a
+ *  prateleirar. Quem só queria olhar saía com um livro na estante que não escolheu.
+ *
+ *  ═══ O CONSERTO É SEPARAR DUAS COISAS QUE NUNCA FORAM UMA ═══
+ *
+ *  Criar a ficha é do CATÁLOGO: um livro que existe passa a existir aqui, e isso é bom
+ *  para todo mundo que buscar depois. Pôr na estante é da PESSOA, e é uma escolha dela.
+ *
+ *  Esta ação faz só a primeira, e devolve o endereço para a tela navegar. A estante
+ *  continua a um clique de distância — na página do livro, que é onde ela sempre
+ *  esteve.
+ *
+ *  Note que ela ESCREVE (cria obra e edição), e por isso passa por `getActor()`: uma
+ *  escrita sem teto de uso é um formulário de spam.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export async function abrirDaBusca(hit: Hit): Promise<string | null> {
+  await getActor();
+
+  const { workId } = await findOrCreateWork(hitToWork(hit));
+
+  const [obra] = await db
+    .select({ slug: works.slug })
+    .from(works)
+    .where(eq(works.id, workId))
+    .limit(1);
+
+  return obra?.slug ?? null;
 }

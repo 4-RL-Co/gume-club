@@ -2921,3 +2921,40 @@ O dono coleciona livros, e disse a frase que faltava: *"tem livros que eu li e n
 - **A única contagem da tela é "tenho e ainda não li"**, que é a pergunta de quem coleciona. Não há placar de quantos livros você tem: isso seria medir a pessoa pela pilha, e este app se recusa a ordenar gente por esforço.
 
 **Não precisou de migration.** A tabela existia, com os quatro estados. Foram usados dois; `lent_out` e `gone` ficam para quando alguém pedir — construir tela para estado que ninguém usou ainda é inventar necessidade.
+
+---
+
+**2026-08-06: A coleção conta CONJUNTOS. É isso que separa colecionar de possuir.**
+
+A primeira versão listava livros, e o dono leu como inventário: *"queria que fosse pra colecionador mesmo, tipo edição deluxe, colecionador etc (meio vibe quem gosta de carta pokemon tcg)"*.
+
+**A diferença não está num rótulo — está no que a tela CONTA.** A estante conta livros lidos; uma lista de "coisas que eu tenho" também conta livros, e por isso lia como estoque. Uma coleção conta conjuntos: "4 de 14". Ninguém que coleciona pensa "tenho 340 cartas"; pensa **"falta uma"**.
+
+- **O que eu NÃO fiz: uma caixinha "isto é item de colecionador?".** Seria um formulário pedindo à pessoa para classificar, e este repo já tem a frase contra isso — *"um formulário fingindo ser memória"*. A pessoa põe o livro na coleção; se ele for volume de algo, a tela sabe.
+- **O conjunto é da EDIÇÃO, e nunca da série.** A frase já estava no schema desde a migration 0038: a Panini publica Berserk em duas edições, e o "volume 25" de uma não é o "volume 25" da outra. Para quem coleciona isso não é detalhe — juntar a Deluxe com a normal estraga exatamente a coisa que a pessoa cuida. A trava tem um teste só para isso.
+- **O que falta CONTINUA na tela, apagado.** Escondê-lo deixaria só o que você tem, que é inventário de novo. **A lacuna é o assunto**: o volume 7 em cinza no meio dos coloridos é a própria vontade de completar. É a gramática que o dono trouxe da referência (item bloqueado fica em preto e branco, a cor é a recompensa).
+- **Isso obriga os volumes que faltam a EXISTIREM no acervo.** Sem as fichas dos onze que faltam, "3 de 14" não teria o que desenhar. Por isso os conjuntos entram inteiros, e não só o que a pessoa marcou.
+- **O selo só aparece completo**, e é a única coisa dourada da tela. Selo pela metade é enfeite, não conquista. Mutado: fazer o selo aparecer com um volume derruba dois testes.
+- **A tela não compara ninguém com ninguém.** Não há "você é o 3º que mais completou" nem quantas pessoas têm o conjunto. Placar transforma colecionar em competição, e é o que este app recusa em toda superfície.
+- **Livro avulso não ganha barra nem cobrança.** Inventar um conjunto de um volume só para toda obra encheria a tela de barras completas, que não dizem nada.
+
+**O dado já existia e estava dormindo.** `colecoes` tem 415 conjuntos (Naruto com 72 volumes, Bleach com 74), vindos da AniList, e **nenhuma tela os lia**. Faltava ligar os livros de quem usa: `0` obras em estante de alguém tinham série ou conjunto.
+
+Foram ligados os dois casos do dono — Vagabond Definitive Edition (6 volumes) e Berserk Deluxe Edition (14) —, com os ISBN conferidos um a um na Open Library. **Nenhum ISBN foi deduzido em sequência a partir do primeiro:** numerar ISBN é uma boa forma de inventar livro que não existe.
+
+**E o resultado expôs o problema original:** o dono tem 4 volumes de Berserk Deluxe na estante e o app só sabia de 3 — porque a posse só era registrada como efeito colateral da nota "de onde veio".
+
+---
+
+**2026-08-06: Só o botão põe o livro na coleção. A procedência deixa de criar exemplar.**
+
+O dono foi direto: *"não quero que seja pego de onde veio e sim clicando em algum botão de colocar na coleção"*.
+
+Escrever "ganhei da minha irmã" fazia o livro entrar na coleção sozinho, com `state: 'owned'`. Era a **única porta que existia** quando o campo nasceu, e por isso foi construída assim. Com um botão na tela, ela virou uma porta lateral que faz a mesma coisa **sem pedir** — e produz uma coleção que a pessoa não montou.
+
+- **`insert` virou `update`.** A nota agora se agarra a um exemplar que já é seu. Sem exemplar, não há o que ter história.
+- **O campo mudou de casa junto.** Ele morava no painel de LEITURA, e "de onde veio esse livro" é sobre o EXEMPLAR. Foi para o cartão da coleção, e só aparece com "tenho" marcado: perguntar a procedência de um livro que não é seu é uma pergunta sem dono.
+- **Sem o campo mudar de lugar, o conserto seria uma armadilha.** O campo continuaria visível para todo mundo, e escrever nele passaria a não fazer nada — trocando "faz demais em silêncio" por "não faz nada em silêncio", que é pior.
+- **Duas travas, e as duas mutadas:** a nota não cria exemplar; e ela guarda a história de um exemplar que existe. A segunda importa tanto quanto a primeira — um conserto que só proíbe pode ter quebrado o caso legítimo, e ninguém notaria.
+
+**E a trava dos limites do repo pegou um descuido meu:** escrevi `maxLength={140}` cravado no campo novo, e `nenhum teto é um número digitado à mão` reprovou. Passou a usar `LIMITS.provenance`. É a terceira vez nesta sessão que um teste estrutural vê o que eu não vi.
