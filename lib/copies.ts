@@ -295,6 +295,8 @@ export type Conjunto = {
   id: string;
   titulo: string;
   publisher: string | null;
+  /** O símbolo da obra, POR REFERÊNCIA. Ver a migration 0060 e lib/imagens.ts. */
+  emblema: string | null;
   total: number;
   tenho: number;
   /** Completo: todos os volumes conhecidos são seus. É o que ganha selo. */
@@ -325,7 +327,7 @@ export async function getConjuntos(
   const meu = dono === actor?.id;
 
   const rows = await db.execute<{
-    id: string; titulo: string; publisher: string | null; total: number | null;
+    id: string; titulo: string; publisher: string | null; total: number | null; emblema: string | null;
     slug: string; title: string; volume: string | null; cover_url: string | null;
     tenho: boolean; quero: boolean;
   }>(sql`
@@ -336,7 +338,7 @@ export async function getConjuntos(
        where oc.user_id = ${dono}::uuid and w.colecao_id is not null
          and (${meu} or oc.visibility = 'public')
     )
-    select c.id, c.title as titulo, c.publisher, c.total_volumes as total,
+    select c.id, c.title as titulo, c.publisher, c.total_volumes as total, c.emblema_url as emblema,
            w.slug, w.title, w.volume::text as volume,
            (select e.cover_url from editions e
              where e.work_id = w.id and e.cover_url is not null
@@ -355,7 +357,7 @@ export async function getConjuntos(
     let c = porConjunto.get(r.id);
     if (!c) {
       c = {
-        id: r.id, titulo: r.titulo, publisher: r.publisher,
+        id: r.id, titulo: r.titulo, publisher: r.publisher, emblema: r.emblema,
         total: r.total ?? 0, tenho: 0, completo: false, volumes: [],
       };
       porConjunto.set(r.id, c);

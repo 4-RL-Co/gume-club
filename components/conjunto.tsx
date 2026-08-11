@@ -1,5 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Trophy } from "lucide-react";
+import { origemAceita } from "@/lib/imagens";
 import { Cover } from "@/components/cover";
 import type { Conjunto } from "@/lib/copies";
 
@@ -38,13 +40,48 @@ export function ConjuntoCard({ c }: { c: Conjunto }) {
          e a ÚNICA cor da tela. Quem completou merece que a moldura saiba. */
       style={c.completo ? { borderColor: "color-mix(in srgb, #d9a520 45%, transparent)" } : undefined}
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <div className="min-w-0">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-4">
+          {/* ════════════════════════════════════════════════════════════
+              O EMBLEMA DA OBRA, e ele é por REFERÊNCIA: o app guarda o endereço e
+              nunca uma cópia do arquivo, igual às capas. Ver lib/imagens.ts.
+
+              A moldura vem do material da casa (superfície de nível 2), e o emblema
+              do conjunto COMPLETO ganha o anel dourado — a mesma cor do selo, e a
+              única da tela. É o desenho da referência que o dono trouxe: o item
+              conquistado tem moldura, o resto não.
+              ════════════════════════════════════════════════════════════ */}
+          {c.emblema && origemAceita(c.emblema) && (
+            <span
+              className="surface-2 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full sm:h-16 sm:w-16"
+              style={c.completo
+                ? { boxShadow: "0 0 0 2px color-mix(in srgb, #d9a520 70%, transparent)" }
+                : undefined}
+              aria-hidden
+            >
+              <Image
+                src={c.emblema}
+                alt=""
+                width={64}
+                height={64}
+                sizes="64px"
+                className={[
+                  "h-10 w-10 object-contain transition-all sm:h-12 sm:w-12",
+                  // Incompleto fica apagado, como os volumes que faltam: o emblema
+                  // acende junto com a coleção.
+                  c.completo ? "" : "opacity-55 grayscale",
+                ].join(" ")}
+              />
+            </span>
+          )}
+
+          <div className="min-w-0">
           <h2 className="voice text-[22px] leading-snug text-[var(--color-ink)] sm:text-[26px]">{c.titulo}</h2>
           <p className="mt-1 text-[13px] text-[var(--color-ink-faint)]">
             <span className="tabular">{c.tenho} de {c.total}</span>
             {c.publisher ? ` · ${c.publisher}` : ""}
           </p>
+          </div>
         </div>
 
         {/* A única coisa dourada da tela, e só quando está completo. */}

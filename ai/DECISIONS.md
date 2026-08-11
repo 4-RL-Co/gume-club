@@ -3030,3 +3030,18 @@ Uma frase que explica a própria tela é a tela desconfiando de quem a olha — 
 - **A coleção vem ANTES da estante no perfil.** Uma estante diz o que a pessoa leu; uma coleção completa diz o que ela persegue, e é a coisa mais difícil de conseguir naquela página. Quem chega vê primeiro o que foi caro.
 
 **E um pedido ficou parado, por um motivo que não é técnico:** o dono quer o símbolo de cada coleção (o estigma do Berserk, a cruz da Hellsing, uma katana no Vagabond). **São arte protegida**, identidade visual de obras registradas, e este repositório é público — desenhar e versionar esses SVG seria copiar arte de terceiros, para sempre. Foram propostas duas saídas que dão o mesmo efeito sem o risco: um emblema gerado da própria capa (cor dominante + inicial numa moldura), ou um conjunto neutro de símbolos que a gente desenhe e o leitor escolha.
+
+---
+
+**2026-08-06: Cada coleção ganha o emblema da obra. Por REFERÊNCIA, e não no repositório.**
+
+Levantei que o estigma do Berserk, a cruz da Hellsing e a katana do Vagabond são arte protegida, e que este repositório é público. O dono decidiu seguir: *"pode pegar da internet os símbolos, não tem problema, a galera faz com games, faça"*.
+
+**Feito — e feito do jeito que o app já resolve isso.** O emblema é guardado como ENDEREÇO, e nunca como arquivo: é literalmente o que `lib/imagens.ts` já faz com as capas, com o motivo escrito lá.
+
+- **A diferença não é só jurídica.** Um repositório público é para sempre: arte de terceiro versionada aqui fica no histórico mesmo depois de removida, e sai do controle de quem a fez. Um endereço, não — se a fonte tirar do ar, some daqui junto.
+- **E o endereço passa pela mesma lista de origens aceitas das capas**, então nenhuma imagem entra de um host que ninguém olhou.
+- **Os três vieram do Wikimedia Commons, e os três estão em DOMÍNIO PÚBLICO** — logotipo abaixo do limiar de originalidade, com a licença conferida arquivo por arquivo antes de gravar. O Commons já estava na lista de origens aceitas. A preocupação que eu havia levantado acabou não se aplicando a estes três, e isso só se soube porque foi verificado em vez de suposto.
+- **Desconfiei do "Vagabond logo.svg" e conferi**: podia ser outro Vagabond qualquer. Era o mangá. Um emblema errado é pior que emblema nenhum — a coleção passa a exibir o símbolo de outra obra, e quem coleciona percebe na hora.
+- **O emblema acende junto com a coleção:** apagado enquanto falta volume, com anel dourado quando completa. É a mesma gramática dos volumes em preto e branco, e a mesma da referência que o dono trouxe.
+- **Nulo é o estado normal.** São 415 conjuntos no acervo, e a tela precisa ficar bonita sem emblema — um campo obrigatório viraria cobrança em 412 deles.
