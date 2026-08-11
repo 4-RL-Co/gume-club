@@ -3045,3 +3045,27 @@ Levantei que o estigma do Berserk, a cruz da Hellsing e a katana do Vagabond sã
 - **Desconfiei do "Vagabond logo.svg" e conferi**: podia ser outro Vagabond qualquer. Era o mangá. Um emblema errado é pior que emblema nenhum — a coleção passa a exibir o símbolo de outra obra, e quem coleciona percebe na hora.
 - **O emblema acende junto com a coleção:** apagado enquanto falta volume, com anel dourado quando completa. É a mesma gramática dos volumes em preto e branco, e a mesma da referência que o dono trouxe.
 - **Nulo é o estado normal.** São 415 conjuntos no acervo, e a tela precisa ficar bonita sem emblema — um campo obrigatório viraria cobrança em 412 deles.
+
+---
+
+**2026-08-06: Os emblemas, e o erro de substring que foi para produção.**
+
+O emblema passou a poder ser posto por qualquer leitor (vai para o log, com nome, reversível — como corrigir ficha), e uma varredura tentou preencher os 415 conjuntos do acervo a partir do Wikimedia Commons.
+
+**A primeira varredura gravou três emblemas ERRADOS em produção:**
+
+| conjunto | recebeu | o que é |
+|---|---|---|
+| Bleach | `Bleacher-report-logo.png` | um site de esportes |
+| Black Jack | `Young Black Jack logo` | um spin-off |
+| Dragon Ball | `Dragon Ball Z Logo` | a sequência |
+
+A regra exigia que o nome do arquivo **contivesse** o nome da obra. "bleach" está dentro de "bleacher". É o erro de substring mais clássico que existe — **e eu tinha escrito, no commit anterior, que "emblema errado é pior que emblema nenhum"** antes de cometê-lo.
+
+A regra passou a exigir IGUALDADE: o nome do arquivo, tirando "logo", a extensão e os separadores, tem que ser idêntico ao da obra. Nada de sobra à esquerda ("Young") nem à direita ("Z", "er Report"). Refeita, ela achou 13 emblemas, todos conferidos.
+
+- **Só licença livre entra**, conferida arquivo por arquivo e nunca presumida por estar no Commons.
+- **A taxa de acerto é baixa de propósito** (13 de 120). Logotipo de obra raramente está em domínio público, e o que não vem automático fica para o mutirão — que é o que este app faz melhor.
+- **O endereço passa por `origemAceita` na ESCRITA**, e não na tela: uma ação de servidor recebe o que o cliente mandar, e sem isso qualquer um apontaria a imagem para um host que ninguém olhou.
+
+**E fica registrado que a coleção NÃO é de mangá.** Nada no mecanismo é específico: criar "Coleção Companhia de Bolso" ou "Harry Potter capa dura" funciona pelo mesmo botão. Os 415 conjuntos são de mangá porque a AniList foi a única fonte importada — é limitação do DADO, e não da funcionalidade.
