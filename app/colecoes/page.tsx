@@ -26,20 +26,20 @@ export default async function Colecoes() {
 
   return (
     <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
-      <ScreenHeader title="Coleções" meta={["a mais nova primeiro", "sem algoritmo"]} />
+      <ScreenHeader title="Listas" meta={["a mais nova primeiro", "sem algoritmo"]} />
 
       <div className="mt-8">
         <CuradoriaCard />
       </div>
 
       <h2 className="mt-10 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-        as coleções de quem lê por aqui
+        as listas de quem lê por aqui
       </h2>
 
       {listas.length === 0 ? (
         <div className="mt-6">
           <Empty>
-            Ninguém abriu uma coleção ainda. Monte a sua num livro qualquer, e ela aparece aqui.
+            Ninguém abriu uma lista ainda. Monte a sua num livro qualquer, e ela aparece aqui.
           </Empty>
         </div>
       ) : (

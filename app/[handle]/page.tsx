@@ -348,7 +348,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
       {(shelves.length > 0 || perfilDaCasa) && (
         <section className="mt-5">
           <h2 className={EYEBROW}>
-            {mine ? "minhas coleções" : `coleções que ${primeiroNome} montou`}
+            {mine ? "minhas listas" : `listas que ${primeiroNome} montou`}
           </h2>
           {/* A curadoria editorial, FIXA no topo das coleções da casa. */}
           {perfilDaCasa && (
@@ -370,7 +370,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
       {(guardadas.length > 0 || curadorias.length > 0) && (
         <section className="mt-5">
           <h2 className={EYEBROW}>
-            {mine ? "coleções que eu guardei" : `coleções que ${primeiroNome} guardou`}
+            {mine ? "listas que eu guardei" : `listas que ${primeiroNome} guardou`}
           </h2>
 
           {/* A curadoria da casa vem PRIMEIRO e como uma linha, e não como card: ela

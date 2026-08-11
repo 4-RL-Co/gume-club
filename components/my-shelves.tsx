@@ -22,11 +22,11 @@ export function MyShelves({ shelves }: { shelves: Shelf[] }) {
     <>
       <div className="mt-8 mb-2.5 flex items-center justify-between px-2">
         <h2 className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
-          minhas coleções
+          minhas listas
         </h2>
         <button
           onClick={() => setAdding(!adding)}
-          aria-label="criar estante"
+          aria-label="criar lista"
           className="text-[var(--color-ink-faint)] transition-colors hover:text-[var(--color-ink)]"
         >
           <Plus size={14} strokeWidth={1.5} />
@@ -49,7 +49,7 @@ export function MyShelves({ shelves }: { shelves: Shelf[] }) {
             autoFocus
             maxLength={LIMITS.shelfName}
             disabled={pending}
-            placeholder="nome da estante"
+            placeholder="nome da lista"
             className="w-full rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-2 py-1.5 text-[13px] outline-none placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-ink)]"
           />
         </form>

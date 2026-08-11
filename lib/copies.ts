@@ -291,12 +291,34 @@ export type VolumeDoConjunto = {
   quero: boolean;
 };
 
+function escolherImagem({
+  emblema,
+  authorImageUrl,
+  coverUrl,
+  title,
+}: {
+  emblema: string | null;
+  authorImageUrl: string | null;
+  coverUrl: string | null;
+  title: string;
+}): string | null {
+  if (emblema) return emblema;
+
+  const titulo = title.toLowerCase();
+  const pareceMangá = /manga|manhwa|manhua|comic|hq|graphic novel|tomo|volume|vol\.|v\./.test(titulo);
+
+  if (!pareceMangá && authorImageUrl) return authorImageUrl;
+  return coverUrl;
+}
+
 export type Conjunto = {
   id: string;
   titulo: string;
   publisher: string | null;
   /** O símbolo da obra, POR REFERÊNCIA. Ver a migration 0060 e lib/imagens.ts. */
   emblema: string | null;
+  /** A imagem de destaque escolhida para mostrar no card. */
+  imagem: string | null;
   total: number;
   tenho: number;
   /** Completo: todos os volumes conhecidos são seus. É o que ganha selo. */
@@ -328,7 +350,7 @@ export async function getConjuntos(
 
   const rows = await db.execute<{
     id: string; titulo: string; publisher: string | null; total: number | null; emblema: string | null;
-    slug: string; title: string; volume: string | null; cover_url: string | null;
+    author_image_url: string | null; slug: string; title: string; volume: string | null; cover_url: string | null;
     tenho: boolean; quero: boolean;
   }>(sql`
     with meus as (
@@ -343,11 +365,13 @@ export async function getConjuntos(
            (select e.cover_url from editions e
              where e.work_id = w.id and e.cover_url is not null
              order by e.created_at asc limit 1) as cover_url,
+           a.image_url as author_image_url,
            coalesce(oc.state = 'owned', false)  as tenho,
            coalesce(oc.state = 'wanted', false) as quero
       from colecoes c
       join meus m on m.colecao_id = c.id
       join works w on w.colecao_id = c.id
+      left join authors a on a.id = w.author_id
       left join owned_copies oc on oc.work_id = w.id and oc.user_id = ${dono}::uuid
                                 and (${meu} or oc.visibility = 'public')
      order by c.title asc, w.volume asc nulls last`);
@@ -358,6 +382,12 @@ export async function getConjuntos(
     if (!c) {
       c = {
         id: r.id, titulo: r.titulo, publisher: r.publisher, emblema: r.emblema,
+        imagem: escolherImagem({
+          emblema: r.emblema,
+          authorImageUrl: r.author_image_url,
+          coverUrl: r.cover_url,
+          title: r.titulo,
+        }),
         total: r.total ?? 0, tenho: 0, completo: false, volumes: [],
       };
       porConjunto.set(r.id, c);

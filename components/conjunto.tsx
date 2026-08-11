@@ -51,7 +51,7 @@ export function ConjuntoCard({ c }: { c: Conjunto }) {
               única da tela. É o desenho da referência que o dono trouxe: o item
               conquistado tem moldura, o resto não.
               ════════════════════════════════════════════════════════════ */}
-          {c.emblema && origemAceita(c.emblema) && (
+          {((c.imagem ?? c.emblema) && origemAceita(c.imagem ?? c.emblema ?? "")) && (
             <span
               className="surface-2 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full sm:h-16 sm:w-16"
               style={c.completo
@@ -60,7 +60,7 @@ export function ConjuntoCard({ c }: { c: Conjunto }) {
               aria-hidden
             >
               <Image
-                src={c.emblema}
+                src={c.imagem ?? c.emblema ?? ""}
                 alt=""
                 width={64}
                 height={64}

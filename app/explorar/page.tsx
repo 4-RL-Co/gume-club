@@ -35,7 +35,7 @@ export const dynamic = "force-dynamic";
 const VITRINES = [
   { key: "tudo", label: "Tudo" },
   { key: "pessoas", label: "Pessoas" },
-  { key: "colecoes", label: "Coleções" },
+  { key: "colecoes", label: "Listas" },
   { key: "autores", label: "Autores" },
   { key: "generos", label: "Gêneros" },
   { key: "editoras", label: "Editoras" },
