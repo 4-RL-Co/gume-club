@@ -1,0 +1,22 @@
+-- ════════════════════════════════════════════════════════════════════
+--  O EMBLEMA DA COLEÇÃO. O estigma, a cruz, a katana.
+--
+--  ═══ POR REFERÊNCIA, E NUNCA UMA CÓPIA ═══
+--
+--  O dono pediu o símbolo de cada obra, e autorizou buscar na internet. Isto guarda o
+--  ENDEREÇO da imagem, e não o arquivo — exatamente o que `lib/imagens.ts` já faz com
+--  as capas, e pela mesma razão escrita lá.
+--
+--  A diferença não é jurídica só: um repositório público é para sempre. Arte de
+--  terceiro versionada aqui fica no histórico mesmo depois de removida, e some do
+--  controle de quem a fez. Um endereço, não: se a fonte tirar do ar, some daqui junto.
+--
+--  E o endereço passa pela mesma lista de origens aceitas das capas, então nenhuma
+--  imagem entra de um host que ninguém olhou.
+--
+--  ═══ NULO É O ESTADO NORMAL ═══
+--
+--  A maioria das coleções não vai ter emblema, e a tela precisa ficar bonita sem ele.
+--  Um emblema obrigatório viraria um campo cobrando preenchimento em 415 conjuntos.
+-- ════════════════════════════════════════════════════════════════════
+ALTER TABLE "colecoes" ADD COLUMN IF NOT EXISTS "emblema_url" text;

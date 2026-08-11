@@ -295,6 +295,8 @@ export type Conjunto = {
   id: string;
   titulo: string;
   publisher: string | null;
+  /** O símbolo da obra, POR REFERÊNCIA. Ver a migration 0060 e lib/imagens.ts. */
+  emblema: string | null;
   total: number;
   tenho: number;
   /** Completo: todos os volumes conhecidos são seus. É o que ganha selo. */
@@ -308,11 +310,24 @@ export type Conjunto = {
  * Um conjunto entra na lista se você tem (ou quer) ao menos um volume dele: a tela é
  * da sua coleção, e não um catálogo de tudo que existe.
  */
-export async function getConjuntos(actor: { id: string } | null): Promise<Conjunto[]> {
-  if (!actor) return [];
+export async function getConjuntos(
+  actor: { id: string } | null,
+  /**
+   * DE QUEM é a coleção. Sem isto, é a de quem está olhando.
+   *
+   * Quando é de outra pessoa, só os exemplares PÚBLICOS entram — e é agora que a
+   * coluna `visibility` passa a significar alguma coisa. Ela existia com `public` no
+   * padrão e nenhuma consulta a lia; publicar sem filtrar seria transformar um padrão
+   * de coluna em decisão de quem nunca foi perguntado.
+   */
+  donoId?: string,
+): Promise<Conjunto[]> {
+  const dono = donoId ?? actor?.id;
+  if (!dono) return [];
+  const meu = dono === actor?.id;
 
   const rows = await db.execute<{
-    id: string; titulo: string; publisher: string | null; total: number | null;
+    id: string; titulo: string; publisher: string | null; total: number | null; emblema: string | null;
     slug: string; title: string; volume: string | null; cover_url: string | null;
     tenho: boolean; quero: boolean;
   }>(sql`
@@ -320,9 +335,10 @@ export async function getConjuntos(actor: { id: string } | null): Promise<Conjun
       select distinct w.colecao_id
         from owned_copies oc
         join works w on w.id = oc.work_id
-       where oc.user_id = ${actor.id}::uuid and w.colecao_id is not null
+       where oc.user_id = ${dono}::uuid and w.colecao_id is not null
+         and (${meu} or oc.visibility = 'public')
     )
-    select c.id, c.title as titulo, c.publisher, c.total_volumes as total,
+    select c.id, c.title as titulo, c.publisher, c.total_volumes as total, c.emblema_url as emblema,
            w.slug, w.title, w.volume::text as volume,
            (select e.cover_url from editions e
              where e.work_id = w.id and e.cover_url is not null
@@ -332,7 +348,8 @@ export async function getConjuntos(actor: { id: string } | null): Promise<Conjun
       from colecoes c
       join meus m on m.colecao_id = c.id
       join works w on w.colecao_id = c.id
-      left join owned_copies oc on oc.work_id = w.id and oc.user_id = ${actor.id}::uuid
+      left join owned_copies oc on oc.work_id = w.id and oc.user_id = ${dono}::uuid
+                                and (${meu} or oc.visibility = 'public')
      order by c.title asc, w.volume asc nulls last`);
 
   const porConjunto = new Map<string, Conjunto>();
@@ -340,7 +357,7 @@ export async function getConjuntos(actor: { id: string } | null): Promise<Conjun
     let c = porConjunto.get(r.id);
     if (!c) {
       c = {
-        id: r.id, titulo: r.titulo, publisher: r.publisher,
+        id: r.id, titulo: r.titulo, publisher: r.publisher, emblema: r.emblema,
         total: r.total ?? 0, tenho: 0, completo: false, volumes: [],
       };
       porConjunto.set(r.id, c);

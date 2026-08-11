@@ -85,10 +85,6 @@ export function Tenho({
         {botao("owned", Package, "você tem", "tenho")}
         {botao("wanted", BookMarked, "você quer", "quero ter")}
       </div>
-      <p className="mt-3 text-[13px] leading-relaxed text-[var(--color-ink-faint)]">
-        Ter não é ler: isto vale para o exemplar, e não muda a sua prateleira.
-      </p>
-
       {/* O CONJUNTO é catálogo, e não preferência: "Hellsing Deluxe tem 3 volumes"
           vale para todo mundo, e por isso a mudança vai para o log com nome e é
           reversível. Ver lib/conjuntos.ts. */}

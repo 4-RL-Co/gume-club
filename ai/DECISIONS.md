@@ -3012,3 +3012,60 @@ O dono pediu *"uma tela um pouco glamurosa"*, com as edições pendentes em pret
 - **O conjunto completo ganha um fio dourado na borda**, além do selo. É a única cor da tela.
 
 **E o primeiro conjunto completo é real:** Hellsing Deluxe Edition, 3 de 3.
+
+---
+
+**2026-08-06: A coleção aparece no perfil, e a tela para de se explicar.**
+
+Dois recados do dono, e o primeiro é sobre a minha escrita.
+
+**1. "Ter não é ler: isto é sobre o exemplar" saiu da tela.** Ele cortou com a razão certa: *"pra quê ficar sempre descrevendo assim? a pessoa sabe que isso é coleção"*.
+
+Uma frase que explica a própria tela é a tela desconfiando de quem a olha — e num lugar que existe para dar orgulho, isso soa a manual. **O erro é recorrente meu:** legendar o óbvio, e chamar isso de clareza. O que ficou foi o FATO ("uma coleção completa"), que informa sem ensinar.
+
+**2. A coleção passou a aparecer no perfil**, e o dono chamou isso de "a graça". Ele está certo, e isso **reverte uma decisão que eu tinha tomado sozinho**: eu fiz a coleção privada, argumentando que "o que eu tenho guardado em casa" não é "o que eu li". O argumento continua verdadeiro; ele só não é o único. Colecionar é para mostrar, e uma coleção que só o dono vê é um armário trancado.
+
+- **A coluna `visibility` finalmente significa alguma coisa.** Ela existia com `public` no padrão e **nenhuma consulta a lia**. Publicar sem filtrar seria transformar um padrão de coluna na decisão de quem nunca foi perguntado. Agora quem olha o próprio perfil vê tudo; quem visita vê só o público. Mutado: tirar o filtro derruba o teste.
+- **Fica registrado que as 27 posses que já existem, de 5 pessoas, herdaram esse padrão** — ninguém escolheu publicá-las, e o comentário do código dizia o contrário. Elas continuam públicas porque a coluna diz isso; se isso incomodar, a volta é um `update` e um botão.
+- **A coleção vem ANTES da estante no perfil.** Uma estante diz o que a pessoa leu; uma coleção completa diz o que ela persegue, e é a coisa mais difícil de conseguir naquela página. Quem chega vê primeiro o que foi caro.
+
+**E um pedido ficou parado, por um motivo que não é técnico:** o dono quer o símbolo de cada coleção (o estigma do Berserk, a cruz da Hellsing, uma katana no Vagabond). **São arte protegida**, identidade visual de obras registradas, e este repositório é público — desenhar e versionar esses SVG seria copiar arte de terceiros, para sempre. Foram propostas duas saídas que dão o mesmo efeito sem o risco: um emblema gerado da própria capa (cor dominante + inicial numa moldura), ou um conjunto neutro de símbolos que a gente desenhe e o leitor escolha.
+
+---
+
+**2026-08-06: Cada coleção ganha o emblema da obra. Por REFERÊNCIA, e não no repositório.**
+
+Levantei que o estigma do Berserk, a cruz da Hellsing e a katana do Vagabond são arte protegida, e que este repositório é público. O dono decidiu seguir: *"pode pegar da internet os símbolos, não tem problema, a galera faz com games, faça"*.
+
+**Feito — e feito do jeito que o app já resolve isso.** O emblema é guardado como ENDEREÇO, e nunca como arquivo: é literalmente o que `lib/imagens.ts` já faz com as capas, com o motivo escrito lá.
+
+- **A diferença não é só jurídica.** Um repositório público é para sempre: arte de terceiro versionada aqui fica no histórico mesmo depois de removida, e sai do controle de quem a fez. Um endereço, não — se a fonte tirar do ar, some daqui junto.
+- **E o endereço passa pela mesma lista de origens aceitas das capas**, então nenhuma imagem entra de um host que ninguém olhou.
+- **Os três vieram do Wikimedia Commons, e os três estão em DOMÍNIO PÚBLICO** — logotipo abaixo do limiar de originalidade, com a licença conferida arquivo por arquivo antes de gravar. O Commons já estava na lista de origens aceitas. A preocupação que eu havia levantado acabou não se aplicando a estes três, e isso só se soube porque foi verificado em vez de suposto.
+- **Desconfiei do "Vagabond logo.svg" e conferi**: podia ser outro Vagabond qualquer. Era o mangá. Um emblema errado é pior que emblema nenhum — a coleção passa a exibir o símbolo de outra obra, e quem coleciona percebe na hora.
+- **O emblema acende junto com a coleção:** apagado enquanto falta volume, com anel dourado quando completa. É a mesma gramática dos volumes em preto e branco, e a mesma da referência que o dono trouxe.
+- **Nulo é o estado normal.** São 415 conjuntos no acervo, e a tela precisa ficar bonita sem emblema — um campo obrigatório viraria cobrança em 412 deles.
+
+---
+
+**2026-08-06: Os emblemas, e o erro de substring que foi para produção.**
+
+O emblema passou a poder ser posto por qualquer leitor (vai para o log, com nome, reversível — como corrigir ficha), e uma varredura tentou preencher os 415 conjuntos do acervo a partir do Wikimedia Commons.
+
+**A primeira varredura gravou três emblemas ERRADOS em produção:**
+
+| conjunto | recebeu | o que é |
+|---|---|---|
+| Bleach | `Bleacher-report-logo.png` | um site de esportes |
+| Black Jack | `Young Black Jack logo` | um spin-off |
+| Dragon Ball | `Dragon Ball Z Logo` | a sequência |
+
+A regra exigia que o nome do arquivo **contivesse** o nome da obra. "bleach" está dentro de "bleacher". É o erro de substring mais clássico que existe — **e eu tinha escrito, no commit anterior, que "emblema errado é pior que emblema nenhum"** antes de cometê-lo.
+
+A regra passou a exigir IGUALDADE: o nome do arquivo, tirando "logo", a extensão e os separadores, tem que ser idêntico ao da obra. Nada de sobra à esquerda ("Young") nem à direita ("Z", "er Report"). Refeita, ela achou 13 emblemas, todos conferidos.
+
+- **Só licença livre entra**, conferida arquivo por arquivo e nunca presumida por estar no Commons.
+- **A taxa de acerto é baixa de propósito** (13 de 120). Logotipo de obra raramente está em domínio público, e o que não vem automático fica para o mutirão — que é o que este app faz melhor.
+- **O endereço passa por `origemAceita` na ESCRITA**, e não na tela: uma ação de servidor recebe o que o cliente mandar, e sem isso qualquer um apontaria a imagem para um host que ninguém olhou.
+
+**E fica registrado que a coleção NÃO é de mangá.** Nada no mecanismo é específico: criar "Coleção Companhia de Bolso" ou "Harry Potter capa dura" funciona pelo mesmo botão. Os 415 conjuntos são de mangá porque a AniList foi a única fonte importada — é limitação do DADO, e não da funcionalidade.

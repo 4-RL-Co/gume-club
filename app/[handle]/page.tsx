@@ -19,6 +19,8 @@ import { BadgesExplicadas } from "@/components/badges";
 import { getListasDe, getListasGuardadas } from "@/lib/listas";
 import { CuradoriaCard } from "@/components/curadoria-card";
 import { getCuradoriasGuardadas } from "@/lib/curadoria-guardada";
+import { getConjuntos } from "@/lib/copies";
+import { ConjuntoCard } from "@/components/conjunto";
 import { souIdealizador } from "@/lib/authz";
 import { ListaGrid } from "@/components/lista-card";
 import { getResenhasDe } from "@/lib/explore";
@@ -103,7 +105,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
   const viewer = await getViewer();
   const mine = viewer?.id === profile.id;
 
-  const [books, counts, following, badges, shelves, guardadas, resenhas, curadorias] = await Promise.all([
+  const [books, counts, following, badges, shelves, guardadas, resenhas, curadorias, conjuntos] = await Promise.all([
     getShelf(viewer, profile.id, { filter: "tudo", sort: "adicionado" }),
     getShelfCounts(viewer, profile.id),
     viewer && !mine ? isFollowing(viewer.id, profile.id) : Promise.resolve(false),
@@ -120,6 +122,14 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
     // E a curadoria da casa que ela guardou. Ela não é uma coleção (o Top 100 é
     // calculado a cada visita), então vem de outra tabela. Ver lib/curadoria-guardada.ts.
     getCuradoriasGuardadas(profile.id),
+    /**
+     * A COLEÇÃO DELA. O dono chamou de "a graça": colecionar é para mostrar, e uma
+     * coleção que só o dono vê é um armário trancado.
+     *
+     * Só os exemplares públicos saem daqui quando o perfil é de outra pessoa — a
+     * consulta é quem decide, e não a tela. Ver lib/copies.ts.
+     */
+    getConjuntos(viewer, profile.id),
   ]);
 
   // A HONRA. Uma escada só: livros, HQs e cada volume de mangá contam juntos. Ver
@@ -249,6 +259,24 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
       </div>
 
       {invisivel && <ConfirmeSeuEmail faltam={LIVROS_QUE_PROVAM - livrosQueProvam} />}
+
+      {/* ═══ A COLEÇÃO, LOGO ABAIXO DO NOME ═══
+
+          Ela vem ANTES da estante de propósito. Uma estante diz o que a pessoa leu;
+          uma coleção completa diz o que ela persegue, e é a coisa mais difícil de
+          conseguir que existe neste perfil. Quem chega vê primeiro o que foi caro. */}
+      {conjuntos.length > 0 && (
+        <section className="mt-5">
+          <h2 className={EYEBROW}>
+            {mine ? "a minha coleção" : `a coleção de ${primeiroNome}`}
+          </h2>
+          <div className="mt-4 flex flex-col gap-5">
+            {conjuntos.map((c) => (
+              <ConjuntoCard key={c.id} c={c} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* No começo do perfil, logo abaixo do nome: a vitrine dos "adorei". */}
       {adorou.length > 0 && (

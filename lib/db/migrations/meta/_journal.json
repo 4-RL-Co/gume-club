@@ -421,6 +421,13 @@
       "when": 1784700817012,
       "tag": "0059_quem_trouxe_o_livro",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1784700817013,
+      "tag": "0060_o_emblema_da_colecao",
+      "breakpoints": true
     }
   ]
 }

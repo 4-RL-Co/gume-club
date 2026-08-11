@@ -30,6 +30,7 @@ import { ligarAoConjunto, soltarDoConjunto, buscarConjuntos } from "@/lib/conjun
 
 const marca = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 let leitor: string;
+let outroQualquer: string;
 let serieId: string;
 let deluxe: string;
 let normal: string;
@@ -40,6 +41,11 @@ beforeAll(async () => {
     .values({ handle: `cj-${marca}`, email: `cj-${marca}@cj.test` })
     .returning({ id: users.id });
   leitor = u!.id;
+
+  const [o] = await db.insert(users)
+    .values({ handle: `cj-fora-${marca}`, email: `cj-fora-${marca}@cj.test` })
+    .returning({ id: users.id });
+  outroQualquer = o!.id;
 
   const [s] = await db.execute<{ id: string }>(sql`
     insert into series (title, slug, kind, total_volumes)
@@ -68,7 +74,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await db.execute(sql`delete from users where id = ${leitor}::uuid`);
+  for (const id of [leitor, outroQualquer]) await db.execute(sql`delete from users where id = ${id}::uuid`);
   await db.execute(sql`delete from works where slug like ${`cj-%-${marca}`}`);
   await db.execute(sql`delete from colecoes where slug like ${`%-${marca}`}`);
   await db.execute(sql`delete from series where slug = ${`zz-serie-${marca}`}`);
@@ -179,5 +185,51 @@ describe("montar um conjunto de edição", () => {
     const [obra] = await db.execute<{ colecao_id: string | null }>(sql`
       select colecao_id from works where id = ${w!.id}::uuid`);
     expect(obra?.colecao_id, "soltar não soltou").toBeNull();
+  });
+});
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  A COLEÇÃO NO PERFIL. Colecionar é para mostrar — mas não sem escolha.
+ *
+ *  O dono chamou de "a graça": uma coleção que só o dono vê é um armário trancado.
+ *
+ *  ═══ E A COLUNA `visibility` PASSA A SIGNIFICAR ALGUMA COISA ═══
+ *
+ *  Ela existia com `public` no padrão e **nenhuma consulta a lia**. Publicar sem
+ *  filtrar seria transformar um padrão de coluna na decisão de quem nunca foi
+ *  perguntado — e "o que eu tenho guardado em casa" não é "o que eu li".
+ *
+ *  Agora quem olha o próprio perfil vê tudo; quem olha o de outra pessoa vê só o que
+ *  ela deixou público.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("a coleção no perfil de outra pessoa", () => {
+  it("o exemplar privado não sai para quem visita", async () => {
+    const [w] = await db.execute<{ id: string }>(sql`
+      select id from works where slug = ${`cj-deluxe-1-${marca}`}`);
+
+    await db.execute(sql`
+      update owned_copies set visibility = 'private'
+       where user_id = ${leitor}::uuid and work_id = ${w!.id}::uuid`);
+
+    // Um visitante qualquer, olhando a coleção do leitor.
+    const deFora = await getConjuntos({ id: outroQualquer }, leitor);
+    const deluxe = deFora.find((c) => c.titulo.startsWith("deluxe"));
+    const vol1 = deluxe?.volumes.find((v) => v.slug === `cj-deluxe-1-${marca}`);
+
+    expect(
+      vol1?.tenho,
+      "um exemplar privado apareceu como 'tem' para um visitante: a coluna de " +
+        "visibilidade voltou a ser enfeite, e o app publica o que ninguém escolheu.",
+    ).toBe(false);
+  });
+
+  it("mas o dono continua vendo o próprio exemplar privado", async () => {
+    const meus = await getConjuntos({ id: leitor });
+    const deluxe = meus.find((c) => c.titulo.startsWith("deluxe"));
+    const vol1 = deluxe?.volumes.find((v) => v.slug === `cj-deluxe-1-${marca}`);
+
+    expect(vol1?.tenho, "o dono perdeu de vista o próprio livro").toBe(true);
   });
 });

@@ -131,13 +131,20 @@ export default async function Colecao({
         <h1 className="voice mt-3 max-w-3xl text-[40px] leading-[1.04] tracking-[-0.015em] sm:text-[52px]">
           O que você tem
         </h1>
-        <p className="voice mt-5 max-w-2xl text-[17px] leading-relaxed text-[var(--color-ink-soft)]">
-          {completas > 0
-            ? completas === 1
-              ? "Uma coleção completa, e o resto a caminho. Ter não é ler: isto é sobre o exemplar."
-              : `${completas} coleções completas, e o resto a caminho. Ter não é ler: isto é sobre o exemplar.`
-            : "O que está na sua estante de verdade, em papel. Ter não é ler: isto é sobre o exemplar."}
-        </p>
+        {/* ═══ A TELA NÃO SE EXPLICA ═══
+
+            Aqui dizia "Ter não é ler: isto é sobre o exemplar", e o dono cortou:
+            "a pessoa sabe que isso é coleção".
+
+            Ele está certo, e o erro é meu de sempre — legendar o óbvio. Uma frase que
+            explica a própria tela é a tela desconfiando de quem a olha, e num lugar
+            que é para dar orgulho isso soa a manual. O que fica é o FATO: quantas
+            estão completas. */}
+        {completas > 0 && (
+          <p className="voice mt-5 text-[17px] leading-relaxed text-[var(--color-ink-soft)]">
+            {completas === 1 ? "Uma coleção completa." : `${completas} coleções completas.`}
+          </p>
+        )}
       </header>
 
       <nav className="mt-8 flex flex-wrap gap-2">

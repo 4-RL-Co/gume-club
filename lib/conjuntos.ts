@@ -1,7 +1,8 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { works, revisions } from "@/lib/db/schema";
-import { assertAuthenticated, type Viewer } from "@/lib/authz";
+import { assertAuthenticated, Forbidden, type Viewer } from "@/lib/authz";
+import { origemAceita } from "@/lib/imagens";
 import { slugify } from "@/lib/slug";
 import { LIMITS, clamp } from "@/lib/limits";
 
@@ -163,6 +164,56 @@ export async function soltarDoConjunto(viewer: Viewer, workId: string): Promise<
       patch: { colecao_id: null },
       previous: { colecao_id: antes.colecaoId, volume: antes.volume },
       reason: "soltou o volume do conjunto",
+    });
+  });
+}
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  O EMBLEMA, POSTO POR QUEM COLECIONA.
+ *
+ *  São 415 conjuntos no acervo e três com emblema. Preencher o resto à mão é trabalho
+ *  de mutirão, e mutirão é o que este app faz melhor — a mesma gente que conserta
+ *  capa sabe qual é o símbolo da obra que ela coleciona.
+ *
+ *  ═══ POR REFERÊNCIA, E DENTRO DA LISTA DE ORIGENS ═══
+ *
+ *  Guarda o ENDEREÇO, nunca o arquivo — igual às capas, e pelo mesmo motivo escrito em
+ *  lib/imagens.ts. E ele passa por `origemAceita`: sem isso, qualquer um apontaria a
+ *  imagem para um host que ninguém olhou, e a página do Gume carregaria o que
+ *  estivesse lá.
+ *
+ *  É catálogo, como o resto do conjunto: vai para o log, com nome, e é reversível.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export async function porEmblema(
+  viewer: Viewer,
+  conjuntoId: string,
+  url: string | null,
+): Promise<void> {
+  assertAuthenticated(viewer);
+
+  const limpo = url?.trim() || null;
+  // A recusa é AQUI, e não na tela: uma ação de servidor recebe o que o cliente
+  // mandar. Um endereço fora da lista simplesmente não entra.
+  if (limpo && !origemAceita(limpo)) {
+    throw new Forbidden("essa imagem vem de um lugar que o Gume não aceita");
+  }
+
+  await db.transaction(async (tx) => {
+    const [antes] = await tx.execute<{ emblema_url: string | null }>(sql`
+      select emblema_url from colecoes where id = ${conjuntoId}::uuid`);
+
+    await tx.execute(sql`
+      update colecoes set emblema_url = ${limpo} where id = ${conjuntoId}::uuid`);
+
+    await tx.insert(revisions).values({
+      userId: viewer!.id,
+      targetType: "colecao",
+      targetId: conjuntoId,
+      patch: { emblema_url: limpo },
+      previous: { emblema_url: antes?.emblema_url ?? null },
+      reason: limpo ? "pôs o emblema da coleção" : "tirou o emblema da coleção",
     });
   });
 }
