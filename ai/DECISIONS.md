@@ -3068,4 +3068,204 @@ A regra passou a exigir IGUALDADE: o nome do arquivo, tirando "logo", a extensã
 - **A taxa de acerto é baixa de propósito** (13 de 120). Logotipo de obra raramente está em domínio público, e o que não vem automático fica para o mutirão — que é o que este app faz melhor.
 - **O endereço passa por `origemAceita` na ESCRITA**, e não na tela: uma ação de servidor recebe o que o cliente mandar, e sem isso qualquer um apontaria a imagem para um host que ninguém olhou.
 
+---
+
+## /colecoes virou /listas. A palavra "coleção" já tinha dono.
+
+O mesmo perfil dizia "a minha coleção" (os conjuntos/troféus — o que você TEM) e,
+duas seções abaixo, "minhas coleções" (as estantes que você monta com as próprias
+mãos, estilo Letterboxd). Singular contra plural era a única diferença, e ela é
+sutil demais para carregar dois conceitos: quem lia não sabia qual coleção era
+qual, e o dono percebeu isso usando o próprio app.
+
+**"Coleção" ficou com o colecionismo** (`/colecao`, os conjuntos, "4 de 14
+volumes") — é o uso mais antigo e o mais próximo do sentido comum da palavra.
+**As estantes montadas à mão viraram "lista"**: `/colecoes` → `/listas`, "minhas
+coleções" → "minhas listas", "coleções que fulano montou/guardou" → "listas que
+fulano montou/guardou". O nome já existia por baixo — `lib/listas.ts`,
+`components/lista-card.tsx`, `ListaGrid` — só a palavra na tela é que ainda dizia
+"coleção".
+
+- **`/colecoes` redireciona (301) para `/listas`** em `next.config.ts`: quem tem
+  o link velho salvo chega no lugar certo, e não num 404.
+- **`/colecao` (singular, os conjuntos) não mudou** — continua correto e não
+  colide mais com nada, porque o plural saiu do caminho.
+- **A curadoria da casa (Top 100) não é uma lista nem uma coleção** — é
+  calculada a cada visita, vem de outra tabela (`lib/curadoria-guardada.ts`), e
+  os comentários que a confundiam com "coleção" foram corrigidos para "lista".
+
+---
+
+## O emblema nunca gravou. E /contribuidores ganhou um quarto trabalho.
+
+Ao dar rótulo próprio à contribuição de quem monta conjuntos de edição em
+`/contribuidores`, escrevi o primeiro teste que chama `porEmblema()` contra um
+banco de verdade — e ele quebrou. **`porEmblema()` nunca funcionou em produção.**
+
+A migration 0011 travou `revisions.target_type` em `('work','edition','author')`,
+antes de coleção existir. A 0060 deu à coleção um emblema e uma função para
+pô-lo, e essa função grava em `revisions` com `target_type = 'colecao'` — um
+valor que a trava nunca aceitou. Toda chamada quebrava com violação de
+constraint, sempre, desde que a função nasceu (2026-08-06). `ligarAoConjunto()`
+grava com `target_type = 'work'` e por isso sempre funcionou, o que escondia o
+problema: as duas ações moram no mesmo formulário (`ConjuntoDoLivro`), e "ligar
+o volume" mascarava "pôr o emblema" quebrado ao lado dele.
+
+**Corrigido na migration 0061**: a trava agora aceita `'colecao'` também. Ver
+`lib/contribuicao.sql.test.ts`, que passou a chamar `porEmblema()` de verdade.
+
+Enquanto consertava isso, dei a `/contribuidores` um QUARTO balde, separado de
+`correções`: montar um conjunto (ligar um volume, pôr um emblema) tinha o mesmo
+peso de uma correção de ficha, mas caía no mesmo rótulo genérico. Agora aparece
+como "N coleções", e `lib/contributors.ts` divide a mesma tabela `revisions` em
+dois recortes (`jsonb_exists(patch, 'colecao_id')` ou `target_type = 'colecao'`
+vira `conjuntos`; o resto continua `correcoes`) para não contar a mesma linha
+duas vezes.
+
+---
+
+## O selo de colecionador não é insígnia, e não sai de /colecao.
+
+O pedido era "insígnia de colecionador para quem fechou pelo menos uma coleção".
+Isso colide de frente com a regra mais central do sistema de honras, travada em
+teste em dois lugares (`lib/badges.test.ts`, `lib/contributors.sql.test.ts`):
+**insígnia nunca é ganha por ler, avaliar ou colecionar — só por trabalho doado
+à comunidade.** Reabrir essa regra para uma exceção pessoal desfaria a única
+linha que separa "o que você FEZ pelos outros" de "o que você TEM para si".
+
+**Virou selo, não insígnia.** Mora só no cabeçalho de `/colecao`, aparece
+quando `completas > 0`, usa o mesmo dourado que já é a única cor da tela (o
+selo "completa" de cada `ConjuntoCard`). Não mora em `lib/badges-view.ts`, não
+entra no painel de honras, não viaja para o perfil nem para o feed — exatamente
+o oposto de uma insígnia, que existe para viajar. Ninguém mais vê o selo de
+ninguém: colecionar é para quem coleciona.
+
+---
+
+## A página de dentro da coleção. Só abre pra quem completou.
+
+Sobre o autor, a obra, as edições — desbloqueada só com a coleção completa.
+Tudo o que ela mostra já existia no catálogo: `authors.bio` (escrita por
+leitor, nunca por IA — é recusa, está no README), `series`, `editions`. Não
+houve pesquisa nova nem pipeline de dado novo, só uma consulta
+(`lib/conjunto-detalhe.ts`) juntando o que já estava espalhado em quatro
+tabelas.
+
+- **O desbloqueio é computado na hora, como tudo no resto da coleção.** Não
+  existe coluna de "completo" (migration 0036 proíbe, de propósito). A rota
+  `/colecao/[slug]` chama a mesma lógica de sempre a cada visita.
+- **Quem quase chegou não vê uma porta fechada.** Um leitor que tocou o
+  conjunto mas não completou vê exatamente quantos faltam — nunca um 404
+  fingindo que a coleção não existe. Só quem NUNCA tocou o conjunto (zero
+  linhas na consulta) recebe 404 de verdade.
+- **Bio vazia continua vazia.** A tela nunca inventa "quem foi essa pessoa":
+  quando `authors.bio` é nula, ela diz que ninguém escreveu ainda — a mesma
+  frase de `/autor/[slug]`, e o mesmo link para lá.
+- **O selo dourado "completa" virou a porta.** Ele saiu de dentro do botão
+  que expande/recolhe o conjunto (link dentro de botão é HTML inválido) e
+  virou um `Link` irmão, ao lado.
+
+---
+
+## A imagem da coleção: mais fontes aceitas, e uma porta que nunca existiu.
+
+Dois problemas, achados juntos. O primeiro: o pedido era imagem de personagem
+"de qualquer fonte", e a lista de origens aceitas (`lib/imagens.ts`) só cobria
+acervo de proveniência limpa (Commons, Open Library, editora) — abrir para
+`img-src https:` quebraria a defesa contra hotlink que o próprio arquivo
+documenta. A escolha foi ampliar a lista com hosts grandes e estáveis de
+conteúdo de fã: `static.wikia.nocookie.net` (Fandom, a maior fonte real de
+personagem de anime/mangá/jogo), `image.tmdb.org` e `images.igdb.com`. Fandom é
+a MESMA classe de risco que o Commons já é (as duas são wikis abertas); a
+diferença é que o Commons filtra por licença e o Fandom não, e essa diferença é
+exatamente o que o dono decidiu aceitar — a mesma autorização já dada para os
+emblemas de logotipo ("pode pegar da internet os símbolos... a galera faz com
+games, faça").
+
+O segundo: `porEmblema()` (lib/conjuntos.ts) existia desde 2026-08-06 e nunca
+teve formulário nenhum — nem botão, nem input, em lugar nenhum do app. Um
+recurso sem UI não é um recurso incompleto: é um recurso que não existe para
+quem lê a tela. Agora `components/conjunto.tsx` tem um editor dentro do
+conjunto aberto ("pôr uma imagem desta coleção"), com a mesma regra de sempre:
+por endereço, nunca uma cópia; contribuição de catálogo (qualquer leitor
+logado, não só o dono); vai para o log com nome, reversível. Só aparece para
+quem está logado (`podeEditar`) — quem olha o perfil de outra pessoa sem ter
+entrado não vê um convite que ia falhar ao salvar.
+
+---
+
+## Cada conjunto virou uma linha, e a grade só abre se você pedir.
+
+Pesquisei como Backloggd, sites de troféu (PSN/Xbox) e apps de manga
+(Manga Vault) resolvem "muitas coleções na mesma tela", e a referência que o
+dono trouxe (troféus estilo PlayStation) já mostrava a resposta: cada jogo é
+uma LINHA compacta, recolhida por padrão, e a grade de conquistas só abre com
+um clique.
+
+Antes, cada `ConjuntoCard` era um cartão inteiro sempre aberto — no perfil, ao
+lado de tudo mais que a pessoa é, uma coleção de dez conjuntos virava dez
+cartões grandes empilhados. Agora `components/conjunto.tsx` é um componente de
+cliente: a linha fechada já carrega o emblema, o título, "X de Y", a barra fina
+de progresso e o selo dourado de completo — responde "estou perto?" sem abrir
+nada — e só a grade de volumes (a lacuna, volume por volume) espera o clique.
+
+- **O que falta continua aparecendo em cinza dentro da grade.** Esconder a
+  lacuna transformaria a tela num inventário do que você já tem, e a lacuna
+  continua sendo o assunto de quem coleciona (migration 0036).
+- **O dourado continua a única cor da tela**, e só quando `c.completo`.
+- **Recolhido por padrão em toda parte** (perfil e `/colecao`), sem exceção
+  para a página dedicada: é o mesmo comportamento da referência, e uma regra
+  só é mais fácil de não esquecer que duas.
+
+---
+
+## Guia: por que não há uma nona cor de insígnia, e o que virou no lugar.
+
+O pedido era uma insígnia "curador" para quem montou uma lista e teve pelo
+menos um guardado — e "curador" já colide com "curadoria da casa" (termo
+reservado ao idealizador), então o nome virou **guia**.
+
+Diferente de "colecionador", isto não esbarra no princípio de "insígnia é
+doação, nunca posse": alguém guardar a sua lista é exatamente o tipo de sinal
+que `lib/listas.ts` já trata como curadoria pública, não como curtida — a
+mesma linha que permitiu o contador de "guardadas" no card da lista
+(2026-07-28). O que bloqueou foi outra coisa, e é geométrica: `lib/badges.test.ts`
+trava 30° de distância mínima entre matizes de insígnia, e mais 30° do
+verde-água da marca (167°). Com as oito cores atuais o círculo já está cheio —
+o único vão largo (entre zelador e moderador) é exatamente o espaço reservado
+para a marca não colidir com ninguém, e não sobra ângulo nenhum dentro dele.
+
+Apresentado o problema, a escolha foi não afrouxar a trava (ela já evitou uma
+colisão de cor de verdade, com o zelador). **Guia virou selo, como
+colecionador**: não mora em `lib/badges-view.ts`, não tem matiz, não entra no
+painel de honras. Mora no perfil, ao lado de "minhas listas"/"listas que X
+montou" — visível a QUALQUER visitante, diferente do colecionador (que é só
+para o próprio dono): guiar alguém é um fato sobre a comunidade, não sobre
+gosto pessoal. Calculado sem consulta nova, reaproveitando `guardadas` que
+`getListasDe` já trazia.
+
+---
+
+## Cem fundadores de novo. A sala virou a meta pública.
+
+Isto reabre "Cinquenta fundadores, e cada um com o número de chegada" (acima). Não porque o
+argumento de lá estivesse errado — **"cem pessoas não são um começo, são um lançamento"
+continua verdade** — mas porque ele media a insígnia contra o tamanho de uma sala, e o Gume
+passou a se medir contra outra coisa: a própria meta pública de cem contas, que já vive em
+`app/painel`. Com cinquenta vagas, "fundador" fechava a meio caminho da meta e sobravam
+cinquenta pessoas que chegaram cedo — antes de qualquer prova de que ia dar certo — sem
+insígnia nenhuma. As cem primeiras SÃO o lançamento inteiro, não uma fração dele.
+
+O dono pediu a reabertura sabendo do argumento anterior e da meta do painel.
+
+- **O número de chegada continua**: "membro fundador #73" é tão honesto quanto "#7" era —
+  a insígnia não mede o que a pessoa fez, mede quando ela chegou.
+- **O corte segue fixo em `lib/regras.ts`** (`CORTE_FUNDADOR`), e o texto da insígnia
+  (`lib/badges-view.ts`) e o teste estrutural (`lib/regras.test.ts`, que lê o número por
+  extenso e compara com o texto exibido) continuam travando os dois números juntos — o bug
+  original (código dizia cinquenta, tela dizia cem) não pode voltar por este caminho.
+- **Não é a mesma coisa que "meta de cem contas"**: são dois números que hoje coincidem
+  (100 e 100) mas medem coisas diferentes — um é corte de chegada, o outro é meta de
+  crescimento. Se um dia divergirem de novo, cada um muda no seu lugar.
+
 **E fica registrado que a coleção NÃO é de mangá.** Nada no mecanismo é específico: criar "Coleção Companhia de Bolso" ou "Harry Potter capa dura" funciona pelo mesmo botão. Os 415 conjuntos são de mangá porque a AniList foi a única fonte importada — é limitação do DADO, e não da funcionalidade.

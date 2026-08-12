@@ -1,12 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Package } from "lucide-react";
+import { Package, Trophy } from "lucide-react";
 import { origemAceita } from "@/lib/imagens";
 import { Empty } from "@/components/empty";
 import { Cover } from "@/components/cover";
 import { getActorOrNull } from "@/lib/actor";
 import { getColecao, contarColecao, getConjuntos } from "@/lib/copies";
 import { ConjuntoCard } from "@/components/conjunto";
+import { ComecarColecao } from "@/components/comecar-colecao";
 import { nomeDoAutor } from "@/lib/autores";
 
 export const dynamic = "force-dynamic";
@@ -140,11 +141,31 @@ export default async function Colecao({
             explica a própria tela é a tela desconfiando de quem a olha, e num lugar
             que é para dar orgulho isso soa a manual. O que fica é o FATO: quantas
             estão completas. */}
+        {/* ═══ O SELO DE COLECIONADOR. AQUI, E EM MAIS LUGAR NENHUM ═══
+
+            Não é insígnia: não mora em lib/badges-view.ts, não entra no painel de
+            honras, não aparece no perfil nem no feed. As insígnias existem para
+            marcar DOAÇÃO à comunidade, e completar uma coleção é para o próprio
+            colecionador — ele não deve nada a mais ninguém por isso. Ver
+            ai/DECISIONS.md.
+
+            O dourado é o mesmo do selo "completa" em cada card (components/conjunto.tsx):
+            a única cor da tela, e ela já marca conquista aqui dentro. Isto só junta o
+            nome à cor, na primeira vez que ela aparece. */}
         {completas > 0 && (
-          <p className="voice mt-5 text-[17px] leading-relaxed text-[var(--color-ink-soft)]">
+          <p className="voice mt-5 flex flex-wrap items-center gap-2.5 text-[17px] leading-relaxed text-[var(--color-ink-soft)]">
+            <span
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-control)] border px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.1em]"
+              style={{ color: "#d9a520", borderColor: "#d9a520" }}
+            >
+              <Trophy size={12} strokeWidth={1.75} aria-hidden />
+              colecionador
+            </span>
             {completas === 1 ? "Uma coleção completa." : `${completas} coleções completas.`}
           </p>
         )}
+
+        <ComecarColecao />
       </header>
 
       <nav className="mt-8 flex flex-wrap gap-2">

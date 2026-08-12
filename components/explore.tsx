@@ -32,7 +32,7 @@ import type { Viewer } from "@/lib/authz";
 export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; soPessoas?: boolean }) {
   const [estantes, listas, afinidade, resenhas, lendo, jaSegue] = await Promise.all([
     getEstantes(viewer),
-    // As coleções MONTADAS, com nome e recorte. Sorteadas como tudo aqui: "as mais
+    // As listas MONTADAS, com nome e recorte. Sorteadas como tudo aqui: "as mais
     // guardadas" seria um ranking de popularidade, e é a coisa que esta tela recusa.
     getListasParaExplorar(viewer),
     getAfinidade(viewer),
@@ -203,14 +203,14 @@ export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; s
             )}
           </section>
 
-          {/* ── ESTANTES MONTADAS À MÃO: a curadoria de alguém, com nome e recorte.
+          {/* ── LISTAS MONTADAS À MÃO: a curadoria de alguém, com nome e recorte.
               Sorteadas e rotacionando, como tudo nesta tela: destacar "as mais
               guardadas" seria um ranking de popularidade com outro chapéu. */}
           {listas.length > 0 && (
             <section>
-              <Titulo>coleções montadas à mão</Titulo>
+              <Titulo>listas montadas à mão</Titulo>
               <p className="mt-4 max-w-lg text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
-                Coleções que alguém montou com as próprias mãos. Abra uma, e se ela for boa,
+                Listas que alguém montou com as próprias mãos. Abra uma, e se ela for boa,
                 guarde: ela fica no seu perfil, com o nome de quem fez.
               </p>
               <div className="mt-6">
@@ -218,10 +218,10 @@ export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; s
               </div>
               <p className="mt-5">
                 <Link
-                  href="/colecoes"
+                  href="/listas"
                   className="text-[13px] text-[var(--color-ink-soft)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
                 >
-                  ver todas as coleções
+                  ver todas as listas
                 </Link>
               </p>
             </section>

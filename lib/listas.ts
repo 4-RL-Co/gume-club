@@ -187,7 +187,7 @@ export async function getListasParaExplorar(viewer: Viewer, limite = 6): Promise
 }
 
 /**
- * TODAS as coleções públicas, para a galeria de /colecoes. Cronológico (a mais nova
+ * TODAS as listas públicas, para a galeria de /listas. Cronológico (a mais nova
  * primeiro), sem algoritmo: é o mesmo costume do feed. As editoriais da casa não
  * entram por aqui: elas são fixadas no topo da tela, e o destaque delas é editorial,
  * não conquistado por métrica.
