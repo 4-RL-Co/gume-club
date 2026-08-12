@@ -34,7 +34,7 @@
     "better-auth": "^1.6.25",
     "drizzle-orm": "^0.45.2",
     "heic2any": "^0.0.4",
-    "lucide-react": "^1.28.0",
+    "lucide-react": "^1.30.0",
     "next": "^15.5.22",
     "pg": "^8.22.0",
     "postgres": "^3.4.5",
