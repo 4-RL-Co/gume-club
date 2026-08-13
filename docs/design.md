@@ -478,11 +478,11 @@ Números são sempre `font-variant-numeric: tabular-nums`. Sentence case em tudo
 
 ## Cor
 
-O canvas é neutro quente. A tinta é a arte de capa. Essa é a paleta.
+O canvas claro é neutro quente. A tinta é a arte de capa. Essa é a paleta.
 
 Um acento, usado para no máximo um elemento por tela (uma nota, uma ação primária). Ele é o **verde-água da lâmina** (`--color-accent: #7dd3c0`) — a cor do fio, não um azul de SaaS. Ver "O accent: a lâmina", acima, para por que ele venceu o vermelhão e o azul de carimbo que já foram candidatos.
 
-O modo escuro não é invertido, é *reduzido*: preto quase absoluto (`#060606`), nunca um `#111827` frio. Vidro no modo escuro cai para ~48% de opacidade e a borda especular cai para ~14% de branco.
+O modo escuro não é invertido, é *reduzido*: carvão, não void. Foi `#060606` (preto quase absoluto, neutro quente) até o dono pedir, de olho no oku.club e no catppuccin, um cinza-roxinho — `#17151d` de canvas, subindo em camadas até o cartão-dentro-de-cartão. Ver `ai/DECISIONS.md`: a regra de "nunca frio" que morava aqui foi revista, não apagada. Vidro no modo escuro cai para ~48% de opacidade e a borda especular cai para ~14% de branco.
 
 ---
 

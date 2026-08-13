@@ -3510,3 +3510,27 @@ lib de ícone do app, 52+ arquivos). A leitura deste registro é que a diferenç
 real é TAMANHO, não família — por isso o que mudou foi escala (ver a entrada
 seguinte, sobre a barra lateral), não uma troca de biblioteca. Se um dia isso
 se provar errado, é a interpretação mais barata de reverter.
+
+---
+
+## O escuro deixa de ser void, e a regra de "nunca frio" é revista.
+
+Outra herança do oku.club: o canvas escuro era `#060606` — quase-absoluto de
+propósito, documentado como "reduzido, nunca invertido, nunca um `#111827`
+frio". O dono mandou um print da barra lateral do Oku (claramente não-preta) e
+citou "o tema catppuccino, não tudo pretão".
+
+Primeiro passe: subi a escala de luz mantendo o mesmo matiz QUENTE de sempre
+(`#161310` de canvas) — respeitando a regra "nunca frio" ao pé da letra, sem
+perguntar se ela ainda fazia sentido. O dono olhou ao vivo e disse: **"a cor,
+eu acho que mais puxado pro cinza roxinho fica melhor"** — direto, pedindo
+exatamente o que a régua antiga proibia.
+
+Então a régua foi revista, não a decisão de subir a escala: o canvas escuro
+vira cinza-roxinho (`#17151d`), na linha real do catppuccin (que TEM azul por
+baixo — foi por isso que a primeira tentativa evitou essa direção, até o dono
+confirmar que era exatamente o que queria). `--color-accent`, `--color-perigo`,
+`--color-colaborar` e as insígnias não mudam: cor dirigida por significado,
+fora do pedido. `docs/design.md` atualizado pra não divergir do código — a
+frase antiga ("nunca invertido, nunca frio") virou a frase que conta essa
+história, em vez de uma regra que o próprio código já não segue.
