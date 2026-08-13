@@ -39,14 +39,28 @@ export function Medicao() {
         />
       )}
 
+      {/**
+       * ═══ O CLARITY TAMBÉM PRECISOU DO CONSERTO DO GOOGLE, E NINGUÉM TINHA
+       *     VOLTADO AQUI PRA APLICAR ═══
+       *
+       * O mesmo problema documentado abaixo pro Google Analytics: `next/script`
+       * com `afterInteractive` não põe a tag no HTML que o servidor manda — ela
+       * nasce só depois da hidratação, como dado dentro do payload do React. O
+       * verificador do Clarity lê o HTML cru (a mesma checagem que o Google já
+       * fazia), não acha o script, e mostra "ainda não instalado" para sempre,
+       * mesmo com o rastreamento funcionando de verdade em quem realmente abre
+       * a página. Por isso o bloco é `dangerouslySetInnerHTML`, como o do GA
+       * logo abaixo — não `next/script`. */}
       {clarity && (
-        <Script id="clarity" strategy="afterInteractive">
-          {`(function(c,l,a,r,i,t,y){
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(c,l,a,r,i,t,y){
               c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
               t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
               y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-            })(window, document, "clarity", "script", "${clarity}");`}
-        </Script>
+            })(window, document, "clarity", "script", "${clarity}");`,
+          }}
+        />
       )}
 
       {/**
