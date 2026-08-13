@@ -70,7 +70,14 @@ export type DoCatalogo = {
   livros: number;
   /** Capas que ela mandou e foram aceitas. */
   capas: number;
-  /** Correções que sobreviveram. */
+  /**
+   * Volumes ligados a um conjunto de edição, e emblemas postos. Até aqui isto
+   * caía dentro de `correcoes` sem rótulo próprio: quem montou "Hellsing Deluxe
+   * tem 10 volumes" contava, mas a tela dizia só "correções" — o mesmo texto de
+   * quem trocou o ano de uma ficha. Ver lib/conjuntos.ts.
+   */
+  conjuntos: number;
+  /** Correções de ficha que sobreviveram (o que não é livro, capa nem conjunto). */
   correcoes: number;
   desde: Date;
 };
@@ -126,7 +133,8 @@ export async function getCatalogo(): Promise<DoCatalogo[]> {
    */
   const rows = await db.execute<{
     handle: string; name: string | null; image: string | null;
-    librarian_tier: number; livros: number; capas: number; correcoes: number; desde: Date;
+    librarian_tier: number; livros: number; capas: number; conjuntos: number; correcoes: number;
+    desde: Date;
   }>(sql`
     with contagens as (
       select u.id, u.handle, u.display_name as name, u.image, u.librarian_tier, u.created_at as desde,
@@ -134,16 +142,36 @@ export async function getCatalogo(): Promise<DoCatalogo[]> {
                where w.created_by = u.id)::int as livros,
              (select count(*) from cover_proposals cp
                where cp.user_id = u.id and cp.state = 'accepted')::int as capas,
+             -- CONJUNTOS: ligou um volume a uma coleção de edição, ou pôs o emblema
+             -- dela. Mesma tabela da correção (revisions), e por isso precisa de um
+             -- recorte próprio para não contar duas vezes na soma. Ver lib/conjuntos.ts.
+             --
+             -- patch->>'colecao_id' is not null é o que separa LIGAR de SOLTAR: as
+             -- duas ações de lib/conjuntos.ts escrevem a mesma chave (colecao_id), e
+             -- soltarDoConjunto() grava colecao_id como null -- desfazer um erro de
+             -- ligação, que é corretivo, não montagem de conjunto. Sem este filtro, as
+             -- duas contavam igual, e desfazer o próprio erro inflava o balde errado.
              (select count(*) from revisions r
-               where r.user_id = u.id and r.reverted_at is null)::int as correcoes
+               where r.user_id = u.id and r.reverted_at is null
+                 and (r.target_type = 'colecao'
+                      or (r.target_type = 'work' and r.patch->>'colecao_id' is not null))
+             )::int as conjuntos,
+             -- CORREÇÕES: o resto do que sobreviveu. O que é conjunto saiu daqui (a
+             -- mesma linha não pode contar duas vezes), e SOLTAR um volume errado fica
+             -- aqui, como a correção que é.
+             (select count(*) from revisions r
+               where r.user_id = u.id and r.reverted_at is null
+                 and not (r.target_type = 'colecao'
+                          or (r.target_type = 'work' and r.patch->>'colecao_id' is not null))
+             )::int as correcoes
         from users u
        where u.deleted_at is null
     )
     select * from contagens
-     where livros + capas + correcoes > 0
-     -- A soma ORDENA, e os três aparecem separados na tela. O desempate é a chegada:
+     where livros + capas + conjuntos + correcoes > 0
+     -- A soma ORDENA, e os quatro aparecem separados na tela. O desempate é a chegada:
      -- entre duas pessoas com o mesmo total, quem chegou primeiro vem primeiro.
-     order by (livros + capas + correcoes) desc, desde asc`);
+     order by (livros + capas + conjuntos + correcoes) desc, desde asc`);
 
   return rows.map((r) => ({
     handle: r.handle,
@@ -152,6 +180,7 @@ export async function getCatalogo(): Promise<DoCatalogo[]> {
     librarian: (r.librarian_tier ?? 0) > 0,
     livros: r.livros,
     capas: r.capas,
+    conjuntos: r.conjuntos,
     correcoes: r.correcoes,
     desde: r.desde,
   }));

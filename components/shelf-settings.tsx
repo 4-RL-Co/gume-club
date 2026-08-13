@@ -10,10 +10,10 @@ import type { Visibility } from "@/lib/authz";
  * Rename it, describe it, number it, hide it, throw it away. Deleting the shelf
  * never deletes the books.
  *
- * A descrição e a numeração entraram junto com os cards de estante: uma coleção
+ * A descrição e a numeração entraram junto com os cards de estante: uma lista
  * montada com capricho tem um recorte para contar ("os dez que me formaram") e,
  * quando a ordem é o ponto, um 1º e um 2º. Numerar é escolha POR estante: obrigar
- * toda coleção a ter números faria de toda coleção um pódio. Ver lib/listas.ts.
+ * toda lista a ter números faria de toda lista um pódio. Ver lib/listas.ts.
  */
 export function ShelfSettings({
   id, slug, name, visibility, description = null, numerada = false, capaWorkId = null, capas = [],
@@ -49,7 +49,7 @@ export function ShelfSettings({
         onClick={() => setOpen(true)}
         className="mt-7 text-[13px] text-[var(--color-ink-faint)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
       >
-        ajustar esta coleção
+        ajustar esta lista
       </button>
     );
   }
@@ -97,7 +97,7 @@ export function ShelfSettings({
           defaultValue={description ?? ""}
           maxLength={LIMITS.note}
           rows={2}
-          placeholder="o que é esta coleção, em uma ou duas frases"
+          placeholder="o que é esta lista, em uma ou duas frases"
           className="w-full resize-none rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[14px] leading-relaxed outline-none focus:border-[var(--color-ink)]"
         />
         <button
@@ -110,11 +110,11 @@ export function ShelfSettings({
       </form>
 
       {/* A FOTO DA ESTANTE: uma imagem sua para o alto da página, como a lombada de
-          uma coleção de verdade. Passa pelo MESMO funil do retrato de perfil
+          uma lista de verdade. Passa pelo MESMO funil do retrato de perfil
           (/api/upload: logado, tipo pelos primeiros bytes, teto de tamanho). */}
       <div className="mt-4">
         <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-          a foto da coleção
+          a foto da lista
         </span>
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <label className="cursor-pointer rounded-[var(--radius-control)] border border-[var(--color-rule)] px-3 py-1.5 text-[12px] text-[var(--color-ink-soft)] transition-colors hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]">
@@ -167,12 +167,12 @@ export function ShelfSettings({
 
       {/* A CARA DA ESTANTE: qual capa a representa no card, no explorar e na aura.
           A escolha é entre os livros DELA (referência ao catálogo, nunca upload solto):
-          a cara de uma coleção é um dos livros dela. Clicar de novo desfaz a escolha
+          a cara de uma lista é um dos livros dela. Clicar de novo desfaz a escolha
           e volta ao primeiro da ordem. */}
       {capas.length > 1 && (
         <div className="mt-4">
           <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-            a capa da coleção
+            a capa da lista
           </span>
           <div className="mt-2 flex flex-wrap gap-2">
             {capas.map((c) => {
@@ -250,7 +250,7 @@ export function ShelfSettings({
       <div className="mt-5 flex items-center gap-3 text-[13px]">
         {armed ? (
           <>
-            <span className="text-[var(--color-ink-soft)]">apagar a coleção? os livros ficam.</span>
+            <span className="text-[var(--color-ink-soft)]">apagar a lista? os livros ficam.</span>
             <button
               disabled={pending}
               onClick={() => start(() => apagarEstante(id))}
@@ -267,7 +267,7 @@ export function ShelfSettings({
             onClick={() => setArmed(true)}
             className="text-[var(--color-ink-faint)] hover:text-[var(--color-perigo)]"
           >
-            apagar esta coleção
+            apagar esta lista
           </button>
         )}
         <button onClick={() => setOpen(false)} className="ml-auto text-[var(--color-ink-faint)]">

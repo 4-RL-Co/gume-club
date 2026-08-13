@@ -293,6 +293,8 @@ export type VolumeDoConjunto = {
 
 export type Conjunto = {
   id: string;
+  /** O endereço público, para /colecao/[slug] — a página de detalhe, só de quem completou. */
+  slug: string;
   titulo: string;
   publisher: string | null;
   /** O símbolo da obra, POR REFERÊNCIA. Ver a migration 0060 e lib/imagens.ts. */
@@ -327,7 +329,8 @@ export async function getConjuntos(
   const meu = dono === actor?.id;
 
   const rows = await db.execute<{
-    id: string; titulo: string; publisher: string | null; total: number | null; emblema: string | null;
+    id: string; conjunto_slug: string; titulo: string; publisher: string | null;
+    total: number | null; emblema: string | null;
     slug: string; title: string; volume: string | null; cover_url: string | null;
     tenho: boolean; quero: boolean;
   }>(sql`
@@ -338,7 +341,7 @@ export async function getConjuntos(
        where oc.user_id = ${dono}::uuid and w.colecao_id is not null
          and (${meu} or oc.visibility = 'public')
     )
-    select c.id, c.title as titulo, c.publisher, c.total_volumes as total, c.emblema_url as emblema,
+    select c.id, c.slug as conjunto_slug, c.title as titulo, c.publisher, c.total_volumes as total, c.emblema_url as emblema,
            w.slug, w.title, w.volume::text as volume,
            (select e.cover_url from editions e
              where e.work_id = w.id and e.cover_url is not null
@@ -357,7 +360,7 @@ export async function getConjuntos(
     let c = porConjunto.get(r.id);
     if (!c) {
       c = {
-        id: r.id, titulo: r.titulo, publisher: r.publisher, emblema: r.emblema,
+        id: r.id, slug: r.conjunto_slug, titulo: r.titulo, publisher: r.publisher, emblema: r.emblema,
         total: r.total ?? 0, tenho: 0, completo: false, volumes: [],
       };
       porConjunto.set(r.id, c);
