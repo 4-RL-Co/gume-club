@@ -441,28 +441,18 @@
   }
 
   /**
-   * O ITEM ATIVO DA NAVEGAÇÃO. Não é uma pílula chapada: é uma superfície ELEVADA.
+   * O ITEM ATIVO DA NAVEGAÇÃO. Uma superfície ELEVADA, e só isso.
    *
-   * Três camadas, e a terceira é a que faz a coisa:
-   *   1. o fundo, um degrau acima do resto da barra;
-   *   2. a borda de luz no topo, que dá espessura;
-   *   3. o FIO, na borda direita, vazando um brilho suave para fora.
-   *
-   * O fio é branco-osso. Em rosa neon isto seria o chrome de um CRM, e um CRM
-   * pode brilhar porque a tela dele é texto e vazio. O Gume é uma parede de
-   * capas: aqui o chrome tem que SUMIR para a arte aparecer, e o único brilho da
-   * tela é a lâmina, não a interface.
+   * Tinha um terceiro elemento — o FIO, um traço de luz vazando na borda
+   * direita, com halo — e o dono achou "meio off" olhando ao vivo depois de
+   * ver o Oku (cujo item ativo é só uma pílula cinza, sem cor nenhuma). O
+   * fio saiu; a pílula, arredondada por inteiro (nenhuma aresta reta
+   * esperando uma lâmina), ficou sozinha marcando "aqui". Ver ai/DECISIONS.md.
    */
-  /* .pill vem depois neste arquivo, e o raio dele vencia: a especificidade tem
-     que ser maior, ou o item ativo volta a ser uma pílula com um fio boiando ao
-     lado. */
   .afiado,
   .pill.afiado {
     position: relative;
-    /* Canto RETO à direita, e não pílula. Numa pílula, a borda direita é meia
-       lua, e um fio reto encostado nela fica boiando AO LADO do item em vez de
-       ser a aresta dele. A lâmina precisa de um gume onde encostar. */
-    border-radius: var(--radius-2);
+    border-radius: var(--radius-pill);
     /* A COR VEM DO TEMA, e não daqui. Cravada em #202020, ela virava um bloco preto
        com texto preto em cima no tema claro — em sete telas de uma vez, porque é esta
        classe que marca TODO item ativo do app. Ver --afiado-de no topo. */
@@ -470,28 +460,6 @@
     box-shadow:
       inset 0 1px 0 var(--afiado-borda),
       0 1px 2px var(--afiado-sombra);
-  }
-
-  /* O FIO: a aresta direita do item, e o brilho que ela deixa escapar. */
-  .afiado::after {
-    content: "";
-    position: absolute;
-    top: 4px;
-    bottom: 4px;
-    right: -0.5px;
-    width: 2px;
-    border-radius: 2px;
-    background: var(--fio);
-    /* O halo é do TEMA: no escuro a lâmina emite luz; no claro ela é tinta no papel,
-       e tinta não brilha — um halo forte ali vira borrão sujo em volta de um traço. */
-    box-shadow:
-      0 0 5px color-mix(in srgb, var(--fio) var(--fio-halo-1), transparent),
-      0 0 12px color-mix(in srgb, var(--fio) var(--fio-halo-2), transparent),
-      0 0 24px color-mix(in srgb, var(--fio) var(--fio-halo-3), transparent);
-  }
-
-  @media (prefers-contrast: more) {
-    .afiado::after { box-shadow: none; }
   }
 
   /* Only things you can click or that carry a state. Filters, tags, statuses. */
