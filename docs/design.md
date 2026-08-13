@@ -470,7 +470,7 @@ Só a capa quebra a regra "raio por material": ela recebe 6px de propósito. Uma
 O premium vem da tipografia, não dos efeitos. Duas famílias:
 
 - **Voice**: **Newsreader**, um serif de verdade com personalidade editorial, para títulos de livro, citações e números grandes. Aberta, gratuita, pronta para produção. Essa é a decisão de maior alavancagem no produto inteiro; é o que o Oku não tem. (A **Fraunces** faz um papel à parte, só na marca — ver acima.)
-- **Chrome**: **Geist**. A Inter é boa e é genérica, e genérico era exatamente o que estava segurando o app no "bonitinho". A Geist tem um esqueleto mais frio e mais mecânico: lê como software sem ler como template, e senta ao lado de uma serifa de alto contraste sem competir com ela.
+- **Chrome**: **Inter**. Foi Geist por um tempo ("a Inter é boa e é genérica, e genérico era exatamente o que estava segurando o app no 'bonitinho'"), até o dono ver o oku.club e pedir Inter de volta, duas vezes, de propósito — ver `ai/DECISIONS.md`. As duas entradas continuam lá: a antiga explica por que Geist entrou, a nova por que ela saiu.
 
 Números são sempre `font-variant-numeric: tabular-nums`. Sentence case em tudo. Sem CAIXA ALTA, exceto rótulos de seção minúsculos de 11px com tracking `0.12em`.
 

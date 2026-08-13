@@ -3487,3 +3487,26 @@ símbolo sozinha. E como a medalha (32px, rotacionada, num canto) é um alvo
 de toque menor que a pill antiga, o card compacto ganhou um link de texto
 simples — "ver a página desta coleção" — dentro do estado aberto, pra
 navegação em celular não depender só do círculo pequeno.
+
+---
+
+## Geist saiu, Inter voltou. Pedido do dono, duas vezes.
+
+A entrada que trocou Inter por Geist continua algumas páginas atrás, intacta —
+esta não a apaga, só registra que o dono mudou de ideia depois de ver o
+oku.club de perto (mandou prints e o site salvo). Perguntei explicitamente se
+"a fonte harmoniza bem" era sobre a família ou só tamanho/peso, avisando que
+isto reverteria uma decisão já documentada. Ele respondeu **"quero as fontes
+e ícones estilo oku"** — direto, pela segunda vez.
+
+`--font-chrome` volta a ser Inter (`app/layout.tsx`, `app/globals.css`).
+Newsreader (a voz, nos títulos) e Fraunces (a marca, só a palavra "Gume")
+ficam como estavam — o pedido era sobre o chrome da interface, não sobre o
+que fala com o leitor.
+
+Sobre "ícones estilo oku": os ícones do Oku são traço fino, geométrico,
+arredondado — a mesma linguagem que o lucide-react já fala aqui (é a única
+lib de ícone do app, 52+ arquivos). A leitura deste registro é que a diferença
+real é TAMANHO, não família — por isso o que mudou foi escala (ver a entrada
+seguinte, sobre a barra lateral), não uma troca de biblioteca. Se um dia isso
+se provar errado, é a interpretação mais barata de reverter.
