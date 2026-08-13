@@ -346,7 +346,7 @@ export function Command() {
               }}
               className="mt-4 flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-ink)] px-4 py-2 text-[13px] font-medium text-[var(--color-canvas)]"
             >
-              <Plus size={15} strokeWidth={2} />
+              <Plus size={15} strokeWidth={1.5} />
               Cadastrar este livro à mão
             </button>
           </div>
