@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn, signUp } from "@/lib/auth-client";
@@ -23,10 +23,27 @@ export default function Entrar() {
   // convidou, ou null se o convite for para alguém que não existe.
   const convite = params.get("convite");
   const [quemChamou, setQuemChamou] = useState<string | null>(null);
+
+  /**
+   * ═══ A VIAGEM PRO GOOGLE NÃO PODE SAIR ANTES DO COOKIE DO CONVITE ═══
+   *
+   * `rememberInviter` é uma chamada de rede — ela GRAVA o cookie, não é
+   * instantânea. O botão do Google não esperava por ela: um clique rápido
+   * (o caminho comum de quem chega de um link num post, no celular) saía
+   * pro Google antes do `Set-Cookie` voltar, e o convite se perdia em
+   * silêncio — sem erro, sem log, só um cadastro que parecia ter chegado
+   * sozinho. Ver ai/DECISIONS.md.
+   *
+   * Este ref é a viagem em curso: os dois botões (Google e o formulário)
+   * esperam por ele antes de continuar. Começa resolvido — sem `convite`
+   * na URL não há nada para esperar.
+   */
+  const conviteEmVoo = useRef<Promise<unknown>>(Promise.resolve());
+
   useEffect(() => {
     if (!convite) return;
     let vivo = true;
-    rememberInviter(convite)
+    conviteEmVoo.current = rememberInviter(convite)
       .then((nome) => {
         if (vivo && nome) {
           setQuemChamou(nome);
@@ -70,6 +87,10 @@ export default function Entrar() {
   const submit = (data: FormData) =>
     start(async () => {
       setError(null);
+      // Mesma espera do botão do Google, por simetria — aqui a corrida é bem
+      // mais rara (digitar e-mail e senha já leva segundos), mas a regra é
+      // uma só: ninguém cria conta antes do convite terminar de gravar.
+      await conviteEmVoo.current;
       const email = String(data.get("email") ?? "").trim();
       const password = String(data.get("password") ?? "");
       const name = String(data.get("name") ?? "").trim();
@@ -174,6 +195,10 @@ export default function Entrar() {
           setGoogle("indo");
           setError(null);
           try {
+            // Espera o cookie do convite terminar de gravar antes de sair pro
+            // Google. Some no `pending`: na prática resolve bem antes de a
+            // pessoa notar "Um momento" na tela.
+            await conviteEmVoo.current;
             const res = await signIn.social({ provider: "google", callbackURL: "/bem-vindo" });
             // Se a resposta voltou com erro, a viagem nem começou: o navegador
             // continua aqui, e o botão precisa voltar a funcionar.
