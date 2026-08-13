@@ -563,7 +563,7 @@ function BuscaFalsa() {
       onClick={abrirBusca}
       className="surface-2 mt-6 flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:ring-1 hover:ring-[color-mix(in_srgb,var(--color-ink)_12%,transparent)]"
     >
-      <Search size={16} strokeWidth={1.5} className="shrink-0 text-[var(--color-ink-faint)]" />
+      <Search size={18} strokeWidth={1.5} className="shrink-0 text-[var(--color-ink-faint)]" />
       <span className="flex-1 text-[14px] text-[var(--color-ink-faint)]">Buscar</span>
       <span className="tabular text-[11px] text-[var(--color-ink-faint)]">⌘K</span>
     </button>
@@ -634,13 +634,13 @@ function Eu({
         onClick={() => setAberto((v) => !v)}
         aria-expanded={aberto}
         className={[
-          "pill mt-1 flex w-full items-center gap-2.5 px-2 py-2 text-left text-[14px] transition-colors",
+          "pill mt-1 flex w-full items-center gap-2.5 px-2 py-2.5 text-left text-[15px] transition-colors",
           path.startsWith("/perfil") || path.startsWith("/eu")
             ? "afiado font-medium text-[var(--color-ink)]"
             : "text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)] hover:text-[var(--color-ink)]",
         ].join(" ")}
       >
-        <Avatar src={image} name={name} handle={handle} size={26} />
+        <Avatar src={image} name={name} handle={handle} size={28} />
         <span className="truncate">{name ?? "Você"}</span>
 
         {/* ═══ A SETA. Sem ela, ninguém sabia que dá para clicar ═══
@@ -781,7 +781,7 @@ function Fora({
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="pill group flex items-center gap-2.5 px-3 py-2 text-[14px] text-[var(--color-ink-soft)] transition-colors duration-150 hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)] hover:text-[var(--color-ink)]"
+      className="pill group flex items-center gap-2.5 px-3 py-2.5 text-[15px] text-[var(--color-ink-soft)] transition-colors duration-150 hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)] hover:text-[var(--color-ink)]"
     >
       {icon}
       <span className="truncate">{children}</span>
@@ -808,7 +808,7 @@ function Item({
       href={href}
       aria-current={active ? "page" : undefined}
       className={[
-        "pill flex items-center gap-2.5 px-3 py-2 text-[14px] transition-colors duration-150",
+        "pill flex items-center gap-2.5 px-3 py-2.5 text-[15px] transition-colors duration-150",
         active
           ? "afiado font-medium text-[var(--color-ink)]"
           : "text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)] hover:text-[var(--color-ink)]",

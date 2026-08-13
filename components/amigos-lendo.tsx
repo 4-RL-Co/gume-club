@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Cover } from "@/components/cover";
 import { Avatar } from "@/components/avatar";
+import { estiloDoLeque } from "@/components/leque-capas";
 import type { AmigoLendo } from "@/lib/social";
 
 /**
@@ -37,24 +38,16 @@ export function AmigosLendo({ amigos }: { amigos: AmigoLendo[] }) {
               {/* O leque de capas. Uma sozinha fica reta; várias se sobrepõem e giram um
                   pouco, com a do meio por cima. Altura fixa para as caixas baterem. */}
               <div className="flex h-44 items-center justify-center">
-                {a.livros.map((livro, i) => {
-                  const meio = (n - 1) / 2;
-                  const giro = n === 1 ? 0 : (i - meio) * 7;
-                  return (
-                    <Link
-                      key={livro.slug}
-                      href={`/livro/${livro.slug}`}
-                      className="cover-lift block w-24 shrink-0"
-                      style={{
-                        marginLeft: i === 0 ? 0 : -34,
-                        transform: `rotate(${giro}deg)`,
-                        zIndex: n - Math.abs(i - meio),
-                      }}
-                    >
-                      <Cover title={livro.title} author={livro.author} src={livro.coverUrl} />
-                    </Link>
-                  );
-                })}
+                {a.livros.map((livro, i) => (
+                  <Link
+                    key={livro.slug}
+                    href={`/livro/${livro.slug}`}
+                    className="cover-lift block w-24 shrink-0"
+                    style={estiloDoLeque(i, n)}
+                  >
+                    <Cover title={livro.title} author={livro.author} src={livro.coverUrl} />
+                  </Link>
+                ))}
               </div>
 
               <Link
