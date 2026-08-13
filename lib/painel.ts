@@ -158,6 +158,19 @@ export type Cadastro = {
 
 export type Fatia = { rotulo: string; n: number };
 
+/** Uma linha do log de alterações: uma correção, uma capa, um emblema, um conjunto. */
+export type LogItem = {
+  quando: Date;
+  quem: string | null;
+  /** O TIPO do que mudou, em português de gente — nunca "work" ou "cover_proposal". */
+  tipo: string;
+  /** O alvo, quando dá pra nomear (o título da obra, o nome do autor). */
+  alvo: string | null;
+  /** Uma pista do que mudou, curta. */
+  detalhe: string | null;
+  revertido: boolean;
+};
+
 export type Painel = {
   filtro: Filtro;
   metas: { usuarios: Meta; contribuidores: Meta };
@@ -225,6 +238,20 @@ export type Painel = {
     semEditora: number;
     semAutor: number;
     buscasVazias: { termo: string; quantas: number }[];
+  };
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  QUEM MEXEU NO QUÊ. O log que faltava pra moderar sem abrir dez telas.
+   *
+   *  Não é vigilância de leitura (nenhuma entrada de estante entra aqui): é
+   *  o mesmo tipo de coisa que /contribuidores já mede, só que fila em vez
+   *  de placar — cada correção, cada capa proposta, na ordem em que
+   *  aconteceram, com quem fez e se sobreviveu. Ver ai/DECISIONS.md.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  moderacao: {
+    log: LogItem[];
+    banidos: { handle: string; nome: string | null; motivo: string | null; quando: Date }[];
   };
   /**
    * ════════════════════════════════════════════════════════════════════
@@ -360,7 +387,7 @@ export async function getPainel(viewer: Viewer, filtro: Filtro = FILTRO_PADRAO):
 export async function coletarPainel(filtro: Filtro = FILTRO_PADRAO): Promise<Painel> {
   const hojeSP = sql`(now() at time zone ${FUSO})::date`;
 
-  const [gente, uso, contribuicao, convite, catalogo, codigo, pessoas] = await Promise.all([
+  const [gente, uso, contribuicao, convite, catalogo, codigo, pessoas, moderacao] = await Promise.all([
     getGente(hojeSP, filtro),
     getUso(),
     getContribuicao(filtro),
@@ -368,6 +395,7 @@ export async function coletarPainel(filtro: Filtro = FILTRO_PADRAO): Promise<Pai
     getCatalogo(),
     getCodigoContagem(),
     getPessoas(hojeSP),
+    getModeracao(),
   ]);
 
   const metas = {
@@ -384,6 +412,7 @@ export async function coletarPainel(filtro: Filtro = FILTRO_PADRAO): Promise<Pai
     convite,
     catalogo,
     pessoas,
+    moderacao,
     insights: [],
   };
   painel.insights = gerarInsights(painel);
@@ -685,6 +714,115 @@ async function getCatalogo(): Promise<Painel["catalogo"]> {
   };
 }
 
+// ─────────────────────────────────────────────────────────────── MODERAÇÃO
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  O LOG DE ALTERAÇÕES. Correção, capa, emblema, conjunto — na ordem em
+ *  que aconteceram, com nome de quem fez.
+ *
+ *  ═══ NÃO É UMA TABELA NOVA ═══
+ *
+ *  `revisions` já é um log append-only (nunca apaga, reverter é uma linha
+ *  nova apontando pra que desfez — ver o comentário da coluna no schema).
+ *  Isto só LÊ o que já existe, junto com `cover_proposals`, e nomeia os
+ *  dois tipos de alvo que hoje `revisions` cobre (`work` e `colecao`).
+ *
+ *  ═══ POR QUE UM CASE COM SUBCONSULTA, E NÃO UM JOIN ═══
+ *
+ *  `target_id` aponta pra tabelas DIFERENTES dependendo de `target_type`
+ *  (works, editions→works, authors, colecoes) — não existe uma FK só. Um
+ *  join fixo casaria com a tabela errada na metade das linhas. O CASE
+ *  escolhe a subconsulta certa por linha, e nunca inventa um nome quando
+ *  a ficha já foi apagada (o valor fica null, e a tela mostra "um item
+ *  apagado" em vez de mentir um título).
+ * ════════════════════════════════════════════════════════════════════
+ */
+async function getModeracao(): Promise<Painel["moderacao"]> {
+  const revisoes = await db.execute<{
+    quando: Date; quem: string | null; target_type: string; reason: string | null;
+    alvo: string | null; reverted: boolean;
+  }>(sql`
+    select r.created_at as quando, u.handle as quem, r.target_type, r.reason,
+           (case r.target_type
+              when 'work' then (select w.title from works w where w.id = r.target_id)
+              when 'colecao' then (select c.title from colecoes c where c.id = r.target_id)
+              else null
+            end) as alvo,
+           (r.reverted_at is not null) as reverted
+      from revisions r
+      left join users u on u.id = r.user_id
+     order by r.created_at desc
+     limit 150
+  `);
+
+  const capas = await db.execute<{
+    quando: Date; quem: string | null; state: string; alvo: string | null;
+  }>(sql`
+    select cp.created_at as quando, u.handle as quem, cp.state,
+           w.title as alvo
+      from cover_proposals cp
+      left join users u on u.id = cp.user_id
+      left join editions e on e.id = cp.edition_id
+      left join works w on w.id = e.work_id
+     order by cp.created_at desc
+     limit 150
+  `);
+
+  const NOME_DO_TIPO: Record<string, string> = {
+    work: "correção de ficha",
+    colecao: "emblema da coleção",
+    edition: "correção de edição",
+    author: "correção de autor",
+  };
+  const NOME_DO_ESTADO: Record<string, string> = {
+    pending: "capa proposta",
+    applied: "capa usada",
+    refused: "capa recusada",
+  };
+
+  const log: LogItem[] = [
+    ...revisoes.map((r): LogItem => ({
+      quando: r.quando,
+      quem: r.quem,
+      tipo: NOME_DO_TIPO[r.target_type] ?? r.target_type,
+      alvo: r.alvo,
+      detalhe: r.reason,
+      revertido: r.reverted,
+    })),
+    ...capas.map((c): LogItem => ({
+      quando: c.quando,
+      quem: c.quem,
+      tipo: NOME_DO_ESTADO[c.state] ?? "capa",
+      alvo: c.alvo,
+      detalhe: null,
+      revertido: c.state === "refused",
+    })),
+    // new Date(...) e não .getTime() direto: db.execute() nem sempre devolve um
+    // Date de verdade pra timestamp (às vezes é a string crua do driver), e um
+    // teste real pegou isso na hora — new Date(Date) também funciona, então o
+    // cast é seguro nos dois casos.
+  ].sort((a, b) => new Date(b.quando).getTime() - new Date(a.quando).getTime()).slice(0, 200);
+
+  /**
+   * QUEM ESTÁ BANIDO HOJE. `banned_at`/`banned_reason` são colunas de ESTADO
+   * (desbanir zera), não um histórico — o mesmo desenho de lib/moderacao.ts.
+   * Consulta própria, e não `getBanidos()`: aquela exige `moderator_at`
+   * (ehModerador), e o idealizador pode não ter o cargo — as duas portas são
+   * INDEPENDENTES de propósito (ver o cabeçalho de lib/moderacao.ts), e o
+   * painel não pode quebrar pra quem só tem uma das duas.
+   */
+  const banidos = await db.execute<{ handle: string; nome: string | null; motivo: string | null; quando: Date }>(sql`
+    select u.handle, u.display_name as nome, u.banned_reason as motivo, u.banned_at as quando
+      from users u
+     where u.banned_at is not null
+     order by u.banned_at desc
+     limit 50
+  `);
+
+  return { log, banidos };
+}
+
 // ─────────────────────────────────────────────────────────────── INSIGHTS
 
 /**
@@ -833,6 +971,15 @@ export function painelEmMarkdown(p: Painel, geradoEm: string): string {
     } else {
       L.push(`| ${c.handle} | ${c.quando} | ${metodo} |`);
     }
+  }
+  L.push("");
+
+  L.push(`## Moderação`);
+  L.push(`- Banidos agora: ${n(p.moderacao.banidos.length)}`);
+  L.push(`- Últimas alterações no log: ${n(p.moderacao.log.length)}`);
+  if (p.moderacao.log.length > 0) {
+    const recente = p.moderacao.log[0]!;
+    L.push(`- A mais recente: ${recente.tipo}${recente.alvo ? ` em "${recente.alvo}"` : ""}, por ${recente.quem ?? "conta apagada"}.`);
   }
   L.push("");
 

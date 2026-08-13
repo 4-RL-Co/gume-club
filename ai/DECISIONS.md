@@ -3377,3 +3377,58 @@ Os dois scripts novos falam com o banco por `postgres` cru, como
 (puro, sem import de banco) é reaproveitado da casa. `scripts/operacao-mais-capas.mjs`
 importa `lib/db/index.ts` direto e pode já estar quebrado pelo mesmo motivo;
 não investigado esta noite.
+
+---
+
+## O painel virou quatro abas. Nenhum dado novo, um lugar melhor pra cada um.
+
+"Melhore o painel, pode colocar abas." Era uma página rolando: metas, gente,
+insights, filtros, uso, contribuição, convite, catálogo, export — nove
+blocos empilhados, sem hierarquia entre "o que crescer" e "o que consertar".
+
+**Crescimento**: metas, a base (pessoa a pessoa), filtros, o gráfico de
+cadastro + o log de quem chegou, convite. **Saúde**: uso (leitura, estante),
+contribuição, catálogo (completude + buscas sem resultado — exatamente o
+"pesquisas que a pessoa fez e não achou livro" do pedido). **Moderação**:
+nova — log de alterações, banidos, e as portas pra /cuidar e /pedidos (a
+ação continua lá; o painel só passou a ser onde se VÊ o que já aconteceu).
+**Agentic**: a "leitura rápida" (que já era aritmética com limiar, nunca
+IA — só mudou de endereço) e o bloco "exportar e ler por agente", que já
+existia e é exatamente o que esse nome pedia.
+
+Estado da aba fica em `useState`, não na URL — trocar de aba não pode
+recarregar a página do servidor, e os filtros de verdade (período, método,
+origem) continuam na URL porque esses sim mudam o que é buscado.
+
+**"Totalmente agentic" foi interpretado com cuidado.** README promete "nada
+de IA generativa no produto" — e o painel também é produto, mesmo privado.
+Não nasceu um chat, nem uma chamada de LLM em tempo real: "agentic" aqui
+significa a mesma coisa que já significava no bloco de export — dar a um
+agente (este, ou outro) o material pra ler e sintetizar por fora, nunca
+embutir a síntese como feature ao vivo. Se a intenção era outra (um chat
+dentro do painel), fica registrado que não foi isso que se construiu, e por
+quê — quem decide se abre exceção pro painel é o dono, e não em silêncio.
+
+**O log de alterações não é tabela nova**: `revisions` já é append-only
+(nunca apaga; reverter é uma linha nova apontando pra que desfez). A consulta
+só lê o que já existe, junto com `cover_proposals`, resolvendo o nome do alvo
+por um CASE (work/colecao apontam pra tabelas diferentes, sem FK única).
+
+**Banidos usa uma consulta PRÓPRIA, não `getBanidos()`.** Aquela função exige
+`ehModerador` (moderator_at), e o idealizador pode não ter o cargo — as duas
+portas (`assertIdealizador`, `assertModerador`) são independentes de
+propósito. Emprestar a autorização errada quebraria o painel pra quem só tem
+uma das duas.
+
+**Um bug real, achado pelo teste antes de chegar a produção**: `db.execute()`
+nem sempre devolve um `Date` de verdade pra coluna timestamp (às vezes é a
+string crua do driver) — `.sort((a,b) => a.quando.getTime() - ...)` quebrava
+na hora. `new Date(x).getTime()` é seguro nos dois casos, e ficou assim.
+
+**Não fiz** (escopo cortado de propósito, não esquecido): tirar "Cuidar do
+acervo" do menu lateral do idealizador. O pedido era "eu fico com item a
+menos", não obrigação — e mexer em visibilidade de menu por papel, sem
+alguém pra checar o resultado antes do deploy, é exatamente o tipo de
+mudança pequena com jeito fácil de acertar a condição errada e esconder a
+fila de quem não é o idealizador. A porta nova (aba Moderação → link) já
+existe; a antiga continua, e sai quando alguém puder olhar o resultado.
