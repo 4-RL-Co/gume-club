@@ -239,4 +239,58 @@ describe("o convite sobrevive à ida ao Google", () => {
     // `input: false`: ninguém posta o próprio padrinho.
     expect(fonte).toMatch(/invitedBy:\s*\{[^}]*input:\s*false/);
   });
+
+  /**
+   * ═══ O SEXTO ELO, E FOI ELE QUE QUEBROU DE VERDADE ═══
+   *
+   * Os cinco de cima provam que o convite, uma vez gravado no cookie, chega até a
+   * coluna. Mas `rememberInviter` é uma chamada de REDE — ela grava o cookie, não é
+   * instantânea — e o botão do Google não esperava por ela: saía pro Google no
+   * clique, sem esperar o `Set-Cookie` voltar. Quem chega de um link num post
+   * costuma clicar rápido, no celular, exatamente o caminho que perde a corrida.
+   *
+   * O dono relatou isto ao vivo: "os posts que eu fiz tem meu link de convite mas
+   * no painel aparece que ninguém chegou por convite" — com o cookie, o hook e a
+   * query todos corretos (testado acima). O sexto elo era o único que faltava.
+   */
+  it("o botão do Google e o formulário esperam o convite terminar de gravar", () => {
+    const fonte = readFileSync("app/entrar/page.tsx", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+
+    const inicioSubmit = fonte.indexOf("const submit = (data: FormData) =>");
+    const fimSubmit = fonte.indexOf("return (\n    <main");
+    const blocoSubmit = fonte.slice(inicioSubmit, fimSubmit);
+
+    const inicioGoogle = fonte.indexOf('onClick={async () => {\n          setGoogle("indo")');
+    const fimGoogle = fonte.indexOf("</button>", inicioGoogle);
+    const blocoGoogle = fonte.slice(inicioGoogle, fimGoogle);
+
+    expect(inicioSubmit, "o formulário de e-mail/senha sumiu do arquivo").toBeGreaterThan(-1);
+    expect(inicioGoogle, "o botão do Google sumiu do arquivo").toBeGreaterThan(-1);
+
+    const esperaSubmit = blocoSubmit.indexOf("await conviteEmVoo.current");
+    const chamadaEmail = Math.max(blocoSubmit.indexOf("signUp.email("), blocoSubmit.indexOf("signIn.email("));
+    expect(
+      esperaSubmit,
+      "o formulário de e-mail/senha não espera o convite terminar de gravar antes de " +
+        "criar a conta — a corrida existe aqui também, só é mais rara.",
+    ).toBeGreaterThan(-1);
+    expect(
+      esperaSubmit,
+      "a espera existe, mas vem DEPOIS da chamada que cria a conta — não protege nada.",
+    ).toBeLessThan(chamadaEmail);
+
+    const esperaGoogle = blocoGoogle.indexOf("await conviteEmVoo.current");
+    const chamadaGoogle = blocoGoogle.indexOf("signIn.social(");
+    expect(
+      esperaGoogle,
+      "o botão do Google não espera o convite terminar de gravar antes de sair pro " +
+        "Google. É a corrida real: um clique rápido (o caminho comum de quem chega de " +
+        "um link num post) sai antes do Set-Cookie voltar, e o convite se perde em " +
+        "silêncio — sem erro, sem log, só um /painel que mostra zero convites.",
+    ).toBeGreaterThan(-1);
+    expect(
+      esperaGoogle,
+      "a espera existe, mas vem DEPOIS da saída pro Google — o navegador já foi embora.",
+    ).toBeLessThan(chamadaGoogle);
+  });
 });
