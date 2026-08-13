@@ -8,6 +8,7 @@ import { origemAceita } from "@/lib/imagens";
 import { Cover } from "@/components/cover";
 import { porEmblemaAction } from "@/app/colecao/actions";
 import { SeloColecionador } from "@/components/selo-colecionador";
+import { AdicionarVolume } from "@/components/adicionar-volume";
 import { DOURADO } from "@/lib/dourado";
 import type { Conjunto } from "@/lib/copies";
 
@@ -77,6 +78,9 @@ export function ConjuntoCard({
   const [erro, setErro] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const pct = c.total > 0 ? Math.round((c.tenho / c.total) * 100) : 0;
+  // O próximo número sugerido pra adicionar um volume aqui mesmo, sem
+  // precisar abrir a página da coleção. Ver components/adicionar-volume.tsx.
+  const proximoVolume = Math.max(0, ...c.volumes.map((v) => v.volume ?? 0)) + 1;
 
   const salvarEmblema = (novoUrl: string) => {
     setErro(null);
@@ -220,6 +224,14 @@ export function ConjuntoCard({
           >
             ver a página desta coleção
           </Link>
+
+          {/* ADICIONAR SEM SAIR DO CARD. Antes, só quem já tivesse aberto a
+              página da coleção descobria que dava pra adicionar um volume —
+              o pedido do dono foi direto: "até entrar ela não sabe que é
+              possível". O mesmo widget da página, só que aqui também. */}
+          {podeEditar && (
+            <AdicionarVolume conjuntoId={c.id} conjuntoSlug={c.slug} proximoVolume={proximoVolume} />
+          )}
 
           {podeEditar && (
             <div className="mt-4 border-t border-[var(--color-rule)] pt-4">
