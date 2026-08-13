@@ -19,12 +19,16 @@
  */
 
 /**
- * MEMBRO FUNDADOR: as cinquenta primeiras. O corte é fixo, e não se move.
+ * MEMBRO FUNDADOR: as cem primeiras. O corte é fixo, e não se move.
  *
- * "Membro fundador" só quer dizer alguma coisa se for pouca gente. Cem pessoas não são
- * um começo: são um lançamento. Cinquenta cabem numa sala.
+ * Era CINQUENTA ("cem pessoas não são um começo, são um lançamento"), e o argumento
+ * continua certo em abstrato — só que ele media a insígnia contra o tamanho de uma sala, e
+ * o Gume não mede a si mesmo contra uma sala: mede contra a própria meta pública de cem
+ * contas (ver `app/painel`). As cem primeiras SÃO o lançamento inteiro, não uma fração
+ * dele, e "fundador" some de fazer sentido se o clube for menor que a coisa que ele fundou.
+ * Decisão revertida com dono e motivo em `ai/DECISIONS.md`.
  */
-export const CORTE_FUNDADOR = 50;
+export const CORTE_FUNDADOR = 100;
 
 /** ZELADOR: dez correções de catálogo que SOBREVIVERAM (revertidas não contam). */
 export const CORRECOES_PARA_ZELADOR = 10;
