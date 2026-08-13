@@ -7,9 +7,15 @@ import { novaEstanteComDescricao } from "@/app/livro/[slug]/curation-actions";
 
 /**
  * ════════════════════════════════════════════════════════════════════
- *  O DIÁLOGO DE CRIAR UMA COLEÇÃO. O primeiro que ANIMA, neste app.
+ *  O DIÁLOGO DE CRIAR UMA LISTA. O primeiro que ANIMA, neste app.
  *
- *  Criar uma estante era um `<input>` que aparecia inline na barra lateral
+ *  NÃO "coleção" — este repo já resolveu essa colisão uma vez
+ *  (`/colecoes` virou `/listas`, ver ai/DECISIONS.md): "coleção" é o que
+ *  você TEM (os conjuntos/troféus, `/colecao`), e "lista" é a estante que
+ *  você monta com as próprias mãos. Este diálogo nasceu chamando a coisa
+ *  errada — corrigido antes de ganhar uma segunda porta de entrada.
+ *
+ *  Criar uma lista era um `<input>` que aparecia inline na barra lateral
  *  (só o nome, sem descrição) — não tinha diálogo nenhum. `components/
  *  command.tsx` e `components/afinidade-linha.tsx` já usam a mesma casca de
  *  modal (`role="dialog"`, `fixed inset-0 bg-black/60 backdrop-blur-sm`,
@@ -30,7 +36,7 @@ import { novaEstanteComDescricao } from "@/app/livro/[slug]/curation-actions";
  *  `pointer-events: none` fechado evita que ele roube clique invisível.
  * ════════════════════════════════════════════════════════════════════
  */
-export function DialogoColecao({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function DialogoLista({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [pending, start] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
   const nomeRef = useRef<HTMLInputElement>(null);
@@ -73,7 +79,7 @@ export function DialogoColecao({ open, onClose }: { open: boolean; onClose: () =
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="criar uma coleção"
+        aria-label="criar uma lista"
         onClick={(e) => e.stopPropagation()}
         className="surface w-full max-w-md p-6"
         style={{
@@ -83,7 +89,7 @@ export function DialogoColecao({ open, onClose }: { open: boolean; onClose: () =
         }}
       >
         <div className="flex items-start justify-between gap-4">
-          <h2 className="voice text-[22px] leading-snug">criar uma coleção</h2>
+          <h2 className="voice text-[22px] leading-snug">criar uma lista</h2>
           <button type="button" onClick={onClose} aria-label="fechar" className="shrink-0 text-[var(--color-ink-faint)] hover:text-[var(--color-ink)]">
             <X size={18} strokeWidth={1.5} />
           </button>
@@ -95,7 +101,7 @@ export function DialogoColecao({ open, onClose }: { open: boolean; onClose: () =
             start(async () => {
               const nome = String(data.get("nome") ?? "").trim();
               if (!nome) {
-                setErro("dê um nome para a coleção");
+                setErro("dê um nome para a lista");
                 return;
               }
               const descricao = String(data.get("descricao") ?? "");
