@@ -547,8 +547,13 @@ export function Sidebar({
  * Mora aqui fora porque quem chama são dois: o campo do desktop e a lupa da barra de
  * baixo do celular. Duas cópias de "como se abre a busca" divergem no dia em que o
  * atalho mudar, e aí uma das duas para de abrir sem ninguém perceber.
+ *
+ * EXPORTADA porque um terceiro lugar passou a precisar dela (o convite para começar
+ * uma coleção, em /colecao): ele não é um campo de busca novo, é o MESMO atalho
+ * disparado de outro botão. Uma busca só, chamada de onde fizer sentido — o que este
+ * arquivo proíbe é uma SEGUNDA busca, não um segundo botão para a primeira.
  */
-function abrirBusca() {
+export function abrirBusca() {
   window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
 }
 

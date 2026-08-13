@@ -6,7 +6,7 @@ import { getQueridinhos } from "@/lib/queridinhos";
 /**
  * O CARTÃO DA CURADORIA DO GUME: a coroa dourada, o título editorial, e o pódio
  * de verdade dentro (as cinco capas mais adoradas, a 1ª no trono). Um componente
- * só, porque ele aparece em três vitrines (explorar, /colecoes, e fixado no
+ * só, porque ele aparece em três vitrines (explorar, /listas, e fixado no
  * perfil da casa) e três cópias divergiriam na primeira semana.
  *
  * Só existe quando já existe queridinho: cartão de vitrine vazio é promessa quebrada.

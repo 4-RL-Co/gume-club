@@ -39,6 +39,7 @@ const POR_EXTENSO: Record<number, string> = {
   5: "cinco",
   10: "dez",
   50: "cinquenta",
+  100: "cem",
 };
 
 describe("as regras das insígnias", () => {

@@ -167,7 +167,7 @@ export async function getBadgesOf(userIds: string[]): Promise<Record<string, Ins
     fundador: boolean;
     /** Quem paga a conta do servidor. Ver a nota em lib/badges-view.ts. */
     apoiador: boolean;
-    /** A ordem de chegada. 1 a 50 para quem é fundador; nulo para o resto. */
+    /** A ordem de chegada. 1 a 100 para quem é fundador; nulo para o resto. */
     chegada: number | null;
     idealizador: boolean;
   }>(sql`
