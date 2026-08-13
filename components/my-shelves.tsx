@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Plus } from "lucide-react";
-import { DialogoColecao } from "@/components/dialogo-colecao";
+import { DialogoLista } from "@/components/dialogo-lista";
 
 export type Shelf = { id: string; slug: string; name: string; visibility: string; n: number };
 
@@ -14,7 +14,7 @@ export type Shelf = { id: string; slug: string; name: string; visibility: string
  *
  * Era um `<input>` que aparecia inline aqui embaixo — só o nome, sem
  * descrição, sem animação nenhuma. Virou o diálogo de
- * components/dialogo-colecao.tsx: o primeiro popup do app que anima ao
+ * components/dialogo-lista.tsx: o primeiro popup do app que anima ao
  * abrir/fechar.
  */
 export function MyShelves({ shelves }: { shelves: Shelf[] }) {
@@ -29,14 +29,14 @@ export function MyShelves({ shelves }: { shelves: Shelf[] }) {
         </h2>
         <button
           onClick={() => setAberto(true)}
-          aria-label="criar coleção"
+          aria-label="criar lista"
           className="text-[var(--color-ink-faint)] transition-colors hover:text-[var(--color-ink)]"
         >
           <Plus size={14} strokeWidth={1.5} />
         </button>
       </div>
 
-      <DialogoColecao open={aberto} onClose={() => setAberto(false)} />
+      <DialogoLista open={aberto} onClose={() => setAberto(false)} />
 
       <nav className="flex flex-col gap-0.5">
         {shelves.map((s) => {

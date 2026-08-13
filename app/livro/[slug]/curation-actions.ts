@@ -222,7 +222,7 @@ export async function novaEstante(name: string, visibility: Visibility): Promise
 
 /**
  * A mesma criação de estante, com descrição — usada pelo diálogo de
- * components/dialogo-colecao.tsx. `descreverLista` é uma ação separada
+ * components/dialogo-lista.tsx. `descreverLista` é uma ação separada
  * (lib/listas.ts) porque a descrição também se edita depois, numa estante
  * já existente; aqui as duas rodam em sequência, uma vez, na criação.
  */

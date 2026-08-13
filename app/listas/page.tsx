@@ -3,6 +3,7 @@ import { ScreenHeader } from "@/components/screen-header";
 import { Empty } from "@/components/empty";
 import { ListaGrid } from "@/components/lista-card";
 import { CuradoriaCard } from "@/components/curadoria-card";
+import { CriarLista } from "@/components/criar-lista";
 import { getTodasAsListas } from "@/lib/listas";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +33,11 @@ export default async function Listas() {
 
   return (
     <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
-      <ScreenHeader title="Listas" meta={["a mais nova primeiro", "sem algoritmo"]} />
+      <ScreenHeader title="Listas" meta={["a mais nova primeiro", "sem algoritmo"]}>
+        {/* Segunda porta pra criar uma lista — a primeira (components/my-shelves.tsx)
+            só existe na coluna de vidro do desktop. Ver components/criar-lista.tsx. */}
+        {viewer && <CriarLista />}
+      </ScreenHeader>
 
       <div className="mt-8">
         <CuradoriaCard />
