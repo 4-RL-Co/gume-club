@@ -130,6 +130,7 @@ const EXCECAO = new Set([
   "app/sobre/page.tsx",
   "app/painel/page.tsx",
   "components/painel.tsx",
+  "components/painel-grafico.tsx",
 ]);
 
 function arquivos(dir: string, out: string[] = []): string[] {

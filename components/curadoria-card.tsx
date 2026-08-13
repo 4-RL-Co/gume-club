@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Crown } from "lucide-react";
 import { Cover } from "@/components/cover";
 import { getQueridinhos } from "@/lib/queridinhos";
+import { DOURADO } from "@/lib/dourado";
 
 /**
  * O CARTÃO DA CURADORIA DO GUME: a coroa dourada, o título editorial, e o pódio
@@ -22,7 +23,7 @@ export async function CuradoriaCard({ compacto = false }: { compacto?: boolean }
     >
       {/* Dourado, a assinatura da curadoria da casa: exceção de cor dirigida pelo
           dono (ai/DECISIONS.md). */}
-      <span className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em]" style={{ color: "#d9a520" }}>
+      <span className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em]" style={{ color: DOURADO }}>
         <Crown size={13} strokeWidth={1.75} aria-hidden />
         a curadoria do Gume
       </span>

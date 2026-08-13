@@ -34,6 +34,7 @@ import { getActorOrNull } from "@/lib/actor";
 import { FORMAT_LABEL } from "@/lib/shelf-view";
 import { origemAceita } from "@/lib/imagens";
 import { nomeDoAutor } from "@/lib/autores";
+import { DOURADO } from "@/lib/dourado";
 
 export const dynamic = "force-dynamic";
 
@@ -458,7 +459,7 @@ export default async function BookPage({
                   className="inline-flex items-center gap-1.5 text-[var(--color-ink)] underline decoration-[var(--color-rule)] underline-offset-4 hover:decoration-[var(--color-ink)]"
                   title="entre os cem que a comunidade mais adorou"
                 >
-                  <Crown size={14} strokeWidth={1.75} aria-hidden style={{ color: "#d9a520" }} />
+                  <Crown size={14} strokeWidth={1.75} aria-hidden style={{ color: DOURADO }} />
                   <span className="tabular font-medium">{comunidade.posicao}º</span> dos queridinhos
                 </Link>
               )}

@@ -2,13 +2,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Trophy, Package } from "lucide-react";
+import { Package } from "lucide-react";
 import { getActorOrNull } from "@/lib/actor";
 import { getConjuntoDetalhe } from "@/lib/conjunto-detalhe";
 import { origemAceita } from "@/lib/imagens";
 import { Cover } from "@/components/cover";
 import { Prosa } from "@/components/prosa";
 import { Empty } from "@/components/empty";
+import { SeloColecionador } from "@/components/selo-colecionador";
+import { DOURADO } from "@/lib/dourado";
 
 export const dynamic = "force-dynamic";
 
@@ -102,24 +104,33 @@ export default async function ColecaoDetalhe({ params }: { params: Promise<{ slu
 
   return (
     <main className="mx-auto max-w-4xl px-6 pb-32 sm:px-10">
-      {/* ═══ O CABEÇALHO: O EMBLEMA GRANDE, E O SELO DE QUEM CHEGOU AQUI ═══ */}
+      {/* ═══ O CABEÇALHO: O EMBLEMA GRANDE, E A MEDALHA DE QUEM CHEGOU AQUI ═══
+
+          A medalha morde o anel dourado do emblema — por isso o `overflow-hidden`
+          e o `rounded-full` que recortam a FOTO moraram num span interno, `absolute
+          inset-0`; o span externo fica só `relative`, sem cortar nada, e é onde a
+          medalha (fora do círculo) consegue vazar. Ver components/selo-colecionador.tsx. */}
       <header className="mt-20 flex flex-col items-center text-center sm:mt-28">
         {/* A foto PREENCHE o círculo (object-cover), não boia pequena dentro dele: um
             personagem ou um rosto cortado à força de padding vira um selo ilegível,
             e não precisa crescer além do círculo pra ficar visível — só preencher. */}
         {c.emblema && origemAceita(c.emblema) && (
-          <span
-            className="surface-2 relative mb-6 flex h-24 w-24 overflow-hidden rounded-full sm:h-28 sm:w-28"
-            style={{ boxShadow: "0 0 0 3px color-mix(in srgb, #d9a520 70%, transparent)" }}
-          >
-            <Image src={c.emblema} alt="" fill sizes="(min-width: 640px) 112px, 96px" className="object-cover" />
+          <span className="relative mb-6 flex h-24 w-24 sm:h-28 sm:w-28">
+            <span
+              className="surface-2 absolute inset-0 overflow-hidden rounded-full"
+              style={{ boxShadow: `0 0 0 3px color-mix(in srgb, ${DOURADO} 70%, transparent)` }}
+            >
+              <Image src={c.emblema} alt="" fill sizes="(min-width: 640px) 112px, 96px" className="object-cover" />
+            </span>
+            <span className="absolute -bottom-2 -right-2 z-10">
+              <SeloColecionador tamanho={44} girar={10} />
+            </span>
           </span>
         )}
-        <p
-          className="inline-flex items-center gap-1.5 rounded-[var(--radius-control)] border px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.1em]"
-          style={{ color: "#d9a520", borderColor: "#d9a520" }}
-        >
-          <Trophy size={12} strokeWidth={1.75} aria-hidden />
+        {/* A medalha já carrega o símbolo; esta linha vira legenda neutra, não
+            repete a cor nem o ícone. Se não há emblema (nada pra medalha morder),
+            ela sozinha continua dizendo o fato. */}
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
           coleção completa
         </p>
         <h1 className="voice mt-5 max-w-2xl text-[40px] leading-[1.04] tracking-[-0.015em] sm:text-[52px]">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Crown, BookOpenCheck, Bookmark, Heart } from "lucide-react";
+import { DOURADO } from "@/lib/dourado";
 import { Cover } from "@/components/cover";
 import { Empty } from "@/components/empty";
 import { getViewer } from "@/lib/viewer";
@@ -48,7 +49,7 @@ export default async function Queridinhos() {
           cor dirigida pelo dono, ver ai/DECISIONS.md), o título grande na serifa da
           voz, e a regra da lista dita em uma frase. */}
       <header className="mt-16 sm:mt-24">
-        <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em]" style={{ color: "#d9a520" }}>
+        <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em]" style={{ color: DOURADO }}>
           <Crown size={14} strokeWidth={1.75} aria-hidden />
           a curadoria do Gume
         </p>

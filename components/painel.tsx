@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import type { Painel as Dados, Ponto, Fatia, Meta } from "@/lib/painel";
+import type { Painel as Dados, Fatia, Meta } from "@/lib/painel";
+import { GraficoSerie } from "@/components/painel-grafico";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -131,86 +132,6 @@ function CartaoMeta({ titulo, meta, nota }: { titulo: string; meta: Meta; nota?:
   );
 }
 
-function Area({ pontos }: { pontos: Ponto[] }) {
-  const [hover, setHover] = useState<number | null>(null);
-  const L = 34;
-  const W = 720;
-  const H = 200;
-  const topo = 16;
-  const base = H - 26;
-
-  const { d, area, xs, teto } = useMemo(() => {
-    const teto = Math.max(1, ...pontos.map((p) => p.n));
-    const larg = W - L - 12;
-    const passo = pontos.length > 1 ? larg / (pontos.length - 1) : 0;
-    const xs = pontos.map((_, i) => L + i * passo);
-    const y = (v: number) => base - (v / teto) * (base - topo);
-    const linha = pontos.map((p, i) => `${i === 0 ? "M" : "L"} ${xs[i]!.toFixed(1)} ${y(p.n).toFixed(1)}`).join(" ");
-    const area =
-      pontos.length > 0 ? `${linha} L ${xs[xs.length - 1]!.toFixed(1)} ${base} L ${xs[0]!.toFixed(1)} ${base} Z` : "";
-    return { d: linha, area, xs, teto };
-  }, [pontos, base]);
-
-  if (pontos.length === 0) return <div className="text-[13px] text-[var(--color-ink-faint)]">sem dados no período</div>;
-
-  const y = (v: number) => base - (v / teto) * (base - topo);
-
-  return (
-    <div className="relative">
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        className="w-full"
-        style={{ overflow: "visible" }}
-        onMouseLeave={() => setHover(null)}
-        onMouseMove={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          const x = ((e.clientX - rect.left) / rect.width) * W;
-          let melhor = 0;
-          let dist = Infinity;
-          xs.forEach((xi, i) => {
-            const dd = Math.abs(xi - x);
-            if (dd < dist) {
-              dist = dd;
-              melhor = i;
-            }
-          });
-          setHover(melhor);
-        }}
-      >
-        <defs>
-          <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={ACCENT} stopOpacity="0.28" />
-            <stop offset="100%" stopColor={ACCENT} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        {[0, 0.5, 1].map((g) => {
-          const yy = topo + g * (base - topo);
-          return (
-            <g key={g}>
-              <line x1={L} y1={yy} x2={W - 12} y2={yy} stroke="var(--color-rule)" strokeWidth="1" />
-              <text x={L - 8} y={yy + 4} textAnchor="end" fontSize="10" fill="var(--color-ink-faint)">
-                {Math.round(teto * (1 - g))}
-              </text>
-            </g>
-          );
-        })}
-        {area && <path d={area} fill="url(#areaFill)" />}
-        {d && <path d={d} fill="none" stroke={ACCENT} strokeWidth="2" strokeLinejoin="round" />}
-        {hover !== null && (
-          <g>
-            <line x1={xs[hover]} y1={topo} x2={xs[hover]} y2={base} stroke="var(--color-ink-faint)" strokeWidth="1" strokeDasharray="3 3" />
-            <circle cx={xs[hover]} cy={y(pontos[hover]!.n)} r="4" fill={ACCENT} stroke="var(--surface-1)" strokeWidth="2" />
-          </g>
-        )}
-      </svg>
-      {hover !== null && (
-        <div className="mt-1 text-[12px] text-[var(--color-ink-soft)]">
-          <span className="tabular font-semibold text-[var(--color-ink)]">{n(pontos[hover]!.n)}</span> em {pontos[hover]!.chave}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function Distribuicao({ fatias }: { fatias: Fatia[] }) {
   const teto = Math.max(1, ...fatias.map((f) => f.n));
@@ -555,7 +476,7 @@ export function Painel({ dados }: { dados: Dados }) {
             </span>
           </div>
           <div className="mt-4">
-            <Area pontos={gente.serie} />
+            <GraficoSerie pontos={gente.serie} />
           </div>
           <div className="mt-4 flex flex-wrap gap-x-8 gap-y-2 text-[13px] text-[var(--color-ink-soft)]">
             <span><span className="tabular font-semibold text-[var(--color-ink)]">{n(gente.novos7)}</span> em 7 dias</span>
