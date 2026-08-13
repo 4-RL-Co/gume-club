@@ -9,7 +9,13 @@ export const dynamic = "force-dynamic";
 
 /**
  * ════════════════════════════════════════════════════════════════════
- *  /colecoes: TODAS as coleções públicas, numa galeria só.
+ *  /listas: TODAS as listas públicas, numa galeria só.
+ *
+ *  Era /colecoes — e "coleção" também é o nome da tela /colecao (o que você TEM,
+ *  os conjuntos/troféus). Duas coisas diferentes com quase o mesmo nome, lado a
+ *  lado no mesmo perfil: quem chegava não sabia qual era qual. Esta é a
+ *  funcionalidade estilo Letterboxd — estantes que um leitor monta com as
+ *  próprias mãos — e "lista" é o nome que sobra sem colidir. Ver ai/DECISIONS.md.
  *
  *  O explorar mostra um sorteio (seis, rotacionando); esta tela é o acervo
  *  inteiro, para quem quer garimpar. A ordem é cronológica, a mais nova
@@ -20,26 +26,26 @@ export const dynamic = "force-dynamic";
  *  gesto do Letterboxd com as listas oficiais.
  * ════════════════════════════════════════════════════════════════════
  */
-export default async function Colecoes() {
+export default async function Listas() {
   const viewer = await getViewer();
   const listas = await getTodasAsListas(viewer);
 
   return (
     <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
-      <ScreenHeader title="Coleções" meta={["a mais nova primeiro", "sem algoritmo"]} />
+      <ScreenHeader title="Listas" meta={["a mais nova primeiro", "sem algoritmo"]} />
 
       <div className="mt-8">
         <CuradoriaCard />
       </div>
 
       <h2 className="mt-10 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-        as coleções de quem lê por aqui
+        as listas de quem lê por aqui
       </h2>
 
       {listas.length === 0 ? (
         <div className="mt-6">
           <Empty>
-            Ninguém abriu uma coleção ainda. Monte a sua num livro qualquer, e ela aparece aqui.
+            Ninguém abriu uma lista ainda. Monte a sua num livro qualquer, e ela aparece aqui.
           </Empty>
         </div>
       ) : (

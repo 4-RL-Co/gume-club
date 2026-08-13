@@ -15,6 +15,16 @@ import { FONTES_DE_IMAGEM } from "./lib/imagens";
  */
 const config: NextConfig = {
   reactStrictMode: true,
+  /**
+   * /colecoes virou /listas (ver ai/DECISIONS.md): duas coisas com quase o mesmo
+   * nome no mesmo perfil — a coleção (o que você TEM, em /colecao) e a coleção
+   * montada à mão (estilo Letterboxd) — e só uma podia ficar com a palavra. Quem
+   * ainda tem o endereço velho salvo, ou clica num link antigo, chega no lugar
+   * certo em vez de num 404.
+   */
+  async redirects() {
+    return [{ source: "/colecoes", destination: "/listas", permanent: true }];
+  },
   images: {
     remotePatterns: FONTES_DE_IMAGEM.map((f) => ({
       protocol: "https" as const,

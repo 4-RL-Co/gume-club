@@ -87,6 +87,32 @@ export const FONTES_DE_IMAGEM = [
   { host: "lh3.googleusercontent.com", oQueE: "a foto de perfil do Google" },
 
   /**
+   * ════════════════════════════════════════════════════════════════════
+   *  O EMBLEMA DA COLEÇÃO GANHOU CARA DE PERSONAGEM. E A LISTA ABRIU PARA ISSO.
+   *
+   *  Até aqui, todo host desta lista tinha proveniência limpa (Commons, Open Library,
+   *  editora). O dono pediu uma imagem de PERSONAGEM para representar a coleção — o
+   *  estigma do Berserk, o Kratos de God of War — "de qualquer fonte", e autorizou de
+   *  propósito correr o risco de direito autoral que isso carrega. É a mesma
+   *  autorização que já valia para os emblemas de logotipo: "pode pegar da internet os
+   *  símbolos, não tem problema, a galera faz com games, faça". Ver ai/DECISIONS.md.
+   *
+   *  Os hosts abaixo continuam curados pelo MESMO motivo dos de cima — são acervos
+   *  grandes e estáveis, e a imagem entra por referência, nunca uma cópia — só que
+   *  agora a curadoria aceita conteúdo de fã, e não só acervo de proveniência limpa.
+   *  `img-src https:` continua fora de cogitação: nenhum host aqui é "a internet
+   *  inteira", pelo mesmo motivo escrito no topo deste arquivo.
+   *
+   *  Fandom é a mesma classe de risco que o Commons já é: as duas são wikis abertas,
+   *  com conteúdo que qualquer pessoa sobe. A diferença é só que o Commons filtra por
+   *  licença e o Fandom não — e é exatamente essa diferença que o dono decidiu aceitar.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  { host: "static.wikia.nocookie.net", oQueE: "wikis de fã (Fandom): personagem de anime, mangá e jogo" },
+  { host: "image.tmdb.org", oQueE: "o TMDB: still de filme e série" },
+  { host: "images.igdb.com", oQueE: "o IGDB: arte de jogo" },
+
+  /**
    * ═══ E A FOTO QUE A PRÓPRIA PESSOA MANDOU ═══
    *
    * Em produção ela não mora no nosso disco (ele não sobrevive ao deploy): ela vai para o

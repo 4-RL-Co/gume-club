@@ -428,6 +428,13 @@
       "when": 1784700817013,
       "tag": "0060_o_emblema_da_colecao",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1784700817014,
+      "tag": "0061_o_emblema_nunca_gravou",
+      "breakpoints": true
     }
   ]
 }
