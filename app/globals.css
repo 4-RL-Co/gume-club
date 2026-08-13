@@ -194,24 +194,27 @@
    */
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-    /* Carvão quente, não void. #060606 era quase-absoluto de propósito, mas
-       preto ao lado de texto claro é o MAIOR contraste que uma tela consegue
-       mostrar — e isso lê como duro, não como rico (é a mesma razão do
-       Material Design nunca usar #000000 puro). A regra de "nunca invertido,
-       nunca frio" continua de pé: o tom é o mesmo grafite quente de sempre
-       (R levemente > G > B), só mais alto na escala de luz. A distância
-       entre nível 0 e nível 1 continua sendo o que FAZ o cartão existir. */
-    --color-canvas: #161310;
-    --surface-0: #161310;
-    --surface-1: #201c17;       /* the card */
-    --surface-2: #2a251e;       /* a card inside a card, or a control */
-    --color-rule: #3a3327;
+    /* Carvão, não void — e agora puxado pro cinza-roxinho, não mais quente.
+       #060606 era quase-absoluto de propósito, mas preto ao lado de texto
+       claro é o MAIOR contraste que uma tela consegue mostrar — e isso lê
+       como duro, não como rico (é a mesma razão do Material Design nunca
+       usar #000000 puro). A régua de "nunca invertido, nunca frio" que
+       morava aqui foi revista: o dono pediu explicitamente o cinza-roxinho,
+       na linha do catppuccin — ver ai/DECISIONS.md, a entrada que substitui
+       essa regra (não a apaga: registra por cima, como a troca de fonte). A
+       distância entre nível 0 e nível 1 continua sendo o que FAZ o cartão
+       existir — só o matiz da escala mudou. */
+    --color-canvas: #17151d;
+    --surface-0: #17151d;
+    --surface-1: #211f2b;       /* the card */
+    --surface-2: #2b2836;       /* a card inside a card, or a control */
+    --color-rule: #3c3849;
     --color-paper: var(--surface-1);
     --color-card: var(--surface-1);
-    --color-ink: #e6ddc9;
-    --color-ink-soft: #a89d89;
-    --color-ink-faint: #786d5a;
-    --color-rule: #3a3327;
+    --color-ink: #e4dfee;
+    --color-ink-soft: #a9a3bf;
+    --color-ink-faint: #7b7492;
+    --color-rule: #3c3849;
 
     /* No escuro, a lâmina brilha um pouco mais: o mesmo verde-água sobre preto
        quase absoluto lê mais apagado do que sobre papel. */
@@ -238,8 +241,8 @@
     /* O FIO, no escuro: branco-osso. É aqui que ele é a lâmina que brilha, e é
        por isso que ele nunca pôde ser uma cor só. Ver o bloco do tema claro. */
     --fio: #f0ede6;
-    --afiado-de: #2c2620;
-    --afiado-para: #221d18;
+    --afiado-de: #2e2a3a;
+    --afiado-para: #24212e;
     --afiado-borda: rgb(255 255 255 / 0.09);
     --afiado-sombra: rgb(0 0 0 / 0.35);
     --fio-halo-1: 45%;
@@ -250,24 +253,27 @@
 
   /* A escolha explícita. Mesmos tokens, e o teste garante que continuam os mesmos. */
   :root[data-theme="dark"] {
-    /* Carvão quente, não void. #060606 era quase-absoluto de propósito, mas
-       preto ao lado de texto claro é o MAIOR contraste que uma tela consegue
-       mostrar — e isso lê como duro, não como rico (é a mesma razão do
-       Material Design nunca usar #000000 puro). A regra de "nunca invertido,
-       nunca frio" continua de pé: o tom é o mesmo grafite quente de sempre
-       (R levemente > G > B), só mais alto na escala de luz. A distância
-       entre nível 0 e nível 1 continua sendo o que FAZ o cartão existir. */
-    --color-canvas: #161310;
-    --surface-0: #161310;
-    --surface-1: #201c17;       /* the card */
-    --surface-2: #2a251e;       /* a card inside a card, or a control */
-    --color-rule: #3a3327;
+    /* Carvão, não void — e agora puxado pro cinza-roxinho, não mais quente.
+       #060606 era quase-absoluto de propósito, mas preto ao lado de texto
+       claro é o MAIOR contraste que uma tela consegue mostrar — e isso lê
+       como duro, não como rico (é a mesma razão do Material Design nunca
+       usar #000000 puro). A régua de "nunca invertido, nunca frio" que
+       morava aqui foi revista: o dono pediu explicitamente o cinza-roxinho,
+       na linha do catppuccin — ver ai/DECISIONS.md, a entrada que substitui
+       essa regra (não a apaga: registra por cima, como a troca de fonte). A
+       distância entre nível 0 e nível 1 continua sendo o que FAZ o cartão
+       existir — só o matiz da escala mudou. */
+    --color-canvas: #17151d;
+    --surface-0: #17151d;
+    --surface-1: #211f2b;       /* the card */
+    --surface-2: #2b2836;       /* a card inside a card, or a control */
+    --color-rule: #3c3849;
     --color-paper: var(--surface-1);
     --color-card: var(--surface-1);
-    --color-ink: #e6ddc9;
-    --color-ink-soft: #a89d89;
-    --color-ink-faint: #786d5a;
-    --color-rule: #3a3327;
+    --color-ink: #e4dfee;
+    --color-ink-soft: #a9a3bf;
+    --color-ink-faint: #7b7492;
+    --color-rule: #3c3849;
 
     /* No escuro, a lâmina brilha um pouco mais: o mesmo verde-água sobre preto
        quase absoluto lê mais apagado do que sobre papel. */
@@ -294,8 +300,8 @@
     /* O FIO, no escuro: branco-osso. É aqui que ele é a lâmina que brilha, e é
        por isso que ele nunca pôde ser uma cor só. Ver o bloco do tema claro. */
     --fio: #f0ede6;
-    --afiado-de: #2c2620;
-    --afiado-para: #221d18;
+    --afiado-de: #2e2a3a;
+    --afiado-para: #24212e;
     --afiado-borda: rgb(255 255 255 / 0.09);
     --afiado-sombra: rgb(0 0 0 / 0.35);
     --fio-halo-1: 45%;
