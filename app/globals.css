@@ -124,7 +124,7 @@
   --font-voice: "Newsreader", ui-serif, Georgia, serif;
   /* Só a marca. Quatro letras: GUME. Ver docs/design.md, "A marca". */
   --font-mark: var(--font-fraunces), "Fraunces", ui-serif, Georgia, serif;
-  --font-chrome: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-chrome: "Inter", ui-sans-serif, system-ui, sans-serif;
 
   --ease-spring: linear(0, 0.35, 0.78, 0.97, 1.02, 1);
 
@@ -239,9 +239,9 @@
     --afiado-para: #171717;
     --afiado-borda: rgb(255 255 255 / 0.09);
     --afiado-sombra: rgb(0 0 0 / 0.35);
-    --fio-halo-1: 70%;
-    --fio-halo-2: 35%;
-    --fio-halo-3: 14%;
+    --fio-halo-1: 45%;
+    --fio-halo-2: 20%;
+    --fio-halo-3: 8%;
     }
   }
 
@@ -292,9 +292,9 @@
     --afiado-para: #171717;
     --afiado-borda: rgb(255 255 255 / 0.09);
     --afiado-sombra: rgb(0 0 0 / 0.35);
-    --fio-halo-1: 70%;
-    --fio-halo-2: 35%;
-    --fio-halo-3: 14%;
+    --fio-halo-1: 45%;
+    --fio-halo-2: 20%;
+    --fio-halo-3: 8%;
     }
 
   html { background: var(--color-canvas); color: var(--color-ink); }
@@ -408,10 +408,13 @@
        e contorno é desenho de ícone, não de objeto sob uma lâmpada. */
     border-top-color: rgb(255 255 255 / 0.08);
     border-radius: var(--radius-1);
+    /* A sombra difusa era funda (30px/35%) — lia como cartão erguido de dashboard,
+       não como papel quieto sobre a mesa. Puxada pra trás com moderação: as três
+       camadas continuam (especular/contato/difusa), só a profundidade desce. */
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.06),
-      0 1px 2px rgb(0 0 0 / 0.30),
-      0 10px 30px rgb(0 0 0 / 0.35);
+      inset 0 1px 0 rgb(255 255 255 / 0.05),
+      0 1px 2px rgb(0 0 0 / 0.18),
+      0 6px 18px rgb(0 0 0 / 0.20);
     transition:
       border-color 200ms var(--ease-spring),
       box-shadow 200ms var(--ease-spring),
@@ -489,9 +492,9 @@
   .surface-hover:hover {
     border-color: color-mix(in srgb, var(--color-ink) 18%, transparent);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.10),
-      0 2px 4px rgb(0 0 0 / 0.20),
-      0 14px 34px rgb(0 0 0 / 0.30);
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 2px 4px rgb(0 0 0 / 0.14),
+      0 10px 24px rgb(0 0 0 / 0.18);
     transform: translateY(-2px);
   }
 
@@ -503,7 +506,9 @@
     background: var(--surface-1);
     border: 1px solid rgb(255 255 255 / 0.06);
     border-radius: var(--radius-1);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 8px 24px rgb(0 0 0 / 0.18);
+    /* Mesma régua de .surface: sem isto, .paper sobrava como a única superfície
+       "pesada" ao lado de um cartão mais quieto. */
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 5px 14px rgb(0 0 0 / 0.12);
   }
 
   /* The book card. Opaque paper, never glass: it scrolls, and it carries text.
@@ -518,10 +523,11 @@
     border: 1px solid rgb(255 255 255 / 0.05);
     border-top-color: rgb(255 255 255 / 0.08);
     border-radius: var(--radius-1);
+    /* Mesma redução de .surface — o comentário lá em cima explica o porquê. */
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.06),
-      0 1px 2px rgb(0 0 0 / 0.30),
-      0 10px 30px rgb(0 0 0 / 0.35);
+      inset 0 1px 0 rgb(255 255 255 / 0.05),
+      0 1px 2px rgb(0 0 0 / 0.18),
+      0 6px 18px rgb(0 0 0 / 0.20);
     transition:
       border-color 200ms var(--ease-spring),
       box-shadow 200ms var(--ease-spring),
@@ -531,9 +537,9 @@
   .card:hover {
     border-color: color-mix(in srgb, var(--color-ink) 18%, transparent);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.10),
-      0 2px 4px rgb(0 0 0 / 0.20),
-      0 14px 34px rgb(0 0 0 / 0.30);
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 2px 4px rgb(0 0 0 / 0.14),
+      0 10px 24px rgb(0 0 0 / 0.18);
     transform: translateY(-2px);
   }
 

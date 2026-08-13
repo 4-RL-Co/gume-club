@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { Geist, Newsreader, Fraunces } from "next/font/google";
+import { Inter, Newsreader, Fraunces } from "next/font/google";
 import { Sidebar } from "@/components/sidebar";
 import { SCRIPT_DO_TEMA } from "@/components/tema";
 import { Command } from "@/components/command";
@@ -18,14 +18,15 @@ import { getNovidades } from "@/lib/novidades";
 import "./globals.css";
 
 /**
- * Geist for the interface, Newsreader for the voice.
+ * Inter for the interface, Newsreader for the voice.
  *
- * Inter is good and it is generic, and generic is what was holding this at
- * "nice". Geist has a colder, more mechanical skeleton that reads as software
- * without reading as a template, and it sits beside a high-contrast serif without
- * competing with it.
+ * Era Geist ("Inter é bom e genérico, e genérico é o que mantinha isto em
+ * 'bonitinho'" — ver a entrada anterior em ai/DECISIONS.md, que continua lá,
+ * intacta). O dono viu o oku.club e pediu Inter de volta, explicitamente, duas
+ * vezes — decisão nova, registrada em ai/DECISIONS.md, não uma reversão
+ * silenciosa desta aqui.
  */
-const chrome = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
+const chrome = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const voice = Newsreader({ subsets: ["latin"], variable: "--font-newsreader", display: "swap" });
 
 /**
