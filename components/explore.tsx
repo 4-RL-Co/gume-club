@@ -7,6 +7,7 @@ import { getCoroasPorHandle } from "@/lib/escada";
 import { Moldura } from "@/components/moldura";
 import { Empty } from "@/components/empty";
 import { Cover } from "@/components/cover";
+import { estiloDoLeque } from "@/components/leque-capas";
 import { AfinidadeLinha } from "@/components/afinidade-linha";
 import { BuscaPessoas } from "@/components/busca-pessoas";
 import type { Viewer } from "@/lib/authz";
@@ -100,30 +101,34 @@ export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; s
           <ul className="mt-10 grid gap-4 sm:grid-cols-2 sm:gap-5">
             {estantes.map((e) => (
               <li key={e.handle}>
-                <Link href={`/@${e.handle}`} className="surface surface-hover flex h-full flex-col p-6 sm:p-7">
-                  <span className="flex items-center gap-3">
+                <Link href={`/@${e.handle}`} className="surface surface-hover flex h-full flex-col items-center p-6 text-center sm:p-7">
+                  {/* O LEQUE: até 5 capas sobrepostas e giradas, a do meio por cima —
+                      mesma geometria de "os seus amigos estão lendo" (/pessoas). Era
+                      uma fileira plana lado a lado; virou a mesma vitrine de troféu.
+                      Ver components/leque-capas.tsx. */}
+                  {e.capas.length > 0 && (
+                    <div className="flex h-32 items-center justify-center">
+                      {e.capas.slice(0, 5).map((c, i, arr) => (
+                        <span key={i} className="cover-lift block w-16 shrink-0" style={estiloDoLeque(i, arr.length)}>
+                          <Cover title="" src={c} />
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <span className={e.capas.length > 0 ? "mt-5" : ""}>
                     <Moldura coroa={coroas[e.handle] ?? null} src={e.image} name={e.name} handle={e.handle} size={52} />
-                    <span className="min-w-0">
-                      <span className="block truncate text-[15px] text-[var(--color-ink)]">
-                        {e.name ?? e.handle}
-                      </span>
-                      <span className="block truncate text-[12px] text-[var(--color-ink-faint)]">
-                        @{e.handle}
-                      </span>
-                    </span>
+                  </span>
+                  <span className="mt-3 block max-w-full truncate text-[15px] text-[var(--color-ink)]">
+                    {e.name ?? e.handle}
+                  </span>
+                  <span className="block truncate text-[12px] text-[var(--color-ink-faint)]">
+                    @{e.handle}
                   </span>
                   {e.bio && (
                     <span className="voice mt-4 line-clamp-2 text-[16px] leading-snug text-[var(--color-ink-soft)]">
                       {e.bio}
                     </span>
                   )}
-                  <span className="mt-6 flex gap-2">
-                    {e.capas.slice(0, 6).map((c, i) => (
-                      <span key={i} className="cover-lift block w-1/6">
-                        <Cover title="" src={c} />
-                      </span>
-                    ))}
-                  </span>
                 </Link>
               </li>
             ))}
@@ -170,17 +175,28 @@ export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; s
               <ul className="mt-6 grid gap-4 sm:grid-cols-2 sm:gap-5">
                 {estantes.map((e) => (
                   <li key={e.handle}>
-                    <Link href={`/@${e.handle}`} className="surface surface-hover flex h-full flex-col p-6 sm:p-7">
-                      <span className="flex items-center gap-3">
+                    <Link href={`/@${e.handle}`} className="surface surface-hover flex h-full flex-col items-center p-6 text-center sm:p-7">
+                      {/* O LEQUE: até 5 capas sobrepostas e giradas, a do meio por cima —
+                          mesma geometria de "os seus amigos estão lendo" (/pessoas). Ver
+                          components/leque-capas.tsx. */}
+                      {e.capas.length > 0 && (
+                        <div className="flex h-32 items-center justify-center">
+                          {e.capas.slice(0, 5).map((c, i, arr) => (
+                            <span key={i} className="cover-lift block w-16 shrink-0" style={estiloDoLeque(i, arr.length)}>
+                              <Cover title="" src={c} />
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <span className={e.capas.length > 0 ? "mt-5" : ""}>
                         <Moldura coroa={coroas[e.handle] ?? null} src={e.image} name={e.name} handle={e.handle} size={52} />
-                        <span className="min-w-0">
-                          <span className="block truncate text-[15px] text-[var(--color-ink)]">
-                            {e.name ?? e.handle}
-                          </span>
-                          <span className="block truncate text-[12px] text-[var(--color-ink-faint)]">
-                            @{e.handle}
-                          </span>
-                        </span>
+                      </span>
+                      <span className="mt-3 block max-w-full truncate text-[15px] text-[var(--color-ink)]">
+                        {e.name ?? e.handle}
+                      </span>
+                      <span className="block truncate text-[12px] text-[var(--color-ink-faint)]">
+                        @{e.handle}
                       </span>
 
                       {e.bio && (
@@ -188,14 +204,6 @@ export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; s
                           {e.bio}
                         </span>
                       )}
-
-                      <span className="mt-6 flex gap-2">
-                        {e.capas.slice(0, 6).map((c, i) => (
-                          <span key={i} className="cover-lift block w-1/6">
-                            <Cover title="" src={c} />
-                          </span>
-                        ))}
-                      </span>
                     </Link>
                   </li>
                 ))}
