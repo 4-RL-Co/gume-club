@@ -3432,3 +3432,22 @@ alguém pra checar o resultado antes do deploy, é exatamente o tipo de
 mudança pequena com jeito fácil de acertar a condição errada e esconder a
 fila de quem não é o idealizador. A porta nova (aba Moderação → link) já
 existe; a antiga continua, e sai quando alguém puder olhar o resultado.
+
+---
+
+## Amazon (os outros dois hosts) e Pinterest entram na lista de origens.
+
+"As melhores capas são lá" (Amazon) e "pra fotos de avatar de coleção etc"
+(Pinterest, com URL de exemplo). Dois hosts a mais de Amazon —
+`images-eu.ssl-images-amazon.com` e `ecx.images-amazon.com`, as outras
+formas que a própria Amazon já usou pra imagem de produto — e `i.pinimg.com`.
+
+O Pinterest é de uma classe diferente dos outros hosts desta lista. Fandom,
+TMDB, IGDB, Commons: cada imagem está ligada a uma ficha, um personagem, uma
+obra — dá pra checar se bate. O Pinterest é um mural: serve qualquer coisa
+que qualquer pessoa salvou lá, sem proveniência nenhuma pra conferir do
+outro lado. Entrou porque o dono pediu sabendo disso — a mesma autorização
+de sempre, e não uma trava frouxa por descuido.
+
+Testado com a URL exata que o dono mandou como exemplo, em
+`lib/imagens.test.ts`.

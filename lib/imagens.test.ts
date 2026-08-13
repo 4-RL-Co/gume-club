@@ -37,6 +37,14 @@ describe("de onde uma imagem pode vir", () => {
       "https://archive.org/x.jpg",
       "https://ia800.us.archive.org/x.jpg", // subdomínio, pelo curinga
       "https://s4.anilist.co/file/x.jpg",
+      // Amazon: "as melhores capas estão lá", pedido do dono. Os quatro hosts
+      // que a Amazon já usou pra imagem de produto, cada um por extenso.
+      "https://m.media-amazon.com/images/I/x.jpg",
+      "https://images-na.ssl-images-amazon.com/images/I/x.jpg",
+      "https://images-eu.ssl-images-amazon.com/images/I/x.jpg",
+      "https://ecx.images-amazon.com/images/I/x.jpg",
+      // Pinterest: a URL exata que o dono mandou como exemplo.
+      "https://i.pinimg.com/1200x/d3/a7/98/d3a7983c1a90b3551de075d94264ff6a.jpg",
     ]) {
       expect(porQueNaoAceita(url), `${url} devia passar`).toBeNull();
     }

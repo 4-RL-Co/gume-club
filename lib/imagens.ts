@@ -73,6 +73,15 @@ export const FONTES_DE_IMAGEM = [
    */
   { host: "m.media-amazon.com", oQueE: "capas da Amazon" },
   { host: "images-na.ssl-images-amazon.com", oQueE: "capas da Amazon" },
+  /**
+   * Os outros dois hosts de imagem da Amazon: a variante europeia
+   * (images-eu) e o formato antigo (ecx) que ainda aparece em edição velha
+   * indexada há anos. Mesmo motivo dos dois de cima — "as melhores capas
+   * estão lá" — e mesmo cuidado: host EXATO da Amazon, nunca um curinga
+   * que abrisse a porta pra quem aluga espaço na nuvem dela.
+   */
+  { host: "images-eu.ssl-images-amazon.com", oQueE: "capas da Amazon" },
+  { host: "ecx.images-amazon.com", oQueE: "capas da Amazon" },
   { host: "skoob.s3.amazonaws.com", oQueE: "capas do Skoob" },
   /**
    * A CDN da H1 Editora. Entrou na operação que trouxe o catálogo da H1 inteiro
@@ -111,6 +120,20 @@ export const FONTES_DE_IMAGEM = [
   { host: "static.wikia.nocookie.net", oQueE: "wikis de fã (Fandom): personagem de anime, mangá e jogo" },
   { host: "image.tmdb.org", oQueE: "o TMDB: still de filme e série" },
   { host: "images.igdb.com", oQueE: "o IGDB: arte de jogo" },
+  /**
+   * O PINTEREST. E ele é de um jeito diferente dos de cima.
+   *
+   * Fandom, TMDB e IGDB são bancos de dados — cada imagem está ligada a um
+   * personagem, uma obra, uma ficha. O Pinterest é um MURAL: `i.pinimg.com`
+   * serve qualquer imagem que qualquer pessoa salvou lá, sem dizer de onde
+   * veio nem quem tirou. Não tem ficha pra checar, não tem "essa foto é
+   * mesmo deste personagem" pra conferir do outro lado — só a imagem.
+   *
+   * Entra do mesmo jeito que os de cima entraram: o dono pediu de propósito
+   * ("as melhores fotos estão lá"), sabendo que aqui não tem proveniência
+   * nenhuma pra checar, e a decisão foi dele. Ver ai/DECISIONS.md.
+   */
+  { host: "i.pinimg.com", oQueE: "Pinterest" },
 
   /**
    * ═══ E A FOTO QUE A PRÓPRIA PESSOA MANDOU ═══
