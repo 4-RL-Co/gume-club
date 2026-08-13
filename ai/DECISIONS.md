@@ -3534,3 +3534,26 @@ confirmar que era exatamente o que queria). `--color-accent`, `--color-perigo`,
 fora do pedido. `docs/design.md` atualizado pra não divergir do código — a
 frase antiga ("nunca invertido, nunca frio") virou a frase que conta essa
 história, em vez de uma regra que o próprio código já não segue.
+
+---
+
+## O fio do item ativo saiu. Ficou só a pílula.
+
+Perguntei explicitamente, na rodada da barra lateral maior: mantém o fio (o
+traço verde-água que vaza na borda do item ativo, a "lâmina" da marca virando
+comportamento de interface) ou tira, e vira pílula neutra igual ao Oku? O
+dono respondeu **manter**. Depois de ver ao vivo, com o resto da barra já
+maior e mais respirada, voltou: "quando um botão/label está selecionado fica
+uma linha branca que me parece meio off, eu acho melhor tirar de tudo e
+deixar só esse círculo mostrando o que tá ativo."
+
+`.afiado::after` (o fio + o halo de brilho) saiu. `.afiado`/`.pill.afiado`
+perdeu o canto reto à direita (que só existia pra dar ao fio uma aresta pra
+encostar) e virou pílula inteira (`--radius-pill`), como o resto do app já
+usa pra filtro/estado. `--fio`/`--fio-halo-*` continuam definidos nos dois
+temas (a paridade que `lib/tema.test.ts` trava), só que sem nenhuma regra
+consumindo mais — não removi os tokens porque o teste depende da presença
+deles, e um token sem uso não custa nada em tempo de execução.
+
+A marca (`components/mark.tsx`, o símbolo "Gume") não muda: o fio saiu só do
+comportamento da interface, não do símbolo em si.
