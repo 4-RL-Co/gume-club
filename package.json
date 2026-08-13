@@ -21,6 +21,8 @@
     "db:import": "node --experimental-strip-types scripts/import-openlibrary.mjs",
     "autores": "node --experimental-strip-types scripts/backfill-authors.mjs",
     "db:seed:demo": "node scripts/seed-demo.mjs",
+    "db:seed:perfil-modelo": "node --experimental-strip-types scripts/seed-perfil-modelo.mjs",
+    "personagens": "node --experimental-strip-types scripts/personagens-da-colecao.mjs",
     "covers": "node scripts/backfill-covers.mjs",
     "covers:canone": "node scripts/backfill-covers.mjs --canone",
     "cobertura": "node --experimental-strip-types seed/cobertura.ts",

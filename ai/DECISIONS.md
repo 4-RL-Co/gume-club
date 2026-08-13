@@ -3307,3 +3307,73 @@ dos três estavam matematicamente incapazes de mostrar qualquer coisa em
 produção, porque o defeito morava numa costura que nenhum teste olhava (um
 valor de estado, um parâmetro esquecido numa chamada). Consultar o banco de
 verdade achou em minutos o que a leitura do código não achava.
+
+---
+
+## A cara da coleção: personagem pra mangá, autor pra livro, e o círculo preenchido.
+
+O dono achou os logotipos "feios" e pediu foto de alta qualidade — personagem
+mais importante pra mangá, retrato do autor pra livro, "não precisa ser de
+fonte aberta". Três mudanças:
+
+- **`lib/anilist.ts` ganhou `personagensDasSeries()`**: para cada série com
+  `anilist_id`, busca o personagem MAIN mais favoritado
+  (`sort: [ROLE, FAVOURITES_DESC]`, testado à mão — Vagabond devolve Musashi
+  Miyamoto, 9.840 favoritos, não um coadjuvante). `scripts/personagens-da-colecao.mjs`
+  roda isso em lote (90 req/min é o teto da AniList, o mesmo de sempre) e
+  GRAVA o endereço em `colecoes.emblema_url`, substituindo o logo — nunca uma
+  chamada na hora, o mesmo motivo de `autoriaDasSeries` já ser um backfill.
+  Rodado contra produção: **314 de 417 coleções de mangá trocaram de imagem**
+  (as 103 restantes não têm personagem principal indexado na AniList — em
+  maioria one-shot e antologia). `s4.anilist.co` já estava na lista de
+  origens aceitas; não precisou mexer em `lib/imagens.ts`.
+
+- **Coleção de livro (sem `anilist_id`) usa o retrato do autor.** Ao vivo,
+  por `coalesce(c.emblema_url, authors.image_url)` em `getConjuntos()` e
+  `getConjuntoDetalhe()` — sem gravar nada, porque `authors.image_url` já é
+  um dado mantido (a mesma foto de `/autor/[slug]`). O manual sempre ganha.
+
+- **A foto PREENCHE o círculo.** "Não precisa ser grande, tá bom estando
+  dentro do círculo se ficar bem visível" — então o pedido não era aumentar,
+  era parar de desperdiçar espaço: a imagem media 28px boiando dentro de um
+  círculo de 44px (o desenho certo pra um ícone, errado pra um rosto).
+  `object-cover` + mesmo tamanho do círculo, em `components/conjunto.tsx` e
+  em `/colecao/[slug]`.
+
+Um achado no caminho, registrado e não perseguido esta noite: `Hellsing
+Deluxe Edition` tem uma linha de `series` própria sem `anilist_id`
+preenchido — por isso continua com o logo antigo. É lacuna de DADO (a mesma
+classe de coisa que `scripts/backfill-authors.mjs` existe para consertar),
+não bug de mecanismo.
+
+---
+
+## O perfil modelo. Um leitor de mentira, fundo, e em produção.
+
+"Mantenha um usuário mockado... pra eu poder visualizar um perfil completo
+que não seja o meu." `seed-demo.mjs` já existia, e é RASO de propósito
+(cinco leitores, seis livros cada, pra alimentar feed e recomendação) — e se
+recusa a rodar em produção porque cria contas que seguem a sua.
+
+`scripts/seed-perfil-modelo.mjs` é outra coisa: UMA conta (`@perfil-modelo`,
+e-mail `@perfil.gume.demo`, bio dizendo o que é), e ela é FUNDA — estante
+grande, notas espalhadas, resenhas escritas à mão (não geradas, a mesma
+régua de `seed-demo.mjs`), duas listas montadas, uma coleção completa e uma
+pela metade. Ela RODA em produção, de propósito: o pedido era ver isto na
+tela de verdade, e não segue ninguém nem toca em nenhuma conta que já existe.
+Idempotente — rodar de novo só completa o que falta.
+
+As duas coleções (uma completa, uma incompleta) são escolhidas por TAMANHO
+numa consulta, nunca por um id fixo no script: um id fixo quebraria em
+silêncio no dia em que aquele conjunto sumisse do catálogo. Rodado contra
+produção esta noite: 78 livros, 55 notas (14 "adorei"), 5 resenhas, "Sayonara
+Piano Sonata" completa (3 de 3), "Boruto" pela metade (10 de 20).
+
+**E um problema de infraestrutura, achado no caminho**: `lib/db/index.ts`
+importa `./schema` sem extensão, e o Node com `--experimental-strip-types`
+não resolve isso fora do bundler do Next (webpack resolve; o Node cru, não).
+Os dois scripts novos falam com o banco por `postgres` cru, como
+`seed-demo.mjs` e `backfill-authors.mjs` já faziam — só `lib/anilist.ts`
+(puro, sem import de banco) é reaproveitado da casa. `scripts/operacao-mais-capas.mjs`
+importa `lib/db/index.ts` direto e pode já estar quebrado pelo mesmo motivo;
+não investigado esta noite.

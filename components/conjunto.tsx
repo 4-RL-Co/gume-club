@@ -91,11 +91,20 @@ export function ConjuntoCard({
           aria-expanded={aberto}
           className="flex min-w-0 flex-1 items-center gap-4 rounded-[var(--radius-2)] text-left transition-colors hover:bg-[color-mix(in_srgb,var(--color-ink)_3%,transparent)]"
         >
-          {/* O EMBLEMA, por referência (nunca uma cópia do arquivo). Ver lib/imagens.ts.
+          {/* A CARA DA COLEÇÃO: o personagem principal (mangá), o retrato do autor
+              (livro), ou o que um leitor pôs à mão. Por referência, nunca uma cópia
+              do arquivo. Ver lib/imagens.ts.
+
+              PREENCHE o círculo — era um ícone pequeno (28px) boiando dentro de um
+              círculo de 44px, o desenho certo pra um LOGOTIPO. Uma foto de rosto
+              apertada assim vira um selo ilegível. object-cover e o mesmo tamanho do
+              círculo fazem a foto valer a pena sem precisar crescer: "não precisa ser
+              grande, tá bom estando dentro do círculo se ficar bem visível."
+
               Completo ganha o anel dourado, a mesma cor do selo abaixo. */}
           {c.emblema && origemAceita(c.emblema) ? (
             <span
-              className="surface-2 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full"
+              className="surface-2 relative flex h-11 w-11 shrink-0 overflow-hidden rounded-full"
               style={c.completo
                 ? { boxShadow: "0 0 0 2px color-mix(in srgb, #d9a520 70%, transparent)" }
                 : undefined}
@@ -104,10 +113,9 @@ export function ConjuntoCard({
               <Image
                 src={c.emblema}
                 alt=""
-                width={44}
-                height={44}
+                fill
                 sizes="44px"
-                className={["h-7 w-7 object-contain", c.completo ? "" : "opacity-55 grayscale"].join(" ")}
+                className={["object-cover", c.completo ? "" : "opacity-55 grayscale"].join(" ")}
               />
             </span>
           ) : (

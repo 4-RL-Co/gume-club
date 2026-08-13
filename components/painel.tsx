@@ -542,7 +542,14 @@ export function Painel({ dados }: { dados: Dados }) {
                   <th className="py-1 pr-4 font-medium">e-mail</th>
                   <th className="py-1 pr-4 font-medium">quando</th>
                   <th className="py-1 pr-4 font-medium">método</th>
-                  <th className="py-1 font-medium">procedência</th>
+                  {/* ═══ A COLUNA SÓ EXISTE SE HOUVER O QUE DIZER ═══
+
+                      Ninguém aqui usou convite ainda (convite.porConvite === 0): a coluna
+                      diria "chegou sozinho" em toda linha, sempre, sem uma exceção — o que
+                      não é informação, é decoração repetida. Uma coluna que nunca varia
+                      não ajuda a olhar o dado, e o dono pediu para ela sumir enquanto isso
+                      for verdade. Ela volta sozinha no dia em que o primeiro convite vingar. */}
+                  {convite.porConvite > 0 && <th className="py-1 font-medium">procedência</th>}
                 </tr>
               </thead>
               <tbody>
@@ -552,7 +559,9 @@ export function Painel({ dados }: { dados: Dados }) {
                     <td className="py-2 pr-4 text-[var(--color-ink-faint)]">{c.email}</td>
                     <td className="tabular py-2 pr-4 text-[var(--color-ink-soft)]">{c.quando}</td>
                     <td className="py-2 pr-4 text-[var(--color-ink-soft)]">{c.metodo === "google" ? "google" : c.metodo === "email" ? "e-mail" : "outro"}</td>
-                    <td className="py-2 text-[var(--color-ink-soft)]">{c.convidadoPor ? `veio por ${c.convidadoPor}` : "chegou sozinho"}</td>
+                    {convite.porConvite > 0 && (
+                      <td className="py-2 text-[var(--color-ink-soft)]">{c.convidadoPor ? `veio por ${c.convidadoPor}` : "chegou sozinho"}</td>
+                    )}
                   </tr>
                 ))}
               </tbody>

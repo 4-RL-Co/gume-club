@@ -118,32 +118,34 @@ export async function getConjuntoDetalhe(
   const total = primeira.total ?? rows.length;
   const tenho = rows.filter((r) => r.tenho).length;
 
+  // O primeiro volume com autor conhecido decide: quase todo conjunto é de um só.
+  const comAutor = rows.find((r) => r.autor_nome);
+  const autor = comAutor
+    ? {
+        nome: comAutor.autor_nome!,
+        slug: comAutor.autor_slug!,
+        bio: comAutor.autor_bio,
+        bioSource: comAutor.autor_bio_fonte,
+        imageUrl: comAutor.autor_image,
+        nationality: comAutor.autor_nacionalidade,
+      }
+    : null;
+
   return {
     id: primeira.id,
     slug: primeira.slug,
     titulo: primeira.titulo,
     publisher: primeira.publisher,
-    emblema: primeira.emblema,
+    // SEM EMBLEMA PRÓPRIO, A CARA VIRA A DO AUTOR — a mesma regra de getConjuntos()
+    // (lib/copies.ts). O manual sempre ganha; isto só entra quando ele é nulo.
+    emblema: primeira.emblema ?? autor?.imageUrl ?? null,
     total,
     tenho,
     completo: total > 0 && tenho >= total,
     serie: primeira.serie_titulo
       ? { titulo: primeira.serie_titulo, kind: primeira.serie_kind ?? "series", status: primeira.serie_status ?? "unknown" }
       : null,
-    // O primeiro volume com autor conhecido decide: quase todo conjunto é de um só.
-    autor: (() => {
-      const comAutor = rows.find((r) => r.autor_nome);
-      return comAutor
-        ? {
-            nome: comAutor.autor_nome!,
-            slug: comAutor.autor_slug!,
-            bio: comAutor.autor_bio,
-            bioSource: comAutor.autor_bio_fonte,
-            imageUrl: comAutor.autor_image,
-            nationality: comAutor.autor_nacionalidade,
-          }
-        : null;
-    })(),
+    autor,
     volumes: rows.map((r) => ({
       slug: r.vol_slug,
       title: r.vol_title,
