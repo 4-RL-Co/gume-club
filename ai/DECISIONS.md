@@ -3661,6 +3661,13 @@ que já recebe denúncia e correção — nenhum endereço novo hardcoded, porqu
 `EMAIL_MODERACAO` já é a variável que existe pra isto, e o Gume não trava
 um endereço de dono no código-fonte de quem hospeda a própria instância.
 
-O botão fica no canto inferior ESQUERDO, sempre visível, em toda tela —
-`components/voltar-ao-topo.tsx` já morava no direito, e os dois nunca
-disputam o mesmo lugar.
+O botão fica no canto inferior DIREITO, sempre visível, em toda tela — o
+mesmo canto de `components/voltar-ao-topo.tsx` (o elevador), um degrau
+acima de onde ele nasce. Primeira versão pôs os dois em cantos opostos
+("pra não disputar lugar"), mas à esquerda mora a coluna do site inteira, e
+o rodapé dela é a foto de quem está logado: o botão sentava em cima da
+própria foto. O dono, ao ver ao vivo: "acho melhor ficar no lado direito
+igual todo site faz e ser um pouco menor" — os dois cantos direitos
+convivem porque o elevador só aparece depois de duas telas de rolagem, e
+este fica visível o tempo todo; empilhados, nunca ao mesmo tempo colidem
+com o mesmo espaço vazio. O botão também encolheu (de 44px pra 36px).

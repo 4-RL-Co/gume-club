@@ -18,11 +18,18 @@ import { toast } from "@/lib/toast";
  *  conseguir criar uma. Ver lib/relatar.ts (o limite é por IP, não por
  *  usuário).
  *
- *  ═══ CANTO ESQUERDO, DE PROPÓSITO ═══
+ *  ═══ CANTO DIREITO, EMPILHADO SOBRE O ELEVADOR ═══
  *
- *  components/voltar-ao-topo.tsx já mora no canto direito (some/aparece
- *  com a rolagem). Este fica no canto oposto, e sempre visível — os dois
- *  nunca disputam o mesmo lugar.
+ *  Foi pro canto ESQUERDO numa primeira versão, "pra não disputar lugar com o
+ *  elevador" — só que à esquerda mora a coluna do site inteira, e o rodapé dela
+ *  é a foto de quem está logado. O botão sentava em cima da própria foto. O
+ *  dono: "acho melhor ficar no lado direito igual todo site faz e ser um
+ *  pouco menor".
+ *
+ *  components/voltar-ao-topo.tsx (o elevador) só aparece depois de duas telas
+ *  de rolagem. Este fica sempre visível, então em vez de dividir os cantos, os
+ *  dois empilham no MESMO canto: este um degrau acima de onde o elevador
+ *  nasce, com uma folga que cabe o elevador inteiro entre os dois.
  *
  *  ═══ A MESMA ANIMAÇÃO DO DIÁLOGO DE LISTA ═══
  *
@@ -72,9 +79,9 @@ export function RelatarProblema() {
         onClick={() => setAberto(true)}
         aria-label="relatar um problema"
         title="relatar um problema"
-        className="surface fixed bottom-24 left-4 z-40 flex h-11 w-11 items-center justify-center rounded-full text-[var(--color-ink-faint)] shadow-lg transition-colors hover:text-[var(--color-ink)] sm:bottom-6 sm:left-6"
+        className="surface fixed bottom-40 right-4 z-40 flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-ink-faint)] shadow-lg transition-colors hover:text-[var(--color-ink)] sm:bottom-20 sm:right-6"
       >
-        <Flag size={16} strokeWidth={1.5} aria-hidden />
+        <Flag size={14} strokeWidth={1.5} aria-hidden />
       </button>
 
       <div
