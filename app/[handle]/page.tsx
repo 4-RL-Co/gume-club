@@ -1,4 +1,4 @@
-import { Pencil, Crown, Signpost } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getViewer } from "@/lib/viewer";
@@ -9,30 +9,20 @@ import { ConfirmeSeuEmail } from "@/components/confirme-seu-email";
 import { estaInvisivel, contarLivrosQueProvam, LIVROS_QUE_PROVAM } from "@/lib/descoberta";
 import { Share } from "@/components/share";
 import { Report } from "@/components/report";
-import { PerfilEstante } from "@/components/perfil-estante";
 import { Moldura, Barra } from "@/components/moldura";
 import { getEscadas } from "@/lib/escada";
-import { Empty } from "@/components/empty";
 import { FollowButton } from "@/components/follow-button";
 import { chegadaDe, getBadges } from "@/lib/badges";
 import { BadgesExplicadas } from "@/components/badges";
 import { getListasDe, getListasGuardadas } from "@/lib/listas";
-import { CuradoriaCard } from "@/components/curadoria-card";
 import { getCuradoriasGuardadas } from "@/lib/curadoria-guardada";
 import { getConjuntos } from "@/lib/copies";
-import { ConjuntoCard } from "@/components/conjunto";
 import { souIdealizador } from "@/lib/authz";
-import { ListaGrid } from "@/components/lista-card";
 import { getResenhasDe } from "@/lib/explore";
-import { Cover } from "@/components/cover";
-import { Carrossel } from "@/components/carrossel";
-import type { ShelfBook } from "@/lib/shelf-view";
+import { PerfilAbas } from "@/components/perfil-abas";
 import Link from "next/link";
-import { DOURADO } from "@/lib/dourado";
 
 export const dynamic = "force-dynamic";
-
-const EYEBROW = "text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]";
 
 /* A TIRA DE "LENDO AGORA" SAIU DO PERFIL: a estante com recortes, no fim da página,
    já responde "o que ela está lendo" num clique, e duas moradas para a mesma resposta
@@ -276,174 +266,30 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
 
       {invisivel && <ConfirmeSeuEmail faltam={LIVROS_QUE_PROVAM - livrosQueProvam} />}
 
-      {/* ═══ A COLEÇÃO, LOGO ABAIXO DO NOME ═══
+      {/* ═══ O RESTO DO PERFIL, EM ABAS ═══
 
-          Ela vem ANTES da estante de propósito. Uma estante diz o que a pessoa leu;
-          uma coleção completa diz o que ela persegue, e é a coisa mais difícil de
-          conseguir que existe neste perfil. Quem chega vê primeiro o que foi caro. */}
-      {conjuntos.length > 0 && (
-        <section className="mt-5">
-          <h2 className={EYEBROW}>
-            {mine ? "a minha coleção" : `a coleção de ${primeiroNome}`}
-          </h2>
-          <div className="mt-4 flex flex-col gap-5">
-            {conjuntos.map((c) => (
-              <ConjuntoCard key={c.id} c={c} podeEditar={!!viewer} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* No começo do perfil, logo abaixo do nome: a vitrine dos "adorei". */}
-      {adorou.length > 0 && (
-        <Carrossel titulo={mine ? "o que eu adorei" : `o que ${primeiroNome} adorou`} books={adorou} />
-      )}
-
-      {/* ═══ AS RESENHAS ═══
-
-          ELAS FICAM NO ALTO, e isso é o conserto de um erro meu: nasceram no fim da
-          página, depois da parede inteira de lidos. O dono rolava meia tela de capas e
-          não achava o que ele mesmo tinha escrito — a coisa mais demorada que ele fez
-          aqui, enterrada embaixo da coisa mais automática.
-
-          A ordem agora conta uma história: a cara, o que a pessoa adorou, o que ela
-          escreveu, e só então as estantes.
-
-          A resenha é a coisa mais demorada que alguém escreve aqui, e ela só existia
-          espalhada: uma por página de livro, e a de todo mundo misturada no explorar.
-          Não dava para ler o que UMA pessoa escreveu, que é exatamente o que se quer
-          depois de gostar de uma resenha dela.
-
-          Quais aparecem é a CONSULTA que decide, e não esta tela: resenha nasce privada
-          neste app, e a privada não sai de getResenhasDe(). Ver SECURITY.md. */}
-      {resenhas.length > 0 && (
-        <section className="surface mt-5 p-7">
-          <h2 className={EYEBROW}>{mine ? "o que eu escrevi" : `o que ${primeiroNome} escreveu`}</h2>
-
-          <ul className="mt-6 flex flex-col gap-6">
-            {resenhas.map((r) => (
-              <li key={r.id} className="flex gap-5">
-                <Link href={`/livro/${r.slug}`} className="cover-lift w-14 shrink-0">
-                  <Cover title={r.title} src={r.coverUrl} />
-                </Link>
-
-                <div className="min-w-0 flex-1">
-                  <Link href={`/livro/${r.slug}`} className="voice text-[17px] leading-snug hover:underline">
-                    {r.title}
-                  </Link>
-
-                  {/* `line-clamp` porque isto é uma LISTA: a resenha inteira mora na
-                      página do livro, e uma lista onde cada item tem seis parágrafos
-                      deixa de ser uma lista. */}
-                  <p className="voice mt-2 line-clamp-4 whitespace-pre-wrap text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
-                    {r.body}
-                  </p>
-
-                  <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-                    {new Date(r.createdAt).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })}
-                    {/* Só o dono precisa saber o que está fechado: para os outros, o que
-                        eles estão vendo já É o que dá para ver. */}
-                    {mine && r.visibility !== "public" && (
-                      <span className="normal-case tracking-normal">
-                        {r.visibility === "private" ? " · só para você" : " · para quem te segue"}
-                      </span>
-                    )}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* ═══ AS ESTANTES QUE ELA MONTOU, COMO CARDS ═══
-
-          Eram pílulas de texto com um número, e uma lista montada com capricho merece
-          aparecer como o que é: capas em leque, nome, descrição. A curadoria é o que o
-          perfil tem de mais pessoal depois das resenhas, e estava vestida de filtro. */}
-      {(shelves.length > 0 || perfilDaCasa) && (
-        <section className="mt-5">
-          <h2 className={`${EYEBROW} flex flex-wrap items-center gap-2`}>
-            {mine ? "minhas listas" : `listas que ${primeiroNome} montou`}
-            {/* O selo de GUIA: pelo menos uma lista daqui já foi guardada por alguém.
-                Fora do sistema de insígnias de propósito. Ver a nota acima, em ehGuia. */}
-            {ehGuia && (
-              <span className="inline-flex items-center gap-1 rounded-[var(--radius-control)] border border-[var(--color-rule)] px-2 py-0.5 text-[10px] normal-case tracking-normal text-[var(--color-ink-faint)]">
-                <Signpost size={11} strokeWidth={1.75} aria-hidden />
-                guia
-              </span>
-            )}
-          </h2>
-          {/* A curadoria editorial, FIXA no topo das listas da casa. */}
-          {perfilDaCasa && (
-            <div className="mt-4">
-              <CuradoriaCard compacto />
-            </div>
-          )}
-          {shelves.length > 0 && (
-            <div className="mt-4">
-              <ListaGrid listas={shelves} mostrarDono={false} />
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* As que ela GUARDOU. O crédito no card é de quem montou, por nome e rosto:
-          guardar é apontar para o trabalho de outra pessoa, e o gesto só faz sentido
-          se quem fez aparecer. Quantas pessoas guardaram não existe em tela nenhuma. */}
-      {(guardadas.length > 0 || curadorias.length > 0) && (
-        <section className="mt-5">
-          <h2 className={EYEBROW}>
-            {mine ? "listas que eu guardei" : `listas que ${primeiroNome} guardou`}
-          </h2>
-
-          {/* A curadoria da casa vem PRIMEIRO e como uma linha, e não como card: ela
-              não tem dono para creditar (é da casa) nem capas próprias para mostrar —
-              as capas dela são as do momento, e mudam sozinhas. Um card com capas que
-              trocam sem ninguém mexer parece defeito. */}
-          {curadorias.length > 0 && (
-            <ul className="mt-4 flex flex-col gap-2">
-              {curadorias.map((c) => (
-                <li key={c.chave}>
-                  <Link
-                    href={c.href}
-                    className="surface surface-hover flex items-center gap-2.5 px-5 py-4 text-[15px] text-[var(--color-ink)]"
-                  >
-                    <Crown size={14} strokeWidth={1.75} aria-hidden style={{ color: DOURADO }} />
-                    {c.titulo}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {guardadas.length > 0 && (
-            <div className="mt-4">
-              <ListaGrid listas={guardadas} />
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* ═══ A ESTANTE, EM UMA PAREDE SÓ ═══
-
-          "Lendo agora" continua sendo uma tira própria lá em cima (é o presente, e o
-          presente merece a primeira dobra). O resto (lidos, esperando, largados) morava
-          em containers empilhados, e o perfil virava um pergaminho. Agora é uma parede
-          com recortes em pílula, como a aba de estante: clica em "esperando" e a parede
-          troca. Abre nos lidos, que é o coração: livro que aconteceu, com veredito. */}
-      {books.length > 0 && (
-        <div className="mt-10">
-          <h2 className={EYEBROW}>a estante</h2>
-          <PerfilEstante books={books} opinions={opinions} />
-        </div>
-      )}
-
-      {books.length === 0 && (
-        <Empty>
-          {mine ? "Sua estante está vazia." : `${name} ainda não mostrou nada por aqui.`}
-        </Empty>
-      )}
+          Sete seções empilhadas (coleção, adorei, resenhas, listas feitas, listas
+          guardadas, estante) viravam um pergaminho — a mesma reclamação que já valia
+          para /painel antes das abas. Mesmo padrão: um componente de cliente troca o
+          que aparece, sem voltar ao servidor. A ordem das abas (coleções primeiro)
+          preserva a prioridade que a página já tinha: "o que é mais difícil de
+          conseguir vem primeiro". Ver components/perfil-abas.tsx. */}
+      <PerfilAbas
+        mine={mine}
+        primeiroNome={primeiroNome ?? name}
+        podeEditarConjunto={!!viewer}
+        conjuntos={conjuntos}
+        books={books}
+        opinions={opinions}
+        adorou={adorou}
+        resenhas={resenhas}
+        shelves={shelves}
+        guardadas={guardadas}
+        curadorias={curadorias}
+        perfilDaCasa={perfilDaCasa}
+        ehGuia={ehGuia}
+        contagemEstante={{ tudo: counts.tudo ?? 0, lidos: counts.lidos ?? 0 }}
+      />
     </main>
   );
 }
