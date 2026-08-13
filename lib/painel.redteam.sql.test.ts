@@ -97,6 +97,8 @@ describe("o idealizador abre o painel, e as agregações rodam", () => {
     expect(painel.metas.usuarios.alvo).toBeGreaterThan(0);
     expect(painel.metas.contribuidores.alvo).toBeGreaterThan(0);
     expect(Array.isArray(painel.insights)).toBe(true);
+    expect(Array.isArray(painel.moderacao.log)).toBe(true);
+    expect(Array.isArray(painel.moderacao.banidos)).toBe(true);
   });
 
   it("o filtro por período muda o que a série e o log devolvem", async () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Painel as Dados, Ponto, Fatia, Meta } from "@/lib/painel";
 
@@ -24,6 +25,35 @@ const n = (x: number) => NF.format(x);
 const um = (x: number) => x.toFixed(1).replace(".", ",");
 const pctDe = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
 const ACCENT = "var(--color-accent)";
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  AS ABAS. Quatro recortes, e cada um responde uma pergunta diferente.
+ *
+ *  Era uma página só, rolando: metas, gente, uso, contribuição, convite,
+ *  catálogo, tudo empilhado. Cada bloco continua existindo — nenhum dado
+ *  novo nasceu pra isto, só um lugar melhor pra cada um morar.
+ *
+ *    crescimento  "estamos crescendo, e de onde vem quem chega?"
+ *    saúde        "o que está funcionando, e o que está travando?"
+ *    moderação    quem mexeu no quê, e quem está banido — a mesma pergunta
+ *                 de /cuidar e /pedidos, só que em forma de histórico
+ *    agentic      a leitura de conjunto, e a porta pra um agente ler sozinho
+ *
+ *  Estado na URL seria mais "correto", e foi decisão deliberada não fazer
+ *  isso: aba não é filtro (não muda QUAL dado vem do servidor, só COMO ele
+ *  é mostrado), e trocar de aba precisa ser instantâneo — nenhuma volta ao
+ *  servidor, nenhum piscar de tela. Os filtros de verdade (período, método,
+ *  origem) continuam na URL, porque esses sim mudam o que o servidor busca.
+ * ════════════════════════════════════════════════════════════════════
+ */
+const ABAS = [
+  { key: "crescimento", label: "crescimento" },
+  { key: "saude", label: "saúde" },
+  { key: "moderacao", label: "moderação" },
+  { key: "agentic", label: "agentic" },
+] as const;
+type Aba = (typeof ABAS)[number]["key"];
 
 function Kpi({ valor, label, nota, destaque = false }: { valor: string; label: string; nota?: string; destaque?: boolean }) {
   return (
@@ -333,12 +363,13 @@ function BaseDeGente({ pessoas }: { pessoas: Dados["pessoas"] }) {
 }
 
 export function Painel({ dados }: { dados: Dados }) {
-  const { filtro, metas, gente, uso, contribuicao, convite, catalogo, pessoas, insights } = dados;
+  const { filtro, metas, gente, uso, contribuicao, convite, catalogo, pessoas, insights, moderacao } = dados;
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const [pendente, comecar] = useTransition();
   const [copiado, setCopiado] = useState(false);
+  const [aba, setAba] = useState<Aba>("crescimento");
 
   /** Escreve (ou apaga) um parâmetro na URL e recarrega os dados. */
   const setParam = (patch: Record<string, string | null>) => {
@@ -394,6 +425,30 @@ export function Painel({ dados }: { dados: Dados }) {
         </div>
       </header>
 
+      {/* ─────────────────────────────── A NAVEGAÇÃO DE ABAS */}
+      <nav className="mt-8 flex gap-1 overflow-x-auto rounded-full border p-1" style={{ borderColor: "var(--color-rule)" }}>
+        {ABAS.map((a) => (
+          <button
+            key={a.key}
+            onClick={() => setAba(a.key)}
+            aria-current={aba === a.key ? "page" : undefined}
+            className="shrink-0 rounded-full px-4 py-2 text-[13px] font-medium capitalize transition-colors"
+            style={
+              aba === a.key
+                ? { background: "var(--color-ink)", color: "var(--color-canvas)" }
+                : { color: "var(--color-ink-soft)" }
+            }
+          >
+            {a.label}
+            {a.key === "moderacao" && moderacao.banidos.length > 0 && (
+              <span className="tabular ml-1.5 opacity-70">· {moderacao.banidos.length}</span>
+            )}
+          </button>
+        ))}
+      </nav>
+
+      {aba === "crescimento" && (
+      <>
       {/* ─────────────────────────────── METAS */}
       <Bloco titulo="metas" desc="o alvo sobe quando você bate nele">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -410,25 +465,12 @@ export function Painel({ dados }: { dados: Dados }) {
       <Bloco titulo="a base" desc="quem está aqui, e o que cada um está fazendo">
         <BaseDeGente pessoas={pessoas} />
       </Bloco>
-
-      {/* ─────────────────────────────── INSIGHTS */}
-      {insights.length > 0 && (
-        <Bloco titulo="leitura rápida">
-          <ul className="flex flex-col gap-2">
-            {insights.map((i, k) => (
-              <li
-                key={k}
-                className="rounded-xl border-l-2 px-4 py-3 text-[14px] leading-relaxed text-[var(--color-ink-soft)]"
-                style={{ borderColor: ACCENT, background: "var(--surface-1)" }}
-              >
-                {i}
-              </li>
-            ))}
-          </ul>
-        </Bloco>
+      </>
       )}
 
       {/* ─────────────────────────────── FILTROS */}
+      {aba === "crescimento" && (
+      <>
       <Bloco titulo="filtros" desc="valem para o gráfico, o log e o resumo do período">
         <div className="flex flex-col gap-4 rounded-2xl border p-5" style={{ borderColor: "var(--color-rule)", background: "var(--surface-1)" }}>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -569,8 +611,12 @@ export function Painel({ dados }: { dados: Dados }) {
           )}
         </div>
       </Bloco>
+      </>
+      )}
 
       {/* ─────────────────────────────── USO */}
+      {aba === "saude" && (
+      <>
       <Bloco titulo="uso" desc="média mente, mediana não">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <Kpi valor={um(uso.medianaLivros)} label="livros por pessoa" nota={`média ${um(uso.mediaLivros)}`} />
@@ -608,8 +654,12 @@ export function Painel({ dados }: { dados: Dados }) {
           <Kpi valor={contribuicao.codigo === null ? "sem dado" : n(contribuicao.codigo)} label="escreveram código" nota={contribuicao.codigo === null ? "o github não respondeu" : undefined} />
         </div>
       </Bloco>
+      </>
+      )}
 
       {/* ─────────────────────────────── CONVITE */}
+      {aba === "crescimento" && (
+      <>
       <Bloco titulo="convite" desc="a única alavanca de crescimento">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
           <div className="rounded-2xl border p-5" style={{ borderColor: "var(--color-rule)", background: "var(--surface-1)" }}>
@@ -620,8 +670,12 @@ export function Painel({ dados }: { dados: Dados }) {
           <Kpi valor={n(convite.convitesQueVingaram)} label="convites viraram conta de verdade" destaque />
         </div>
       </Bloco>
+      </>
+      )}
 
       {/* ─────────────────────────────── CATÁLOGO */}
+      {aba === "saude" && (
+      <>
       <Bloco titulo="catálogo">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <Kpi valor={n(catalogo.obras)} label="obras" />
@@ -648,6 +702,28 @@ export function Painel({ dados }: { dados: Dados }) {
           )}
         </div>
       </Bloco>
+      </>
+      )}
+
+      {aba === "agentic" && (
+      <>
+      {/* ─────────────────────────────── LEITURA RÁPIDA (movida pra cá: é
+          exatamente a mesma pergunta que esta aba existe pra responder) */}
+      {insights.length > 0 && (
+        <Bloco titulo="leitura rápida" desc="aritmética com um limiar, dita em português. Não é IA — é a mesma conta que você faria olhando os números.">
+          <ul className="flex flex-col gap-2">
+            {insights.map((i, k) => (
+              <li
+                key={k}
+                className="rounded-xl border-l-2 px-4 py-3 text-[14px] leading-relaxed text-[var(--color-ink-soft)]"
+                style={{ borderColor: ACCENT, background: "var(--surface-1)" }}
+              >
+                {i}
+              </li>
+            ))}
+          </ul>
+        </Bloco>
+      )}
 
       {/* ─────────────────────────────── EXPORTAR / AGENTE */}
       <Bloco titulo="exportar e ler por agente">
@@ -684,6 +760,81 @@ export function Painel({ dados }: { dados: Dados }) {
           </div>
         </div>
       </Bloco>
+      </>
+      )}
+
+      {aba === "moderacao" && (
+      <>
+      {/* ─────────────────────────────── AS FILAS, SEM SAIR DAQUI ═══
+
+          "Assim eu fico com item a menos no menu" — o pedido era um lugar
+          só. As FILAS DE AÇÃO (aprovar capa, revisar denúncia) continuam
+          morando em /cuidar e /pedidos: são páginas com botão, feitas pra
+          qualquer bibliotecário ou moderador agir, e o painel é só do
+          idealizador. Isto aqui é a PORTA pra lá, e o HISTÓRICO do que já
+          aconteceu — as duas coisas que só faziam sentido reunidas aqui. */}
+      <Bloco titulo="as filas" desc="a ação continua nas telas de sempre">
+        <div className="flex flex-wrap gap-3">
+          <Link href="/cuidar" className="rounded-full px-4 py-2 text-[13px] font-medium" style={{ background: "var(--color-ink)", color: "var(--color-canvas)" }}>
+            cuidar do acervo
+          </Link>
+          <Link href="/pedidos" className="rounded-full border px-4 py-2 text-[13px] font-medium" style={{ borderColor: "var(--color-rule)", color: "var(--color-ink)" }}>
+            pedidos de leitor
+          </Link>
+        </div>
+      </Bloco>
+
+      {/* ─────────────────────────────── BANIDOS */}
+      <Bloco titulo="banidos" desc="banned_at é ESTADO, não histórico: desbanir apaga o rastro daqui">
+        {moderacao.banidos.length === 0 ? (
+          <p className="text-[13px] text-[var(--color-ink-soft)]">ninguém banido agora.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {moderacao.banidos.map((b) => (
+              <li key={b.handle} className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl border-l-2 px-4 py-3 text-[13px]" style={{ borderColor: "var(--color-perigo, #b3543f)", background: "var(--surface-1)" }}>
+                <span className="text-[var(--color-ink)]">{b.nome ?? b.handle} <span className="text-[var(--color-ink-faint)]">@{b.handle}</span></span>
+                <span className="text-[var(--color-ink-soft)]">{b.motivo ?? "sem motivo registrado"}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Bloco>
+
+      {/* ─────────────────────────────── O LOG DE ALTERAÇÕES */}
+      <Bloco titulo="log de alterações" desc="correção, capa, emblema — na ordem em que aconteceram, com nome de quem fez">
+        {moderacao.log.length === 0 ? (
+          <p className="text-[13px] text-[var(--color-ink-soft)]">nada registrado ainda.</p>
+        ) : (
+          <div className="max-h-[560px] overflow-y-auto rounded-2xl border" style={{ borderColor: "var(--color-rule)" }}>
+            <table className="w-full text-[13px]">
+              <thead className="sticky top-0" style={{ background: "var(--surface-1)" }}>
+                <tr className="text-left text-[11px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)]">
+                  <th className="px-4 py-2 font-medium">quando</th>
+                  <th className="px-4 py-2 font-medium">quem</th>
+                  <th className="px-4 py-2 font-medium">o quê</th>
+                  <th className="px-4 py-2 font-medium">alvo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {moderacao.log.map((l, i) => (
+                  <tr key={i} className="border-t" style={{ borderColor: "var(--color-rule)", opacity: l.revertido ? 0.55 : 1 }}>
+                    <td className="tabular px-4 py-2 whitespace-nowrap text-[var(--color-ink-soft)]">
+                      {new Date(l.quando).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                    </td>
+                    <td className="px-4 py-2 text-[var(--color-ink)]">{l.quem ?? "conta apagada"}</td>
+                    <td className="px-4 py-2 text-[var(--color-ink-soft)]">
+                      {l.tipo}{l.revertido ? " · revertido" : ""}
+                    </td>
+                    <td className="px-4 py-2 text-[var(--color-ink-soft)]">{l.alvo ?? "item apagado"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Bloco>
+      </>
+      )}
     </main>
   );
 }
