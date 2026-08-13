@@ -10,6 +10,7 @@ import { Cover } from "@/components/cover";
 import { Prosa } from "@/components/prosa";
 import { Empty } from "@/components/empty";
 import { SeloColecionador } from "@/components/selo-colecionador";
+import { AdicionarVolume } from "@/components/adicionar-volume";
 import { DOURADO } from "@/lib/dourado";
 
 export const dynamic = "force-dynamic";
@@ -70,6 +71,10 @@ export default async function ColecaoDetalhe({ params }: { params: Promise<{ slu
   const c = await getConjuntoDetalhe(actor, slug);
   if (!c) notFound();
 
+  // O número sugerido pro próximo volume: o maior que já existe, mais um.
+  // A pessoa pode editar antes de confirmar — é só o ponto de partida.
+  const proximoVolume = Math.max(0, ...c.volumes.map((v) => v.volume ?? 0)) + 1;
+
   /* ═══ AINDA NÃO. E A TELA DIZ ISSO, EM VEZ DE ESCONDER A PORTA ═══
 
      Um leitor que tocou o conjunto (tem ou quer pelo menos um volume) mas não
@@ -97,6 +102,13 @@ export default async function ColecaoDetalhe({ params }: { params: Promise<{ slu
           >
             voltar para a sua coleção
           </Link>
+
+          {/* Faltar não é só esperar: se o livro que falta já existe no
+              catálogo (só não está ligado ainda), a pessoa completa daqui
+              mesmo. Ver components/adicionar-volume.tsx. */}
+          <div className="flex justify-center">
+            <AdicionarVolume conjuntoId={c.id} conjuntoSlug={c.slug} proximoVolume={proximoVolume} />
+          </div>
         </div>
       </main>
     );
@@ -218,6 +230,14 @@ export default async function ColecaoDetalhe({ params }: { params: Promise<{ slu
             </li>
           ))}
         </ul>
+
+        {/* Uma coleção "completa" é o fato de HOJE, não um teto: se uma
+            edição nova surgir (ou a pessoa souber de uma que falta),
+            adicionar aqui é o que mantém o conjunto honesto — a coleção
+            pode voltar a ficar incompleta, e é assim que deve ser. */}
+        <div className="mt-6 text-center">
+          <AdicionarVolume conjuntoId={c.id} conjuntoSlug={c.slug} proximoVolume={proximoVolume} />
+        </div>
       </section>
 
       <p className="mt-14 text-center">
