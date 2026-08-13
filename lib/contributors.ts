@@ -140,8 +140,12 @@ export async function getCatalogo(): Promise<DoCatalogo[]> {
       select u.id, u.handle, u.display_name as name, u.image, u.librarian_tier, u.created_at as desde,
              (select count(*) from works w
                where w.created_by = u.id)::int as livros,
+             -- 'accepted' NUNCA foi um estado de verdade: o check constraint da tabela
+             -- só permite 'pending' | 'applied' | 'refused' (migration da fila de capas).
+             -- Esta linha comparava com um valor que o banco jamais grava, e por isso
+             -- NINGUÉM jamais apareceu aqui por capa nenhuma, desde que a página nasceu.
              (select count(*) from cover_proposals cp
-               where cp.user_id = u.id and cp.state = 'accepted')::int as capas,
+               where cp.user_id = u.id and cp.state = 'applied')::int as capas,
              -- CONJUNTOS: ligou um volume a uma coleção de edição, ou pôs o emblema
              -- dela. Mesma tabela da correção (revisions), e por isso precisa de um
              -- recorte próprio para não contar duas vezes na soma. Ver lib/conjuntos.ts.

@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { users, works } from "@/lib/db/schema";
+import { users, works, editions, coverProposals } from "@/lib/db/schema";
 import { getCatalogo } from "@/lib/contributors";
 import { ligarAoConjunto, porEmblema, soltarDoConjunto } from "@/lib/conjuntos";
 
@@ -36,6 +36,7 @@ const marca = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 let trouxe: string;
 let corrigiu: string;
 let montou: string;
+let mandouCapa: string;
 let alvoDoConjunto: string;
 
 beforeAll(async () => {
@@ -48,6 +49,7 @@ beforeAll(async () => {
   trouxe = await mk("ctb-trouxe");
   corrigiu = await mk("ctb-corrigiu");
   montou = await mk("ctb-montou");
+  mandouCapa = await mk("ctb-capa");
 
   // Alguém que TROUXE dois livros e nunca corrigiu nada.
   for (const n of [1, 2]) {
@@ -81,10 +83,25 @@ beforeAll(async () => {
   const [c] = await db.execute<{ colecao_id: string }>(sql`
     select colecao_id from works where id = ${alvoDoConjunto}::uuid`);
   await porEmblema({ id: montou }, c!.colecao_id, "https://upload.wikimedia.org/zz-teste.svg");
+
+  // E alguém que mandou capa, e ela foi usada. Uma segunda proposta ainda na fila
+  // (pending) prova que só a que FOI USADA conta.
+  const [wCapa] = await db.insert(works)
+    .values({ slug: `ctb-capa-${marca}`, title: `zz ctb capa ${marca}` })
+    .returning({ id: works.id });
+  const [ed] = await db.insert(editions)
+    .values({ workId: wCapa!.id, publisher: "Editora Teste" })
+    .returning({ id: editions.id });
+  await db.insert(coverProposals).values([
+    { editionId: ed!.id, userId: mandouCapa, coverUrl: "https://upload.wikimedia.org/zz-capa-usada.jpg", state: "applied" },
+    { editionId: ed!.id, userId: mandouCapa, coverUrl: "https://upload.wikimedia.org/zz-capa-fila.jpg", state: "pending" },
+  ]);
 });
 
 afterAll(async () => {
-  for (const id of [trouxe, corrigiu, montou]) await db.execute(sql`delete from users where id = ${id}::uuid`);
+  for (const id of [trouxe, corrigiu, montou, mandouCapa]) {
+    await db.execute(sql`delete from users where id = ${id}::uuid`);
+  }
   await db.execute(sql`delete from works where slug like ${`ctb-%${marca}`}`);
   await db.execute(sql`delete from colecoes where slug like ${`%ctb-conjunto-${marca}%`}`);
   await db.execute(sql`delete from series where slug like ${`%ctb-conjunto-${marca}%`}`);
@@ -173,5 +190,31 @@ describe("a página de contribuidores conta os quatro trabalhos", () => {
       "soltar o volume não foi contado em lugar nenhum: desfazer uma ligação errada é " +
         "trabalho de catálogo, como qualquer outra correção",
     ).toBe(1);
+  });
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  'ACCEPTED' NUNCA FOI UM ESTADO DE VERDADE. NINGUÉM JAMAIS CONTOU POR CAPA.
+   *
+   *  O check constraint de cover_proposals só permite 'pending' | 'applied' |
+   *  'refused' — e a consulta comparava com 'accepted', um valor que o banco nunca
+   *  grava. Em produção: zero pessoas com capa contada, sempre, desde que a coluna
+   *  nasceu. Só a proposta USADA ('applied') conta; a que ainda está na fila
+   *  ('pending') não é trabalho feito, é trabalho proposto.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  it("quem manda capa e ela é USADA aparece com rótulo próprio", async () => {
+    const lista = await getCatalogo();
+    const p = lista.find((x) => x.handle === `ctb-capa-${marca}`);
+
+    expect(p, "quem mandou uma capa usada não apareceu na lista").toBeTruthy();
+    expect(
+      p?.capas,
+      "a capa aplicada não foi contada: 'accepted' não é um estado que o banco grava",
+    ).toBe(1);
+    expect(
+      p?.livros,
+      "mandar capa não é trazer livro: os dois baldes não podem se misturar",
+    ).toBe(0);
   });
 });

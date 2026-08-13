@@ -3269,3 +3269,41 @@ O dono pediu a reabertura sabendo do argumento anterior e da meta do painel.
   crescimento. Se um dia divergirem de novo, cada um muda no seu lugar.
 
 **E fica registrado que a coleção NÃO é de mangá.** Nada no mecanismo é específico: criar "Coleção Companhia de Bolso" ou "Harry Potter capa dura" funciona pelo mesmo botão. Os 415 conjuntos são de mangá porque a AniList foi a única fonte importada — é limitação do DADO, e não da funcionalidade.
+
+---
+
+## /contribuidores contava capa como 'accepted', e o banco nunca grava esse estado.
+
+O dono perguntou "não dá pra colocar quem cria livros, adiciona infos, só quem
+corrige?" — e a resposta certa não era explicar de novo que o mecanismo já
+existe (item anterior). Era ir olhar o banco de produção. Achei dois bugs
+reais, os dois silenciosos desde que nasceram.
+
+**Capas: `cp.state = 'accepted'` nunca bateu com nada.** O check constraint de
+`cover_proposals` só permite `'pending' | 'applied' | 'refused'` — `'accepted'`
+não é, e nunca foi, um valor que o banco aceita gravar. `getCatalogo()`
+comparava com uma palavra errada desde que a coluna "capas" foi escrita, e
+NENHUM teste jamais chamou essa consulta contra uma proposta de capa de
+verdade — o buraco não tinha como ser visto de dentro do código, só olhando o
+dado. Corrigido para `'applied'`, com teste novo em `lib/contribuicao.sql.test.ts`
+que insere uma proposta `applied` e uma `pending` lado a lado, provando que só
+a usada conta.
+
+**Livros: `addByHand()` não creditava ninguém.** `findOrCreateWork()` só grava
+`works.created_by` quando quem chama manda `criadoPor` (migration 0059) — e o
+formulário de "não achei este livro, vou cadastrar" (o trabalho mais
+deliberado que existe para trazer um livro ao acervo) tinha `actor` na mão e
+nunca passava adiante. As outras chamadas (busca por ISBN, import em massa)
+já passavam `criadoPor` certo; só esta ficou pra trás. Em produção: **zero**
+obras com `created_by` preenchido, de um total onde 3.307 estão marcadas
+`needs_review` (o que o painel chama de "obras de leitor" — uma métrica
+diferente, que não depende de `created_by`). Corrigido com um teste de fonte
+em `app/buscar/actions.test.ts` (a ação depende de sessão, não dá pra chamar
+direto num teste — o que trava é a FORMA da chamada).
+
+**A lição, escrita para não repetir**: os três baldes de `/contribuidores`
+(livros, capas, conjuntos) foram construídos com cuidado e testados — e dois
+dos três estavam matematicamente incapazes de mostrar qualquer coisa em
+produção, porque o defeito morava numa costura que nenhum teste olhava (um
+valor de estado, um parâmetro esquecido numa chamada). Consultar o banco de
+verdade achou em minutos o que a leitura do código não achava.

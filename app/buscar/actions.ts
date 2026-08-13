@@ -176,6 +176,11 @@ export async function addByHand(form: {
     // pela mesma razão de todos os outros campos: ela está com o livro na mão.
     coverUrl: capa ?? achado?.coverUrl ?? null,
     needsReview: true, // é um livro de verdade na estante enquanto isso, e não um de segunda
+    // QUEM DIGITOU ESTE LIVRO À MÃO. Cadastrar um livro que a busca não achou é o
+    // trabalho mais deliberado que existe para trazer um livro ao acervo — e esta
+    // chamada nunca creditou ninguém por isso: criadoPor faltava aqui, e só aqui.
+    // Ver a migration 0059 e lib/contributors.ts.
+    criadoPor: actor.id,
   });
 
   await shelve(actor, workId, form.status, editionId);
