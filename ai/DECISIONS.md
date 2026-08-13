@@ -3557,3 +3557,35 @@ deles, e um token sem uso não custa nada em tempo de execução.
 
 A marca (`components/mark.tsx`, o símbolo "Gume") não muda: o fio saiu só do
 comportamento da interface, não do símbolo em si.
+
+---
+
+## Adicionar um volume, da própria página da coleção. Continua sendo fato.
+
+A coleção de Dostoiévski/Martin Claret (a que provou que "coleção" não é só
+mangá) estava faltando livro — Martin Claret publicou mais Dostoiévski do que
+os quatro que entraram no catálogo. O dono pediu: "deixe que o usuário
+personalize sua coleção, isso é até legal, pq aí a pessoa controla o que
+coleciona".
+
+Perguntei antes de escrever código: "personalizar" queria dizer destravar a
+busca (o mecanismo de `lib/conjuntos.ts`, `ligarAoConjunto`, já existe — só
+tinha uma porta, `components/conjunto-do-livro.tsx`, na página do LIVRO) ou
+deixar qualquer pessoa grudar qualquer livro em qualquer conjunto, virando
+coleção pessoal solta? O dono escolheu a primeira — **o conjunto continua
+sendo fato de edição, não opinião**, a mesma régua que `lib/conjuntos.ts` já
+escreve. Só a PORTA era o problema: faltava dar pra adicionar de dentro da
+própria coleção, sem precisar navegar até cada livro.
+
+`app/colecao/actions.ts` ganhou `adicionarVolume()`: recebe o slug do livro
+(o que a busca do catálogo devolve — `Hit` não carrega workId, só o
+endereço), resolve o id por dentro, e chama o mesmo `ligarAoConjunto()` de
+sempre. `components/adicionar-volume.tsx` é a busca — só sobre livros JÁ no
+catálogo (`source === "gume"`); um resultado vindo de fora ainda precisa
+ganhar ficha primeiro, do jeito que o Cmd+K já exige em duas etapas.
+
+A porta entra nos DOIS estados de `app/colecao/[slug]/page.tsx`: a coleção
+completa (pode voltar a ficar incompleta, se uma edição nova entrar — e é
+assim que deve ser, a coleção completa é o fato de HOJE, nunca um teto
+guardado) e a "ainda não" (onde a porta importa mais: é exatamente ali que
+completar faz sentido).
