@@ -1,22 +1,25 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { LIMITS } from "@/lib/limits";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Plus } from "lucide-react";
-import { novaEstante } from "@/app/livro/[slug]/curation-actions";
+import { DialogoColecao } from "@/components/dialogo-colecao";
 
 export type Shelf = { id: string; slug: string; name: string; visibility: string; n: number };
 
 /**
  * Shelves the reader invented, under the fixed ones. "Para reler", "do meu pai",
  * "livros que me dão medo". The app does not get to decide what those are.
+ *
+ * Era um `<input>` que aparecia inline aqui embaixo — só o nome, sem
+ * descrição, sem animação nenhuma. Virou o diálogo de
+ * components/dialogo-colecao.tsx: o primeiro popup do app que anima ao
+ * abrir/fechar.
  */
 export function MyShelves({ shelves }: { shelves: Shelf[] }) {
   const path = usePathname();
-  const [adding, setAdding] = useState(false);
-  const [pending, start] = useTransition();
+  const [aberto, setAberto] = useState(false);
 
   return (
     <>
@@ -25,35 +28,15 @@ export function MyShelves({ shelves }: { shelves: Shelf[] }) {
           minhas listas
         </h2>
         <button
-          onClick={() => setAdding(!adding)}
-          aria-label="criar estante"
+          onClick={() => setAberto(true)}
+          aria-label="criar coleção"
           className="text-[var(--color-ink-faint)] transition-colors hover:text-[var(--color-ink)]"
         >
           <Plus size={14} strokeWidth={1.5} />
         </button>
       </div>
 
-      {adding && (
-        <form
-          className="mb-2 px-2"
-          action={(data: FormData) =>
-            start(async () => {
-              const name = String(data.get("nome") ?? "").trim();
-              if (name) await novaEstante(name, "public");
-              setAdding(false);
-            })
-          }
-        >
-          <input
-            name="nome"
-            autoFocus
-            maxLength={LIMITS.shelfName}
-            disabled={pending}
-            placeholder="nome da estante"
-            className="w-full rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-2 py-1.5 text-[13px] outline-none placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-ink)]"
-          />
-        </form>
-      )}
+      <DialogoColecao open={aberto} onClose={() => setAberto(false)} />
 
       <nav className="flex flex-col gap-0.5">
         {shelves.map((s) => {

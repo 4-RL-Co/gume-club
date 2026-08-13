@@ -19,6 +19,7 @@ import {
   snapshotShelf, restoreShelf, setStatusMany, addManyToCollection,
   type BookEdit, type ShelfSnapshot,
 } from "@/lib/curation";
+import { descreverLista } from "@/lib/listas";
 import type { Visibility } from "@/lib/authz";
 
 /** Take the book off your shelf. Everything you attached to it goes with it. */
@@ -215,6 +216,26 @@ export async function toggleCollection(
 export async function novaEstante(name: string, visibility: Visibility): Promise<void> {
   const actor = await getActor();
   await createCollection(actor, name, visibility);
+  revalidatePath("/");
+  revalidatePath("/estante");
+}
+
+/**
+ * A mesma criação de estante, com descrição — usada pelo diálogo de
+ * components/dialogo-colecao.tsx. `descreverLista` é uma ação separada
+ * (lib/listas.ts) porque a descrição também se edita depois, numa estante
+ * já existente; aqui as duas rodam em sequência, uma vez, na criação.
+ */
+export async function novaEstanteComDescricao(
+  name: string,
+  description: string,
+  visibility: Visibility,
+): Promise<void> {
+  const actor = await getActor();
+  const id = await createCollection(actor, name, visibility);
+  if (id && description.trim()) {
+    await descreverLista(actor, id, description);
+  }
   revalidatePath("/");
   revalidatePath("/estante");
 }
