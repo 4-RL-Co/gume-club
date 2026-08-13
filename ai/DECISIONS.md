@@ -3613,3 +3613,54 @@ um teto guardado).
 O link "ver a página desta coleção" perdeu o `c.completo &&` — fica sempre
 visível. A medalha continua só na coleção completa: ela significa "isto
 está completo", e mostrá-la numa incompleta mentiria.
+
+---
+
+## O botão de adicionar volume mora no próprio card, não só na página.
+
+Seguida direta da entrada anterior. Depois de a porta pra dentro da coleção
+deixar de depender de estar completa, o dono perguntou: "o que acha de ter
+um botão de ver página e outro de adicionar volume? pra pessoa não ter que
+entrar na página pra add volume, pq até entrar ela não sabe que é
+possível". Concordei e implementei: sem o segundo botão, "adicionar volume"
+era um recurso invisível atrás de uma navegação — quem nunca abriu a página
+de uma coleção específica não tinha como descobrir que dava pra completá-la
+por ali.
+
+`components/conjunto.tsx` (o card compacto, o que aparece no perfil e em
+`/colecao`) ganhou o mesmo `<AdicionarVolume>` que já vivia em
+`app/colecao/[slug]/page.tsx`, ao lado do link "ver a página desta
+coleção" — os dois agora convivem no card, cada um resolvendo um problema
+diferente (ver vs. editar), e nenhum depende do outro. Continua atrás de
+`podeEditar`: quem não é dono do conjunto não vê o botão, do jeito que já
+não via a busca dentro da página.
+
+---
+
+## Relatar um problema não pede conta, porque o bug pode ser o motivo de não ter uma.
+
+O dono: "também tem que ter um botão visível em todo o site para reportar
+um problema, aí a pessoa consegue mandar um email pra [a caixa de quem
+cuida do Gume]". A ação foi pensada do lado de fora: `components/report.tsx`
+já existia para denunciar uma PESSOA, mas exige estar logado, porque faz
+sentido perguntar quem está denunciando. Um bug no app é o caso oposto —
+quem esbarra nele pode não ter conta ainda, e é bem capaz de ser justo essa
+a razão de não conseguir criar uma. Fechar a porta atrás de um login teria
+calado exatamente quem mais precisava de um jeito de avisar.
+
+Por isso `relatarProblemaAction` (`app/relatar/actions.ts`) não chama
+`getActor()`, de propósito — entrou em `SEM_PORTEIRO`
+(`lib/acoes.test.ts`) e em `PUBLICO` (`lib/surface.test.ts`) com o motivo
+escrito, os dois lugares que este repo usa pra marcar uma exceção como
+deliberada, não esquecida. Quem autoriza no lugar de uma sessão é o limite
+por IP (`RATES.relatarProblema`, três por hora — ver `lib/rate-limit.ts`),
+igual à busca de código por e-mail no meio do login.
+
+O e-mail vai para `CAIXA_DA_MODERACAO()` (`lib/email.ts`), a mesma caixa
+que já recebe denúncia e correção — nenhum endereço novo hardcoded, porque
+`EMAIL_MODERACAO` já é a variável que existe pra isto, e o Gume não trava
+um endereço de dono no código-fonte de quem hospeda a própria instância.
+
+O botão fica no canto inferior ESQUERDO, sempre visível, em toda tela —
+`components/voltar-ao-topo.tsx` já morava no direito, e os dois nunca
+disputam o mesmo lugar.

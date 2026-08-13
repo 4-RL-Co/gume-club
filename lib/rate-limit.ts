@@ -107,6 +107,15 @@ export const RATES = {
    * única escrita do app fora do balde; auditoria de 2026-07-22.
    */
   upload: { limit: 20, windowMs: 60_000 },
+  /**
+   * RELATAR UM PROBLEMA. Aberto a quem não tem conta — de propósito, um bug
+   * não deveria exigir cadastro pra ser avisado — e é exatamente por isso
+   * que precisa de um teto apertado por IP: sem `viewer.id` pra medir,
+   * `limitarEscrita` (a régua de toda escrita autenticada) não serve aqui.
+   * Três por hora é a mesma conta de `signup`: generoso pra uma casa
+   * inteira, ridículo pra um script.
+   */
+  relatarProblema: { limit: 3, windowMs: 60 * 60_000 },
 } as const;
 
 export type Regra = { limit: number; windowMs: number };

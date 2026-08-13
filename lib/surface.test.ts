@@ -81,6 +81,9 @@ const PUBLICO: Record<string, string> = {
    */
   "app/api/webhooks/stripe/route.ts":
     "é o aviso de pagamento do Stripe, que nunca tem sessão. Quem autoriza é o HMAC sobre o corpo cru, conferido com STRIPE_WEBHOOK_SECRET antes de qualquer leitura do conteúdo, e o efeito é idempotente por id de evento. Ver lib/stripe.webhook.test.ts",
+
+  "app/relatar/actions.ts":
+    "de propósito aberto a quem não tem conta: um bug pode ser justo o motivo de não conseguir se cadastrar. Não lê nem escreve dado de ninguém, só encaminha o texto pra caixa da moderação, e é limitada por IP (RATES.relatarProblema), não por usuário. Ver lib/acoes.test.ts (SEM_PORTEIRO) e lib/relatar.ts",
 };
 
 function arquivos(dir: string, out: string[] = []): string[] {
