@@ -202,7 +202,7 @@ export const INSIGNIAS: Record<
     label: "membro fundador",
     sobre: "estava aqui quando isto ainda era quase nada",
     como:
-      "Você está entre as cinquenta primeiras pessoas do Gume, e o seu número de chegada fica na insígnia. Chegou quando a estante estava vazia e ainda não dava para saber se ia dar certo. Não tem como conquistar depois: ou você chegou cedo, ou não chegou.",
+      "Você está entre as cem primeiras pessoas do Gume, e o seu número de chegada fica na insígnia. Chegou quando a estante estava vazia e ainda não dava para saber se ia dar certo. Não tem como conquistar depois: ou você chegou cedo, ou não chegou.",
     matiz: 25, // terracota
     icone: "Flag",
   },

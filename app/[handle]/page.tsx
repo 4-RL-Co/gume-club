@@ -1,4 +1,4 @@
-import { Pencil, Crown } from "lucide-react";
+import { Pencil, Crown, Signpost } from "lucide-react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getViewer } from "@/lib/viewer";
@@ -119,7 +119,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
     // As resenhas DELA, e a consulta é quem decide quais: privada nunca sai daqui.
     // Ver getResenhasDe() em lib/explore.ts e SECURITY.md.
     getResenhasDe(viewer, profile.id),
-    // E a curadoria da casa que ela guardou. Ela não é uma coleção (o Top 100 é
+    // E a curadoria da casa que ela guardou. Ela não é uma lista (o Top 100 é
     // calculado a cada visita), então vem de outra tabela. Ver lib/curadoria-guardada.ts.
     getCuradoriasGuardadas(profile.id),
     /**
@@ -136,13 +136,28 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
   // lib/honras.ts.
   const escadas = await getEscadas(profile.id);
 
-  // O perfil da CASA carrega a curadoria da casa fixada nas coleções: as editoriais
+  // O perfil da CASA carrega a curadoria da casa fixada nas listas: as editoriais
   // moram com quem as edita. souIdealizador aqui não é permissão, é identificação:
   // pergunta se ESTE perfil é o de quem imaginou o Gume.
   const perfilDaCasa = await souIdealizador({ id: profile.id });
 
   const name = profile.displayName ?? profile.handle;
   const primeiroNome = name.split(" ")[0];
+
+  /**
+   * ═══ O SELO DE GUIA. Sem consulta nova, e fora do sistema de insígnias ═══
+   *
+   * `getListasDe` já traz `guardadas` por lista (ver lib/listas.ts e o teste em
+   * lib/listas.sql.test.ts). "Guia" é quem montou pelo menos uma lista que ficou boa
+   * o bastante para alguém guardar — reaproveita o mesmo dado, e não soma um select.
+   *
+   * NÃO é insígnia (não mora em lib/badges-view.ts): o círculo de cor das oito/nove
+   * insígnias trava matematicamente 30° entre matizes e 30° do accent da marca, e as
+   * oito já usam o círculo inteiro sem sobrar ângulo livre. Forçar uma nona cor exigia
+   * afrouxar essa trava para todo mundo, e o dono preferiu um selo à parte a mexer
+   * numa garantia que já evitou uma colisão de cor de verdade. Ver ai/DECISIONS.md.
+   */
+  const ehGuia = shelves.some((s) => s.guardadas > 0);
   const opinions = await getFriendRatings(viewer, books.map((b) => b.workId));
 
   // O QUE ELA ADOROU vira a vitrine em profundidade; o resto da estante mora numa
@@ -272,7 +287,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
           </h2>
           <div className="mt-4 flex flex-col gap-5">
             {conjuntos.map((c) => (
-              <ConjuntoCard key={c.id} c={c} />
+              <ConjuntoCard key={c.id} c={c} podeEditar={!!viewer} />
             ))}
           </div>
         </section>
@@ -342,15 +357,23 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
 
       {/* ═══ AS ESTANTES QUE ELA MONTOU, COMO CARDS ═══
 
-          Eram pílulas de texto com um número, e uma coleção montada com capricho merece
+          Eram pílulas de texto com um número, e uma lista montada com capricho merece
           aparecer como o que é: capas em leque, nome, descrição. A curadoria é o que o
           perfil tem de mais pessoal depois das resenhas, e estava vestida de filtro. */}
       {(shelves.length > 0 || perfilDaCasa) && (
         <section className="mt-5">
-          <h2 className={EYEBROW}>
-            {mine ? "minhas coleções" : `coleções que ${primeiroNome} montou`}
+          <h2 className={`${EYEBROW} flex flex-wrap items-center gap-2`}>
+            {mine ? "minhas listas" : `listas que ${primeiroNome} montou`}
+            {/* O selo de GUIA: pelo menos uma lista daqui já foi guardada por alguém.
+                Fora do sistema de insígnias de propósito. Ver a nota acima, em ehGuia. */}
+            {ehGuia && (
+              <span className="inline-flex items-center gap-1 rounded-[var(--radius-control)] border border-[var(--color-rule)] px-2 py-0.5 text-[10px] normal-case tracking-normal text-[var(--color-ink-faint)]">
+                <Signpost size={11} strokeWidth={1.75} aria-hidden />
+                guia
+              </span>
+            )}
           </h2>
-          {/* A curadoria editorial, FIXA no topo das coleções da casa. */}
+          {/* A curadoria editorial, FIXA no topo das listas da casa. */}
           {perfilDaCasa && (
             <div className="mt-4">
               <CuradoriaCard compacto />
@@ -370,7 +393,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
       {(guardadas.length > 0 || curadorias.length > 0) && (
         <section className="mt-5">
           <h2 className={EYEBROW}>
-            {mine ? "coleções que eu guardei" : `coleções que ${primeiroNome} guardou`}
+            {mine ? "listas que eu guardei" : `listas que ${primeiroNome} guardou`}
           </h2>
 
           {/* A curadoria da casa vem PRIMEIRO e como uma linha, e não como card: ela

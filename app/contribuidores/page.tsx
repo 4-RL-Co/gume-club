@@ -101,12 +101,15 @@ export default async function Contribuidores() {
 
                       <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12px] text-[var(--color-ink-faint)]">
                         {/* ════════════════════════════════════════════════════
-                            OS TRÊS TRABALHOS, SEPARADOS. E os números vivem AQUI,
+                            OS QUATRO TRABALHOS, SEPARADOS. E os números vivem AQUI,
                             e só aqui: nunca no perfil, nunca no feed.
 
                             Era só "correções". Quem TROUXE um livro que faltava no
                             acervo — o trabalho mais valioso para um catálogo — não
-                            aparecia, e quem mandou capa também não.
+                            aparecia, quem mandou capa também não, e quem montou um
+                            conjunto de edição ("Hellsing Deluxe tem 10 volumes")
+                            desaparecia dentro do mesmo rótulo de quem só trocou um
+                            ano de ficha.
 
                             Somar tudo num número esconderia a natureza do trabalho,
                             que é o que esta página existe para dar a ver. Cada um só
@@ -125,9 +128,17 @@ export default async function Contribuidores() {
                             </span>
                           </>
                         )}
-                        {p.correcoes > 0 && (
+                        {p.conjuntos > 0 && (
                           <>
                             {(p.livros > 0 || p.capas > 0) && <span aria-hidden>·</span>}
+                            <span className="tabular">
+                              {p.conjuntos} {p.conjuntos === 1 ? "coleção" : "coleções"}
+                            </span>
+                          </>
+                        )}
+                        {p.correcoes > 0 && (
+                          <>
+                            {(p.livros > 0 || p.capas > 0 || p.conjuntos > 0) && <span aria-hidden>·</span>}
                             <span className="tabular">
                               {p.correcoes} {p.correcoes === 1 ? "correção" : "correções"}
                             </span>

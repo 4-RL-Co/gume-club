@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
  *  EXPLORAR, COM UM MENU DE VITRINES. A galeria ganhou corredores.
  *
  *  A tela única virou seis vitrines: tudo (a mistura de sempre), pessoas,
- *  coleções, autores, gêneros e editoras. O menu é o mesmo padrão de pílulas
+ *  listas, autores, gêneros e editoras. O menu é o mesmo padrão de pílulas
  *  das abas de /pessoas: recorte mora na tela que ele recorta.
  *
  *  As três últimas são CATÁLOGO puro (a vitrine da livraria, sem linha de
@@ -35,7 +35,7 @@ export const dynamic = "force-dynamic";
 const VITRINES = [
   { key: "tudo", label: "Tudo" },
   { key: "pessoas", label: "Pessoas" },
-  { key: "colecoes", label: "Coleções" },
+  { key: "listas", label: "Listas" },
   { key: "autores", label: "Autores" },
   { key: "generos", label: "Gêneros" },
   { key: "editoras", label: "Editoras" },
@@ -83,7 +83,7 @@ export default async function Explorar({
 
       {ver === "tudo" && <Explore viewer={viewer} />}
       {ver === "pessoas" && <Pessoas viewer={viewer} />}
-      {ver === "colecoes" && <Colecoes viewer={viewer} busca={busca} />}
+      {ver === "listas" && <Listas viewer={viewer} busca={busca} />}
       {ver === "autores" && <Autores busca={busca} />}
       {ver === "generos" && <PorRotulo tipo="generos" escolhido={escolhido} busca={busca} />}
       {ver === "editoras" && <PorRotulo tipo="editoras" escolhido={escolhido} busca={busca} />}
@@ -130,19 +130,19 @@ async function Pessoas({ viewer }: { viewer: Awaited<ReturnType<typeof getViewer
   return <Explore viewer={viewer} soPessoas />;
 }
 
-/** A vitrine de COLEÇÕES: a curadoria da casa fixa, e todas as públicas embaixo. */
-async function Colecoes({ viewer, busca }: { viewer: Awaited<ReturnType<typeof getViewer>>; busca: string }) {
+/** A vitrine de LISTAS: a curadoria da casa fixa, e todas as públicas embaixo. */
+async function Listas({ viewer, busca }: { viewer: Awaited<ReturnType<typeof getViewer>>; busca: string }) {
   const todas = await getTodasAsListas(viewer);
   const listas = todas.filter((l) => bate(busca, l.name, l.description, l.dono.name, l.dono.handle));
   return (
     <div className="mt-2 flex flex-col gap-8">
-      <Busca ver="colecoes" valor={busca} oQue="buscar uma coleção pelo nome" />
+      <Busca ver="listas" valor={busca} oQue="buscar uma lista pelo nome" />
       {!busca && <CuradoriaCard />}
       {listas.length === 0 ? (
         <Empty>
           {busca
-            ? "Nenhuma coleção com esse nome por aqui."
-            : "Ninguém abriu uma coleção ainda. Monte a sua num livro qualquer."}
+            ? "Nenhuma lista com esse nome por aqui."
+            : "Ninguém abriu uma lista ainda. Monte a sua num livro qualquer."}
         </Empty>
       ) : (
         <ListaGrid listas={listas} />
