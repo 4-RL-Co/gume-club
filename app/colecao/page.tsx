@@ -9,6 +9,7 @@ import { getColecao, contarColecao, getConjuntos } from "@/lib/copies";
 import { ConjuntoCard } from "@/components/conjunto";
 import { ComecarColecao } from "@/components/comecar-colecao";
 import { nomeDoAutor } from "@/lib/autores";
+import { DOURADO } from "@/lib/dourado";
 
 export const dynamic = "force-dynamic";
 
@@ -156,7 +157,7 @@ export default async function Colecao({
           <p className="voice mt-5 flex flex-wrap items-center gap-2.5 text-[17px] leading-relaxed text-[var(--color-ink-soft)]">
             <span
               className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-control)] border px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.1em]"
-              style={{ color: "#d9a520", borderColor: "#d9a520" }}
+              style={{ color: DOURADO, borderColor: DOURADO }}
             >
               <Trophy size={12} strokeWidth={1.75} aria-hidden />
               colecionador

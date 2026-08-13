@@ -3451,3 +3451,39 @@ de sempre, e não uma trava frouxa por descuido.
 
 Testado com a URL exata que o dono mandou como exemplo, em
 `lib/imagens.test.ts`.
+
+---
+
+## A pill virou medalha, e ela vaza o card.
+
+"Seria legal ser tipo um badge na coleção completa, uma medalha, sabe? meio
+overflow com o container, não só escrito." O selo "completa" era uma pill de
+texto — borda, palavra, ícone `Trophy` — sentada ao lado do resto. Virou um
+objeto de verdade: um círculo dourado que morde o canto do card
+(`components/conjunto.tsx`) ou o anel do emblema grande
+(`app/colecao/[slug]/page.tsx`), com sombra própria, como se estivesse
+pendurado por cima, não desenhado dentro.
+
+O acabamento (`components/selo-colecionador.tsx`) reaproveita a TÉCNICA de
+`components/badges.tsx` — verniz, bisel, glow — mas não importa nada de lá.
+Continua NÃO SENDO insígnia: não entra em `lib/badges-view.ts`, não mora no
+sistema OKLCH que `lib/paleta.test.ts` já trava cheio, não aparece no painel
+de honras. Completar uma coleção é para o próprio colecionador, não uma
+doação à comunidade — a distinção que `app/colecao/page.tsx` já registrava
+continua valendo. Duas diferenças propositais de uma insígnia: ela GIRA (6 a
+10°, "pendurada", nunca alinhada ao grid) e tem sombra fora do círculo (paira
+sobre o card; uma insígnia é nivelada com a superfície que a contém).
+
+O dourado (`#d9a520`) virou uma constante — `lib/dourado.ts`, `DOURADO` — em
+vez de continuar escrito à mão em onze pontos de oito arquivos. O nome não é
+`ouro-colecao`: essa mesma cor também é a coroa da curadoria da casa
+("queridinhos"), e um nome preso à coleção mentiria sobre a coroa. As duas
+coisas só compartilham o hex por coincidência de gosto, nunca de
+significado — o arquivo diz isso.
+
+A pill de texto ao lado do emblema grande, em `/colecao/[slug]`, perdeu cor,
+borda e ícone: virou legenda neutra, porque a medalha grande já carrega o
+símbolo sozinha. E como a medalha (32px, rotacionada, num canto) é um alvo
+de toque menor que a pill antiga, o card compacto ganhou um link de texto
+simples — "ver a página desta coleção" — dentro do estado aberto, pra
+navegação em celular não depender só do círculo pequeno.

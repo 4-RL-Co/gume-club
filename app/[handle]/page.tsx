@@ -28,6 +28,7 @@ import { Cover } from "@/components/cover";
 import { Carrossel } from "@/components/carrossel";
 import type { ShelfBook } from "@/lib/shelf-view";
 import Link from "next/link";
+import { DOURADO } from "@/lib/dourado";
 
 export const dynamic = "force-dynamic";
 
@@ -408,7 +409,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
                     href={c.href}
                     className="surface surface-hover flex items-center gap-2.5 px-5 py-4 text-[15px] text-[var(--color-ink)]"
                   >
-                    <Crown size={14} strokeWidth={1.75} aria-hidden style={{ color: "#d9a520" }} />
+                    <Crown size={14} strokeWidth={1.75} aria-hidden style={{ color: DOURADO }} />
                     {c.titulo}
                   </Link>
                 </li>

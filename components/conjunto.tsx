@@ -3,10 +3,12 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Trophy, ChevronDown, ImagePlus, X } from "lucide-react";
+import { ChevronDown, ImagePlus, X } from "lucide-react";
 import { origemAceita } from "@/lib/imagens";
 import { Cover } from "@/components/cover";
 import { porEmblemaAction } from "@/app/colecao/actions";
+import { SeloColecionador } from "@/components/selo-colecionador";
+import { DOURADO } from "@/lib/dourado";
 import type { Conjunto } from "@/lib/copies";
 
 /**
@@ -29,8 +31,19 @@ import type { Conjunto } from "@/lib/copies";
  *  ═══ POR QUE O DE CIMA (A LINHA) NÃO PODE FICAR DESATUALIZADO ═══
  *
  *  A linha sozinha já precisa responder "estou perto?" sem abrir nada: por isso ela
- *  carrega a barra fina de progresso e o selo dourado de completo, os dois já visíveis
- *  fechada. Só a GRADE dos volumes (a lacuna, volume por volume) é que espera o clique.
+ *  carrega a barra fina de progresso e a medalha dourada de completo, os dois já
+ *  visíveis fechada. Só a GRADE dos volumes (a lacuna, volume por volume) é que espera
+ *  o clique.
+ *
+ *  ═══ A MEDALHA, E POR QUE ELA VAZA O CARD ═══
+ *
+ *  Era uma pill de texto (borda + palavra "completa" + ícone). Virou uma medalha de
+ *  verdade — ver components/selo-colecionador.tsx — que morde o canto do card em vez
+ *  de ficar escrita ao lado. Por isso a `<section>` perdeu o `overflow-hidden`: ele
+ *  cortaria a medalha junto com o resto. Nada mais dependia desse corte — o padding
+ *  (p-5/p-6) já mantém todo o conteúdo interno longe do raio da borda arredondada.
+ *  A medalha mora no `<div className="relative">` que envolve a section, não dentro
+ *  dela, e vaza livre por cima do canto.
  *
  *  ═══ O QUE NÃO MUDOU ═══
  *
@@ -78,12 +91,20 @@ export function ConjuntoCard({
   };
 
   return (
-    <section
-      className="surface overflow-hidden"
-      /* O conjunto completo ganha um fio dourado na borda — o mesmo dourado do selo,
-         e a ÚNICA cor da tela. Quem completou merece que a moldura saiba. */
-      style={c.completo ? { borderColor: "color-mix(in srgb, #d9a520 45%, transparent)" } : undefined}
-    >
+    <div className="relative">
+      {/* A medalha vaza o card: mora FORA da section, no wrapper relative, mordendo
+          o canto arredondado. Ver components/selo-colecionador.tsx. */}
+      {c.completo && (
+        <span className="absolute -top-3 -right-3 z-10">
+          <SeloColecionador href={`/colecao/${c.slug}`} tamanho={32} girar={8} />
+        </span>
+      )}
+      <section
+        className="surface"
+        /* O conjunto completo ganha um fio dourado na borda — o mesmo dourado da
+           medalha, e a ÚNICA cor da tela. Quem completou merece que a moldura saiba. */
+        style={c.completo ? { borderColor: `color-mix(in srgb, ${DOURADO} 45%, transparent)` } : undefined}
+      >
       <div className="flex w-full items-center gap-3 p-5 sm:p-6">
         <button
           type="button"
@@ -106,7 +127,7 @@ export function ConjuntoCard({
             <span
               className="surface-2 relative flex h-11 w-11 shrink-0 overflow-hidden rounded-full"
               style={c.completo
-                ? { boxShadow: "0 0 0 2px color-mix(in srgb, #d9a520 70%, transparent)" }
+                ? { boxShadow: `0 0 0 2px color-mix(in srgb, ${DOURADO} 70%, transparent)` }
                 : undefined}
               aria-hidden
             >
@@ -140,7 +161,7 @@ export function ConjuntoCard({
             <div className="mt-2 h-1 overflow-hidden rounded-full" style={{ background: "var(--surface-2)" }}>
               <div
                 className="h-full rounded-full transition-all"
-                style={{ width: `${pct}%`, background: c.completo ? "#d9a520" : "var(--color-ink-soft)" }}
+                style={{ width: `${pct}%`, background: c.completo ? DOURADO : "var(--color-ink-soft)" }}
               />
             </div>
           </div>
@@ -155,20 +176,6 @@ export function ConjuntoCard({
             ].join(" ")}
           />
         </button>
-
-        {/* A ÚNICA coisa dourada da tela, e a porta para a página de dentro da
-            coleção — que só existe para quem chegou até aqui. Fora do botão que
-            expande/recolhe, porque um link dentro de um botão é HTML inválido. */}
-        {c.completo && (
-          <Link
-            href={`/colecao/${c.slug}`}
-            className="inline-flex shrink-0 items-center gap-1 rounded-[var(--radius-control)] border px-2 py-1 text-[11px] font-medium transition-opacity hover:opacity-80"
-            style={{ color: "#d9a520", borderColor: "#d9a520" }}
-          >
-            <Trophy size={11} strokeWidth={1.75} aria-hidden />
-            completa
-          </Link>
-        )}
       </div>
 
       {aberto && (
@@ -201,6 +208,18 @@ export function ConjuntoCard({
               </li>
             ))}
           </ul>
+
+          {/* A medalha (32px, rotacionada, no canto) é um alvo de toque pequeno —
+              este link garante que abrir a página da coleção não dependa só dela,
+              principalmente no celular. */}
+          {c.completo && (
+            <Link
+              href={`/colecao/${c.slug}`}
+              className="mt-3 inline-block text-[12px] text-[var(--color-ink-faint)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+            >
+              ver a página desta coleção
+            </Link>
+          )}
 
           {podeEditar && (
             <div className="mt-4 border-t border-[var(--color-rule)] pt-4">
@@ -255,6 +274,7 @@ export function ConjuntoCard({
           )}
         </div>
       )}
-    </section>
+      </section>
+    </div>
   );
 }
