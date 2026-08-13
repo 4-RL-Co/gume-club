@@ -22,7 +22,7 @@ Auto-hospedável · Sem anúncios, sem links de afiliado, sem algoritmo
 
 <img src="./docs/screenshots/manifesto.png" alt="A home, sem entrar: uma parede de capas reais do catálogo, e a tese por cima" width="100%">
 
-App de leitura se vende pela cara, então esta é a cara. Fundo preto, serifa, e a única cor vem das capas. Sem placar, sem barra de progresso, sem nada em alta.
+App de leitura se vende pela cara, então esta é a cara. Fundo escuro, serifa, e a única cor vem das capas. Sem placar, sem barra de progresso, sem nada em alta.
 
 ---
 
