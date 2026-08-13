@@ -124,7 +124,7 @@
   --font-voice: "Newsreader", ui-serif, Georgia, serif;
   /* Só a marca. Quatro letras: GUME. Ver docs/design.md, "A marca". */
   --font-mark: var(--font-fraunces), "Fraunces", ui-serif, Georgia, serif;
-  --font-chrome: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-chrome: "Inter", ui-sans-serif, system-ui, sans-serif;
 
   --ease-spring: linear(0, 0.35, 0.78, 0.97, 1.02, 1);
 
