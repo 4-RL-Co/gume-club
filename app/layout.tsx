@@ -6,6 +6,7 @@ import { SCRIPT_DO_TEMA } from "@/components/tema";
 import { Command } from "@/components/command";
 import { ToastHost } from "@/components/toast-host";
 import { VoltarAoTopo } from "@/components/voltar-ao-topo";
+import { RelatarProblema } from "@/components/relatar-problema";
 import { PublicHeader } from "@/components/public-header";
 import { Medicao } from "@/components/medicao";
 import { getViewer, getUser } from "@/lib/viewer";
@@ -78,6 +79,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <body className="min-h-dvh">
           <PublicHeader />
           {children}
+          {/* Um bug pode chegar antes de uma conta — quem topa com um erro é
+              bem capaz de ser justo quem não conseguiu se cadastrar. Ver
+              components/relatar-problema.tsx e lib/relatar.ts. */}
+          <RelatarProblema />
+          <ToastHost />
           <Medicao />
         </body>
       </html>
@@ -131,6 +137,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
         {/* O elevador: some no topo, aparece depois de duas telas. */}
         <VoltarAoTopo />
+
+        {/* Canto oposto ao elevador, sempre visível — os dois nunca disputam
+            o mesmo lugar. Ver components/relatar-problema.tsx. */}
+        <RelatarProblema />
 
         {/* Cinco segundos de arrependimento em toda ação destrutiva. */}
         <ToastHost />

@@ -88,6 +88,22 @@ const SEM_PORTEIRO: Record<string, string> = {
   procurarPessoas:
     "é busca por tecla, e conta no balde de BUSCA (RATES.search), não no de escrita: " +
     "contar tecla a tecla no balde de escrita esgotaria o teto do dono numa palavra.",
+
+  /**
+   * ═══ RELATAR UM PROBLEMA É DE PROPÓSITO ABERTO A QUEM NÃO TEM CONTA ═══
+   *
+   * Um bug no app pode acontecer justo pra quem está tentando criar conta e não
+   * consegue — exigir login pra avisar disso seria fechar a porta bem na cara de
+   * quem mais precisa dela. A ação não lê nem escreve dado de ninguém: só manda o
+   * TEXTO que a pessoa escreveu pra caixa da moderação (lib/email.ts). Quem
+   * autoriza aqui não é um ator: é o limite por IP (RATES.relatarProblema, ver
+   * lib/rate-limit.ts), que impede o script que um `getActor()` nunca impediria
+   * de qualquer forma (ele criaria a conta e chamaria autenticado).
+   */
+  relatarProblemaAction:
+    "de propósito aberto a quem não tem conta — um bug pode ser justo o motivo de não " +
+    "conseguir se cadastrar. Não toca em dado de ninguém, só encaminha o texto pra caixa " +
+    "da moderação, e é limitada por IP (RATES.relatarProblema), não por usuário.",
 };
 
 /** Todo arquivo que declara `"use server"`. */
