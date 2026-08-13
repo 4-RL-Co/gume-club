@@ -138,8 +138,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* O elevador: some no topo, aparece depois de duas telas. */}
         <VoltarAoTopo />
 
-        {/* Canto oposto ao elevador, sempre visível — os dois nunca disputam
-            o mesmo lugar. Ver components/relatar-problema.tsx. */}
+        {/* Mesmo canto do elevador, um degrau acima — este sempre visível, o
+            elevador só depois de rolar. Ver components/relatar-problema.tsx. */}
         <RelatarProblema />
 
         {/* Cinco segundos de arrependimento em toda ação destrutiva. */}
