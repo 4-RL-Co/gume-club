@@ -341,7 +341,20 @@ export async function getConjuntos(
        where oc.user_id = ${dono}::uuid and w.colecao_id is not null
          and (${meu} or oc.visibility = 'public')
     )
-    select c.id, c.slug as conjunto_slug, c.title as titulo, c.publisher, c.total_volumes as total, c.emblema_url as emblema,
+    select c.id, c.slug as conjunto_slug, c.title as titulo, c.publisher, c.total_volumes as total,
+           -- SEM EMBLEMA PRÓPRIO, A CARA VIRA A DO AUTOR. Coleção de mangá tem o
+           -- personagem principal (colocado por scripts/personagens-da-colecao.mjs);
+           -- coleção de livro não tem personagem nenhum, e o retrato de quem escreveu
+           -- já mora em authors.image_url — mostrar ele é melhor que o vazio, e mais
+           -- bonito que um logotipo. O emblema manual (posto por um leitor) sempre
+           -- ganha: isto só entra quando ele é nulo.
+           coalesce(
+             c.emblema_url,
+             (select a.image_url from works w2
+               join authors a on a.id = w2.author_id
+              where w2.colecao_id = c.id and a.image_url is not null
+              order by w2.created_at asc limit 1)
+           ) as emblema,
            w.slug, w.title, w.volume::text as volume,
            (select e.cover_url from editions e
              where e.work_id = w.id and e.cover_url is not null

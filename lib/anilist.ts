@@ -333,6 +333,81 @@ query ($ids: [Int]) {
   }
 }`;
 
+const PERSONAGEM_PRINCIPAL = `
+query ($ids: [Int]) {
+  Page(perPage: 50) {
+    media(id_in: $ids, type: MANGA) {
+      id
+      characters(sort: [ROLE, FAVOURITES_DESC], perPage: 1) {
+        nodes { image { large } }
+      }
+    }
+  }
+}`;
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  O PERSONAGEM MAIS IMPORTANTE DE CADA SÉRIE. Pra ser a cara da coleção.
+ *
+ *  O dono pediu: "os logos que estão aí são feios; pra mangá, coloca a foto do
+ *  personagem mais importante". `characters(sort: [ROLE, FAVOURITES_DESC])`
+ *  faz exatamente essa pergunta — primeiro os PROTAGONISTAS (role: MAIN), e
+ *  entre eles o mais favoritado pela comunidade da AniList. Testado à mão:
+ *  Vagabond devolve Musashi Miyamoto (9.840 favoritos), não um coadjuvante.
+ *
+ *  ═══ POR QUE ISTO É UM BACKFILL, E NUNCA UMA CHAMADA NA HORA ═══
+ *
+ *  A AniList dá 90 requisições por minuto pro app INTEIRO, compartilhadas com
+ *  toda busca de série. Chamar isto a cada visita à coleção estouraria esse
+ *  teto na primeira dúzia de pessoas olhando a própria estante ao mesmo tempo.
+ *  Por isso o endereço da imagem é BUSCADO UMA VEZ e GRAVADO em
+ *  `colecoes.emblema_url` — a mesma coluna do emblema, por referência, nunca
+ *  uma cópia do arquivo. Ver scripts/personagens-da-colecao.mjs.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export async function personagensDasSeries(ids: number[]): Promise<Map<number, string | null>> {
+  const fora = new Map<number, string | null>();
+
+  for (let i = 0; i < ids.length; i += 50) {
+    const lote = ids.slice(i, i + 50);
+
+    // Mesma defesa de autoriaDasSeries: tempo esgotado LANÇA, e nunca vira "sem
+    // personagem" — um lote perdido gravaria null sobre 50 séries de uma vez.
+    let res: Response;
+    try {
+      res = await fetch(ENDERECO, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ query: PERSONAGEM_PRINCIPAL, variables: { ids: lote } }),
+        signal: AbortSignal.timeout(20_000),
+      });
+    } catch {
+      throw new AniListRecusou(
+        "a AniList não respondeu ao pedido de personagens — a rede caiu, ou ela demorou " +
+          "demais. Isso NÃO quer dizer que estas séries não têm personagem principal.",
+      );
+    }
+
+    if (res.status === 429 || res.status >= 500) {
+      throw new AniListRecusou(`a AniList recusou o pedido de personagens (${res.status}).`);
+    }
+    if (!res.ok) continue;
+
+    const json = (await res.json()) as {
+      data?: { Page?: { media?: { id: number; characters?: { nodes?: { image?: { large?: string } }[] } }[] } };
+    };
+
+    for (const m of json.data?.Page?.media ?? []) {
+      const imagem = m.characters?.nodes?.[0]?.image?.large ?? null;
+      fora.set(m.id, imagem);
+    }
+
+    await new Promise((r) => setTimeout(r, 1200));
+  }
+
+  return fora;
+}
+
 export type Autoria = { autor: string | null; ilustrador: string | null };
 
 /** O staff completo de várias séries de uma vez. Em lotes: 50 por chamada. */

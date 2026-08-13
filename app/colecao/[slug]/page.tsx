@@ -104,12 +104,15 @@ export default async function ColecaoDetalhe({ params }: { params: Promise<{ slu
     <main className="mx-auto max-w-4xl px-6 pb-32 sm:px-10">
       {/* ═══ O CABEÇALHO: O EMBLEMA GRANDE, E O SELO DE QUEM CHEGOU AQUI ═══ */}
       <header className="mt-20 flex flex-col items-center text-center sm:mt-28">
+        {/* A foto PREENCHE o círculo (object-cover), não boia pequena dentro dele: um
+            personagem ou um rosto cortado à força de padding vira um selo ilegível,
+            e não precisa crescer além do círculo pra ficar visível — só preencher. */}
         {c.emblema && origemAceita(c.emblema) && (
           <span
-            className="surface-2 mb-6 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full sm:h-28 sm:w-28"
+            className="surface-2 relative mb-6 flex h-24 w-24 overflow-hidden rounded-full sm:h-28 sm:w-28"
             style={{ boxShadow: "0 0 0 3px color-mix(in srgb, #d9a520 70%, transparent)" }}
           >
-            <Image src={c.emblema} alt="" width={112} height={112} sizes="112px" className="h-16 w-16 object-contain sm:h-20 sm:w-20" />
+            <Image src={c.emblema} alt="" fill sizes="(min-width: 640px) 112px, 96px" className="object-cover" />
           </span>
         )}
         <p

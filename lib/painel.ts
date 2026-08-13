@@ -819,12 +819,20 @@ export function painelEmMarkdown(p: Painel, geradoEm: string): string {
   L.push("");
 
   L.push(`### Quem chegou por último`);
-  L.push(`| pessoa | quando | método | procedência |`);
-  L.push(`| --- | --- | --- | --- |`);
+  // A coluna de procedência só entra se alguém, alguma vez, chegou por convite. Com
+  // zero convites vingados ela diria "chegou sozinho" em toda linha, sempre — uma
+  // coluna que nunca varia não é informação. Ver a mesma trava em components/painel.tsx.
+  const comProcedencia = p.convite.porConvite > 0;
+  L.push(comProcedencia ? `| pessoa | quando | método | procedência |` : `| pessoa | quando | método |`);
+  L.push(comProcedencia ? `| --- | --- | --- | --- |` : `| --- | --- | --- |`);
   for (const c of p.gente.log) {
     const metodo = c.metodo === "google" ? "google" : c.metodo === "email" ? "e-mail" : "outro";
-    const proc = c.convidadoPor ? `veio por ${c.convidadoPor}` : "chegou sozinho";
-    L.push(`| ${c.handle} | ${c.quando} | ${metodo} | ${proc} |`);
+    if (comProcedencia) {
+      const proc = c.convidadoPor ? `veio por ${c.convidadoPor}` : "chegou sozinho";
+      L.push(`| ${c.handle} | ${c.quando} | ${metodo} | ${proc} |`);
+    } else {
+      L.push(`| ${c.handle} | ${c.quando} | ${metodo} |`);
+    }
   }
   L.push("");
 
