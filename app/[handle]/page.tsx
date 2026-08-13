@@ -20,6 +20,7 @@ import { getConjuntos } from "@/lib/copies";
 import { souIdealizador } from "@/lib/authz";
 import { getResenhasDe } from "@/lib/explore";
 import { PerfilAbas } from "@/components/perfil-abas";
+import { CuradoriaCard } from "@/components/curadoria-card";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -286,7 +287,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
         shelves={shelves}
         guardadas={guardadas}
         curadorias={curadorias}
-        perfilDaCasa={perfilDaCasa}
+        curadoriaFixa={perfilDaCasa ? <CuradoriaCard compacto /> : null}
         ehGuia={ehGuia}
         contagemEstante={{ tudo: counts.tudo ?? 0, lidos: counts.lidos ?? 0 }}
       />

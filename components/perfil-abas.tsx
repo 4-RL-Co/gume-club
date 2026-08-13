@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Crown, Signpost } from "lucide-react";
 import { Cover } from "@/components/cover";
@@ -8,7 +8,6 @@ import { Carrossel } from "@/components/carrossel";
 import { ConjuntoCard } from "@/components/conjunto";
 import { PerfilEstante } from "@/components/perfil-estante";
 import { ListaGrid } from "@/components/lista-card";
-import { CuradoriaCard } from "@/components/curadoria-card";
 import { Empty } from "@/components/empty";
 import { DOURADO } from "@/lib/dourado";
 import type { Conjunto } from "@/lib/copies";
@@ -42,7 +41,7 @@ export function PerfilAbas({
   conjuntos,
   books, opinions, adorou,
   resenhas,
-  shelves, guardadas, curadorias, perfilDaCasa, ehGuia,
+  shelves, guardadas, curadorias, curadoriaFixa, ehGuia,
   contagemEstante,
 }: {
   mine: boolean;
@@ -56,7 +55,11 @@ export function PerfilAbas({
   shelves: ListaCard[];
   guardadas: ListaCard[];
   curadorias: Curadoria[];
-  perfilDaCasa: boolean;
+  /** O card da curadoria da casa, já renderizado — CuradoriaCard é um Server
+      Component assíncrono (busca no banco), e um componente de cliente não
+      pode importar e desenhar um Server Component sozinho: só recebê-lo já
+      pronto, de quem o renderizou (app/[handle]/page.tsx). */
+  curadoriaFixa: ReactNode;
   ehGuia: boolean;
   contagemEstante: { tudo: number; lidos: number };
 }) {
@@ -68,7 +71,7 @@ export function PerfilAbas({
       key: "listas" as const,
       label: "listas",
       n: shelves.length + guardadas.length + curadorias.length,
-      existe: shelves.length > 0 || guardadas.length > 0 || curadorias.length > 0 || perfilDaCasa,
+      existe: shelves.length > 0 || guardadas.length > 0 || curadorias.length > 0 || !!curadoriaFixa,
     },
   ].filter((a) => a.existe);
 
@@ -178,11 +181,7 @@ export function PerfilAbas({
               )}
             </h3>
             {/* A curadoria editorial, FIXA no topo das listas da casa. */}
-            {perfilDaCasa && (
-              <div className="mt-4">
-                <CuradoriaCard compacto />
-              </div>
-            )}
+            {curadoriaFixa && <div className="mt-4">{curadoriaFixa}</div>}
             {shelves.length > 0 && (
               <div className="mt-4">
                 <ListaGrid listas={shelves} mostrarDono={false} />
