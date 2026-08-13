@@ -22,7 +22,7 @@ Self-hostable · No ads, no affiliate links, no algorithm
 
 <img src="./docs/screenshots/manifesto.png" alt="The logged-out home: a wall of real covers from the catalog, with the thesis over it" width="100%">
 
-A reading app sells itself on its face, so this is the face. Black background, a serif, and the only color comes from the covers. No leaderboard, no progress bar, nothing trending.
+A reading app sells itself on its face, so this is the face. Dark background, a serif, and the only color comes from the covers. No leaderboard, no progress bar, nothing trending.
 
 ---
 
