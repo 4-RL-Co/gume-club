@@ -3589,3 +3589,27 @@ completa (pode voltar a ficar incompleta, se uma edição nova entrar — e é
 assim que deve ser, a coleção completa é o fato de HOJE, nunca um teto
 guardado) e a "ainda não" (onde a porta importa mais: é exatamente ali que
 completar faz sentido).
+
+---
+
+## A porta pra dentro da coleção não podia depender de já estar completa.
+
+Bug que sobrou da fatia anterior: a página da coleção (`/colecao/[slug]`) já
+tratava os dois estados — completa e "ainda não" — e o widget de adicionar
+volume já estava nos dois. Mas o CARD compacto (`components/conjunto.tsx`,
+o que aparece no perfil e em `/colecao`) só oferecia dois jeitos de chegar
+lá — a medalha e o link "ver a página desta coleção" — e os dois estavam
+atrás de `c.completo`. Uma coleção incompleta não tinha link nenhum pra sua
+própria página, então o widget de adicionar volume existia e era
+inalcançável.
+
+O dono: "eu devo ter o poder de editar uma coleção mesmo ela não estando
+completa, porque às vezes tá errada, faltando edição etc" — exatamente o
+caso que mais precisa da porta: colecionar errado (edição faltando, volume
+ligado ao conjunto errado) é tão real quanto colecionar tudo, e conta a
+mesma história do widget em si (a coleção completa é o fato de HOJE, nunca
+um teto guardado).
+
+O link "ver a página desta coleção" perdeu o `c.completo &&` — fica sempre
+visível. A medalha continua só na coleção completa: ela significa "isto
+está completo", e mostrá-la numa incompleta mentiria.

@@ -209,17 +209,17 @@ export function ConjuntoCard({
             ))}
           </ul>
 
-          {/* A medalha (32px, rotacionada, no canto) é um alvo de toque pequeno —
-              este link garante que abrir a página da coleção não dependa só dela,
-              principalmente no celular. */}
-          {c.completo && (
-            <Link
-              href={`/colecao/${c.slug}`}
-              className="mt-3 inline-block text-[12px] text-[var(--color-ink-faint)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
-            >
-              ver a página desta coleção
-            </Link>
-          )}
+          {/* A medalha (32px, rotacionada, no canto) só aparece completa — mas
+              o link pra página da coleção NÃO pode depender disso: colecionar
+              errado (falta edição, item ligado ao conjunto errado) é tão real
+              quanto colecionar tudo, e é justamente incompleta que a pessoa
+              mais precisa entrar pra consertar. Ver components/adicionar-volume.tsx. */}
+          <Link
+            href={`/colecao/${c.slug}`}
+            className="mt-3 inline-block text-[12px] text-[var(--color-ink-faint)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+          >
+            ver a página desta coleção
+          </Link>
 
           {podeEditar && (
             <div className="mt-4 border-t border-[var(--color-rule)] pt-4">
