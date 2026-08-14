@@ -10,7 +10,10 @@ import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { authors, works } from "@/lib/db/schema";
 import { limparNomeDeAutor } from "@/lib/autores";
-import { obraGemeaDe, fundirObras, type ObraGemea } from "@/lib/corrections";
+import {
+  obraGemeaDe, fundirObras, obraDoIsbn, edicaoDoIsbn, fundirEdicoes,
+  type ObraGemea, type EdicaoGemea,
+} from "@/lib/corrections";
 import { Forbidden } from "@/lib/authz";
 import { LIMITS, clamp, clampRequired } from "@/lib/limits";
 import { paraIsbn13 } from "@/lib/isbn";
@@ -49,7 +52,7 @@ export async function saveBookEdit(
   workId: string,
   editionId: string | null,
   form: Record<string, string>,
-): Promise<{ erro: string | null; gemea?: ObraGemea }> {
+): Promise<{ erro: string | null; gemea?: ObraGemea; edicaoGemea?: EdicaoGemea }> {
   const viewer = await getViewer();
   if (viewer) await limitarEscrita(viewer.id);
 
@@ -175,9 +178,35 @@ export async function saveBookEdit(
      * já bateu nesse mesmo canto). `editions` tem uma única constraint
      * UNIQUE — `editions_isbn13_unique` — então um 23505 aqui só pode ser
      * o ISBN colidindo; qualquer outro erro sobe normalmente.
+     *
+     * ═══ E UM ISBN COLIDIDO NÃO É UM BECO, É UMA PERGUNTA ═══
+     *
+     * "Se pertence a outra edição, quer dizer que é o mesmo livro, certo? Não
+     * tem como ter uma opção de dar merge?" — o dono, direto. Um ISBN é o
+     * número de UMA edição publicada: colidir não é "parecido", é a MESMA
+     * edição, cadastrada duas vezes. Duas formas de acontecer:
+     *
+     *  - a edição dona do ISBN já é desta MESMA obra: duas linhas de edição
+     *    para um livro só. Funde as edições (fundirEdicoes) e a tela oferece
+     *    isso na hora.
+     *  - a edição dona do ISBN é de OUTRA obra: as duas obras provavelmente
+     *    são a mesma ficha duplicada (como o Frankenstein, só que achado
+     *    pelo ISBN em vez do autor). Devolve pelo MESMO campo `gemea` que o
+     *    choque de autor já usa — a tela de "é o mesmo livro?" é uma só.
      */
     const err = e as { code?: string; cause?: { code?: string } };
     const code = err.code ?? err.cause?.code;
+    if (code === "23505" && isbn13) {
+      const colidida = await edicaoDoIsbn(isbn13);
+      if (colidida && colidida.workId === workId) {
+        return { erro: null, edicaoGemea: colidida };
+      }
+      if (colidida) {
+        const gemea = await obraDoIsbn(colidida.workId, workId);
+        if (gemea) return { erro: null, gemea };
+      }
+      return { erro: "esse ISBN já pertence a outra edição no catálogo" };
+    }
     if (code === "23505") {
       return { erro: "esse ISBN já pertence a outra edição no catálogo" };
     }
@@ -339,4 +368,29 @@ export async function fundirLivros(
   if (viva) revalidatePath(`/livro/${viva.slug}`);
 
   return { erro: null, slug: viva?.slug };
+}
+
+/**
+ * "É a mesma edição": tudo do `de` passa para o `para` (quem tem a cópia, quem está
+ * lendo, a proposta de capa pendente), e a linha duplicada sai. Ver fundirEdicoes()
+ * em lib/corrections.ts — o equivalente de fundirLivros(), um degrau mais estreito
+ * (edição, não obra inteira).
+ */
+export async function fundirEdicoesAction(
+  slug: string,
+  deId: string,
+  paraId: string,
+  motivo: string,
+): Promise<{ erro: string | null }> {
+  const viewer = await getViewer();
+  if (viewer) await limitarEscrita(viewer.id);
+
+  try {
+    await fundirEdicoes(viewer, deId, paraId, motivo || null);
+  } catch {
+    return { erro: "Não deu para juntar agora. O problema é nosso." };
+  }
+
+  revalidatePath(`/livro/${slug}`);
+  return { erro: null };
 }

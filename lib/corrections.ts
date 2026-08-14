@@ -692,6 +692,43 @@ export type ObraGemea = {
 };
 
 /**
+ * A mesma verificação de conflito de {@link obraGemeaDe}, para um candidato JÁ
+ * CONHECIDO (o ID veio de uma colisão de ISBN, não de uma busca por título e
+ * autor). Ver obraDoIsbn(), logo abaixo.
+ */
+async function obraGemeaPorId(candidataId: string, outraId: string): Promise<ObraGemea | null> {
+  const [row] = await db.execute<ObraGemea>(sql`
+    select g.id, g.slug::text as slug, g.title,
+           (select count(*) from editions e where e.work_id = g.id)::int as edicoes,
+           (
+             exists (select 1 from library_entries a join library_entries b
+                       on b.user_id = a.user_id and b.work_id = g.id
+                      where a.work_id = ${outraId}::uuid)
+             or exists (select 1 from ratings a join ratings b
+                          on b.user_id = a.user_id and b.work_id = g.id
+                         where a.work_id = ${outraId}::uuid)
+             or exists (select 1 from reviews a join reviews b
+                          on b.user_id = a.user_id and b.work_id = g.id
+                         where a.work_id = ${outraId}::uuid)
+             or exists (select 1 from owned_copies a join owned_copies b
+                          on b.user_id = a.user_id and b.work_id = g.id
+                         where a.work_id = ${outraId}::uuid)
+             or exists (select 1 from collection_items a join collection_items b
+                          on b.collection_id = a.collection_id and b.work_id = g.id
+                         where a.work_id = ${outraId}::uuid)
+             or exists (select 1 from recommendations a join recommendations b
+                          on b.from_user_id = a.from_user_id and b.to_user_id = a.to_user_id
+                         and b.work_id = g.id
+                         where a.work_id = ${outraId}::uuid)
+           ) as conflito
+      from works g
+     where g.id = ${candidataId}::uuid
+     limit 1`);
+
+  return row ?? null;
+}
+
+/**
  * Já existe uma ficha igual para este autor? É a pergunta que a ficha do livro faz antes
  * de trocar o autor, porque trocar o autor é o que dispara a colisão.
  */
@@ -800,8 +837,10 @@ export async function fundirObras(
      * são `on delete cascade`, então apagar primeiro apagaria a estante, a nota e a
      * resenha de gente de verdade — em silêncio, e sem volta.
      *
-     * `editions` não colide por ISBN (o unique é global, e não por obra), e `activities`
-     * não tem unique por pessoa: essas duas passam inteiras.
+     * `editions` não colide por ISBN (o unique é global e vale para toda edição, o
+     * tempo todo — reatribuir `work_id` não toca `isbn13`, então não há como este
+     * UPDATE violar aquele UNIQUE), e `activities` não tem unique por pessoa: essas
+     * duas passam inteiras.
      */
     for (const tabela of [
       sql`editions`, sql`library_entries`, sql`ratings`, sql`reviews`,
@@ -821,5 +860,101 @@ export async function fundirObras(
     });
 
     await tx.delete(works).where(eq(works.id, deId));
+  });
+}
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  DUAS FICHAS DA MESMA EDIÇÃO. Um ISBN é o número de UMA edição publicada.
+ *
+ *  ═══ DE ONDE ELA VEM ═══
+ *
+ *  Alguém tentava salvar um ISBN, e ele já pertencia a outra edição do catálogo —
+ *  outra linha, não outro livro. Diferente do caso do Frankenstein (duas OBRAS
+ *  para o mesmo livro, por causa de um autor errado), aqui a duplicata é mais
+ *  estreita: a mesma edição, cadastrada duas vezes, às vezes na mesma obra, às
+ *  vezes em duas obras que também são duplicatas (aí a saída certa é fundirObras,
+ *  não esta função — ver edicaoDoIsbn() e obraDoIsbn(), em app/livro/[slug]/curation-actions.ts).
+ *
+ *  ═══ POR QUE ELA NÃO PERGUNTA "TEM CONFLITO?" ═══
+ *
+ *  fundirObras recusa quando a mesma pessoa tem as duas fichas, porque aí há
+ *  duas notas e duas resenhas concorrendo, e escolher não é decisão de máquina.
+ *  Uma edição não guarda nota nem resenha — essas vivem na obra. O que uma
+ *  edição guarda é logística (qual capa, quantas páginas, quem tem ESTA cópia
+ *  na mão, quem está lendo ESTA impressão): dado que MIGRA sem perder nada, não
+ *  dado que escolhe entre duas versões de uma opinião.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export type EdicaoGemea = {
+  id: string;
+  workId: string;
+  publisher: string | null;
+  publishedYear: number | null;
+  format: string | null;
+};
+
+/** Que edição já responde por este ISBN? É a pergunta que o formulário faz quando o
+ * `UNIQUE` de `editions.isbn13` recusa uma gravação. */
+export async function edicaoDoIsbn(isbn13: string): Promise<EdicaoGemea | null> {
+  const [row] = await db
+    .select({
+      id: editions.id,
+      workId: editions.workId,
+      publisher: editions.publisher,
+      publishedYear: editions.publishedYear,
+      format: editions.format,
+    })
+    .from(editions)
+    .where(eq(editions.isbn13, isbn13))
+    .limit(1);
+
+  return row ?? null;
+}
+
+/** A obra da edição que colidiu, com a mesma checagem de conflito de obraGemeaDe —
+ * usada quando a colisão aponta para OUTRA obra, e não para a que está sendo editada. */
+export async function obraDoIsbn(candidataWorkId: string, workIdAtual: string): Promise<ObraGemea | null> {
+  return obraGemeaPorId(candidataWorkId, workIdAtual);
+}
+
+/**
+ * Juntar duas edições: tudo do `de` passa para o `para` (quem tem a cópia, quem está
+ * lendo, a proposta de capa pendente, o identificador externo do import), e o `de` sai.
+ *
+ * Sem checagem de conflito — ver o comentário acima do bloco. `identifiers` é a única
+ * tabela com um UNIQUE próprio ((kind, value), não edition_id), e mover o edition_id de
+ * uma linha existente nunca toca essa chave.
+ */
+export async function fundirEdicoes(
+  viewer: Viewer,
+  deId: string,
+  paraId: string,
+  motivo: string | null,
+): Promise<void> {
+  assertAuthenticated(viewer);
+  if (deId === paraId) return;
+
+  const [de] = await db.select().from(editions).where(eq(editions.id, deId)).limit(1);
+  const [para] = await db.select().from(editions).where(eq(editions.id, paraId)).limit(1);
+  if (!de || !para) throw new Error("edição não encontrada");
+
+  await db.transaction(async (tx) => {
+    for (const tabela of [
+      sql`identifiers`, sql`library_entries`, sql`owned_copies`, sql`readings`, sql`cover_proposals`,
+    ]) {
+      await tx.execute(sql`update ${tabela} set edition_id = ${paraId}::uuid where edition_id = ${deId}::uuid`);
+    }
+
+    await tx.insert(revisions).values({
+      userId: viewer.id,
+      targetType: "edition",
+      targetId: paraId,
+      patch: { fundidaCom: de.isbn13 ?? de.id, copiasMovidas: true },
+      previous: { isbn13: de.isbn13 },
+      reason: motivo,
+    });
+
+    await tx.delete(editions).where(eq(editions.id, deId));
   });
 }
