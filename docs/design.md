@@ -25,10 +25,11 @@ A marca é preta e branca, sempre: ela é `currentColor`, e nunca uma cor própr
 
 O ícone é o quadrado arredondado, com grão: grafite com a marca em branco (`assets/logoiconpreto.png`, **o principal**, e é a pedra de amolar) e osso com a marca em preto (`assets/logoiconbranco.png`, para fundo claro e para papel).
 
-**Ele vive em exatamente três lugares, e em nenhum outro:**
+**Ele vive em exatamente cinco lugares, e em nenhum outro:**
 
 - `app/apple-icon.png` (180×180)
 - `public/favicon.ico`
+- `public/icon-192.png` e `public/icon-512.png` (o manifesto do app — ver `app/manifest.ts`)
 - a loja (`public/logo/icone-*-1024.png`)
 
 **Na interface, a marca é sempre chapada e `currentColor`.** Um ícone com grão e fundo próprio dentro de uma tela é um adesivo colado na tela: ele não herda a cor do texto, não inverte no tema claro, e vira uma caixinha cinza no meio de um cabeçalho. Se você se pegar importando um `.png` de marca dentro de `app/` ou `components/`, pare.
