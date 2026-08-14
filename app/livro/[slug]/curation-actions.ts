@@ -13,6 +13,7 @@ import { limparNomeDeAutor } from "@/lib/autores";
 import { obraGemeaDe, fundirObras, type ObraGemea } from "@/lib/corrections";
 import { Forbidden } from "@/lib/authz";
 import { LIMITS, clamp, clampRequired } from "@/lib/limits";
+import { paraIsbn13 } from "@/lib/isbn";
 import {
   removeFromShelf, removeManyFromShelf, editBook, setShelvesByName, setMyEdition, toggleInCollection,
   createCollection, renameCollection, deleteCollection, setCollectionVisibility,
@@ -121,7 +122,28 @@ export async function saveBookEdit(
   const naoAceita = porQueNaoAceita(capa ?? "");
   if (naoAceita) return { erro: naoAceita };
 
-  const isbn = (form.isbn ?? "").replace(/[^0-9X]/gi, "");
+  /**
+   * ═══ O ISBN DE DEZ DÍGITOS TAMBÉM É UM ISBN ═══
+   *
+   * "Quando coloco o ISBN10, ele aparece que salvou, mas o campo do ISBN
+   * continua em branco." Isto aceitava só treze dígitos e descartava
+   * qualquer outra coisa em silêncio — um de dez (o de toda edição de
+   * antes de 2007) virava `null`, e a tela dizia "salvo" porque
+   * tecnicamente salvou: salvou um branco. Ver lib/isbn.ts.
+   *
+   * Um branco calado só vale para o campo VAZIO (limpar o ISBN é uma
+   * ação válida). Texto que não bate em dez nem treze dígitos é erro
+   * de digitação, e tem que voltar como aviso, não como sucesso mentiroso.
+   */
+  const isbnDigitado = (form.isbn ?? "").trim();
+  let isbn13: string | null = null;
+  if (isbnDigitado) {
+    isbn13 = paraIsbn13(isbnDigitado);
+    if (!isbn13) {
+      return { erro: "isso não parece um ISBN (dez ou treze dígitos, do jeito que está na contracapa)" };
+    }
+  }
+
   // A allow-list é esta, e ela é explícita: o que não está aqui não entra, venha
   // o campo que vier no corpo da requisição. Ver lib/limits.ts.
   const edit: BookEdit = {
@@ -132,11 +154,35 @@ export async function saveBookEdit(
     publishedYear: num(form.publishedYear),
     pageCount: num(form.pageCount),
     format: clampRequired(form.format, 20),
-    isbn13: isbn.length === 13 ? isbn : null,
+    isbn13,
     coverUrl: capa,
   };
 
-  await editBook(viewer, workId, editionId, edit, str(form.reason, LIMITS.note));
+  try {
+    await editBook(viewer, workId, editionId, edit, str(form.reason, LIMITS.note));
+  } catch (e) {
+    /**
+     * ═══ "ISSO É UM PROBLEMA NOSSO" — E ERA, DE VERDADE ═══
+     *
+     * `editions.isbn13` é único (migration 0001): duas edições não podem
+     * responder pelo mesmo número. Sem este catch, colidir com uma edição
+     * que já tem aquele ISBN estourava para fora da ação de servidor, e o
+     * Next apaga a mensagem real em produção — a pessoa via um erro
+     * genérico, sem saber por quê.
+     *
+     * O Drizzle embrulha o erro do driver: o código do Postgres chega em
+     * `err.cause.code`, não em `err.code` (ver app/perfil/actions.ts, que
+     * já bateu nesse mesmo canto). `editions` tem uma única constraint
+     * UNIQUE — `editions_isbn13_unique` — então um 23505 aqui só pode ser
+     * o ISBN colidindo; qualquer outro erro sobe normalmente.
+     */
+    const err = e as { code?: string; cause?: { code?: string } };
+    const code = err.code ?? err.cause?.code;
+    if (code === "23505") {
+      return { erro: "esse ISBN já pertence a outra edição no catálogo" };
+    }
+    throw e;
+  }
 
   revalidatePath(`/livro/${slug}`);
   revalidatePath("/");

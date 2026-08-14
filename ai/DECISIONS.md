@@ -3671,3 +3671,35 @@ igual todo site faz e ser um pouco menor" — os dois cantos direitos
 convivem porque o elevador só aparece depois de duas telas de rolagem, e
 este fica visível o tempo todo; empilhados, nunca ao mesmo tempo colidem
 com o mesmo espaço vazio. O botão também encolheu (de 44px pra 36px).
+
+---
+
+## O ISBN de dez dígitos também é um ISBN.
+
+O dono, direto do celular: "fui adicionar um ISBN num livro... quando
+coloquei o ISBN13 aparece que deu um erro ao salvar e isso é um problema
+nosso. E quando coloco o ISBN10, ele aparece que salvou, mas o campo do
+ISBN continua em branco". Dois bugs, uma causa: `editions.isbn13`
+(`lib/db/schema.ts`) é a única coluna que o catálogo guarda, e é `UNIQUE`.
+
+O de treze dígitos que dava erro: colidia com o `isbn13` de OUTRA edição
+já cadastrada, e a ação de servidor não tratava esse erro — ele escapava
+cru, o Next apaga a mensagem real em produção, e a pessoa via um "erro
+nosso" sem saber o quê. `saveBookEdit` (`app/livro/[slug]/curation-actions.ts`)
+agora pega o código 23505 do Postgres (a mesma lição que `app/perfil/actions.ts`
+já tinha aprendido, embrulhado em `err.cause.code`) e devolve "esse ISBN
+já pertence a outra edição no catálogo" — a verdade, em vez do genérico.
+
+O de dez dígitos que sumia: o código só aceitava treze dígitos, e qualquer
+outra coisa — inclusive um ISBN-10 real, o que está impresso em toda
+edição de antes de 2007 — virava `null` em silêncio. A tela dizia "salvo"
+porque tecnicamente salvou: salvou um branco.
+
+Um ISBN-10 e o ISBN-13 do mesmo livro não são "dois números parecidos":
+são o MESMO número, um com "978" na frente e o dígito verificador
+recalculado — conversão aritmética, documentada, sem perda. `lib/isbn.ts`
+faz essa conta (`paraIsbn13`), com um teste que confere contra um par
+publicamente conhecido (`0-306-40615-2` ↔ `978-0-306-40615-7`), não só
+contra a própria implementação. Um texto que não bate em dez nem treze
+dígitos agora volta como erro explícito — "isso não parece um ISBN" — em
+vez de outro branco calado.
