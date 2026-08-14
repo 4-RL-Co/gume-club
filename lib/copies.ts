@@ -293,7 +293,9 @@ export type VolumeDoConjunto = {
 
 export type Conjunto = {
   id: string;
-  /** O endereço público, para /colecao/[slug] — a página de detalhe, só de quem completou. */
+  /** O endereço público, para /colecao/[slug] — a página de detalhe, aberta
+      completo ou não (ver ai/DECISIONS.md: a porta não pode depender de já
+      estar completa, é incompleto que mais precisa de conserto). */
   slug: string;
   titulo: string;
   publisher: string | null;
