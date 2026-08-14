@@ -3703,3 +3703,38 @@ publicamente conhecido (`0-306-40615-2` ↔ `978-0-306-40615-7`), não só
 contra a própria implementação. Um texto que não bate em dez nem treze
 dígitos agora volta como erro explícito — "isso não parece um ISBN" — em
 vez de outro branco calado.
+
+---
+
+## Um ISBN colidido não é um beco: é a mesma edição, e agora dá para juntar.
+
+O dono, direto: "se pertence a outra edição, quer dizer que é o mesmo
+livro, certo? Não tem como ter uma opção de dar merge?" Sim — um ISBN é o
+número de UMA edição publicada, e colidir com ele não é "parecido", é a
+MESMA edição cadastrada duas vezes. O Gume já tinha fusão de OBRA
+(`fundirObras`/`fundirLivros`, o caso do Frankenstein com o tradutor
+gravado como autor). Faltava o equivalente mais estreito, de EDIÇÃO.
+
+Duas formas de a colisão acontecer, e a tela distingue:
+
+- A edição dona do ISBN já é desta MESMA obra: duas linhas de edição para
+  um livro só. `fundirEdicoes` (`lib/corrections.ts`) junta — quem tem a
+  cópia, quem está lendo, a proposta de capa pendente passam para a que
+  sobrevive — e `saveBookEdit` oferece isso na hora, sem exigir nova
+  tentativa. Sem checagem de conflito: diferente de obra, uma edição não
+  guarda nota nem resenha (isso vive na obra), só logística que migra sem
+  perder nada.
+- A edição dona é de OUTRA obra: as duas obras provavelmente são a mesma
+  ficha duplicada, só achada pelo ISBN em vez do autor. `saveBookEdit`
+  devolve pelo MESMO campo `gemea` que o choque de autor já usa —
+  reaproveita a tela "é o mesmo livro?" que já existia, em vez de duplicar.
+
+Cheguei a "consertar" um suposto ponto cego em `fundirObras` — a ideia de
+que duas obras fundidas poderiam cada uma já ter uma edição com o mesmo
+ISBN, e o `UPDATE` em bloco estouraria o UNIQUE. Escrevi o remendo, escrevi
+o teste, e o próprio Postgres recusou montar o cenário: `editions.isbn13`
+é único GLOBALMENTE, sempre foi, e reatribuir `work_id` não toca `isbn13`
+— duas linhas com o mesmo ISBN nunca chegam a coexistir no banco para
+começo de conversa. O remendo defendia contra um estado impossível.
+Revertido antes de virar código morto. `lib/fundir-edicoes.sql.test.ts`
+guarda a explicação, para não reaparecer.

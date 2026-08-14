@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { saveBookEdit, fundirLivros } from "@/app/livro/[slug]/curation-actions";
+import { saveBookEdit, fundirLivros, fundirEdicoesAction } from "@/app/livro/[slug]/curation-actions";
 import { useRouter } from "next/navigation";
-import type { ObraGemea } from "@/lib/corrections";
+import type { ObraGemea, EdicaoGemea } from "@/lib/corrections";
 import { toast } from "@/lib/toast";
 import { LIMITS } from "@/lib/limits";
 
@@ -66,6 +66,7 @@ export function Correcao({
 }) {
   const [capa, setCapa] = useState(livro.coverUrl ?? "");
   const [gemea, setGemea] = useState<ObraGemea | null>(null);
+  const [edicaoGemea, setEdicaoGemea] = useState<EdicaoGemea | null>(null);
   const router = useRouter();
   const [subindo, setSubindo] = useState(false);
   const [recusa, setRecusa] = useState<string | null>(null);
@@ -164,6 +165,74 @@ export function Correcao({
     );
   }
 
+  /**
+   * ═══ UM ISBN COLIDIDO NÃO É UM BECO, É UMA PERGUNTA (a mesma, um degrau abaixo) ═══
+   *
+   * "Se pertence a outra edição, quer dizer que é o mesmo livro, certo? Não tem
+   * como ter uma opção de dar merge?" — o dono. Um ISBN é o número de UMA edição
+   * publicada, então colidir aqui não é "parecido", é a MESMA edição já
+   * cadastrada — dentro deste mesmo livro. (Quando a colisão aponta para OUTRA
+   * obra, saveBookEdit devolve pelo campo `gemea` acima: é o mesmo caso do
+   * Frankenstein, só achado pelo ISBN em vez do autor.)
+   */
+  if (edicaoGemea) {
+    return (
+      <div className="paper mt-8 p-5">
+        <h3 className="text-[15px] text-[var(--color-ink)]">É a mesma edição?</h3>
+
+        <p className="voice mt-3 text-[17px] leading-snug text-[var(--color-ink)]">
+          Esse ISBN já é de uma edição deste livro
+          {edicaoGemea.publisher ? `, da ${edicaoGemea.publisher}` : ""}
+          {edicaoGemea.publishedYear ? ` (${edicaoGemea.publishedYear})` : ""}.
+        </p>
+
+        <p className="mt-3 max-w-lg text-[13px] leading-relaxed text-[var(--color-ink-soft)]">
+          Um ISBN é o número de uma edição só. Se são a mesma, o Gume junta: quem já lê ou
+          tem esta edição passa para a que já existe, e esta linha some.
+        </p>
+
+        {recusa && (
+          <p className="mt-3 text-[13px] leading-relaxed text-[var(--color-perigo)]" aria-live="polite">
+            {recusa}
+          </p>
+        )}
+
+        <div className="mt-5 flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() =>
+              start(async () => {
+                setRecusa(null);
+                if (!editionId) return;
+                const { erro } = await fundirEdicoesAction(slug, editionId, edicaoGemea.id, "");
+                if (erro) {
+                  setRecusa(erro);
+                  return;
+                }
+                toast("Juntadas. Agora é uma edição só.");
+                router.push(`/livro/${slug}`);
+              })
+            }
+            className="rounded-[var(--radius-control)] bg-[var(--color-ink)] px-5 py-2 text-[14px] font-medium text-[var(--color-canvas)] disabled:opacity-40"
+          >
+            {pending ? "juntando" : "Sim, é a mesma edição"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEdicaoGemea(null);
+              setRecusa(null);
+            }}
+            className="text-[13px] text-[var(--color-ink-faint)]"
+          >
+            não, é diferente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form
       action={(data: FormData) =>
@@ -182,9 +251,13 @@ export function Correcao({
             reason: String(data.get("reason") ?? ""),
           };
           try {
-            const { erro, gemea: g } = await saveBookEdit(slug, workId, editionId, form);
+            const { erro, gemea: g, edicaoGemea: eg } = await saveBookEdit(slug, workId, editionId, form);
             if (g) {
               setGemea(g);
+              return;
+            }
+            if (eg) {
+              setEdicaoGemea(eg);
               return;
             }
             if (erro) {
