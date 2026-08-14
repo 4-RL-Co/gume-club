@@ -98,6 +98,14 @@ const icone = grafite;
 
 await icone().resize(180, 180).png().toFile("app/apple-icon.png");
 
+// ── 2b. os ícones do MANIFESTO (PWA): 192 e 512, o mesmo recorte ────────────
+//
+// app/manifest.ts aponta para estes dois. Nasceram aqui, e não à mão fora do
+// script, pelo mesmo motivo de tudo o mais nesta página: uma fonte só, ou os
+// dois conjuntos de ícone divergem no dia em que a arte for reexportada.
+await icone().resize(192, 192).png().toFile("public/icon-192.png");
+await icone().resize(512, 512).png().toFile("public/icon-512.png");
+
 // ── 3. favicon.ico: 16 + 32 + 48, com o ÍCONE (grafite) ─────────────────────
 //
 // Um .ico é um cabeçalho e uma lista de imagens, e cada uma pode ser um PNG
@@ -225,6 +233,8 @@ await claro().resize(1024, 1024).png().toFile("public/logo/icone-claro-1024.png"
 
 console.log("✓ app/icon.svg              a marca chapada, e ela vira nos dois temas");
 console.log("✓ app/apple-icon.png        180, o ícone grafite");
+console.log("✓ public/icon-192.png       192, para o manifesto (PWA)");
+console.log("✓ public/icon-512.png       512, para o manifesto (PWA)");
 console.log("✓ public/favicon.ico        16, 32, 48");
 console.log("✓ public/logo/              marca, lockups (h e v), preto e branco, svg e png");
 console.log("✓ public/logo/icone-*-1024  os dois ícones, para a loja");

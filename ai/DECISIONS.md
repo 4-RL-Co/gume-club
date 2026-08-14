@@ -3738,3 +3738,40 @@ o teste, e o próprio Postgres recusou montar o cenário: `editions.isbn13`
 começo de conversa. O remendo defendia contra um estado impossível.
 Revertido antes de virar código morto. `lib/fundir-edicoes.sql.test.ts`
 guarda a explicação, para não reaparecer.
+
+---
+
+## O ícone ganhou o vidro roxo, e o app ganhou um manifesto de verdade.
+
+O dono trouxe um logo novo ("pra você alterar quando alguém for usar o
+site como app") — a mesma marca (livro + fio), mas na pele nova do
+`cinza-roxinho`: fundo roxo-escuro com textura e um brilho na borda, em vez
+do grafite chapado que `assets/logoiconpreto.png` guardava desde antes da
+troca de paleta. Substitui a arte-fonte e rodei `pnpm brand` — o script já
+existente que recorta e gera tudo a partir dela; nada foi redimensionado à
+mão. `app/apple-icon.png`, `public/favicon.ico` e
+`public/logo/icone-grafite-1024.png` saíram atualizados de lá.
+
+`assets/logoiconbranco.png` (a pele clara, "para fundo claro e para
+papel") **não** foi trocada — só ganhei um arquivo novo, o escuro. Ela
+continua no estilo antigo, chapado, e agora destoa do grafite: um problema
+pequeno, porque a própria `docs/design.md` já dizia que a pele clara "não é
+o padrão em lugar nenhum". Registrado aqui para não ser esquecido, não
+para ser resolvido calado.
+
+Faltava, além disso, o manifesto do app (`app/manifest.ts`) — sem ele, só
+o Safari/iOS tinha um "Adicionar à Tela de Início" de verdade (mecanismo
+próprio da Apple, não depende de manifesto). No Chrome/Android, "usar como
+app" era um atalho pobre: sem ícone redondo do sistema, sem tela cheia, sem
+nome no app switcher. `scripts/brand.mjs` ganhou dois exports a mais
+(`public/icon-192.png`, `public/icon-512.png`, do mesmo recorte do
+grafite — nunca uma terceira cópia da arte), e `app/manifest.ts` os
+referencia com `display: "standalone"` e as cores do canvas escuro
+(`#17151d`, o mesmo de `app/globals.css`).
+
+De brinde, `app/layout.tsx` ganhou `viewport.themeColor` (claro e escuro,
+via `prefers-color-scheme`) — a barra de endereço do celular passa a ser a
+cor do canvas em qualquer visita, não só no app instalado.
+
+`docs/design.md` — "o ícone vive em exatamente três lugares" virou cinco,
+com os dois novos do manifesto.

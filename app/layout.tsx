@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Newsreader, Fraunces } from "next/font/google";
 import { Sidebar } from "@/components/sidebar";
 import { SCRIPT_DO_TEMA } from "@/components/tema";
@@ -59,6 +59,20 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
   title: "Gume",
   description: "A mente nunca perde o fio.",
+};
+
+/**
+ * A cor da barra de endereço (Android) e do fundo atrás do teclado/notch
+ * (iOS), nos dois temas — não só no app instalado (isso é o manifest.ts),
+ * mas em toda visita, dentro do navegador. Os dois hex são os mesmos
+ * --color-canvas de app/globals.css: a barra do sistema é o canvas, mais
+ * um pixel.
+ */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f2efe8" },
+    { media: "(prefers-color-scheme: dark)", color: "#17151d" },
+  ],
 };
 
 /**
