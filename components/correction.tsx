@@ -260,7 +260,15 @@ export function Correcao({
         <Campo name="firstPublished" label="ano da obra" defaultValue={livro.firstPublished ?? ""} inputMode="numeric" />
         <Campo name="publishedYear" label="ano da edição" defaultValue={livro.publishedYear ?? ""} inputMode="numeric" />
         <Campo name="pageCount" label="páginas" defaultValue={livro.pageCount ?? ""} inputMode="numeric" />
-        <Campo name="isbn" label="ISBN" defaultValue={livro.isbn13 ?? ""} inputMode="numeric" />
+        {/* Dez ou treze dígitos — os dois são o mesmo número, e o servidor
+            converte um pro outro. Ver lib/isbn.ts. */}
+        <Campo
+          name="isbn"
+          label="ISBN"
+          defaultValue={livro.isbn13 ?? ""}
+          inputMode="numeric"
+          placeholder="dez ou treze dígitos"
+        />
         <label className="block">
           <Rotulo>formato</Rotulo>
           <select
