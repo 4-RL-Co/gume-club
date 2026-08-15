@@ -3899,3 +3899,75 @@ foi alterado no banco: nenhuma data foi inventada para preencher os 22
 livros, porque isso seria a mesma mentira, só que gravada.
 `lib/stats.sql.test.ts` prova os quatro casos contra o Postgres de
 verdade: lido com data, lido sem data (o bug), lendo, abandonado.
+
+---
+
+## Uma sugestão exige estante, e um bug de anos ficava escondido atrás dela.
+
+Três pedidos, uma manhã.
+
+**1. Ninguém deveria ser sugerido com zero livros.** "Quando alguém entra
+no Gume, aparece um monte de gente aleatória pra seguir. Aqui tem que
+aparecer quem tem pelo menos 10 livros na estante." O piso de
+`getShelvesToFollow` (`lib/invite.ts`) era "pelo menos UM livro
+público" — uma conta recém-criada com um livro solto já bastava para
+virar sugestão pra todo mundo que chegasse sozinho. Trocado para
+`LIVROS_DO_AMIGO` (`lib/regras.ts`, hoje 10) — a MESMA régua do selo de
+arauto, e pela mesma razão escrita lá: "o ponto em que alguém parou de
+experimentar e passou a usar."
+
+**E um bug de verdade, achado no caminho.** O print que motivou o pedido
+mostrava SEIS pessoas, todas com "0 LIVROS" — inclusive uma com 126
+livros públicos de verdade. Não era o piso; era a coluna `books` do
+`SELECT`, e o Drizzle tem uma pegadinha real: `${users.id}` interpolado
+numa cláusula WHERE vira `"users"."id"` (qualificado), mas o MESMO
+`${users.id}` interpolado dentro de uma subconsulta do SELECT vira só
+`"id"` (sem tabela) — e ali dentro, `"id"` cru resolve para a tabela
+mais próxima que também tem uma coluna `id`, que é `library_entries`, e
+não `users`. A condição virava `le.user_id = le.id` — dois UUIDs que
+nunca coincidem — e a contagem dava zero, sempre, para todo mundo.
+Confirmado comparando `.toSQL()` dos dois casos antes de mexer, e
+consertado trocando `${users.id}` por `users.id` cru (seguro aqui: é um
+nome de tabela fixo no próprio código, não dado de fora). Bug
+pré-existente, sem relação com o piso — só ficou visível porque os dois
+foram investigados juntos.
+
+**2. A resenha no perfil não dava pra ler, e tinha um retângulo estranho
+embaixo da capa.** components/perfil-abas.tsx cortava a resenha em
+quatro linhas (`line-clamp-4`, de propósito: "a lista onde cada item tem
+seis parágrafos deixa de ser uma lista") mas nunca dizia como ler o
+resto — ganhou um link "ler resenha inteira" explícito, em vez de
+depender de a pessoa adivinhar que clicar na capa ou no título levava
+para lá.
+
+O retrato fantasma: o `<li className="flex gap-5">` esticava (o
+`align-items: stretch` padrão do flex) o `<Link className="cover-lift">`
+até a altura da COLUNA DE TEXTO — título + quatro linhas + data, bem
+mais alta que a capa. A capa em si ficava do tamanho certo
+(`aspect-2/3`), mas a sombra e o brilho de `.cover-lift` (que cobrem
+`inset: 0`, 100% do PRÓPRIO elemento) cobriam o Link inteiro, esticado —
+sobrava um retângulo com sombra e gradiente embaixo da capa de verdade.
+`items-start` no `<li>` resolve. O mesmo padrão (capa + texto alto)
+existia em components/explore.tsx ("resenhas recentes") e foi corrigido
+junto, mesma causa.
+
+**3. A página do livro não mostrava resenha de mais ninguém.** "Quando
+alguém faz uma resenha pública de um livro, a resenha das pessoas devem
+aparecer na página do livro." Não existia NENHUMA consulta buscando
+"resenhas deste livro, de outras pessoas" — só a SUA, no editor de
+"arrumar". `getResenhasDoLivro()` (`lib/explore.ts`) é a mesma régua de
+visibilidade de sempre (`visibleTo()`, no SQL), com uma exclusão a mais:
+a resenha de quem está olhando NUNCA aparece na lista — ela já está
+aberta, em cima, no editor. `components/resenhas-do-livro.tsx` expande
+no lugar ("ler resenha inteira" / "ler menos"), porque aqui não existe
+"a página do livro" para onde linkar — a gente já está nela.
+
+`lib/redteam.sql.test.ts` ganhou os três casos (pública aparece,
+privada não aparece, a própria não duplica) na mesma bateria de ataque
+que já existia para o resto do explorar — mesmas vítima/atacante, e uma
+obra nova só para não colidir com um teste de IDOR que já assumia zero
+resenhas na obra original.
+
+Verificado: tsc --noEmit, next lint, vitest run (1120 testes — 3 novos
+em lib/invite.sql.test.ts, 3 novos em lib/redteam.sql.test.ts), next
+build completo.

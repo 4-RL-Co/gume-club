@@ -457,3 +457,69 @@ export async function getResenhasDe(
     visibility: r.visibility,
   }));
 }
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  AS RESENHAS DESTE LIVRO. "Quando alguém faz uma resenha pública, a
+ *  resenha das pessoas deve aparecer na página do livro."
+ *
+ *  A página do livro sempre teve UM lugar para resenha: a sua, no editor de
+ *  "arrumar" (components/arrumar.tsx). O que outra pessoa escreveu sobre o
+ *  MESMO livro não aparecia em lugar nenhum — nem no perfil de quem
+ *  escreveu (para isso existe getResenhasDe), nem aqui.
+ *
+ *  A SUA fica de fora desta lista, de propósito: ela já está aberta, no
+ *  editor logo acima. Repeti-la aqui embaixo seria a mesma resenha duas
+ *  vezes na mesma tela.
+ *
+ *  Mesma regra de visibilidade de sempre, no SQL: dono vê a própria (mas
+ *  ela nunca aparece aqui, pelo motivo acima), quem segue vê a de quem
+ *  segue, um estranho só vê a pública.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export type ResenhaDoLivro = {
+  id: string;
+  body: string;
+  createdAt: Date;
+  handle: string;
+  name: string | null;
+  image: string | null;
+};
+
+export async function getResenhasDoLivro(
+  viewer: Viewer,
+  workId: string,
+  /** A pessoa cuja resenha NÃO deve vir na lista — ela já aparece, aberta, em cima. */
+  excluirUserId: string | null,
+  limite = 20,
+): Promise<ResenhaDoLivro[]> {
+  const rows = await db.execute<{
+    id: string;
+    body: string;
+    created_at: Date;
+    handle: string;
+    name: string | null;
+    image: string | null;
+  }>(sql`
+    -- Sem apelido em "reviews": o visibleTo() emite o nome real da tabela, e um
+    -- apelido faz o Postgres não achar a coluna que a regra de visibilidade cita.
+    select reviews.id, reviews.body, reviews.created_at,
+           u.handle, u.display_name as name, u.image
+      from reviews
+      join users u on u.id = reviews.user_id and u.deleted_at is null
+     where reviews.work_id = ${workId}::uuid
+       and reviews.deleted_at is null
+       and ${visibleTo(viewer, reviews.userId, reviews.visibility)}
+       ${excluirUserId ? sql`and reviews.user_id <> ${excluirUserId}::uuid` : sql``}
+     order by reviews.created_at desc
+     limit ${limite}`);
+
+  return rows.map((r) => ({
+    id: r.id,
+    body: r.body,
+    createdAt: r.created_at,
+    handle: r.handle,
+    name: r.name,
+    image: r.image,
+  }));
+}

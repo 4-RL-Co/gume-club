@@ -274,7 +274,11 @@ export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; s
 
               <ul className="mt-6 flex flex-col gap-4">
                 {resenhas.map((r) => (
-                  <li key={r.id} className="surface flex gap-5 p-6 sm:p-7">
+                  // `items-start`: sem isto, o <Link> da capa esticava até a altura da
+                  // coluna de texto, e a sombra/brilho de `.cover-lift` (100% do
+                  // próprio elemento) sobravam num retângulo fantasma embaixo da capa.
+                  // Ver o mesmo conserto em components/perfil-abas.tsx.
+                  <li key={r.id} className="surface flex items-start gap-5 p-6 sm:p-7">
                     <Link href={`/@${r.handle}`} aria-label={r.name ?? r.handle} className="shrink-0">
                       <Moldura coroa={coroas[r.handle] ?? null} src={r.image} name={r.name} handle={r.handle} size={48} />
                     </Link>
