@@ -3842,3 +3842,20 @@ placar, sem nota e sem punição por abandono — nenhuma dessas quatro
 regras precisou mudar uma linha para acomodar o segundo caminho, e isso
 é o teste de que a reversão é sobre UNIDADE, não sobre os princípios que
 protegiam a página lida da forma errada de existir.
+
+---
+
+## O livro médio caiu de 300 para 250 páginas.
+
+O dono, olhando a própria estante: "eu reduziria a quantidade de
+páginas, estou vendo que está em média 300, eu colocaria 250". Um ajuste
+de calibragem, não de princípio — `PAGINAS_POR_LIVRO` (`lib/honras.ts`)
+é só o número que converte a régua de leituras na régua de páginas
+mantendo os dois caminhos igualmente difíceis (ver a entrada anterior),
+e não há um jeito "certo" de medir isso: é uma estimativa, e o dono
+mediu a própria estante contra o número que eu tinha chutado.
+
+A régua toda desceu junto (Bronze: 1.500 → 1.250 páginas; Gume: 150.000
+→ 125.000; o paragon: 7.500 → 6.250 por estrela) — `pisoEmPaginas()` e
+`paragonEmPaginas()` continuam sendo os únicos lugares que sabem o
+número, então nada mais no código precisou mudar.

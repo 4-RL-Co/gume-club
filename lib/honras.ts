@@ -115,11 +115,13 @@ const PARAGON = 25;
  *
  *  ═══ POR QUE UMA CONVERSÃO, E NÃO UMA RÉGUA INVENTADA ═══
  *
- *  Trezentas páginas é a estimativa comum de "um livro médio" — não é medido neste
- *  catálogo (a base tem edição sem página cadastrada, às vezes), é uma calibragem
- *  honesta: o degrau de páginas custa a MESMA coisa que o degrau de livros custaria
- *  se todo livro tivesse exatamente essa espessura. Ninguém sobe mais fácil de um
- *  lado só porque um número foi chutado maior ou menor no outro.
+ *  Duzentas e cinquenta páginas é a estimativa de "um livro médio" — não é medido
+ *  neste catálogo (a base tem edição sem página cadastrada, às vezes), é uma
+ *  calibragem honesta: o degrau de páginas custa a MESMA coisa que o degrau de
+ *  livros custaria se todo livro tivesse exatamente essa espessura. Ninguém sobe
+ *  mais fácil de um lado só porque um número foi chutado maior ou menor no outro.
+ *  (Era 300 até o dono olhar a própria estante e achar isso puxado pra cima; ver
+ *  ai/DECISIONS.md.)
  *
  *  ═══ POR QUE ISSO NÃO É "MEDIR ESFORÇO" ═══
  *
@@ -130,7 +132,7 @@ const PARAGON = 25;
  *  Ver ai/DECISIONS.md.
  * ════════════════════════════════════════════════════════════════════
  */
-const PAGINAS_POR_LIVRO = 300;
+const PAGINAS_POR_LIVRO = 250;
 const PISO_PAGINAS = PISO.map((n) => n * PAGINAS_POR_LIVRO);
 const PARAGON_PAGINAS = PARAGON * PAGINAS_POR_LIVRO;
 
