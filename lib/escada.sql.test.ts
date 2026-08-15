@@ -61,17 +61,18 @@ describe("getEscadas soma páginas de verdade, e escolhe o caminho melhor", () =
     const leitor = await novoLeitor("gordo");
 
     // Quatro livros de 50 páginas: 4 leituras, 200 páginas — nem perto do Bronze
-    // (piso: 5 leituras, ou 1.500 páginas) por nenhuma das duas réguas.
+    // (piso: 5 leituras, ou 1.250 páginas) por nenhuma das duas réguas.
     for (let i = 0; i < 4; i++) {
       await marcarLido(leitor, await novoLivro(50));
     }
     // O quinto fecha as DUAS réguas ao mesmo tempo: a quinta leitura bate o piso
-    // de livros, e as 4.000 páginas dele sozinho já passam o piso de páginas.
-    await marcarLido(leitor, await novoLivro(4000));
+    // de livros, e as 1.100 páginas dele somadas às 200 já passam o piso de
+    // páginas (sem estourar pro degrau seguinte, Prata, que pede 3.750).
+    await marcarLido(leitor, await novoLivro(1100));
 
     const { posicao } = await getEscadas(leitor);
     expect(posicao.livros).toBe(5);
-    expect(posicao.paginas).toBe(4200);
+    expect(posicao.paginas).toBe(1300);
     expect(posicao.honra).toBe("bronze");
   });
 
@@ -79,7 +80,7 @@ describe("getEscadas soma páginas de verdade, e escolhe o caminho melhor", () =
     const leitor = await novoLeitor("tijolo");
 
     // Só DOIS livros: livros=2 nem chega perto do Bronze (piso: 5). Mas
-    // 4.000 + 4.000 = 8.000 páginas já passa o piso de Prata (4.500) inteiro.
+    // 4.000 + 4.000 = 8.000 páginas já passa o piso de Ouro (7.500) inteiro.
     await marcarLido(leitor, await novoLivro(4000));
     await marcarLido(leitor, await novoLivro(4000));
 
@@ -87,7 +88,7 @@ describe("getEscadas soma páginas de verdade, e escolhe o caminho melhor", () =
     expect(posicao.livros).toBe(2);
     expect(posicao.paginas).toBe(8000);
     expect(posicao.via, "a régua de livros nem chegou ao Bronze — só a página venceu").toBe("paginas");
-    expect(posicao.honra).toBe("prata");
+    expect(posicao.honra).toBe("ouro");
   });
 
   it("edição sem página cadastrada soma zero, e não derruba a conta", async () => {
@@ -112,8 +113,8 @@ describe("degrauNovo detecta a subida pela página, não só pelo livro", () => 
     expect((await getEscadas(leitor)).posicao.honra).toBe("ferro");
 
     // A terceira é o Conde de Monte Cristo: 1.400 páginas. livros vira 3 (Bronze
-    // pede 5: continua Ferro por essa régua) — mas páginas vira 1.500, exatamente
-    // o piso do Bronze.
+    // pede 5: continua Ferro por essa régua) — mas páginas vira 1.500, e o piso
+    // do Bronze é 1.250.
     const grande = await novoLivro(1400);
     await marcarLido(leitor, grande);
 

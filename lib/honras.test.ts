@@ -189,22 +189,22 @@ describe("a moldura da cara mostra a honra", () => {
  * ════════════════════════════════════════════════════════════════════
  */
 describe("a régua de páginas", () => {
-  it("cada degrau custa 300 páginas por leitura — a mesma proporção, a régua toda", () => {
+  it("cada degrau custa 250 páginas por leitura — a mesma proporção, a régua toda", () => {
     for (const h of escada()) {
       if (piso(h) === 0) continue;
-      expect(pisoEmPaginas(h)).toBe(piso(h) * 300);
+      expect(pisoEmPaginas(h)).toBe(piso(h) * 250);
     }
   });
 
   it("posicaoPorPaginas sobe do mesmo jeito que posicaoDe, só que em páginas", () => {
     expect(posicaoPorPaginas(0).honra).toBe("ferro");
-    expect(posicaoPorPaginas(1499).honra).toBe("ferro");
-    expect(posicaoPorPaginas(1500).honra).toBe("bronze");
-    expect(posicaoPorPaginas(150_000).honra).toBe("gume");
+    expect(posicaoPorPaginas(1249).honra).toBe("ferro");
+    expect(posicaoPorPaginas(1250).honra).toBe("bronze");
+    expect(posicaoPorPaginas(125_000).honra).toBe("gume");
   });
 
   it("o paragon de páginas é o mesmo múltiplo do de leituras", () => {
-    expect(paragonEmPaginas()).toBe(paragonEmLeituras() * 300);
+    expect(paragonEmPaginas()).toBe(paragonEmLeituras() * 250);
   });
 });
 
@@ -226,16 +226,16 @@ describe("melhorPosicao: a régua que colocar a pessoa mais longe", () => {
   });
 
   it("em empate exato, o caminho de livros é quem assina — mas o resultado é o mesmo", () => {
-    // 500 leituras = Gume. 150.000 páginas TAMBÉM é Gume, exatamente no mesmo piso.
-    const p = melhorPosicao(500, 150_000);
+    // 500 leituras = Gume. 125.000 páginas TAMBÉM é Gume, exatamente no mesmo piso.
+    const p = melhorPosicao(500, 125_000);
     expect(p.honra).toBe("gume");
     expect(p.estrelas).toBe(0);
   });
 
   it("uma estrela por páginas conta igual a uma estrela por leituras", () => {
-    // 525 leituras é Gume +1. 157.500 páginas (150.000 + 7.500) também é.
+    // 525 leituras é Gume +1. 131.250 páginas (125.000 + 6.250) também é.
     const porLivros = melhorPosicao(525, 0);
-    const porPaginas = melhorPosicao(0, 157_500);
+    const porPaginas = melhorPosicao(0, 131_250);
     expect(porLivros.estrelas).toBe(1);
     expect(porPaginas.estrelas).toBe(1);
     expect(porPaginas.via).toBe("paginas");

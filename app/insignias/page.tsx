@@ -300,7 +300,8 @@ function Honras({ escadas }: { escadas: Awaited<ReturnType<typeof getEscadas>> |
               })}
             </ul>
 
-            {/* O TOPO NÃO É O FIM. Depois dele, uma estrela a cada vinte e cinco (ou 7.500 páginas). */}
+            {/* O TOPO NÃO É O FIM. Depois dele, uma estrela a cada vinte e cinco leituras
+                (ou paragonEmPaginas() páginas — o número vem de lib/honras.ts, nunca chutado aqui). */}
             <p className="mt-6 text-[12px] leading-relaxed text-[var(--color-ink-faint)]">
               Depois do último degrau a escada não acaba: a cada {paragonEmLeituras()} leituras
               (ou {paragonEmPaginas().toLocaleString("pt-BR")} páginas) vem uma estrela. Gume +1,
