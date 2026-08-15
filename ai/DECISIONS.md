@@ -3775,3 +3775,70 @@ cor do canvas em qualquer visita, não só no app instalado.
 
 `docs/design.md` — "o ícone vive em exatamente três lugares" virou cinco,
 com os dois novos do manifesto.
+
+---
+
+## Página lida volta — não como ritmo, como o segundo caminho de uma escada que já existia.
+
+Em 2026-07-12, `lib/stats.ts` passou a dizer, com essas palavras: "FORA, e
+não volta: página lida, meta, velocidade, ritmo, e qualquer número que
+meça produção." O dono pediu agora um contador de páginas nas
+estatísticas e na home, e honra por página lida — e a resposta não foi
+implementar calado por cima de uma frase que dizia "não volta". Foi
+mostrar a frase, mostrar as outras duas (`app/page.tsx`, `lib/honras.ts`)
+que diziam a mesma coisa, e perguntar se ele queria reverter sabendo
+disso. Ele quis: "sim, sabendo que isso reverte, reverter tudo."
+
+O argumento dele: "imagina que eu estou lendo o Conde de Monte Cristo,
+levo meses pra terminar e não sinto que avancei — número de livros só
+beneficia volume de livros; se eu quiser ler um livro longo, eu não sinto
+[que valeu a pena]." E um furo real na recusa de 07-12: ela juntou RITMO
+(quão rápido, quão seguido — isso É cobrança, e continua banido) com
+VOLUME (quanto, na vida inteira — que "livros lidos" já media, do lado,
+sem que ninguém achasse isso opressivo). Um livro de 1200 páginas contar
+"1", igual a uma novela de 150, é a mesma injustiça que a escada de honra
+já tinha resolvido para mangá-vs-romance (uma escada só, e não duas) —
+só que ao contrário: lá a HQ curta não valia menos; aqui o livro longo
+não valia mais.
+
+## O que mudou
+
+**As estatísticas e a home.** `Stats.pages` (`lib/stats.ts`) soma
+`page_count` das edições dos livros TERMINADOS — nunca progresso dentro
+de uma leitura em curso, que segue banido (ver `lib/db/schema.ts`, "Do not
+add this table back"). `null`, e não zero, quando nenhuma edição do que
+a pessoa terminou tem página cadastrada: "sem contagem" não é "zero", e
+um zero aqui se leria como fato — mesmo princípio que já regia paciência
+e idade mediana nesta tela. Aparece em `/estatisticas` e no bloco "o ano"
+da home (`app/page.tsx`), do lado do número de livros. A proibição de
+comparar ESFORÇO entre pessoas continua de pé, inteira — página lida é
+uma estatística SUA, nunca da comunidade, e `lib/stats.test.ts` prova que
+nenhum termo de ranking/média/percentil entrou junto.
+
+**A honra.** "Eu quero que tenha 2 possibilidades de subir: quantidade de
+livros e de página — isso premia quem lê muitos livros pequenos e quem
+lê alguns livros grandes." Continua UM anel, UMA barra no perfil — não
+uma segunda escada, não um segundo selo. `melhorPosicao(livros, paginas)`
+(`lib/honras.ts`) calcula os dois caminhos e usa o que levar mais longe,
+degrau por degrau. A régua de páginas é a de leituras multiplicada por
+300 — a estimativa comum de "um livro médio", escolhida porque ninguém
+sobe mais fácil de um lado só por um número ter sido chutado maior ou
+menor no outro; o paragon do topo (25 leituras por estrela) escala junto
+(7.500 páginas).
+
+`degrauNovo` (`lib/escada.ts`) ganhou um segundo parâmetro (`workId`)
+porque agora precisa saber quantas páginas TEM o livro que acabou de ser
+marcado como lido, para calcular o "antes" nas duas réguas ao mesmo tempo
+— sem isso, terminar um livro gigante que sozinho cruza um piso de
+página não anunciaria a subida.
+
+## O que não voltou, e continua banido
+
+Meta, ofensiva, velocidade, ritmo, streak, comparação de esforço entre
+pessoas, e qualquer progresso DENTRO de uma leitura em curso. Nenhuma
+dessas frases mudou; só "página lida", sozinha, saiu da lista.
+`lib/honras.regras.test.ts` prova que a honra continua sem relógio, sem
+placar, sem nota e sem punição por abandono — nenhuma dessas quatro
+regras precisou mudar uma linha para acomodar o segundo caminho, e isso
+é o teste de que a reversão é sobre UNIDADE, não sobre os princípios que
+protegiam a página lida da forma errada de existir.

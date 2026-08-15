@@ -174,6 +174,16 @@ export default async function Estatisticas({
             </span>
           )}
 
+          {/* `null` quando NENHUMA edição do que você terminou tem página cadastrada
+              — "sem contagem" não é "zero", e um zero aqui se leria como fato. Ver
+              o cabeçalho de lib/stats.ts. */}
+          {s.pages !== null && (
+            <span>
+              <span className="tabular text-[var(--color-ink)]">{s.pages.toLocaleString("pt-BR")}</span>{" "}
+              páginas
+            </span>
+          )}
+
           {/* Ter e ler são coisas diferentes, e essa é a tensão que define o app. */}
           <span>
             de <span className="tabular text-[var(--color-ink)]">{s.shelf}</span> na estante

@@ -5,7 +5,9 @@ import { INSIGNIAS, ORDEM } from "@/lib/badges-view";
 import { Cabecalho, Portas } from "@/components/casa-de-quem-faz";
 import { Moldura } from "@/components/moldura";
 import { getEscadas } from "@/lib/escada";
-import { HONRAS, NOME, piso, type Honra } from "@/lib/honras";
+import {
+  HONRAS, NOME, piso, pisoEmPaginas, paragonEmLeituras, paragonEmPaginas, type Honra,
+} from "@/lib/honras";
 import { Placa } from "@/components/badges";
 import { cor as matizDe } from "@/lib/badges-view";
 
@@ -247,6 +249,14 @@ function Honras({ escadas }: { escadas: Awaited<ReturnType<typeof getEscadas>> |
         celebra.
       </p>
 
+      <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-[var(--color-ink-soft)]">
+        E tem <strong className="font-medium text-[var(--color-ink)]">dois caminhos</strong>{" "}
+        para cada degrau: quantidade de leituras, ou quantidade de páginas de livros que
+        você terminou. Vale o que colocar você mais longe. Quem lê muitos livros curtos
+        sobe por um lado; quem está há meses em Os Miseráveis sobe pelo outro assim que
+        vira a última página — o tamanho do livro passa a valer alguma coisa.
+      </p>
+
       {(() => {
         const onde = escadas ? (HONRAS as readonly string[]).indexOf(escadas.posicao.honra) : -1;
 
@@ -281,7 +291,8 @@ function Honras({ escadas }: { escadas: Awaited<ReturnType<typeof getEscadas>> |
                       <span className="tabular block text-[12px] text-[var(--color-ink-faint)]">
                         {piso(honra as Honra) === 0
                           ? "de graça, desde o primeiro dia"
-                          : `${piso(honra as Honra).toLocaleString("pt-BR")} leituras`}
+                          : `${piso(honra as Honra).toLocaleString("pt-BR")} leituras ` +
+                            `— ou ${pisoEmPaginas(honra as Honra).toLocaleString("pt-BR")} páginas`}
                       </span>
                     </span>
                   </li>
@@ -289,10 +300,11 @@ function Honras({ escadas }: { escadas: Awaited<ReturnType<typeof getEscadas>> |
               })}
             </ul>
 
-            {/* O TOPO NÃO É O FIM. Depois dele, uma estrela a cada vinte e cinco. */}
+            {/* O TOPO NÃO É O FIM. Depois dele, uma estrela a cada vinte e cinco (ou 7.500 páginas). */}
             <p className="mt-6 text-[12px] leading-relaxed text-[var(--color-ink-faint)]">
-              Depois do último degrau a escada não acaba: a cada 25 leituras vem uma estrela.
-              Gume +1, Gume +2, e assim por diante.
+              Depois do último degrau a escada não acaba: a cada {paragonEmLeituras()} leituras
+              (ou {paragonEmPaginas().toLocaleString("pt-BR")} páginas) vem uma estrela. Gume +1,
+              Gume +2, e assim por diante.
             </p>
           </div>
         );

@@ -585,9 +585,13 @@ async function Casa({ viewerId }: { viewerId: string }) {
             IS true, in a sentence, and never print a 0 in display type. */}
         {ano.books > 0 ? (
           <div className="grid gap-4 sm:grid-cols-3">
-            {/* Nada de página lida: métrica de esforço vira meta, e meta vira
-                cobrança. O que cabe aqui é o que fala de gosto. */}
             <Numero valor={ano.books} rotulo={ano.books === 1 ? "livro terminado" : "livros terminados"} />
+            {/* `null` quando nenhuma edição do que você terminou tem página
+                cadastrada — ver o cabeçalho de lib/stats.ts. Volume da vida
+                inteira medido em páginas, nunca ritmo: sem meta, sem ofensiva. */}
+            {ano.pages !== null && (
+              <Numero valor={ano.pages} rotulo="páginas" />
+            )}
             {ano.nationalities.length > 0 && (
               <Numero
                 valor={ano.nationalities.length}

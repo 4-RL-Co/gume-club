@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  HONRAS, NOME, coroaDe, escada, nomeCompleto, piso, posicaoDe, type Honra,
+  HONRAS, NOME, coroaDe, escada, nomeCompleto, piso, pisoEmPaginas, posicaoDe,
+  posicaoPorPaginas, melhorPosicao, paragonEmLeituras, paragonEmPaginas, type Honra,
 } from "./honras";
 
 /**
@@ -177,5 +178,79 @@ describe("a moldura da cara mostra a honra", () => {
 
   it("quem não leu nada tem a moldura do Ferro, e não fica sem moldura", () => {
     expect(coroaDe(posicaoDe(0), semApoio)).toEqual({ honra: "ferro", estrelas: 0 });
+  });
+});
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  DOIS CAMINHOS, UMA ESCADA. "Quantidade de livros e de página — isso premia
+ *  quem lê muitos livros pequenos e quem lê alguns livros grandes." Ver
+ *  melhorPosicao(), em lib/honras.ts, e ai/DECISIONS.md.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("a régua de páginas", () => {
+  it("cada degrau custa 300 páginas por leitura — a mesma proporção, a régua toda", () => {
+    for (const h of escada()) {
+      if (piso(h) === 0) continue;
+      expect(pisoEmPaginas(h)).toBe(piso(h) * 300);
+    }
+  });
+
+  it("posicaoPorPaginas sobe do mesmo jeito que posicaoDe, só que em páginas", () => {
+    expect(posicaoPorPaginas(0).honra).toBe("ferro");
+    expect(posicaoPorPaginas(1499).honra).toBe("ferro");
+    expect(posicaoPorPaginas(1500).honra).toBe("bronze");
+    expect(posicaoPorPaginas(150_000).honra).toBe("gume");
+  });
+
+  it("o paragon de páginas é o mesmo múltiplo do de leituras", () => {
+    expect(paragonEmPaginas()).toBe(paragonEmLeituras() * 300);
+  });
+});
+
+describe("melhorPosicao: a régua que colocar a pessoa mais longe", () => {
+  it("poucas leituras de livros gigantes vencem muitas leituras de livros curtos", () => {
+    // 3 leituras não chegam ao Bronze (5) — mas 45.000 páginas já é Diamante.
+    const p = melhorPosicao(3, 45_000);
+    expect(p.via).toBe("paginas");
+    expect(p.honra).toBe("diamante");
+    expect(p.quantas).toBe(45_000);
+  });
+
+  it("quem lê muitos livros curtos continua subindo pela régua de sempre", () => {
+    // 60 leituras é Platina — bem mais do que as 3.000 páginas (curtas) dariam sozinhas.
+    const p = melhorPosicao(60, 3000);
+    expect(p.via).toBe("livros");
+    expect(p.honra).toBe("platina");
+    expect(p.quantas).toBe(60);
+  });
+
+  it("em empate exato, o caminho de livros é quem assina — mas o resultado é o mesmo", () => {
+    // 500 leituras = Gume. 150.000 páginas TAMBÉM é Gume, exatamente no mesmo piso.
+    const p = melhorPosicao(500, 150_000);
+    expect(p.honra).toBe("gume");
+    expect(p.estrelas).toBe(0);
+  });
+
+  it("uma estrela por páginas conta igual a uma estrela por leituras", () => {
+    // 525 leituras é Gume +1. 157.500 páginas (150.000 + 7.500) também é.
+    const porLivros = melhorPosicao(525, 0);
+    const porPaginas = melhorPosicao(0, 157_500);
+    expect(porLivros.estrelas).toBe(1);
+    expect(porPaginas.estrelas).toBe(1);
+    expect(porPaginas.via).toBe("paginas");
+  });
+
+  it("carrega os dois números crus, não só o vencedor", () => {
+    const p = melhorPosicao(12, 45_000);
+    expect(p.livros).toBe(12);
+    expect(p.paginas).toBe(45_000);
+  });
+
+  it("número quebrado ou negativo não quebra nenhuma das duas réguas", () => {
+    const p = melhorPosicao(-3, -100);
+    expect(p.honra).toBe("ferro");
+    expect(p.livros).toBe(0);
+    expect(p.paginas).toBe(0);
   });
 });

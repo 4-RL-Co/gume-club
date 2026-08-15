@@ -1,7 +1,26 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { coroaDe, posicaoDe, type Coroa, type Posicao } from "@/lib/honras";
+import { coroaDe, melhorPosicao, type Coroa, type PosicaoDupla } from "@/lib/honras";
 import { ehApoiador } from "@/lib/apoio";
+
+/**
+ * A edição resolvida de UMA leitura (o alias sempre se chama `le` nas consultas
+ * abaixo): a que a pessoa escolheu, senão a que ela tem, senão a primeira que existe
+ * na obra. A mesma regra de lib/stats.ts:163 — reescrita aqui porque lá ela corre
+ * sobre colunas do Drizzle (que rendem `library_entries.edition_id`, sem alias) e as
+ * consultas de honra sempre foram SQL cru com `le` de alias; misturar os dois estoura
+ * "relation library_entries does not exist" no Postgres.
+ */
+const EDICAO_RESOLVIDA = sql`(
+  select e.id from editions e
+  where e.id = coalesce(
+    le.edition_id,
+    (select oc.edition_id from owned_copies oc
+     where oc.work_id = le.work_id and oc.user_id = le.user_id),
+    (select e2.id from editions e2 where e2.work_id = le.work_id
+     order by e2.created_at asc, e2.id asc limit 1)
+  )
+)`;
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -40,7 +59,7 @@ import { ehApoiador } from "@/lib/apoio";
  */
 
 export type Escadas = {
-  posicao: Posicao;
+  posicao: PosicaoDupla;
   /**
    * A moldura que a pessoa usa hoje.
    *
@@ -53,18 +72,25 @@ export type Escadas = {
 export async function getEscadas(userId: string): Promise<Escadas> {
   const [linha] = await db.execute<{
     lidos: number;
+    paginas: number;
     apoia: boolean;
     moldura: string | null;
   }>(sql`
     select
       -- Uma obra terminada é UMA leitura, mesmo relida cinco vezes. Reler não infla honra.
       count(*) filter (where le.status = 'read')::int as lidos,
+      -- E a soma de páginas é o segundo caminho pra mesma escada — ver lib/honras.ts
+      -- (melhorPosicao). Edição sem página cadastrada soma zero, nunca null: a soma
+      -- inteira ainda tem que virar um int para posicaoPorPaginas().
+      coalesce(sum(
+        (select e3.page_count from editions e3 where e3.id = ${EDICAO_RESOLVIDA})
+      ) filter (where le.status = 'read'), 0)::int as paginas,
       (select ${ehApoiador(sql`u`)} from users u where u.id = ${userId}::uuid) as apoia,
       (select u.moldura      from users u where u.id = ${userId}::uuid) as moldura
     from library_entries le
    where le.user_id = ${userId}::uuid`);
 
-  const posicao = posicaoDe(Number(linha?.lidos ?? 0));
+  const posicao = melhorPosicao(Number(linha?.lidos ?? 0), Number(linha?.paginas ?? 0));
   const apoia = Boolean(linha?.apoia);
 
   /**
@@ -126,6 +152,7 @@ async function coroas(
     id: string;
     handle: string;
     lidos: number;
+    paginas: number;
     apoia: boolean;
     moldura: string | null;
   }>(sql`
@@ -133,7 +160,10 @@ async function coroas(
            u.handle::text as handle,
            ${ehApoiador(sql`u`)} as apoia,
            u.moldura,
-           count(le.id) filter (where le.status = 'read')::int as lidos
+           count(le.id) filter (where le.status = 'read')::int as lidos,
+           coalesce(sum(
+             (select e3.page_count from editions e3 where e3.id = ${EDICAO_RESOLVIDA})
+           ) filter (where le.status = 'read'), 0)::int as paginas
       from users u
       -- LEFT: quem não leu nada continua tendo coroa (Ferro). Um inner join sumiria
       -- com a pessoa do feed, e a moldura dela viraria um buraco.
@@ -146,7 +176,7 @@ async function coroas(
   const fora: Record<string, Coroa> = {};
 
   for (const l of linhas) {
-    const posicao = posicaoDe(Number(l.lidos ?? 0));
+    const posicao = melhorPosicao(Number(l.lidos ?? 0), Number(l.paginas ?? 0));
     const k = chave === "id" ? l.id : l.handle;
 
     // A MESMA regra do perfil, e a mesma função. Ver coroaDe() em lib/honras.ts.
@@ -178,21 +208,40 @@ async function coroas(
  *  Não existe descida. Se alguém tirar um livro da estante, o número cai, e a honra cai
  *  junto — e **nada é escrito no feed**. A honra do passado, gravada na atividade daquele
  *  dia, continua lá: você FOI Prata naquele dia, e isso aconteceu.
+ *
+ *  ═══ E O "ANTES" DE PÁGINAS SUBTRAI ESTE LIVRO, NÃO UM PALPITE ═══
+ *
+ *  A régua de páginas (ver lib/honras.ts) pede o mesmo truque, com uma pergunta a
+ *  mais: "menos um" não quer dizer nada em páginas — precisa ser "menos as páginas
+ *  DESTE livro". Isso é fato estável de catálogo (a página de uma edição não muda
+ *  entre a leitura de duas pessoas ao mesmo tempo), então essa parte pode vir de uma
+ *  consulta separada sem reabrir a janela de corrida que o truque do "menos um"
+ *  existe para fechar.
  * ════════════════════════════════════════════════════════════════════
  */
-export async function degrauNovo(userId: string): Promise<string | null> {
-  const [linha] = await db.execute<{ quantas: number }>(sql`
-    select count(*)::int as quantas
+export async function degrauNovo(userId: string, workId: string): Promise<string | null> {
+  // As páginas DESTE livro. Fato de catálogo, sem corrida — ver a nota acima.
+  const [livro] = await db.execute<{ paginas: number | null }>(sql`
+    select (select e3.page_count from editions e3 where e3.id = ${EDICAO_RESOLVIDA}) as paginas
       from library_entries le
-     where le.user_id = ${userId}::uuid
-       and le.status = 'read'`);
+     where le.user_id = ${userId}::uuid and le.work_id = ${workId}::uuid`);
+  const paginasDesteLivro = Number(livro?.paginas ?? 0);
+
+  const [linha] = await db.execute<{ lidos: number; paginas: number }>(sql`
+    select
+      count(*) filter (where le.status = 'read')::int as lidos,
+      coalesce(sum(
+        (select e3.page_count from editions e3 where e3.id = ${EDICAO_RESOLVIDA})
+      ) filter (where le.status = 'read'), 0)::int as paginas
+      from library_entries le
+     where le.user_id = ${userId}::uuid`);
 
   if (!linha) return null;
 
-  const depois = posicaoDe(Number(linha.quantas));
+  const depois = melhorPosicao(Number(linha.lidos), Number(linha.paginas));
 
-  // O "antes" é este mesmo número menos ESTE livro. Ver a nota acima.
-  const antes = posicaoDe(Number(linha.quantas) - 1);
+  // O "antes" é este mesmo par menos ESTE livro (uma leitura, e as páginas dele). Ver a nota acima.
+  const antes = melhorPosicao(Number(linha.lidos) - 1, Number(linha.paginas) - paginasDesteLivro);
 
   /**
    * Sobe quando muda de DEGRAU **ou** quando ganha uma ESTRELA.
