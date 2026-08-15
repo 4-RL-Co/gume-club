@@ -9,10 +9,31 @@ import { libraryEntries } from "@/lib/db/schema";
  * ══════════════════════════════════════════════════════════════════════
  *  ESTA PÁGINA NÃO DIZ QUANTO VOCÊ LEU. ELA DIZ QUEM VOCÊ É.
  *
- *  É curadoria, e não desempenho. FORA, e não volta: página lida, meta,
- *  velocidade, ritmo, e qualquer número que meça produção. Métrica de
- *  esforço vira meta, meta vira cobrança, e cobrança é da mesma família
- *  da streak.
+ *  É curadoria, e não desempenho. Ranking, percentil, posição, meta, ofensiva,
+ *  velocidade, ritmo — nada disso mede quem você é, mede quanto você produziu, e
+ *  produção vira cobrança. Essa linha continua de pé, sem exceção. Ver a seção
+ *  seguinte, sobre a comunidade, que é onde ela mais importa.
+ *
+ *  ═══ PÁGINA LIDA ESTAVA NESSA LISTA, E SAIU DELA ═══
+ *
+ *  Até 2026-07-12 esta seção dizia, com essas palavras: "FORA, e não volta:
+ *  página lida, meta, velocidade, ritmo, e qualquer número que meça produção."
+ *  O motivo era real — meta vira cobrança — mas a frase juntou duas coisas que
+ *  não são a mesma: RITMO (quão rápido, quão seguido — isso É cobrança) e VOLUME
+ *  (quanto, na vida inteira — que é exatamente o que "livros lidos" já mede, ao
+ *  lado, na mesma tela, sem que ninguém achasse isso opressivo).
+ *
+ *  O dono, direto: "imagina que eu estou lendo o Conde de Monte Cristo, levo
+ *  meses pra terminar e não sinto que avancei — número de livros só beneficia
+ *  volume de LIVROS; se eu quiser ler um livro longo, eu não sinto [orgulho de
+ *  ter avançado]." Um livro de 1200 páginas conta "1", igual a uma novela de
+ *  150 — a mesma injustiça que a escada de honra já tinha resolvido para
+ *  mangá-vs-romance (ver lib/honras.ts) continuava aqui, ao contrário.
+ *
+ *  Página lida volta, e só ela: contada a partir de livros TERMINADOS, nunca de
+ *  progresso dentro de uma leitura em curso (isso segue banido — ver
+ *  lib/db/schema.ts). Meta, ofensiva, velocidade e ritmo continuam de fora, e
+ *  continuam banidos para sempre. Ver ai/DECISIONS.md.
  *
  *  ═══ A COMUNIDADE, E A LINHA QUE NÃO SE CRUZA ═══
  *
@@ -50,6 +71,13 @@ export type Stats = {
   series: number;
   /** Quantos livros existem na estante. Ter e ler são coisas diferentes, e essa é a tensão. */
   shelf: number;
+
+  /**
+   * Páginas de livros TERMINADOS. `null` quando NENHUMA edição do que você
+   * terminou tem página cadastrada — "sem contagem" não é "zero": um zero se lê
+   * como fato, e aqui seria mentira. Ver o cabeçalho deste arquivo.
+   */
+  pages: number | null;
 
   /**
    * A DISTÂNCIA. O coração da página, e a estatística que nenhum outro app tem,
@@ -187,6 +215,25 @@ export async function getStats(
       count(distinct w.series_id)::int                                as series
     from library_entries
     join works w on w.id = library_entries.work_id
+    where library_entries.user_id = ${ownerId}::uuid
+      and ${visible}
+      and ${finished(year)}`);
+
+  /**
+   * PÁGINAS DE LIVROS TERMINADOS. A mesma edição resolvida de sempre (`edition`,
+   * acima), somada — e a soma ignora, sozinha, quem não tem página cadastrada
+   * (`sum` do SQL pula null). O que ela NÃO faz sozinha é distinguir "ninguém
+   * tinha página" de "zero páginas": por isso `comPagina` conta separado, e
+   * `pages` só vira número quando pelo menos uma edição respondeu. Ver o
+   * cabeçalho deste arquivo.
+   */
+  const [paginas] = await db.execute<{ soma: number; comPagina: number }>(sql`
+    select
+      coalesce(sum(e.page_count), 0)::int             as soma,
+      count(*) filter (where e.page_count is not null)::int as "comPagina"
+    from library_entries
+    join works w on w.id = library_entries.work_id
+    left join editions e on e.id = ${edition}
     where library_entries.user_id = ${ownerId}::uuid
       and ${visible}
       and ${finished(year)}`);
@@ -389,6 +436,7 @@ export async function getStats(
     volumes: counted?.volumes ?? 0,
     series: counted?.series ?? 0,
     shelf: shelfTotal?.n ?? 0,
+    pages: paginas && paginas.comPagina > 0 ? paginas.soma : null,
     age:
       age?.median != null && age.from != null && age.to != null && age.midpoint != null
         ? { median: age.median, from: age.from, to: age.to, midpoint: age.midpoint }

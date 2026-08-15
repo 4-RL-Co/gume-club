@@ -37,6 +37,15 @@
  *
  *  É o Paragon do Diablo, e a ideia é a mesma: quem chegou ao topo continua tendo o que
  *  fazer, sem que o app precise inventar um degrau novo a cada dois anos.
+ *
+ *  ═══ UMA ESCADA, MAS DOIS CAMINHOS PRA SUBIR NELA ═══
+ *
+ *  Isto não contradiz o título acima: continua UMA escada (um vocabulário, uma barra
+ *  no perfil). O que existe agora são duas réguas para medir a mesma coisa — quanto
+ *  você leu na vida — porque "livros terminados" sozinho pune quem está no meio de um
+ *  Conde de Monte Cristo: meses de leitura, e nenhum livro fechado ainda. Páginas de
+ *  livros TERMINADOS é o segundo caminho: um livro longo, ao terminar, pesa o que ele
+ *  pesa. Ver melhorPosicao(), abaixo, e ai/DECISIONS.md.
  * ════════════════════════════════════════════════════════════════════
  */
 
@@ -99,21 +108,64 @@ const PISO = [0, 5, 15, 30, 60, 100, 150, 225, 325, 500];
  */
 const PARAGON = 25;
 
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  O SEGUNDO CAMINHO: PÁGINAS. "Quantidade de livros e de página — isso premia
+ *  quem lê muitos livros pequenos e quem lê alguns livros grandes."
+ *
+ *  ═══ POR QUE UMA CONVERSÃO, E NÃO UMA RÉGUA INVENTADA ═══
+ *
+ *  Trezentas páginas é a estimativa comum de "um livro médio" — não é medido neste
+ *  catálogo (a base tem edição sem página cadastrada, às vezes), é uma calibragem
+ *  honesta: o degrau de páginas custa a MESMA coisa que o degrau de livros custaria
+ *  se todo livro tivesse exatamente essa espessura. Ninguém sobe mais fácil de um
+ *  lado só porque um número foi chutado maior ou menor no outro.
+ *
+ *  ═══ POR QUE ISSO NÃO É "MEDIR ESFORÇO" ═══
+ *
+ *  A honra sempre foi volume (quantas leituras), nunca ritmo (quão rápido, quão
+ *  seguido) — isso já está escrito em "o que a honra não faz", logo abaixo: sem
+ *  ofensiva, sem meta do ano, sem temporada. Página é a MESMA pergunta ("quanto
+ *  você leu na vida") com outra unidade — não uma pergunta nova sobre velocidade.
+ *  Ver ai/DECISIONS.md.
+ * ════════════════════════════════════════════════════════════════════
+ */
+const PAGINAS_POR_LIVRO = 300;
+const PISO_PAGINAS = PISO.map((n) => n * PAGINAS_POR_LIVRO);
+const PARAGON_PAGINAS = PARAGON * PAGINAS_POR_LIVRO;
+
 /** A escada, do Ferro ao Gume. */
 export function escada(): readonly Honra[] {
   return HONRAS;
 }
 
-/** O piso de uma honra. */
+/** O piso de uma honra, em leituras. */
 export function piso(honra: Honra): number {
   const i = (HONRAS as readonly string[]).indexOf(honra);
   if (i < 0) throw new Error(`"${honra}" não é uma honra`);
   return PISO[i]!;
 }
 
+/** O piso de uma honra, em páginas — o mesmo degrau, pela outra régua. */
+export function pisoEmPaginas(honra: Honra): number {
+  const i = (HONRAS as readonly string[]).indexOf(honra);
+  if (i < 0) throw new Error(`"${honra}" não é uma honra`);
+  return PISO_PAGINAS[i]!;
+}
+
+/** Quantas leituras valem uma estrela, depois do topo. */
+export function paragonEmLeituras(): number {
+  return PARAGON;
+}
+
+/** Quantas páginas valem uma estrela, depois do topo — a mesma conversão de sempre. */
+export function paragonEmPaginas(): number {
+  return PARAGON_PAGINAS;
+}
+
 export type Posicao = {
   honra: Honra;
-  /** Quantas leituras a pessoa tem. */
+  /** Quantas leituras a pessoa tem — ou quantas páginas, se veio de posicaoPorPaginas(). */
   quantas: number;
 
   /**
@@ -128,7 +180,7 @@ export type Posicao = {
   /** A próxima honra, ou null se a pessoa já está no topo (aí o que vem é uma estrela). */
   proxima: Honra | null;
 
-  /** Quantas leituras faltam para o próximo degrau — ou para a próxima estrela. */
+  /** Quanto falta para o próximo degrau — ou para a próxima estrela — na MESMA unidade de `quantas`. */
   faltam: number;
 
   /** Quanto do degrau atual já foi andado, de 0 a 1. É a barra. */
@@ -136,26 +188,22 @@ export type Posicao = {
 };
 
 /**
- * Onde a pessoa está.
- *
- * `quantas` é o número de leituras TERMINADAS na vida — livros, HQs e volumes de mangá,
- * tudo junto. Não é por ano, não zera, e não expira: é uma vida de leitor, e vida não tem
- * temporada.
+ * A conta em si, parametrizada pela régua (leituras ou páginas). `posicaoDe` e
+ * `posicaoPorPaginas`, abaixo, são as duas peles públicas desta mesma função — a
+ * escada é uma só, o que muda é a unidade que sobe nela.
  */
-export function posicaoDe(quantas: number): Posicao {
-  const n = Math.max(0, Math.floor(quantas));
-
+function calcular(n: number, escadaPiso: readonly number[], paragon: number): Posicao {
   let i = 0;
   for (let k = 0; k < HONRAS.length; k++) {
-    if (n >= PISO[k]!) i = k;
+    if (n >= escadaPiso[k]!) i = k;
   }
 
   const honra = HONRAS[i]! as Honra;
   const noTopo = i === HONRAS.length - 1;
 
   if (!noTopo) {
-    const daqui = PISO[i]!;
-    const ate = PISO[i + 1]!;
+    const daqui = escadaPiso[i]!;
+    const ate = escadaPiso[i + 1]!;
 
     return {
       honra,
@@ -173,17 +221,81 @@ export function posicaoDe(quantas: number): Posicao {
    * A barra passa a medir a distância até a PRÓXIMA estrela, e não até um degrau que não
    * existe. Uma barra cheia e parada, para sempre, é uma barra que zomba de quem chegou.
    */
-  const acima = n - PISO[i]!;
-  const estrelas = Math.floor(acima / PARAGON);
-  const dentro = acima % PARAGON;
+  const acima = n - escadaPiso[i]!;
+  const estrelas = Math.floor(acima / paragon);
+  const dentro = acima % paragon;
 
   return {
     honra,
     quantas: n,
     estrelas,
     proxima: null,
-    faltam: PARAGON - dentro,
-    fracao: dentro / PARAGON,
+    faltam: paragon - dentro,
+    fracao: dentro / paragon,
+  };
+}
+
+/**
+ * Onde a pessoa está, pela régua de LEITURAS.
+ *
+ * `quantas` é o número de leituras TERMINADAS na vida — livros, HQs e volumes de mangá,
+ * tudo junto. Não é por ano, não zera, e não expira: é uma vida de leitor, e vida não tem
+ * temporada.
+ */
+export function posicaoDe(quantas: number): Posicao {
+  return calcular(Math.max(0, Math.floor(quantas)), PISO, PARAGON);
+}
+
+/**
+ * Onde a pessoa está, pela régua de PÁGINAS — o segundo caminho para a mesma escada.
+ * Ver o bloco "O SEGUNDO CAMINHO", acima de PAGINAS_POR_LIVRO.
+ */
+export function posicaoPorPaginas(paginas: number): Posicao {
+  return calcular(Math.max(0, Math.floor(paginas)), PISO_PAGINAS, PARAGON_PAGINAS);
+}
+
+export type PosicaoDupla = Posicao & {
+  /** Qual dos dois caminhos está levando a pessoa mais longe — o que decide a honra. */
+  via: "livros" | "paginas";
+  livros: number;
+  paginas: number;
+};
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  A MELHOR DAS DUAS RÉGUAS. Livros OU páginas, o que colocar a pessoa mais longe.
+ *
+ *  "Isso premia quem lê muitos livros pequenos e quem lê alguns livros grandes." Um
+ *  livro de 1200 páginas não vale "um livro" nesta conta: vale o que ele pesa. E
+ *  quem lê rápido continuando a ler continua subindo pela régua de sempre — nenhum
+ *  caminho fica pior do que já era, só ganhou um segundo do lado.
+ *
+ *  A comparação é por DEGRAU primeiro (honra vale mais que estrela, estrela vale
+ *  mais que fração): ninguém fica "mais perto" do próximo degrau na régua que
+ *  está perdendo, porque essa régua não é a que importa agora.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export function melhorPosicao(livros: number, paginas: number): PosicaoDupla {
+  const porLivros = posicaoDe(livros);
+  const porPaginas = posicaoPorPaginas(paginas);
+
+  const iLivros = (HONRAS as readonly string[]).indexOf(porLivros.honra);
+  const iPaginas = (HONRAS as readonly string[]).indexOf(porPaginas.honra);
+
+  const paginasVence =
+    iPaginas > iLivros ||
+    (iPaginas === iLivros && porPaginas.estrelas > porLivros.estrelas) ||
+    (iPaginas === iLivros &&
+      porPaginas.estrelas === porLivros.estrelas &&
+      porPaginas.fracao > porLivros.fracao);
+
+  const vencedora = paginasVence ? porPaginas : porLivros;
+
+  return {
+    ...vencedora,
+    via: paginasVence ? "paginas" : "livros",
+    livros: Math.max(0, Math.floor(livros)),
+    paginas: Math.max(0, Math.floor(paginas)),
   };
 }
 

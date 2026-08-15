@@ -76,7 +76,7 @@ describe("a comunidade compara gosto, nunca esforço", () => {
 
 describe("a frase-resumo cala a boca quando não sabe", () => {
   const base: Stats = {
-    books: 0, volumes: 0, series: 0, shelf: 10,
+    books: 0, volumes: 0, series: 0, shelf: 10, pages: null,
     age: { median: 40, from: 1900, to: 2020, midpoint: 1980 },
     centuries: [], nationalities: [], publishers: [], origins: [], formats: [],
     verdicts: [], oldest: null, newest: null, reread: [], abandoned: 0,

@@ -1,4 +1,4 @@
-import { HONRAS, NOME, nomeCompleto, type Coroa, type Posicao } from "@/lib/honras";
+import { HONRAS, NOME, nomeCompleto, type Coroa, type PosicaoDupla } from "@/lib/honras";
 import { APOIADOR, DEGRAU } from "@/lib/paleta";
 import { Avatar } from "@/components/avatar";
 
@@ -174,12 +174,18 @@ export function Moldura({
  * ════════════════════════════════════════════════════════════════════
  *  A BARRA. Uma só, no perfil.
  *
- *  Uma escada só: livros, HQs e volumes de mangá contam juntos. O número diz "leituras",
- *  e não "livros" nem "volumes", porque agora ele é os três somados.
+ *  Uma escada só: livros, HQs e volumes de mangá contam juntos. E agora dois CAMINHOS
+ *  pra subir nela — leituras ou páginas de livros terminados, o que levar mais longe
+ *  (ver melhorPosicao() em lib/honras.ts). A barra mostra sempre o caminho que está
+ *  GANHANDO: um livro de 1200 páginas pode valer mais em páginas do que em leituras, e
+ *  a pessoa vê a régua que está de fato empurrando ela pra frente.
  * ════════════════════════════════════════════════════════════════════
  */
-export function Barra({ p }: { p: Posicao }) {
+export function Barra({ p }: { p: PosicaoDupla }) {
   const { de, brilho } = tinta({ honra: p.honra });
+  const porPaginas = p.via === "paginas";
+  const singular = porPaginas ? "página" : "leitura";
+  const plural = porPaginas ? "páginas" : "leituras";
 
   return (
     <div>
@@ -188,14 +194,15 @@ export function Barra({ p }: { p: Posicao }) {
           <span style={{ color: de }}>{nomeCompleto(p)}</span>
           <span className="text-[var(--color-ink-faint)]">
             {" · "}
-            <span className="tabular">{p.quantas.toLocaleString("pt-BR")}</span> leituras
+            <span className="tabular">{p.quantas.toLocaleString("pt-BR")}</span>{" "}
+            {p.quantas === 1 ? singular : plural}
           </span>
         </span>
 
         {/* No topo, o alvo é a próxima ESTRELA, e não um degrau que não existe. Uma barra
             cheia e parada para sempre é uma barra que zomba de quem chegou. */}
         <span className="tabular text-[12px] text-[var(--color-ink-faint)]">
-          {p.faltam === 1 ? "falta 1" : `faltam ${p.faltam}`}{" "}
+          {p.faltam === 1 ? `falta 1 ${singular}` : `faltam ${p.faltam.toLocaleString("pt-BR")} ${plural}`}{" "}
           {p.proxima ? `para ${NOME[p.proxima]}` : "para a próxima estrela"}
         </span>
       </div>
