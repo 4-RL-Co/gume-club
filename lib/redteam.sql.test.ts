@@ -10,7 +10,7 @@ import {
 import { getShelf } from "@/lib/shelf";
 import { getStats } from "@/lib/stats";
 import { getFriendRatings } from "@/lib/ratings";
-import { getEstantes, getAfinidade, getResenhas, getLendoAgora } from "@/lib/explore";
+import { getEstantes, getAfinidade, getResenhas, getLendoAgora, getResenhasDoLivro } from "@/lib/explore";
 import { Forbidden } from "@/lib/authz";
 
 /**
@@ -32,6 +32,7 @@ let atacante: { id: string };
 let vitima: { id: string };
 let obra: string;
 let obraPrivada: string;
+let obraComResenha: string;
 let estanteDaVitima: string;
 
 const criados: string[] = [];
@@ -60,9 +61,17 @@ beforeAll(async () => {
     .insert(works)
     .values({ slug: `redteam-b-${marca}`, title: `A obra privada da vítima ${marca}` })
     .returning({ id: works.id });
+  // Só para o teste de resenha pública — separada de `obra` porque o teste de
+  // IDOR "não fotografa nem restaura" já assume que (vítima, obra) começa sem
+  // nenhuma resenha.
+  const [w3] = await db
+    .insert(works)
+    .values({ slug: `redteam-c-${marca}`, title: `A obra com resenha da vítima ${marca}` })
+    .returning({ id: works.id });
 
   obra = w1!.id;
   obraPrivada = w2!.id;
+  obraComResenha = w3!.id;
 
   // a estante da vítima: uma linha pública e uma privada
   await db.insert(libraryEntries).values([
@@ -75,9 +84,13 @@ beforeAll(async () => {
     { userId: vitima.id, workId: obraPrivada, value: 2, visibility: "private" },
   ]);
 
-  await db.insert(reviews).values({
-    userId: vitima.id, workId: obraPrivada, body: "a resenha secreta", visibility: "private",
-  });
+  await db.insert(reviews).values([
+    { userId: vitima.id, workId: obraPrivada, body: "a resenha secreta", visibility: "private" },
+    // Pública, numa obra À PARTE — para provar que uma resenha visível aparece
+    // na página do livro para um estranho, sem colidir com o teste de IDOR que
+    // assume (vítima, obra) começando sem nenhuma resenha.
+    { userId: vitima.id, workId: obraComResenha, body: "a resenha pública da vítima", visibility: "public" },
+  ]);
 
   const id = await createCollection(vitima, "A estante privada da vítima", "private");
   estanteDaVitima = id!;
@@ -88,7 +101,7 @@ afterAll(async () => {
   for (const id of criados) {
     await db.execute(sql`delete from users where id = ${id}::uuid`);
   }
-  const obras = [obra, obraPrivada].filter(Boolean);
+  const obras = [obra, obraPrivada, obraComResenha].filter(Boolean);
   if (obras.length) {
     await db.execute(sql`delete from works where id = any(${sql.param(obras)}::uuid[])`);
   }
@@ -283,6 +296,35 @@ describe("explorar: a linha privada não vira vitrine", () => {
     expect(
       lendo.some((l) => l.title.includes("privada")),
       "o livro de uma linha privada apareceu em 'estão lendo agora'",
+    ).toBe(false);
+  });
+
+  /**
+   * ═══ A RESENHA NA PÁGINA DO LIVRO: A MESMA REGRA, UM DEGRAU MAIS ESTREITO ═══
+   *
+   * "Quando alguém faz uma resenha pública de um livro, a resenha das pessoas
+   * deve aparecer na página do livro." Ver getResenhasDoLivro(), lib/explore.ts.
+   */
+  it("a resenha pública da vítima aparece na página do livro para um estranho", async () => {
+    const resenhas = await getResenhasDoLivro(atacante, obraComResenha, null);
+    expect(resenhas.some((r) => r.body === "a resenha pública da vítima")).toBe(true);
+  });
+
+  it("a resenha privada da vítima não aparece na página do livro para um estranho", async () => {
+    const resenhas = await getResenhasDoLivro(atacante, obraPrivada, null);
+    expect(
+      resenhas.some((r) => r.body === "a resenha secreta"),
+      "a resenha PRIVADA da vítima apareceu na página do livro",
+    ).toBe(false);
+  });
+
+  it("a própria resenha não volta na lista de 'quem mais escreveu'", async () => {
+    // A vítima olhando a página do PRÓPRIO livro não vê a própria resenha
+    // duplicada aqui embaixo — ela já está aberta no editor de "arrumar".
+    const resenhas = await getResenhasDoLivro(vitima, obraComResenha, vitima.id);
+    expect(
+      resenhas.some((r) => r.body === "a resenha pública da vítima"),
+      "a resenha da própria pessoa voltou na lista de 'outras pessoas'",
     ).toBe(false);
   });
 });

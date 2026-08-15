@@ -23,6 +23,8 @@ import { Correcao } from "@/components/correction";
 import { CorrectionsLog } from "@/components/corrections-log";
 import { getCorrecoes, souBibliotecario } from "@/lib/corrections";
 import { getFollowees, getRecommender } from "@/lib/social";
+import { getResenhasDoLivro } from "@/lib/explore";
+import { ResenhasDoLivro } from "@/components/resenhas-do-livro";
 import { getShelvesOf, getCollections } from "@/lib/curation";
 import { getFriendRatings } from "@/lib/ratings";
 import { getBook, slugAtualDe } from "@/lib/book";
@@ -103,7 +105,9 @@ export default async function BookPage({
     notFound();
   }
 
-  const [friends, recommender, shelves, todasAsEstantes, opinions, minhaCopia, conjuntoDoLivro] = await Promise.all([
+  const [
+    friends, recommender, shelves, todasAsEstantes, opinions, minhaCopia, conjuntoDoLivro, resenhas,
+  ] = await Promise.all([
     actor ? getFollowees(actor.id) : Promise.resolve([]),
     actor ? getRecommender(actor.id, book.workId) : Promise.resolve(null),
     /** As estantes suas em que ESTE livro já está. */
@@ -129,6 +133,9 @@ export default async function BookPage({
           select title, total_volumes from colecoes where id = ${book.colecaoId}::uuid`)
           .then((r) => (r[0] ? { titulo: r[0].title, total: r[0].total_volumes } : null))
       : Promise.resolve(null),
+    // O que OUTRAS pessoas escreveram sobre este livro — a sua já está aberta no
+    // editor de "arrumar", e por isso fica fora daqui. Ver lib/explore.ts.
+    getResenhasDoLivro(viewer, book.workId, actor?.id ?? null),
   ]);
 
   const opinion = opinions[book.workId];
@@ -550,6 +557,10 @@ export default async function BookPage({
               </ul>
             </section>
           )}
+
+          {/* As resenhas de quem NÃO é você — a sua já está aberta, no editor de
+              "arrumar" lá em cima. Ver lib/explore.ts (getResenhasDoLivro). */}
+          <ResenhasDoLivro resenhas={resenhas} />
 
           {actor ? (
             <>

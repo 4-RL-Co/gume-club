@@ -132,7 +132,12 @@ export function PerfilAbas({
         <section className="surface mt-6 p-7">
           <ul className="flex flex-col gap-6">
             {resenhas.map((r) => (
-              <li key={r.id} className="flex gap-5">
+              // `items-start`: sem isto, o flex esticava o <Link> da capa até a
+              // altura da coluna de texto (título + 4 linhas + data) — a capa em si
+              // ficava do tamanho certo (aspect-2/3), mas a sombra e o brilho de
+              // `.cover-lift` (que cobrem 100% do próprio elemento) continuavam
+              // esticados, e sobrava um retrato fantasma embaixo da capa de verdade.
+              <li key={r.id} className="flex items-start gap-5">
                 <Link href={`/livro/${r.slug}`} className="cover-lift w-14 shrink-0">
                   <Cover title={r.title} src={r.coverUrl} />
                 </Link>
@@ -144,10 +149,20 @@ export function PerfilAbas({
 
                   {/* `line-clamp` porque isto é uma LISTA: a resenha inteira mora na
                       página do livro, e uma lista onde cada item tem seis parágrafos
-                      deixa de ser uma lista. */}
+                      deixa de ser uma lista. Mas cortar sem avisar deixava a pessoa
+                      achando que a resenha ACABAVA ali — "ler resenha inteira" é o
+                      caminho até a página do livro, dito, e não só implícito no clique
+                      da capa ou do título. */}
                   <p className="voice mt-2 line-clamp-4 whitespace-pre-wrap text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
                     {r.body}
                   </p>
+
+                  <Link
+                    href={`/livro/${r.slug}`}
+                    className="mt-1 inline-block text-[12px] text-[var(--color-ink-faint)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+                  >
+                    ler resenha inteira
+                  </Link>
 
                   <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
                     {new Date(r.createdAt).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })}
