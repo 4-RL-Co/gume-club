@@ -176,16 +176,16 @@ export function Moldura({
  *
  *  Uma escada só: livros, HQs e volumes de mangá contam juntos. E agora dois CAMINHOS
  *  pra subir nela — leituras ou páginas de livros terminados, o que levar mais longe
- *  (ver melhorPosicao() em lib/honras.ts). A barra mostra sempre o caminho que está
- *  GANHANDO: um livro de 1200 páginas pode valer mais em páginas do que em leituras, e
- *  a pessoa vê a régua que está de fato empurrando ela pra frente.
+ *  (ver melhorPosicao() em lib/honras.ts). O CABEÇALHO mostra os dois números sempre
+ *  ("12 leituras, 3.400 páginas"): é o retrato completo, não só quem está ganhando. O
+ *  "faltam", que é sobre a BARRA em si, continua na régua que está de fato empurrando
+ *  a pessoa pra frente — misturar as duas unidades ali confundiria o "faltam quanto".
  * ════════════════════════════════════════════════════════════════════
  */
 export function Barra({ p }: { p: PosicaoDupla }) {
   const { de, brilho } = tinta({ honra: p.honra });
-  const porPaginas = p.via === "paginas";
-  const singular = porPaginas ? "página" : "leitura";
-  const plural = porPaginas ? "páginas" : "leituras";
+  const singular = p.via === "paginas" ? "página" : "leitura";
+  const plural = p.via === "paginas" ? "páginas" : "leituras";
 
   return (
     <div>
@@ -194,8 +194,10 @@ export function Barra({ p }: { p: PosicaoDupla }) {
           <span style={{ color: de }}>{nomeCompleto(p)}</span>
           <span className="text-[var(--color-ink-faint)]">
             {" · "}
-            <span className="tabular">{p.quantas.toLocaleString("pt-BR")}</span>{" "}
-            {p.quantas === 1 ? singular : plural}
+            <span className="tabular">{p.livros.toLocaleString("pt-BR")}</span>{" "}
+            {p.livros === 1 ? "leitura" : "leituras"}
+            {", "}
+            <span className="tabular">{p.paginas.toLocaleString("pt-BR")}</span> páginas
           </span>
         </span>
 
