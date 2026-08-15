@@ -166,11 +166,34 @@ export type Community = {
   together: { slug: string; title: string; author: string | null; people: number }[];
 };
 
-/** Terminado no ano civil que o leitor escolheu. `null` é a vida inteira. */
+/**
+ * Terminado no ano civil que o leitor escolheu. `null` é a vida inteira.
+ *
+ * ═══ NA VIDA INTEIRA, O STATUS TAMBÉM CONTA — NÃO SÓ A LEITURA COM DATA ═══
+ *
+ * "A quantidade de páginas no meu perfil e nas minhas estatísticas não está
+ * batendo." A honra (lib/escada.ts) sempre contou por `status = 'read'` da
+ * estante; esta tela sempre contou só por uma `readings` com `finished_on`.
+ * As duas eram fatos diferentes disfarçados do mesmo nome, e ficaram
+ * invisíveis até página virar um NÚMERO que dá pra comparar lado a lado.
+ *
+ * A causa real: um lote de import (Goodreads, entre outros) grava o status
+ * "lido" vindo da prateleira de origem mesmo quando o arquivo não tinha data
+ * de término — e insere uma `readings` vazia (as três datas nulas) em vez de
+ * nenhuma. `status = 'read'` sabe que o livro foi lido; só não sabe QUANDO.
+ *
+ * Por ANO isso não muda: sem data não há como dizer "terminado em 2019", e
+ * inventar uma mentiria. Mas "vida inteira" não pergunta quando — só se
+ * aconteceu — e aí `status = 'read'` já é resposta suficiente, a mesma que a
+ * honra sempre aceitou. Ver ai/DECISIONS.md.
+ */
 function finished(year: number | null) {
   return year === null
-    ? sql`exists (select 1 from readings r
-                  where r.entry_id = ${libraryEntries.id} and r.finished_on is not null)`
+    ? sql`(
+        ${libraryEntries.status} = 'read'
+        or exists (select 1 from readings r
+                   where r.entry_id = ${libraryEntries.id} and r.finished_on is not null)
+      )`
     : sql`exists (select 1 from readings r
                   where r.entry_id = ${libraryEntries.id}
                     and r.finished_on is not null
