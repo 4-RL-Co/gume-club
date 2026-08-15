@@ -3859,3 +3859,43 @@ A régua toda desceu junto (Bronze: 1.500 → 1.250 páginas; Gume: 150.000
 → 125.000; o paragon: 7.500 → 6.250 por estrela) — `pisoEmPaginas()` e
 `paragonEmPaginas()` continuam sendo os únicos lugares que sabem o
 número, então nada mais no código precisou mudar.
+
+---
+
+## Livro e página no mesmo card, e por que os dois números não batiam.
+
+Duas coisas do mesmo pedido de tela.
+
+**O card.** Livro e página entraram como dois cards separados no bloco
+"o ano" da home. Com nacionalidade e editora, viravam quatro — e o
+quarto sobrava sozinho numa segunda linha, quebrando a grade de três
+colunas. O dono: "não gosto de cards assimétricos/sobrando, talvez a
+qt de livros e de páginas podem ficar no mesmo card." `Numero`
+(`app/page.tsx`) ganhou um `extra` opcional — um segundo número, menor,
+dentro do MESMO cartão — porque livro e página já andam juntos (você lê
+UM livro, não duas coisas), e voltam a caber três cartões cheios na
+grade de sempre.
+
+**Os números não batiam.** "A quantidade de páginas no meu perfil e
+ranking não está batendo com a quantidade de páginas nas minhas
+estatísticas." Investigado contra o banco de produção, não suposto:
+`lib/escada.ts` sempre contou "lido" por `library_entries.status`;
+`lib/stats.ts` sempre contou só por uma `readings` com `finished_on`.
+Um lote de import (Goodreads) gravou 22 livros com o status "lido" vindo
+da prateleira de origem, no mesmo dia — sem data de término no arquivo
+importado, e o importador grava uma `readings` com as três datas nulas
+em vez de nenhuma linha (`lib/import/aplicar.ts`). `status = 'read'`
+sabia que o livro tinha sido lido; `readings.finished_on` não sabia
+quando, e `lib/stats.ts` só perguntava a ela.
+
+As duas contas sempre foram fatos diferentes com o mesmo nome, e ficaram
+invisíveis até página virar um número comparável lado a lado.
+`finished()` (`lib/stats.ts`) agora aceita `status = 'read'` também, mas
+SÓ na vida inteira (`ano = sempre`): por ANO continua exigindo uma data
+real, porque inventar uma seria mentir ("terminado em 2019" quando
+ninguém sabe se foi). Um livro sem data nunca aparece num ano específico
+— só na vida inteira, exatamente como a honra sempre tratou. Nenhum dado
+foi alterado no banco: nenhuma data foi inventada para preencher os 22
+livros, porque isso seria a mesma mentira, só que gravada.
+`lib/stats.sql.test.ts` prova os quatro casos contra o Postgres de
+verdade: lido com data, lido sem data (o bug), lendo, abandonado.

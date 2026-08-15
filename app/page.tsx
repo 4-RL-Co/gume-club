@@ -585,13 +585,17 @@ async function Casa({ viewerId }: { viewerId: string }) {
             IS true, in a sentence, and never print a 0 in display type. */}
         {ano.books > 0 ? (
           <div className="grid gap-4 sm:grid-cols-3">
-            <Numero valor={ano.books} rotulo={ano.books === 1 ? "livro terminado" : "livros terminados"} />
-            {/* `null` quando nenhuma edição do que você terminou tem página
-                cadastrada — ver o cabeçalho de lib/stats.ts. Volume da vida
-                inteira medido em páginas, nunca ritmo: sem meta, sem ofensiva. */}
-            {ano.pages !== null && (
-              <Numero valor={ano.pages} rotulo="páginas" />
-            )}
+            {/* Livro e página no MESMO card: um quarto card sobrando, sozinho
+                na segunda linha, ficava assimétrico — três cartões cheios lê
+                melhor que quatro com um errante. `null` quando nenhuma edição
+                do que você terminou tem página cadastrada — ver o cabeçalho
+                de lib/stats.ts. Volume da vida inteira medido em páginas,
+                nunca ritmo: sem meta, sem ofensiva. */}
+            <Numero
+              valor={ano.books}
+              rotulo={ano.books === 1 ? "livro terminado" : "livros terminados"}
+              extra={ano.pages !== null ? { valor: ano.pages, rotulo: "páginas" } : undefined}
+            />
             {ano.nationalities.length > 0 && (
               <Numero
                 valor={ano.nationalities.length}
@@ -658,8 +662,21 @@ async function Casa({ viewerId }: { viewerId: string }) {
   );
 }
 
-/** One number, alone in a wide card. A statistic crammed next to a label is a chip. */
-function Numero({ valor, rotulo }: { valor: number; rotulo: string }) {
+/**
+ * One number, alone in a wide card. A statistic crammed next to a label is a chip.
+ *
+ * `extra` é um segundo número, pequeno, dentro do MESMO card — não um card à parte.
+ * Nasceu de livros+páginas: um quarto card sobrando sozinho numa segunda linha lia
+ * pior que dois números que já andam juntos (você lê UM livro, não duas coisas)
+ * dividindo o mesmo cartão.
+ */
+function Numero({
+  valor, rotulo, extra,
+}: {
+  valor: number;
+  rotulo: string;
+  extra?: { valor: number; rotulo: string };
+}) {
   return (
     <div className="surface flex flex-col items-center gap-2 px-6 py-8">
       <span className="voice tabular text-[40px] leading-none">
@@ -668,6 +685,11 @@ function Numero({ valor, rotulo }: { valor: number; rotulo: string }) {
       <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
         {rotulo}
       </span>
+      {extra && (
+        <span className="tabular mt-1 text-[13px] text-[var(--color-ink-faint)]">
+          {extra.valor.toLocaleString("pt-BR")} {extra.rotulo}
+        </span>
+      )}
     </div>
   );
 }
