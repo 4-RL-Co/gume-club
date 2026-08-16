@@ -57,6 +57,38 @@ function noAno(filter: FilterKey, ano: number): SQL {
 }
 
 /**
+ * ════════════════════════════════════════════════════════════════════
+ *  A EDIÇÃO "SEM PREFERÊNCIA DECLARADA". Nem a sua, nem a que você possui —
+ *  a que sobra, entre todas as do work. Devolve UMA sempre (quando existe ao
+ *  menos uma), porque quem chama isto também quer editora e páginas, não só
+ *  a capa: um filtro (`where cover_url is not null`) devolveria zero linhas
+ *  para um livro sem nenhuma capa cadastrada, e sumiria com o resto da ficha.
+ *
+ *  ═══ "NA LISTA, OS MISERÁVEIS APARECE COM ESSA CAPA (NÃO É A MINHA)" ═══
+ *
+ *  Era `order by created_at asc, id asc`, cru — em app/estante/[slug]/page.tsx,
+ *  numa cópia solta desta mesma escolha. Um lote de import grava várias edições
+ *  com o MESMO `created_at`, até o microssegundo; sem critério de capa, o
+ *  desempate virava a ordem (arbitrária) do UUID, e podia cair numa edição sem
+ *  capa, ou de outra editora, em vez da que a página do livro mostrava.
+ *
+ *  `(cover_url is null)` na FRENTE do ORDER BY resolve sem filtrar: `false`
+ *  (tem capa) ordena antes de `true` (não tem) no Postgres, então a edição COM
+ *  capa vence o empate — e se nenhuma tiver, a mais antiga por `created_at`
+ *  continua vencendo, do jeito que já era. Mesma regra que a página do livro
+ *  (app/livro/[slug]/page.tsx) e o leque de /listas (lib/listas.ts) já usam,
+ *  só que ali como um FILTRO (`and cover_url is not null`) — o que funciona
+ *  quando quem chama só quer a capa, e nada mais da edição.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export function edicaoPreferida(): SQL {
+  return sql`(
+    select e2.id from editions e2 where e2.work_id = ${works.id}
+    order by (e2.cover_url is null), e2.created_at asc, e2.id asc limit 1
+  )`;
+}
+
+/**
  * One reader's shelf. The visibility filter is `visibleTo()`, and it runs in
  * SQL: a private row is never fetched and then hidden in JavaScript, because
  * over-fetching and hiding is how data leaks. See SECURITY.md.
@@ -185,8 +217,7 @@ export async function getShelf(
     .leftJoin(editions, sql`${editions.id} = coalesce(
       ${libraryEntries.editionId},
       ${ownedCopies.editionId},
-      (select e2.id from editions e2 where e2.work_id = ${works.id}
-       order by (e2.cover_url is null), e2.created_at asc, e2.id asc limit 1)
+      ${edicaoPreferida()}
     )`)
     .where(and(
       eq(libraryEntries.userId, ownerId),

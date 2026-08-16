@@ -4048,3 +4048,44 @@ rodando duas vezes), rodado direto em produção, verificado por SQL antes
 e depois: as edições, as duas estantes (a do dono e a de
 @alexssander-affonso-da-silva) e o "1 de 4" do conjunto, todos
 conferidos depois de rodar.
+
+---
+
+## A capa certa na estante, não só na ficha do livro.
+
+O dono, direto de um print: "na lista Os Miseráveis aparece com essa
+capa (não é a minha), e quando eu clico aparece com a capa correta,
+como corrigir isso?"
+
+`app/estante/[slug]/page.tsx` escolhia a capa de cada item pegando a
+edição mais ANTIGA por `created_at` — crua, sem checar se ela TINHA
+capa. A página do livro (`app/livro/[slug]/page.tsx`) e o leque de
+`/listas` (`lib/listas.ts`) já pulavam edição sem capa; só a grade da
+estante não.
+
+A causa de aparecer AGORA, e não sempre: um lote de import grava várias
+edições com o MESMO `created_at`, até o microssegundo — e sem critério
+de capa, o desempate virava a ordem (arbitrária) do UUID. Podia cair
+numa edição sem capa, ou de outra editora, em vez da que a ficha do
+livro mostrava. Confirmado contra produção: as 6 edições de "Os
+Miseráveis" tinham todas o mesmo `created_at` de um import em lote, e a
+edição escolhida pela ordem crua era da Cosac Naify — não a Martin
+Claret que aparece na ficha.
+
+`edicaoPreferida()` (`lib/shelf.ts`) extrai a escolha para um lugar só —
+havia uma cópia idêntica em `lib/shelf.ts` (usada por `getShelf()`, já
+certa) e uma cópia SOLTA, errada, em `app/estante/[slug]/page.tsx`. As
+duas agora chamam a mesma função. A regra: `(cover_url is null)` na
+FRENTE do `order by` — não um filtro `where cover_url is not null` — pra
+nunca ficar sem edição nenhuma quando existe ao menos uma (quem chama
+também quer editora e páginas, não só a capa).
+
+Varri o resto do catálogo por essa mesma cópia solta antes de corrigir
+só esta: todo outro lugar que escolhe capa (página do livro, `/listas`,
+os pôsteres do WhatsApp, o feed, `/explorar`) já filtrava `cover_url is
+not null` direito. Era o único lugar quebrado.
+
+`lib/shelf.sql.test.ts` (novo): prova o empate exato que causava o bug —
+quatro edições com o mesmo `created_at`, só uma com capa — contra o
+Postgres de verdade, e prova que uma obra sem capa nenhuma continua
+mostrando o resto da ficha (editora, ano), não sumindo.
