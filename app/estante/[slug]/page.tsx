@@ -263,7 +263,7 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
 
       {mine && <PorNaEstante slug={shelf.slug} collectionId={shelf.id} />}
 
-      {mine && books.length > 1 && (
+      {mine && books.length > 0 && (
         <div className="mt-6">
           <OrganizarEstante
             slug={shelf.slug}

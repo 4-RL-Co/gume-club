@@ -6,7 +6,7 @@ import { users, works, collections, collectionItems } from "@/lib/db/schema";
 import {
   getListasDe, getListasGuardadas, guardarLista, esquecerLista, jaGuardei,
   moverNaLista, numerarLista, descreverLista, getListasParaExplorar,
-  porNaLista, quemGuardou,
+  porNaLista, tirarDaLista, quemGuardou,
 } from "@/lib/listas";
 
 /**
@@ -362,6 +362,38 @@ describe("pôr um livro na estante", () => {
   it("uma obra que não existe não vira linha na estante", async () => {
     const fantasma = "00000000-0000-4000-8000-000000000000";
     expect(await porNaLista(vitima, listaPublica, fantasma)).toBe(false);
+  });
+});
+
+// ────────────────────────────── tirar um livro: o dono, e só dele fica de fato fora
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  TIRAR UM LIVRO DA ESTANTE. "Não achei como tirar um livro da minha
+ *  lista por dentro da página da lista" — só dava pela ficha do livro.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("tirar um livro da estante", () => {
+  it("o atacante não tira nada da lista da vítima", async () => {
+    await tirarDaLista(atacante, listaPublica, obraA);
+
+    const quantas = await db.execute<{ n: number }>(sql`
+      select count(*)::int as n from collection_items
+       where collection_id = ${listaPublica}::uuid and work_id = ${obraA}::uuid`);
+    expect(quantas[0]!.n, "o atacante tirou um livro da lista de outra pessoa").toBe(1);
+  });
+
+  it("o dono tira, e o livro some da lista", async () => {
+    await tirarDaLista(vitima, listaPrivada, obraA);
+
+    const quantas = await db.execute<{ n: number }>(sql`
+      select count(*)::int as n from collection_items
+       where collection_id = ${listaPrivada}::uuid and work_id = ${obraA}::uuid`);
+    expect(quantas[0]!.n).toBe(0);
+  });
+
+  it("tirar de novo não quebra: já não estava lá", async () => {
+    await expect(tirarDaLista(vitima, listaPrivada, obraA)).resolves.toBeUndefined();
   });
 });
 
