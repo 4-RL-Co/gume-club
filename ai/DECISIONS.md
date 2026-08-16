@@ -3971,3 +3971,40 @@ resenhas na obra original.
 Verificado: tsc --noEmit, next lint, vitest run (1120 testes — 3 novos
 em lib/invite.sql.test.ts, 3 novos em lib/redteam.sql.test.ts), next
 build completo.
+
+---
+
+## Calhamaços Martin Claret é uma lista, não um conjunto — e destravou um autor quebrado.
+
+O dono: "estou pensando em criar a coleção calhamaços martin claret...
+crie e já coloque os que eu tenho: guerra e paz, ana kariênina, conde de
+monte cristo, dom quixote, os miseráveis, divina comédia."
+
+Seis autores diferentes (Tolstói, Dumas, Cervantes, Hugo, Dante) não são
+um conjunto editorial — não formam UMA obra em volumes, como a
+Dostoiévski da Martin Claret (ver a entrada "Adicionar um volume..."
+mais acima). É um agrupamento por gosto, e é isso que `collections`
+(lista) já existe para fazer. Perguntei antes de criar; o dono confirmou
+lista.
+
+Anna Kariênina ficou de fora: não existe na estante dele. Os outros
+cinco pedidos já estavam lá, como "quero ler" — nenhum possuído ou lido
+ainda. Perguntei se "os que eu tenho" queria dizer "os já catalogados,
+do jeito que estão" ou "só depois de marcar como possuído primeiro"; o
+dono escolheu a primeira. `scripts/calhamacos-martin-claret.mjs` cria a
+lista e liga os cinco, na ordem pedida.
+
+**E um bug de catálogo, achado no caminho.** "Os miseráveis" existia
+DUAS vezes: uma com Victor Hugo (o autor certo), outra com um autor
+chamado, literalmente, "invalid author ID" — resíduo de um import que
+falhou e gravou a própria mensagem de erro como se fosse um nome. A
+ficha quebrada era a que estava na estante do dono, e era a única leitora
+dela. Fundida na ficha certa com a mesma operação que o catálogo já usa
+para duas fichas do mesmo livro (`fundirObras`, `lib/corrections.ts`,
+reescrita em SQL cru no script pelo mesmo motivo do script anterior:
+bootstrap, não uma correção simulada de leitor). A ficha de autor órfã
+saiu do catálogo depois — confirmado que nenhuma outra obra a usava.
+
+O script é idempotente (rodar de novo não duplica nada) e foi rodado
+direto em produção, com verificação por SQL antes e depois de cada
+passo.
