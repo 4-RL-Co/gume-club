@@ -89,6 +89,31 @@ export function edicaoPreferida(): SQL {
 }
 
 /**
+ * ════════════════════════════════════════════════════════════════════
+ *  ═══ "AQUI CONTINUA COM A CAPA ERRADA" ═══
+ *
+ *  edicaoPreferida() sozinha não bastava: Os Miseráveis tem CINCO edições
+ *  diferentes com capa (não uma), todas do mesmo lote de import — o desempate
+ *  por capa não resolve um empate entre várias que TÊM capa. E o dono já tinha
+ *  escolhido a Martin Claret na própria estante (`library_entries.edition_id`);
+ *  era por isso que a ficha do livro mostrava ela (via `minha`, em
+ *  app/livro/[slug]/page.tsx) mas a estante de lib/shelf.ts calculava a mesma
+ *  coisa direito. Só app/estante/[slug]/page.tsx (a página de LISTA) fazia
+ *  JOIN com libraryEntries e ownedCopies do dono da lista e não usava a
+ *  edição que eles guardam — chamava edicaoPreferida() crua.
+ *
+ *  A pessoa manda em qual edição é "a dela": a que ela escolheu, depois a que
+ *  ela possui, só então o desempate genérico. Requer que quem chama já tenha
+ *  feito JOIN com libraryEntries e ownedCopies do MESMO dono que decide qual
+ *  edição é "a sua" aqui — getShelf() e app/estante/[slug]/page.tsx fazem os
+ *  dois, cada um do jeito certo para o que está mostrando.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export function edicaoDoLeitor(): SQL {
+  return sql`coalesce(${libraryEntries.editionId}, ${ownedCopies.editionId}, ${edicaoPreferida()})`;
+}
+
+/**
  * One reader's shelf. The visibility filter is `visibleTo()`, and it runs in
  * SQL: a private row is never fetched and then hidden in JavaScript, because
  * over-fetching and hiding is how data leaks. See SECURITY.md.
@@ -214,11 +239,7 @@ export async function getShelf(
     // The edition YOU chose wins, then the copy you own, then the earliest on
     // record. Memórias Póstumas has 100 editions; picking one for you was never
     // good enough, and page counts and covers differ between them.
-    .leftJoin(editions, sql`${editions.id} = coalesce(
-      ${libraryEntries.editionId},
-      ${ownedCopies.editionId},
-      ${edicaoPreferida()}
-    )`)
+    .leftJoin(editions, sql`${editions.id} = ${edicaoDoLeitor()}`)
     .where(and(
       eq(libraryEntries.userId, ownerId),
       visibleTo(viewer, libraryEntries.userId, libraryEntries.visibility),

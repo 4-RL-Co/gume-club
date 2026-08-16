@@ -4089,3 +4089,35 @@ not null` direito. Era o único lugar quebrado.
 quatro edições com o mesmo `created_at`, só uma com capa — contra o
 Postgres de verdade, e prova que uma obra sem capa nenhuma continua
 mostrando o resto da ficha (editora, ano), não sumindo.
+
+## A capa certa, de novo: faltava a edição que o dono ESCOLHEU, não só a que tem capa.
+
+Depois de mergear o conserto acima, o mesmo print voltou: "aqui
+continua com a capa errada". `edicaoPreferida()` desempatava certo
+quando só UMA edição tinha capa — mas "Os Miseráveis" tem CINCO
+edições com capa (não uma), todas do mesmo lote de import. Entre cinco,
+o desempate por `created_at`/`id` ainda é arbitrário, e caiu de novo na
+edição errada (Cosac Naify).
+
+A causa real é outra: o dono já tinha ESCOLHIDO a edição Martin Claret
+na própria estante (`library_entries.edition_id`) — é por isso que a
+ficha do livro mostrava ela certo (via `minha`, a edição que ELE tem,
+não um desempate). `getShelf()` (`lib/shelf.ts`) já respeitava essa
+escolha (`coalesce(edição escolhida, edição possuída,
+edicaoPreferida())`); `app/estante/[slug]/page.tsx`, a página de LISTA,
+já fazia `leftJoin` com `libraryEntries` e `ownedCopies` do dono da
+lista para status e nota de posse — só não usava a edição que eles
+guardam ali, e chamava `edicaoPreferida()` crua.
+
+`edicaoDoLeitor()` (`lib/shelf.ts`) extrai esse `coalesce` para uma
+função só, ao lado de `edicaoPreferida()`; `getShelf()` e a página de
+lista chamam a mesma agora — a mesma deduplicação de novo, um passo
+adiante. Confirmado contra produção antes de escrever código, rodando a
+query nova à mão: as 5 obras da lista Calhamaços Martin Claret voltaram
+todas com editora "Martin Claret" e a capa certa.
+
+Lição: o primeiro conserto testou o cenário certo (empate por capa) mas
+não o cenário REAL (múltiplas edições com capa, e uma escolha explícita
+do dono sendo ignorada) — confirmar a causa raiz contra os dados de
+produção ANTES de assumir que o sintoma sumiu evita declarar vitória
+cedo demais.

@@ -73,6 +73,54 @@ describe("edicaoPreferida (via getShelf): a edição com capa vence o empate", (
     );
   });
 
+  it("a edição ESCOLHIDA vence mesmo quando outra teria vencido o desempate genérico", async () => {
+    // "Aqui continua com a capa errada." O reader escolheu uma edição
+    // específica (library_entries.edition_id); mesmo com outras cinco do
+    // mesmo work tendo capa também, a escolhida é a que aparece — nunca o
+    // desempate de edicaoPreferida(), que só entra quando ninguém escolheu.
+    const [u] = await db
+      .insert(users)
+      .values({ handle: `estante-escolha-${marca}`, email: `estante-escolha-${marca}@sh.test` })
+      .returning({ id: users.id });
+    lixo.gente.push(u!.id);
+
+    const [w] = await db
+      .insert(works)
+      .values({ title: `Cinco Capas ${marca}`, authorId: autor, slug: `cinco-capas-${marca}` })
+      .returning({ id: works.id });
+    lixo.obras.push(w!.id);
+
+    // As duas primeiras venceriam o desempate genérico (created_at, depois id);
+    // a terceira só ganha porque foi EXPLICITAMENTE escolhida.
+    const criadoEm = sql`'2020-01-01 00:00:00+00'::timestamptz`;
+    await db.execute(sql`
+      insert into editions (work_id, publisher, cover_url, created_at) values
+        (${w!.id}::uuid, 'A que ganharia o desempate', 'https://exemplo.test/desempate.jpg', ${criadoEm}),
+        (${w!.id}::uuid, 'Também tem capa', 'https://exemplo.test/tambem.jpg', ${criadoEm})`);
+    const [escolhida] = await db
+      .insert(editions)
+      .values({
+        workId: w!.id,
+        publisher: "A escolhida",
+        coverUrl: "https://exemplo.test/escolhida.jpg",
+        createdAt: sql`'2020-01-01 00:00:00+00'::timestamptz`,
+      })
+      .returning({ id: editions.id });
+
+    await db.insert(libraryEntries).values({
+      userId: u!.id,
+      workId: w!.id,
+      status: "want_to_read",
+      editionId: escolhida!.id,
+    });
+
+    const [livro] = await getShelf({ id: u!.id }, u!.id);
+
+    expect(livro?.coverUrl, "a edição escolhida por quem lê perdeu para o desempate genérico").toBe(
+      "https://exemplo.test/escolhida.jpg",
+    );
+  });
+
   it("nenhuma edição com capa: continua devolvendo uma edição, não nenhuma", async () => {
     const [u] = await db
       .insert(users)
