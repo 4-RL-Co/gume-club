@@ -3971,3 +3971,80 @@ resenhas na obra original.
 Verificado: tsc --noEmit, next lint, vitest run (1120 testes — 3 novos
 em lib/invite.sql.test.ts, 3 novos em lib/redteam.sql.test.ts), next
 build completo.
+
+---
+
+## Calhamaços Martin Claret é uma lista, não um conjunto — e destravou um autor quebrado.
+
+O dono: "estou pensando em criar a coleção calhamaços martin claret...
+crie e já coloque os que eu tenho: guerra e paz, ana kariênina, conde de
+monte cristo, dom quixote, os miseráveis, divina comédia."
+
+Seis autores diferentes (Tolstói, Dumas, Cervantes, Hugo, Dante) não são
+um conjunto editorial — não formam UMA obra em volumes, como a
+Dostoiévski da Martin Claret (ver a entrada "Adicionar um volume..."
+mais acima). É um agrupamento por gosto, e é isso que `collections`
+(lista) já existe para fazer. Perguntei antes de criar; o dono confirmou
+lista.
+
+Anna Kariênina ficou de fora: não existe na estante dele. Os outros
+cinco pedidos já estavam lá, como "quero ler" — nenhum possuído ou lido
+ainda. Perguntei se "os que eu tenho" queria dizer "os já catalogados,
+do jeito que estão" ou "só depois de marcar como possuído primeiro"; o
+dono escolheu a primeira. `scripts/calhamacos-martin-claret.mjs` cria a
+lista e liga os cinco, na ordem pedida.
+
+**E um bug de catálogo, achado no caminho.** "Os miseráveis" existia
+DUAS vezes: uma com Victor Hugo (o autor certo), outra com um autor
+chamado, literalmente, "invalid author ID" — resíduo de um import que
+falhou e gravou a própria mensagem de erro como se fosse um nome. A
+ficha quebrada era a que estava na estante do dono, e era a única leitora
+dela. Fundida na ficha certa com a mesma operação que o catálogo já usa
+para duas fichas do mesmo livro (`fundirObras`, `lib/corrections.ts`,
+reescrita em SQL cru no script pelo mesmo motivo do script anterior:
+bootstrap, não uma correção simulada de leitor). A ficha de autor órfã
+saiu do catálogo depois — confirmado que nenhuma outra obra a usava.
+
+O script é idempotente (rodar de novo não duplica nada) e foi rodado
+direto em produção, com verificação por SQL antes e depois de cada
+passo.
+
+---
+
+## Dostoiévski existia como dois autores — e nenhuma edição desapareceu ao virar um.
+
+O dono pediu pra ligar o "Crime e Castigo" dele ao conjunto "Dostoiévski
+— Martin Claret" (ver a entrada "Adicionar um volume..."). O livro dele
+estava numa ficha duplicada: o catálogo tinha "Fyodor Dostoyevsky" (10
+obras — é quem já estava no conjunto) e "Fiódor Dostoiévski" (5 obras)
+como duas PESSOAS diferentes. A mesma pessoa, grafada duas vezes — o
+mesmo bug do "Frankenstein" que `lib/corrections.ts` já documenta, só
+que em quatro títulos ao mesmo tempo: Crime e Castigo, O Idiota, Noites
+Brancas, Os Irmãos Karamázov. Um outro leitor (@alexssander-affonso-da-silva)
+também tinha dois desses (O Idiota, lendo; Noites Brancas, lido) na
+metade errada.
+
+O dono, antes de eu tocar em qualquer coisa: "pode fazer conserto desde
+que esteja correto. Por exemplo, dostoievski da martin claret e do clube
+de literatura clássica são edições diferentes de editora diferente, não
+pode sumir." Confirmado ANTES de rodar, e não depois: `fundirObras()`
+nunca apaga edição — ela MOVE todas as edições da ficha que sai para a
+que fica. As sete edições das quatro obras (Martin Claret em três
+variantes, Todavia, Clube de Literatura Clássica) sobreviveram inteiras,
+só reagrupadas — conferido edição por edição depois de rodar.
+
+`scripts/dostoievski-desduplicado.mjs`: funde as quatro obras primeiro
+(`fundirObras`), e só depois os dois autores (`fundirAutores`) — na
+mesma ordem que `fundirAutores()` já exige sozinha (ela recusa fundir
+dois autores que ainda compartilham um título). "Fyodor Dostoyevsky"
+sobrevive — mais obras já ligadas, e é quem já estava no conjunto —
+"Fiódor Dostoiévski" vira apelido buscável dele. Por fim, o "Crime e
+Castigo" do dono virou "tenho" (`owned_copies`): ele disse "eu já tenho
+crime e castigo", e um conjunto conta posse, não intenção — sem isso o
+conjunto mostraria "0 de 4" mesmo depois do conserto.
+
+Idempotente (cada passo confere o estado atual antes de agir, provado
+rodando duas vezes), rodado direto em produção, verificado por SQL antes
+e depois: as edições, as duas estantes (a do dono e a de
+@alexssander-affonso-da-silva) e o "1 de 4" do conjunto, todos
+conferidos depois de rodar.
