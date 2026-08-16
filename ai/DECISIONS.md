@@ -4008,3 +4008,43 @@ saiu do catálogo depois — confirmado que nenhuma outra obra a usava.
 O script é idempotente (rodar de novo não duplica nada) e foi rodado
 direto em produção, com verificação por SQL antes e depois de cada
 passo.
+
+---
+
+## Dostoiévski existia como dois autores — e nenhuma edição desapareceu ao virar um.
+
+O dono pediu pra ligar o "Crime e Castigo" dele ao conjunto "Dostoiévski
+— Martin Claret" (ver a entrada "Adicionar um volume..."). O livro dele
+estava numa ficha duplicada: o catálogo tinha "Fyodor Dostoyevsky" (10
+obras — é quem já estava no conjunto) e "Fiódor Dostoiévski" (5 obras)
+como duas PESSOAS diferentes. A mesma pessoa, grafada duas vezes — o
+mesmo bug do "Frankenstein" que `lib/corrections.ts` já documenta, só
+que em quatro títulos ao mesmo tempo: Crime e Castigo, O Idiota, Noites
+Brancas, Os Irmãos Karamázov. Um outro leitor (@alexssander-affonso-da-silva)
+também tinha dois desses (O Idiota, lendo; Noites Brancas, lido) na
+metade errada.
+
+O dono, antes de eu tocar em qualquer coisa: "pode fazer conserto desde
+que esteja correto. Por exemplo, dostoievski da martin claret e do clube
+de literatura clássica são edições diferentes de editora diferente, não
+pode sumir." Confirmado ANTES de rodar, e não depois: `fundirObras()`
+nunca apaga edição — ela MOVE todas as edições da ficha que sai para a
+que fica. As sete edições das quatro obras (Martin Claret em três
+variantes, Todavia, Clube de Literatura Clássica) sobreviveram inteiras,
+só reagrupadas — conferido edição por edição depois de rodar.
+
+`scripts/dostoievski-desduplicado.mjs`: funde as quatro obras primeiro
+(`fundirObras`), e só depois os dois autores (`fundirAutores`) — na
+mesma ordem que `fundirAutores()` já exige sozinha (ela recusa fundir
+dois autores que ainda compartilham um título). "Fyodor Dostoyevsky"
+sobrevive — mais obras já ligadas, e é quem já estava no conjunto —
+"Fiódor Dostoiévski" vira apelido buscável dele. Por fim, o "Crime e
+Castigo" do dono virou "tenho" (`owned_copies`): ele disse "eu já tenho
+crime e castigo", e um conjunto conta posse, não intenção — sem isso o
+conjunto mostraria "0 de 4" mesmo depois do conserto.
+
+Idempotente (cada passo confere o estado atual antes de agir, provado
+rodando duas vezes), rodado direto em produção, verificado por SQL antes
+e depois: as edições, as duas estantes (a do dono e a de
+@alexssander-affonso-da-silva) e o "1 de 4" do conjunto, todos
+conferidos depois de rodar.
