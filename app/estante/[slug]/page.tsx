@@ -7,6 +7,7 @@ import { visibleTo } from "@/lib/authz";
 import { getViewer } from "@/lib/viewer";
 import { collections, collectionItems, works, authors, editions, libraryEntries, ownedCopies, ratings } from "@/lib/db/schema";
 import { getFriendRatings } from "@/lib/ratings";
+import { edicaoPreferida } from "@/lib/shelf";
 import type { ShelfBook } from "@/lib/shelf-view";
 import { Share } from "@/components/share";
 import { ScreenHeader } from "@/components/screen-header";
@@ -108,9 +109,13 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
       eq(ownedCopies.workId, works.id),
       eq(ownedCopies.userId, shelf.userId),
     ))
-    .leftJoin(editions, sql`${editions.id} = (
-      select e2.id from editions e2 where e2.work_id = ${works.id}
-      order by e2.created_at asc, e2.id asc limit 1)`)
+    /**
+     * "Na lista Os Miseráveis aparece com essa capa (não é a minha), e quando eu
+     * clico aparece com a capa correta." Era `order by created_at asc, id asc`,
+     * cru — uma cópia solta da mesma escolha que lib/shelf.ts já fazia direito.
+     * Ver edicaoPreferida(), em lib/shelf.ts, com a explicação completa.
+     */
+    .leftJoin(editions, sql`${editions.id} = ${edicaoPreferida()}`)
     .where(eq(collectionItems.collectionId, shelf.id))
     .orderBy(collectionItems.position, collectionItems.addedAt);
 
