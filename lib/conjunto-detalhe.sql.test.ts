@@ -109,6 +109,32 @@ describe("a página de dentro da coleção", () => {
     expect(v1?.publishedYear).toBe(2020);
   });
 
+  it("entre duas edições da editora do conjunto, a com tradutor vence — mesmo sendo mais nova", async () => {
+    /**
+     * "Aqui continua com a capa errada" — desta vez a Dostoiévski Martin Claret: Os
+     * Irmãos Karamázov ganhou uma edição NOVA (tradutor preenchido, capa de
+     * verdade), mas uma edição VELHA da mesma editora (sem tradutor, capa
+     * emprestada da OpenLibrary, criada antes) continuava vencendo só por ser mais
+     * antiga. A consulta agora prefere, dentro da MESMA editora do conjunto, a
+     * edição que tem tradutor — o sinal de ficha catalogada à mão, não herdada de
+     * um import em lote.
+     */
+    await db.execute(sql`
+      insert into editions (work_id, publisher, cover_url, translator, created_at)
+      values (${obraA}::uuid, 'Editora Teste', 'https://exemplo.test/velha-sem-tradutor.jpg', null,
+              '2020-01-01 00:00:00+00'::timestamptz)`);
+    await db.execute(sql`
+      insert into editions (work_id, publisher, cover_url, translator, created_at)
+      values (${obraA}::uuid, 'Editora Teste', 'https://exemplo.test/nova-com-tradutor.jpg', 'Tradutora Teste',
+              '2026-01-01 00:00:00+00'::timestamptz)`);
+
+    const c = await getConjuntoDetalhe(leitor, `zz-conjunto-cjd-${marca}`);
+    const v1 = c!.volumes.find((v) => v.volume === 1);
+    expect(v1?.coverUrl, "a edição sem tradutor venceu só por ser mais antiga").toBe(
+      "https://exemplo.test/nova-com-tradutor.jpg",
+    );
+  });
+
   it("nada aqui inventa bio: sem authors.bio, a página não tem o que mostrar", async () => {
     const [semBio] = await db.insert(authors)
       .values({ name: `Autor Sem Bio ${marca}`, slug: `autor-sem-bio-${marca}` })

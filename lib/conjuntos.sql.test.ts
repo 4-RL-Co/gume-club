@@ -128,6 +128,55 @@ describe("a coleção por conjuntos", () => {
 
 /**
  * ════════════════════════════════════════════════════════════════════
+ *  "AQUI CONTINUA COM A CAPA ERRADA" — a Dostoiévski Martin Claret, desta vez no
+ *  card recolhido do perfil (getConjuntos), não só na página de dentro da
+ *  coleção (lib/conjunto-detalhe.ts, que já tem o mesmo teste). Entre duas
+ *  edições da MESMA editora do conjunto, a com tradutor (ficha catalogada à
+ *  mão) vence — mesmo que a sem tradutor tenha sido criada antes.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("a capa do conjunto, entre duas edições da mesma editora", () => {
+  it("a com tradutor vence, mesmo sendo mais nova", async () => {
+    const [s] = await db.execute<{ id: string }>(sql`
+      insert into series (title, slug, kind, total_volumes)
+      values (${`zz série capa ${marca}`}, ${`zz-serie-capa-${marca}`}, 'series', 1) returning id`);
+
+    const [c] = await db.execute<{ id: string }>(sql`
+      insert into colecoes (series_id, slug, title, publisher, total_volumes)
+      values (${s!.id}::uuid, ${`cj-capa-${marca}`}, ${`zz capa ${marca}`}, 'Editora Teste', 1)
+      returning id`);
+
+    const [w] = await db.insert(works)
+      .values({ slug: `cj-capa-tradutor-${marca}`, title: `zz capa tradutor ${marca}`, volume: "1" })
+      .returning({ id: works.id });
+    await db.execute(sql`update works set colecao_id = ${c!.id}::uuid where id = ${w!.id}::uuid`);
+
+    await db.execute(sql`
+      insert into editions (work_id, publisher, cover_url, translator, created_at)
+      values (${w!.id}::uuid, 'Editora Teste', 'https://exemplo.test/velha-sem-tradutor.jpg', null,
+              '2020-01-01 00:00:00+00'::timestamptz)`);
+    await db.execute(sql`
+      insert into editions (work_id, publisher, cover_url, translator, created_at)
+      values (${w!.id}::uuid, 'Editora Teste', 'https://exemplo.test/nova-com-tradutor.jpg', 'Tradutora Teste',
+              '2026-01-01 00:00:00+00'::timestamptz)`);
+
+    await marcarPosse({ id: leitor }, w!.id, null, "owned");
+
+    const conjuntos = await getConjuntos({ id: leitor });
+    const conjunto = conjuntos.find((x) => x.titulo === `zz capa ${marca}`);
+    const vol = conjunto?.volumes.find((v) => v.slug === `cj-capa-tradutor-${marca}`);
+    expect(vol?.coverUrl, "a edição sem tradutor venceu só por ser mais antiga").toBe(
+      "https://exemplo.test/nova-com-tradutor.jpg",
+    );
+
+    // Fora do afterAll geral: esta série é só desta ficha, e o cascade leva a
+    // colecoes junto (o work já cai no `delete ... where slug like` de sempre).
+    await db.execute(sql`delete from series where id = ${s!.id}::uuid`);
+  });
+});
+
+/**
+ * ════════════════════════════════════════════════════════════════════
  *  QUEM MONTA UM CONJUNTO, E POR QUE ISSO É CATÁLOGO.
  *
  *  Os conjuntos vinham todos da AniList, e só cobriam mangá conhecido. O dono tinha

@@ -256,7 +256,14 @@ export default async function BookPage({
    * ════════════════════════════════════════════════════════════════════
    */
   const minha = book.editions.find((e) => e.id === book.mine?.editionId);
-  const comCapa = book.editions.find((e) => e.coverUrl);
+  /**
+   * Entre duas edições com capa, a mais CATALOGADA vence — ter tradutor é o sinal
+   * de que alguém preencheu esta ficha à mão, e não só herdou o que veio pronto de
+   * um import em lote. Sem isso, a ordem crua de `created_at` podia escolher uma
+   * capa genérica emprestada da OpenLibrary em vez da capa de verdade que acabou
+   * de ser cadastrada — mesma causa do conserto em lib/conjunto-detalhe.ts.
+   */
+  const comCapa = book.editions.find((e) => e.coverUrl && e.translator) ?? book.editions.find((e) => e.coverUrl);
 
   /** A ficha é a da sua edição, se você declarou uma. */
   const edition = minha ?? comCapa ?? book.editions[0];
