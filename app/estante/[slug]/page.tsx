@@ -7,7 +7,7 @@ import { visibleTo } from "@/lib/authz";
 import { getViewer } from "@/lib/viewer";
 import { collections, collectionItems, works, authors, editions, libraryEntries, ownedCopies, ratings } from "@/lib/db/schema";
 import { getFriendRatings } from "@/lib/ratings";
-import { edicaoPreferida } from "@/lib/shelf";
+import { edicaoDoLeitor } from "@/lib/shelf";
 import type { ShelfBook } from "@/lib/shelf-view";
 import { Share } from "@/components/share";
 import { ScreenHeader } from "@/components/screen-header";
@@ -110,12 +110,14 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
       eq(ownedCopies.userId, shelf.userId),
     ))
     /**
-     * "Na lista Os Miseráveis aparece com essa capa (não é a minha), e quando eu
-     * clico aparece com a capa correta." Era `order by created_at asc, id asc`,
-     * cru — uma cópia solta da mesma escolha que lib/shelf.ts já fazia direito.
-     * Ver edicaoPreferida(), em lib/shelf.ts, com a explicação completa.
+     * "Aqui continua com a capa errada." O primeiro conserto (edicaoPreferida()
+     * desempatando por capa) não bastou: Os Miseráveis tem CINCO edições diferentes
+     * com capa, todas do mesmo lote de import. Esta query já fazia JOIN com
+     * libraryEntries e ownedCopies do dono da lista — só não usava a edição que
+     * eles guardam. Ver edicaoDoLeitor(), em lib/shelf.ts, com a explicação
+     * completa; é a mesma prioridade que getShelf() já usava.
      */
-    .leftJoin(editions, sql`${editions.id} = ${edicaoPreferida()}`)
+    .leftJoin(editions, sql`${editions.id} = ${edicaoDoLeitor()}`)
     .where(eq(collectionItems.collectionId, shelf.id))
     .orderBy(collectionItems.position, collectionItems.addedAt);
 
