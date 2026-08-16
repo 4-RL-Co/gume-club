@@ -274,6 +274,34 @@ export async function porNaLista(
   return gravadas.length > 0;
 }
 
+/**
+ * Tira um livro desta lista. "Não achei como tirar um livro da minha lista
+ * por dentro da página da lista" — só dava para desmarcar pela ficha do
+ * livro (toggleInCollection, em lib/curation.ts). Isso não mexe na estante
+ * de leitura (status, nota, resenha, posse): sair de uma lista que você
+ * montou não é sair da sua estante — as duas coisas são independentes desde
+ * que "conjunto" e "lista" viraram conceitos separados.
+ *
+ * Mesmo padrão de dono checado DENTRO do delete: se a lista não for do
+ * ator, o delete não acha linha nenhuma para apagar.
+ */
+export async function tirarDaLista(
+  actor: { id: string },
+  collectionId: string,
+  workId: string,
+): Promise<void> {
+  assertOwner(actor as Viewer, { userId: actor.id });
+
+  await db.execute(sql`
+    delete from collection_items
+     where collection_id = ${collectionId}::uuid
+       and work_id = ${workId}::uuid
+       and exists (
+         select 1 from collections c
+          where c.id = ${collectionId}::uuid
+            and c.user_id = ${actor.id}::uuid)`);
+}
+
 export async function ordenarLista(
   actor: { id: string },
   collectionId: string,

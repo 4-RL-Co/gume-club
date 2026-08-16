@@ -4121,3 +4121,30 @@ não o cenário REAL (múltiplas edições com capa, e uma escolha explícita
 do dono sendo ignorada) — confirmar a causa raiz contra os dados de
 produção ANTES de assumir que o sintoma sumiu evita declarar vitória
 cedo demais.
+
+## Tirar um livro da lista, de dentro da própria lista.
+
+O dono: "e como eu faço pra editar a coleção tipo, excluir um livro,
+adicionar outro, eu não achei como tirar um livro da minha lista por
+dentro da página da lista." Dava para adicionar (`PorNaEstante`) e
+reordenar (`OrganizarEstante`), mas remover só existia num lugar: a
+ficha do próprio livro, desmarcando a lista lá (`toggleInCollection`,
+em `lib/curation.ts`) — uma porta que ninguém acha procurando na lista.
+
+`tirarDaLista()` (`lib/listas.ts`) segue o mesmo padrão de dono checado
+DENTRO do próprio `delete` que todo o resto do arquivo já usa
+(`porNaLista`, `moverNaLista`): se a lista não for do ator, o delete não
+acha linha nenhuma. Não mexe em `library_entries`/`owned_copies`/nota/
+resenha — sair de uma lista que você montou não é sair da sua estante de
+leitura, e as duas já eram conceitos independentes.
+
+`OrganizarEstante` virou o lugar dos dois gestos (renomeado na tela para
+"editar a lista", já que só reordenar não descreve mais o que ela faz):
+remover pede um clique de confirmação por item, porque, ao contrário de
+subir/descer, não tem como desfazer sozinho. O componente também passou
+a aparecer com UM livro só (antes exigia dois, por causa do reordenar) —
+uma lista de um item ainda precisa de como sair dela.
+
+`lib/listas.sql.test.ts`: os dois casos de sempre contra Postgres de
+verdade — o atacante tenta tirar da lista da vítima e não tira nada, o
+dono tira e o livro some.

@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { getActor } from "@/lib/actor";
 import {
   moverNaLista, numerarLista, descreverLista, guardarLista, esquecerLista, escolherCapaDaLista, fotografarLista,
-  porNaLista,
+  porNaLista, tirarDaLista,
 } from "@/lib/listas";
 
 /**
@@ -93,4 +93,11 @@ export async function porLivroNaEstante(
 
   revalidatePath(`/estante/${slug}`);
   return { ok: true, novo };
+}
+
+/** "Não achei como tirar um livro da minha lista por dentro da página da lista." */
+export async function tirarDaEstante(slug: string, collectionId: string, workId: string) {
+  const actor = await getActor();
+  await tirarDaLista(actor, collectionId, workId);
+  revalidatePath(`/estante/${slug}`);
 }
