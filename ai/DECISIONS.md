@@ -4148,3 +4148,65 @@ uma lista de um item ainda precisa de como sair dela.
 `lib/listas.sql.test.ts`: os dois casos de sempre contra Postgres de
 verdade — o atacante tenta tirar da lista da vítima e não tira nada, o
 dono tira e o livro some.
+
+## A Dostoiévski — Martin Claret completa: 11 volumes, não 4, e um terceiro autor duplicado.
+
+O dono levantou os 11 títulos da edição gráfica tipográfica (capa dura) da
+Martin Claret direto na Amazon — título, tradutor, ISBN-10 e 13, páginas,
+capa — numa planilha e 11 fotos, e pediu para criar/corrigir os livros e
+atualizar a coleção para mostrar os pendentes, com a capa certa. Só "Crime
+e castigo" é dele.
+
+Investigando, o catálogo tinha um TERCEIRO Dostoiévski duplicado: além de
+"Fyodor Dostoyevsky" (o sobrevivente da fusão anterior, ver a entrada
+"Dostoiévski existia como dois autores") havia um "Fyodor Dostoevsky" (sem
+o Y), com 14 obras — 7 delas duplicando um título que o outro autor já
+tinha, incluindo um grupo de QUATRO fichas diferentes para "Diário do
+subsolo" (duas chamadas "Cadernos do Subterrâneo", uma "Memórias do
+Subsolo") e "O sósia" com um título literalmente quebrado por scraping
+("O sósia Capa dura – 3 outubro 2022"). `scripts/dostoievski-colecao-completa.mjs`
+funde cada par pelo padrão de sempre (fundirObras em SQL cru — nenhuma
+edição apagada, só reagrupada) antes de fundir os dois autores, e só então
+cria as 11 edições Martin Claret (`on conflict (isbn13)`, cobrindo tanto
+"a edição já existia, só faltava a capa" quanto "a edição não existia
+ainda" com o mesmo código) e sobe as 11 capas para o Blob.
+
+O volume virou cronologia de verdade pela primeira vez: com 4 volumes a
+convenção ("não é sequência narrativa, é o ano da obra original") não
+tinha como aparecer torta; com os 11, Crime e Castigo deixa de ser o
+volume 1 (a Martin Claret não começa a coleção nele) e vira o volume 7.
+
+## Duas capas erradas A MAIS, e as duas eram a mesma causa da lista.
+
+Depois do script, a página da coleção ainda mostrava a capa errada para
+"Os Irmãos Karamázov" e "O idiota" — a MESMA causa raiz de "A capa certa
+na estante, não só na ficha do livro", só que numa TERCEIRA e QUARTA
+consulta que ninguém tinha varrido: `lib/conjunto-detalhe.ts` (a página de
+dentro da coleção) e `lib/copies.ts` (o card recolhido do conjunto no
+perfil). As duas escolhiam a capa por `order by created_at asc`, cru — e
+uma edição Martin Claret ANTIGA (import em lote, sem tradutor, capa
+emprestada da OpenLibrary) vencia a edição NOVA (tradutor preenchido,
+ISBN de verdade, capa de verdade) só por ser mais velha.
+
+A diferença desta vez: um conjunto tem editora DECLARADA
+(`colecoes.publisher`), e as duas consultas passaram a preferir, nesta
+ordem: (1) edição da editora do conjunto com capa e tradutor preenchido,
+(2) edição da editora do conjunto com capa, (3) qualquer uma com capa. Ter
+tradutor é o sinal de que alguém catalogou aquela ficha à mão, e não só
+herdou o que veio pronto de um import em lote — sem esse terceiro degrau,
+duas edições Martin Claret com capa (uma velha, uma nova) ainda empatavam
+errado.
+
+A ficha do livro (`app/livro/[slug]/page.tsx`) tinha o mesmo problema, por
+um caminho diferente: `comCapa` era `book.editions.find(e => e.coverUrl)`,
+sem nenhum desempate — a primeira com capa, na ordem que o Postgres
+decidisse devolver. Ganhou o mesmo critério (prefere a que tem tradutor),
+e `lib/book.ts` passou a trazer `translator` só para isso (não aparece na
+tela). E a cópia do dono de "Crime e castigo" (`owned_copies`) ganhou a
+edição certa (`edition_id`), porque sem ela nem esse critério ajudava: sem
+edição escolhida, a página cai no mesmo desempate genérico, um livro à
+frente.
+
+`lib/conjunto-detalhe.sql.test.ts` e `lib/conjuntos.sql.test.ts`: o mesmo
+teste nos dois lugares — duas edições da mesma editora, só uma com
+tradutor, a mais nova — provado contra Postgres de verdade.

@@ -99,12 +99,37 @@ export async function getConjuntoDetalhe(
        * edição e a editora de outra, misturando duas edições numa carta só. A prioridade
        * é a mesma de sempre (a que tem capa), mas agora é UMA linha, e o resto dela anda
        * junto: publicador, ano e páginas são todos da mesma edição que deu a capa.
+       *
+       * ═══ E A DA EDITORA DO CONJUNTO VENCE PRIMEIRO ═══
+       *
+       * "atualize a coleção... capa correta." Ao completar a Dostoiévski — Martin
+       * Claret com os 11 volumes reais, Os Irmãos Karamázov ganhou uma edição NOVA
+       * (Martin Claret, ISBN genuíno, capa da própria caixa do dono) — e o
+       * order by created_at asc cru escolhia a edição Martin Claret ANTIGA (de
+       * um import de meses atrás, capa emprestada de outra impressão) só por ter
+       * created_at menor. Um conjunto tem editora declarada (colecoes.publisher)
+       * exatamente para isto: a capa que ele mostra é a DESTA editora quando ela
+       * existe, e só cai para "qualquer uma com capa" quando não existe nenhuma.
+       *
+       * E A MESMA EDITORA PODE TER MAIS DE UMA IMPRESSÃO: Os Irmãos Karamázov tinha
+       * DUAS edições Martin Claret com capa — a nova (tradutor, ISBN e páginas
+       * completos) e uma antiga de import em lote (sem tradutor, capa emprestada da
+       * OpenLibrary). Entre duas da mesma editora, a mais CATALOGADA vence — ter
+       * tradutor é o sinal de que alguém preencheu esta ficha à mão, e não só
+       * herdou o que veio pronto.
        */
       left join lateral (
         select e.cover_url, e.publisher, e.published_year, e.page_count
           from editions e
          where e.work_id = w.id
-         order by (e.cover_url is not null) desc, e.created_at asc
+         order by
+           case
+             when e.publisher = c.publisher and e.cover_url is not null and e.translator is not null then 0
+             when e.publisher = c.publisher and e.cover_url is not null then 1
+             when e.cover_url is not null then 2
+             else 3
+           end,
+           e.created_at asc, e.id asc
          limit 1
       ) ed on true
       left join authors a on a.id = w.author_id

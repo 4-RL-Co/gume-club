@@ -358,9 +358,23 @@ export async function getConjuntos(
               order by w2.created_at asc limit 1)
            ) as emblema,
            w.slug, w.title, w.volume::text as volume,
+           /**
+            * A da EDITORA DO CONJUNTO vence primeiro, e entre duas da MESMA editora
+            * a mais catalogada (com tradutor) vence — mesmo conserto e mesma causa de
+            * lib/conjunto-detalhe.ts: era só order by created_at asc, e uma edição
+            * antiga de outra editora (ou uma edição velha da editora certa, sem
+            * tradutor, capa emprestada) vencia só por ser mais velha.
+            */
            (select e.cover_url from editions e
              where e.work_id = w.id and e.cover_url is not null
-             order by e.created_at asc limit 1) as cover_url,
+             order by
+               case
+                 when e.publisher = c.publisher and e.translator is not null then 0
+                 when e.publisher = c.publisher then 1
+                 else 2
+               end,
+               e.created_at asc, e.id asc
+             limit 1) as cover_url,
            coalesce(oc.state = 'owned', false)  as tenho,
            coalesce(oc.state = 'wanted', false) as quero
       from colecoes c

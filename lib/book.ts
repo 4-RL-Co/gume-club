@@ -16,6 +16,8 @@ export type BookEdition = {
   pageCount: number | null;
   format: string;
   coverUrl: string | null;
+  /** Só para desempatar qual capa é "a certa" entre duas com capa. Não aparece na tela. */
+  translator: string | null;
 };
 
 export type Book = {
@@ -167,6 +169,9 @@ export async function getBook(slug: string, viewer: Viewer, actorId: string | nu
       pageCount: editions.pageCount,
       format: editions.format,
       coverUrl: editions.coverUrl,
+      // Só para desempatar qual capa é "a certa" entre duas edições com capa
+      // (ver a escolha de comCapa, na página). Não aparece na tela.
+      translator: editions.translator,
     })
     .from(editions)
     .where(eq(editions.workId, work.workId))
