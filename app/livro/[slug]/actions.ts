@@ -14,6 +14,7 @@ import { limitarEscrita } from "@/lib/escrita";
 import { editarLeitura, apagarLeitura } from "@/lib/leituras";
 import { ratings, reviews } from "@/lib/db/schema";
 import { favoritar, desfavoritar } from "@/lib/favoritos";
+import { upvotar, tirarUpvote } from "@/lib/upvotes";
 
 /**
  * Moving the status is also a reading event. Starting a book opens a reading;
@@ -244,4 +245,18 @@ export async function desfavoritarAction(slug: string, workId: string): Promise<
   await desfavoritar(actor, workId);
   revalidatePath(`/livro/${slug}`);
   revalidatePath("/perfil");
+}
+
+/** Upvote numa resenha — nunca em gente. Ver lib/upvotes.ts. */
+export async function upvotarAction(slug: string, reviewId: string): Promise<{ ok: boolean }> {
+  const actor = await getActor();
+  const r = await upvotar(actor, reviewId);
+  revalidatePath(`/livro/${slug}`);
+  return r;
+}
+
+export async function tirarUpvoteAction(slug: string, reviewId: string): Promise<void> {
+  const actor = await getActor();
+  await tirarUpvote(actor, reviewId);
+  revalidatePath(`/livro/${slug}`);
 }

@@ -49,7 +49,7 @@ O feed fica quieto, como o Oku: cronológico, quem você segue, sem barulho.
 4. **Sem barra de progresso**: três estados (quero ler / lendo / lido / DNF), e nunca página atual ou porcentagem. Barra de progresso é cobrança diária — vira placar, vira streak. A contagem de páginas do ano soma as edições terminadas, então nada de valor se perde. Ver ai/DECISIONS.md.
 5. **A tela do ano**: parede de capas, páginas, autores, lendo agora. A coisa que as pessoas dão print.
 6. **Resenhas**: longas, flag de spoiler, **e resenhas privadas** (visíveis só para você). Muitos leitores escrevem para si mesmos e nunca publicariam.
-7. **Sem comentários.** Resenhas e follows são os únicos canais. Isso é uma escolha de produto, e também significa que a moderação continua suportável para uma pessoa só.
+7. **Sem comentário livre — a resenha pode receber um voto.** Resenhas, follows e o voto na resenha (nunca em pessoa) são os únicos canais. Comentário continua de fora: a moderação de texto novo, escrito por qualquer estranho, ainda não tem plano — e ela é o que faz a moderação deixar de ser suportável para uma pessoa só. Um voto não escreve nada, então não reabre esse risco. Ver ai/DECISIONS.md, "o upvote entra".
 8. **Feed de amigos**: cronológico, só quem você segue.
 9. **Perfis públicos**: indexáveis. A sua estante é uma página que você teria orgulho de linkar.
 10. **Recomendar para um amigo**: um livro, uma pessoa, uma linha de porquê.

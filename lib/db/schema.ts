@@ -562,6 +562,31 @@ export const reviews = pgTable("reviews", {
   index("reviews_work_idx").on(t.workId, t.createdAt),
 ]);
 
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  O UPVOTE. Um número, e nada mais — nunca um comentário.
+ *
+ *  "eu acho que deve ter upvote e comentário no gume... vai funcionar como
+ *  ferramenta de socialização" — o dono, sabendo que reabre uma decisão
+ *  antiga (README: "sem curtida"; ai/DECISIONS.md, 11 de julho: "sem
+ *  comentários, nunca"). O upvote entra; o comentário livre fica para
+ *  depois — a razão OPERACIONAL da decisão antiga ("uma pessoa só modera
+ *  isto") é sobre TEXTO NOVO de estranho, e um upvote não escreve nada.
+ *
+ *  Vota em RESENHA, nunca em pessoa: é o mesmo limite que "queridinhos" já
+ *  desenha (lib/queridinhos.ts) — ordenar LIVROS pelo carinho que
+ *  receberam é permitido, ordenar GENTE não é.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export const reviewUpvotes = pgTable("review_upvotes", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  reviewId: uuid("review_id").notNull().references(() => reviews.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  primaryKey({ columns: [t.userId, t.reviewId] }),
+  index("review_upvotes_review_idx").on(t.reviewId),
+]);
+
 /** A shelf the reader invented. Public or private, theirs either way. */
 export const collections = pgTable("collections", {
   id: uuid("id").primaryKey().default(sql`uuidv7()`),

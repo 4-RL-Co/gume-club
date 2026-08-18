@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { ArrowBigUp } from "lucide-react";
 import { AvatarLink } from "@/components/avatar";
+import { upvotarAction, tirarUpvoteAction } from "@/app/livro/[slug]/actions";
 import type { ResenhaDoLivro } from "@/lib/explore";
 
 /**
@@ -18,9 +20,22 @@ import type { ResenhaDoLivro } from "@/lib/explore";
  *  para lá que a resenha inteira mora. Aqui a gente JÁ ESTÁ na página do
  *  livro: não existe um "lá" para onde mandar o clique. Expandir no lugar é a
  *  única saída que não é um link para a própria tela.
+ *
+ *  ═══ O UPVOTE, E O QUE ELE NÃO É ═══
+ *
+ *  Vota na RESENHA, nunca na pessoa que escreveu — não existe placar de
+ *  "quem recebe mais votos" em lugar nenhum do app, só o número desta
+ *  resenha, aqui. Ver a migration 0064 e lib/upvotes.ts.
  * ════════════════════════════════════════════════════════════════════
  */
-export function ResenhasDoLivro({ resenhas }: { resenhas: ResenhaDoLivro[] }) {
+export function ResenhasDoLivro({
+  resenhas, slug, podeVotar,
+}: {
+  resenhas: ResenhaDoLivro[];
+  slug: string;
+  /** Só quem está logado vota. Ver lib/upvotes.ts. */
+  podeVotar: boolean;
+}) {
   if (resenhas.length === 0) return null;
 
   return (
@@ -31,19 +46,42 @@ export function ResenhasDoLivro({ resenhas }: { resenhas: ResenhaDoLivro[] }) {
 
       <ul className="mt-5 flex flex-col gap-6">
         {resenhas.map((r) => (
-          <Uma key={r.id} r={r} />
+          <Uma key={r.id} r={r} slug={slug} podeVotar={podeVotar} />
         ))}
       </ul>
     </section>
   );
 }
 
-function Uma({ r }: { r: ResenhaDoLivro }) {
+function Uma({ r, slug, podeVotar }: { r: ResenhaDoLivro; slug: string; podeVotar: boolean }) {
   const [aberta, setAberta] = useState(false);
+  const [votei, setVotei] = useState(r.votei);
+  const [upvotes, setUpvotes] = useState(r.upvotes);
+  const [pending, start] = useTransition();
 
   // Um corte grosseiro, só para decidir se vale a pena oferecer "ler mais": uma
   // resenha de duas frases não precisa do botão, e ele ali seria um convite vazio.
   const longa = r.body.length > 320;
+
+  const votar = () => {
+    const antes = { votei, upvotes };
+    setVotei(!votei);
+    setUpvotes((n) => n + (votei ? -1 : 1));
+    start(async () => {
+      if (antes.votei) {
+        await tirarUpvoteAction(slug, r.id);
+        return;
+      }
+      const res = await upvotarAction(slug, r.id);
+      if (!res.ok) {
+        // A resenha sumiu ou deixou de ser visível entre o clique e o servidor
+        // responder — o otimista desfaz, calado: não é um erro que a pessoa
+        // causou.
+        setVotei(antes.votei);
+        setUpvotes(antes.upvotes);
+      }
+    });
+  };
 
   return (
     <li className="flex items-start gap-4">
@@ -75,9 +113,36 @@ function Uma({ r }: { r: ResenhaDoLivro }) {
           </button>
         )}
 
-        <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-          {new Date(r.createdAt).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })}
-        </p>
+        <div className="mt-2 flex items-center gap-3">
+          <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+            {new Date(r.createdAt).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })}
+          </p>
+
+          {podeVotar ? (
+            <button
+              type="button"
+              disabled={pending}
+              aria-pressed={votei}
+              onClick={votar}
+              className={[
+                "flex items-center gap-1 rounded-[var(--radius-control)] border px-2 py-1 text-[12px] disabled:opacity-40",
+                votei
+                  ? "border-[var(--color-accent)] text-[var(--color-accent)]"
+                  : "border-[var(--color-rule)] text-[var(--color-ink-faint)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]",
+              ].join(" ")}
+            >
+              <ArrowBigUp size={13} strokeWidth={1.75} fill={votei ? "currentColor" : "none"} aria-hidden />
+              {upvotes > 0 && <span className="tabular">{upvotes}</span>}
+            </button>
+          ) : (
+            upvotes > 0 && (
+              <span className="flex items-center gap-1 text-[12px] text-[var(--color-ink-faint)]">
+                <ArrowBigUp size={13} strokeWidth={1.75} aria-hidden />
+                <span className="tabular">{upvotes}</span>
+              </span>
+            )
+          )}
+        </div>
       </div>
     </li>
   );

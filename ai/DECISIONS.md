@@ -4317,3 +4317,44 @@ favoritos-vitrine.tsx`, dentro de `perfil-abas.tsx`).
 `lib/favoritos.sql.test.ts`: os três empates que só o Postgres decide —
 coroar o último sem colidir, tirar do meio sem colidir, e o teto de
 cinco recusando o sexto mesmo lido.
+
+## O upvote entra. Comentário livre, não ainda.
+
+"eu acho que deve ter upvote e comentário no gume, eu sei que isso vai
+contra várias coisas, mas eu acho que vai funcionar como uma
+ferramenta de socialização/conhecer novas pessoas" — o dono, sabendo
+que reabre duas decisões antigas: o README prometia "sem curtida"; e
+"sem comentários, nunca" (11 de julho), com duas razões — produto (o
+feed fica quieto) e operacional (uma pessoa só modera isto, e
+comentário é onde a moderação morre).
+
+Escolha, apresentada e confirmada: **upvote agora, comentário fica
+para quando houver um plano de moderação** (fila de denúncia, quem
+modera o quê). A razão operacional da decisão antiga é sobre TEXTO
+NOVO de estranho para alguém ler e julgar — um upvote não escreve
+nada, não tem o que denunciar, não tem o que possa ferir. É a metade
+barata da ideia, sem herdar o custo caro da outra metade.
+
+`review_upvotes` (migration 0064): `(user_id, review_id)`, sem coluna
+a mais. Vota em RESENHA, nunca em pessoa — o mesmo limite que
+"queridinhos" já desenha (lib/queridinhos.ts): ordenar LIVROS pelo
+carinho que receberam é permitido, ordenar GENTE pelo voto que recebeu
+não é. Não existe, em lugar nenhum do app, um número de "quantos votos
+esta pessoa já recebeu" — só o total de UMA resenha, na própria
+resenha.
+
+Três travas, checadas em Postgres de verdade
+(`lib/upvotes.sql.test.ts`): ninguém vota na própria resenha; ninguém
+vota numa que não pode ver (mesma `visibleTo()` de sempre, dentro do
+próprio INSERT — não uma checagem separada que um refactor esquece de
+chamar); votar duas vezes não conta duas.
+
+Onde mora: o botão é em `components/resenhas-do-livro.tsx` (a única
+tela que já lista resenhas de outras pessoas). A contagem sai junto de
+`getResenhasDoLivro()` (`lib/explore.ts`), uma subconsulta por
+resenha — sem `join` que multiplicasse linha.
+
+**A copy mudou** onde prometia "sem curtida": README ("O que não vai
+ser") e `ai/PRD.md` (item 7, "sem comentários"), os dois reescritos
+para dizer a verdade nova sem prometer mais do que existe — comentário
+continua fora, só o voto entrou.
