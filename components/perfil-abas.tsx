@@ -5,12 +5,10 @@ import Link from "next/link";
 import { Crown, Signpost } from "lucide-react";
 import { Cover } from "@/components/cover";
 import { Carrossel } from "@/components/carrossel";
-import { ConjuntoCard } from "@/components/conjunto";
 import { PerfilEstante } from "@/components/perfil-estante";
 import { ListaGrid } from "@/components/lista-card";
 import { Empty } from "@/components/empty";
 import { DOURADO } from "@/lib/dourado";
-import type { Conjunto } from "@/lib/copies";
 import type { ShelfBook } from "@/lib/shelf-view";
 import type { Opinion } from "@/lib/ratings";
 import type { ListaCard } from "@/lib/listas";
@@ -30,15 +28,18 @@ const EYEBROW = "text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-f
  *  aparece, sem voltar ao servidor e sem piscar a tela.
  *
  *  Uma aba só existe se tiver algo dentro — a mesma regra que cada seção já
- *  seguia (`{x.length > 0 && (...)}`). Um perfil novo, sem coleção nem
+ *  seguia (`{x.length > 0 && (...)}`). Um perfil novo, sem estante nem
  *  resenha, não ganha abas vazias: ganha só as abas que respondem por algo.
- *  A ordem (coleções, estante, resenhas, listas) é a mesma prioridade que a
- *  página já tinha empilhada: o que é mais difícil de conseguir vem primeiro.
+ *  A ordem (estante, resenhas, listas) é a mesma prioridade que a página já
+ *  tinha empilhada: o que é mais difícil de conseguir vem primeiro.
+ *
+ *  A aba "coleções" (os conjuntos editoriais — "Berserk Deluxe", "4 de 14")
+ *  saiu inteira: colecionismo tirava o foco de um app que é sobre ler. Ver a
+ *  migration 0062 e ai/DECISIONS.md.
  * ════════════════════════════════════════════════════════════════════
  */
 export function PerfilAbas({
-  mine, primeiroNome, podeEditarConjunto,
-  conjuntos,
+  mine, primeiroNome,
   books, opinions, adorou,
   resenhas,
   shelves, guardadas, curadorias, curadoriaFixa, ehGuia,
@@ -46,8 +47,6 @@ export function PerfilAbas({
 }: {
   mine: boolean;
   primeiroNome: string;
-  podeEditarConjunto: boolean;
-  conjuntos: Conjunto[];
   books: ShelfBook[];
   opinions: Record<string, Opinion>;
   adorou: ShelfBook[];
@@ -64,7 +63,6 @@ export function PerfilAbas({
   contagemEstante: { tudo: number; lidos: number };
 }) {
   const ABAS = [
-    { key: "colecoes" as const, label: "coleções", n: conjuntos.length, existe: conjuntos.length > 0 },
     { key: "estante" as const, label: "estante", n: contagemEstante.tudo, existe: books.length > 0 || adorou.length > 0 },
     { key: "resenhas" as const, label: "resenhas", n: resenhas.length, existe: resenhas.length > 0 },
     {
@@ -104,16 +102,6 @@ export function PerfilAbas({
           </button>
         ))}
       </nav>
-
-      {aba === "colecoes" && (
-        <section className="mt-6">
-          <div className="flex flex-col gap-5">
-            {conjuntos.map((c) => (
-              <ConjuntoCard key={c.id} c={c} podeEditar={podeEditarConjunto} />
-            ))}
-          </div>
-        </section>
-      )}
 
       {aba === "estante" && (
         <section className="mt-6">

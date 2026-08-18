@@ -5,7 +5,6 @@ import { BookMarked, Package } from "lucide-react";
 import { marcar, guardarProcedencia } from "@/app/livro/[slug]/colecao-actions";
 import type { Posse } from "@/lib/copies";
 import { LIMITS } from "@/lib/limits";
-import { ConjuntoDoLivro } from "@/components/conjunto-do-livro";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -32,7 +31,7 @@ import { ConjuntoDoLivro } from "@/components/conjunto-do-livro";
  * ════════════════════════════════════════════════════════════════════
  */
 export function Tenho({
-  slug, workId, editionId, posse, historia, conjunto, volume,
+  slug, workId, editionId, posse, historia,
 }: {
   slug: string;
   workId: string;
@@ -40,9 +39,6 @@ export function Tenho({
   posse: Posse;
   /** "de onde veio esse livro". Só existe para um exemplar que já é seu. */
   historia: string | null;
-  /** O conjunto de edição, se este volume já pertence a um. */
-  conjunto: { titulo: string; total: number | null } | null;
-  volume: number | null;
 }) {
   const [atual, setAtual] = useState<Posse>(posse);
   const [pending, start] = useTransition();
@@ -85,11 +81,6 @@ export function Tenho({
         {botao("owned", Package, "você tem", "tenho")}
         {botao("wanted", BookMarked, "você quer", "quero ter")}
       </div>
-      {/* O CONJUNTO é catálogo, e não preferência: "Hellsing Deluxe tem 3 volumes"
-          vale para todo mundo, e por isso a mudança vai para o log com nome e é
-          reversível. Ver lib/conjuntos.ts. */}
-      <ConjuntoDoLivro slug={slug} workId={workId} atual={conjunto} volumeAtual={volume} />
-
       {/* ════════════════════════════════════════════════════════════════
           DE ONDE VEIO. Só depois do botão, e nunca antes.
 

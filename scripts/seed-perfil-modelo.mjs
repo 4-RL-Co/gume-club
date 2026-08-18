@@ -5,9 +5,12 @@
  *
  *  Diferente de seed-demo.mjs (cinco leitores rasos, pra alimentar feed e
  *  recomendação), este é UM leitor só, e ele é FUNDO: estante grande, notas
- *  espalhadas, resenhas, uma coleção fechada e outra pela metade — tudo que
- *  um perfil pode ter, num perfil só, pra dar pra julgar o desenho da tela
- *  inteira sem esperar a própria conta crescer.
+ *  espalhadas, resenhas, listas montadas — tudo que um perfil pode ter, num
+ *  perfil só, pra dar pra julgar o desenho da tela inteira sem esperar a
+ *  própria conta crescer.
+ *
+ *  Já semeou "uma coleção fechada e outra pela metade" (colecionismo, selo
+ *  dourado de completa) — saiu junto com o colecionador, migration 0062.
  *
  *  ═══ E ELE RODA EM PRODUÇÃO, DE PROPÓSITO ═══
  *
@@ -171,59 +174,6 @@ for (const [slug, nome, desc, numerada, quantos] of [
   }
 }
 console.log(`  2 listas montadas`);
-
-/**
- * ═══ A COLEÇÃO (colecionismo): UMA FECHADA, UMA PELA METADE ═══
- *
- * "Ter não é ler" — o perfil modelo precisa mostrar as duas coisas que só a
- * coleção mostra: o selo dourado de completa, e a lacuna de uma que ainda
- * falta. Escolhidas pelo TAMANHO (pequena o bastante pra fechar sem exagero,
- * média o bastante pra deixar sobrando), nunca por um id fixo no código —
- * o catálogo muda, e um id fixo quebraria em silêncio no dia em que sumisse.
- */
-const [pequena] = await sql`
-  select c.id, c.title, count(w.id)::int as n
-    from colecoes c join works w on w.colecao_id = c.id
-   group by c.id, c.title
-  having count(w.id) between 3 and 6
-   order by count(w.id) asc
-   limit 1`;
-
-const [media] = await sql`
-  select c.id, c.title, count(w.id)::int as n
-    from colecoes c join works w on w.colecao_id = c.id
-   group by c.id, c.title
-  having count(w.id) between 10 and 20
-   order by count(w.id) desc
-   limit 1`;
-
-let completou = 0;
-if (pequena) {
-  const volumes = await sql`select w.id from works w where w.colecao_id = ${pequena.id}`;
-  for (const v of volumes) {
-    await sql`
-      insert into owned_copies (user_id, work_id, state, visibility)
-      values (${pessoa.id}, ${v.id}, 'owned', 'public')
-      on conflict (user_id, work_id) do update set state = 'owned'`;
-    completou++;
-  }
-  console.log(`  coleção COMPLETA: "${pequena.title}" (${completou} de ${pequena.n})`);
-}
-
-let incompleta = 0;
-if (media) {
-  const volumes = await sql`select w.id from works w where w.colecao_id = ${media.id} order by w.volume asc nulls last`;
-  // Metade, arredondado pra baixo, e nunca o total: a lacuna É o ponto.
-  const metade = volumes.slice(0, Math.floor(volumes.length / 2));
-  for (const v of metade) {
-    await sql`
-      insert into owned_copies (user_id, work_id, state, visibility)
-      values (${pessoa.id}, ${v.id}, 'owned', 'public')
-      on conflict (user_id, work_id) do update set state = 'owned'`;
-    incompleta++;
-  }
-  console.log(`  coleção INCOMPLETA: "${media.title}" (${incompleta} de ${media.n})`);
-}
 
 console.log(`\n✓ pronto: gume.club/@${pessoa.handle}`);
 await sql.end();

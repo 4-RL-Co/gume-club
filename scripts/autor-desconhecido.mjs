@@ -53,7 +53,7 @@ const chave = (t) =>
 console.log("\n1. lendo o acervo\n");
 
 const obras = await sql`
-  select w.id, w.title, w.author_id, w.colecao_id,
+  select w.id, w.title, w.author_id, w.volume,
          (w.description is not null) as tem_sinopse,
          (select count(*) from editions e where e.work_id = w.id)::int as edicoes,
          exists (select 1 from editions e
@@ -116,8 +116,8 @@ for (const o of semAutor) {
    */
   if (g.autores.size > 1) { ambiguas++; continue; }
 
-  // O volume de coleção tem identidade de NÚMERO, não de título. Ver poda-ingles.mjs.
-  if (o.colecao_id || g.melhor.colecao_id) { volumes++; continue; }
+  // O volume de série tem identidade de NÚMERO, não de título. Ver poda-ingles.mjs.
+  if (o.volume !== null || g.melhor.volume !== null) { volumes++; continue; }
 
   /**
    * ═══ POR QUE NÃO DÁ PARA SÓ "ASSINAR" A ÓRFÃ ═══
@@ -150,7 +150,7 @@ console.log(`\n2. o que dá para consertar\n`);
 console.log(`  ${n(fundem)} fichas órfãs se fundem na irmã assinada`);
 if (deAlguem > 0) console.log(`  ${n(deAlguem)} são de uma PESSOA. Ficam de pé, órfãs. Ninguém perde nada.`);
 console.log(`  ${n(ambiguas)} têm título ambíguo (dois autores ou mais). Ficam órfãs, de propósito.`);
-if (volumes > 0) console.log(`  ${n(volumes)} são volume de coleção. Intocadas.`);
+if (volumes > 0) console.log(`  ${n(volumes)} são volume de série. Intocadas.`);
 console.log(`  ${n(semPar)} não têm irmã assinada. O autor delas continua desconhecido.`);
 
 console.log("\n  ─── 10 ao acaso ───\n");

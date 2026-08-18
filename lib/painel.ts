@@ -744,9 +744,15 @@ async function getModeracao(): Promise<Painel["moderacao"]> {
     alvo: string | null; reverted: boolean;
   }>(sql`
     select r.created_at as quando, u.handle as quem, r.target_type, r.reason,
+           /**
+            * 'colecao' não tem mais tabela para nomear (o colecionador saiu do
+            * app, migration 0062) — cai no else null, igual a uma ficha
+            * apagada: a tela mostra "um item apagado" em vez de mentir um
+            * título. As linhas antigas de revisions continuam no log, só
+            * sem nome.
+            */
            (case r.target_type
               when 'work' then (select w.title from works w where w.id = r.target_id)
-              when 'colecao' then (select c.title from colecoes c where c.id = r.target_id)
               else null
             end) as alvo,
            (r.reverted_at is not null) as reverted

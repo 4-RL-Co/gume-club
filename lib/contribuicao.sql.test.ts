@@ -3,7 +3,6 @@ import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users, works, editions, coverProposals } from "@/lib/db/schema";
 import { getCatalogo } from "@/lib/contributors";
-import { ligarAoConjunto, porEmblema, soltarDoConjunto } from "@/lib/conjuntos";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -35,9 +34,7 @@ import { ligarAoConjunto, porEmblema, soltarDoConjunto } from "@/lib/conjuntos";
 const marca = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 let trouxe: string;
 let corrigiu: string;
-let montou: string;
 let mandouCapa: string;
-let alvoDoConjunto: string;
 
 beforeAll(async () => {
   const mk = async (h: string) => {
@@ -48,7 +45,6 @@ beforeAll(async () => {
   };
   trouxe = await mk("ctb-trouxe");
   corrigiu = await mk("ctb-corrigiu");
-  montou = await mk("ctb-montou");
   mandouCapa = await mk("ctb-capa");
 
   // Alguém que TROUXE dois livros e nunca corrigiu nada.
@@ -68,22 +64,6 @@ beforeAll(async () => {
     values (${corrigiu}::uuid, 'work', ${w!.id}::uuid,
             '{"title":"depois"}'::jsonb, '{"title":"antes"}'::jsonb)`);
 
-  // E alguém que MONTOU um conjunto de edição (ligou um volume, e pôs o emblema)
-  // e nunca corrigiu ficha nenhuma no sentido comum.
-  const [wc] = await db.insert(works)
-    .values({ slug: `ctb-cj-${marca}`, title: `zz ctb cj ${marca}` })
-    .returning({ id: works.id });
-  alvoDoConjunto = wc!.id;
-  await ligarAoConjunto(
-    { id: montou },
-    alvoDoConjunto,
-    { titulo: `zz ctb conjunto ${marca}`, total: 3, publisher: null },
-    1,
-  );
-  const [c] = await db.execute<{ colecao_id: string }>(sql`
-    select colecao_id from works where id = ${alvoDoConjunto}::uuid`);
-  await porEmblema({ id: montou }, c!.colecao_id, "https://upload.wikimedia.org/zz-teste.svg");
-
   // E alguém que mandou capa, e ela foi usada. Uma segunda proposta ainda na fila
   // (pending) prova que só a que FOI USADA conta.
   const [wCapa] = await db.insert(works)
@@ -99,15 +79,20 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  for (const id of [trouxe, corrigiu, montou, mandouCapa]) {
+  for (const id of [trouxe, corrigiu, mandouCapa]) {
     await db.execute(sql`delete from users where id = ${id}::uuid`);
   }
   await db.execute(sql`delete from works where slug like ${`ctb-%${marca}`}`);
-  await db.execute(sql`delete from colecoes where slug like ${`%ctb-conjunto-${marca}%`}`);
-  await db.execute(sql`delete from series where slug like ${`%ctb-conjunto-${marca}%`}`);
 });
 
-describe("a página de contribuidores conta os quatro trabalhos", () => {
+/**
+ * "conjuntos" (montar um conjunto de edição) não ganha teste próprio aqui: o
+ * colecionador saiu do app (migration 0062), e não existe mais um caminho de
+ * código que grave essa contagem. O campo continua em DoCatalogo — congelado
+ * com o que já existe em produção, não apagado — mas nada aqui cria dado novo
+ * para testar.
+ */
+describe("a página de contribuidores conta o trabalho de catálogo", () => {
   it("quem só TROUXE livro aparece na lista", async () => {
     const lista = await getCatalogo();
     const p = lista.find((x) => x.handle === `ctb-trouxe-${marca}`);
@@ -141,55 +126,6 @@ describe("a página de contribuidores conta os quatro trabalhos", () => {
       "a contagem de livros inflou: as subconsultas viraram join e as linhas se " +
         "multiplicaram umas pelas outras.",
     ).toBe(2);
-  });
-
-  /**
-   * MONTAR UM CONJUNTO (ligar um volume, pôr o emblema) é revisão da mesma tabela de
-   * uma correção de ficha, e por isso precisa de recorte próprio: sem ele, as duas
-   * linhas de `revisions` cairiam dentro de `correcoes` e o trabalho de quem coleciona
-   * ficaria com o rótulo genérico de quem só trocou um ano de edição. Ver lib/conjuntos.ts.
-   */
-  it("quem MONTA um conjunto aparece com rótulo próprio, e não vira 'correção'", async () => {
-    const lista = await getCatalogo();
-    const p = lista.find((x) => x.handle === `ctb-montou-${marca}`);
-
-    expect(
-      p,
-      "quem ligou um volume a um conjunto e pôs o emblema não apareceu na lista",
-    ).toBeTruthy();
-    expect(
-      p?.conjuntos,
-      "as duas revisões de conjunto (ligar o volume, pôr o emblema) não foram contadas",
-    ).toBe(2);
-    expect(
-      p?.correcoes,
-      "o trabalho de conjunto vazou para o balde de 'correções': a mesma linha de " +
-        "revisions contou duas vezes, uma vez em cada balde",
-    ).toBe(0);
-  });
-
-  /**
-   * SOLTAR é DESFAZER, e desfazer é corretivo, não montagem. `soltarDoConjunto()`
-   * escreve na MESMA tabela e com a MESMA chave (`colecao_id`) que `ligarAoConjunto()`
-   * — só que com o valor `null`. Contar as duas igual faria desfazer o próprio erro
-   * inflar o balde de "coleções" por engano.
-   */
-  it("quem SOLTA um volume do conjunto conta como correção, e não como conjunto", async () => {
-    await soltarDoConjunto({ id: montou }, alvoDoConjunto);
-
-    const lista = await getCatalogo();
-    const p = lista.find((x) => x.handle === `ctb-montou-${marca}`);
-
-    expect(
-      p?.conjuntos,
-      "soltar o volume inflou o balde de conjuntos: continua contando só o que MONTA " +
-        "(ligar o volume, pôr o emblema), não o que desfaz",
-    ).toBe(2);
-    expect(
-      p?.correcoes,
-      "soltar o volume não foi contado em lugar nenhum: desfazer uma ligação errada é " +
-        "trabalho de catálogo, como qualquer outra correção",
-    ).toBe(1);
   });
 
   /**
