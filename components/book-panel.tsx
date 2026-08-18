@@ -1,19 +1,21 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import type { Book } from "@/lib/book";
 import type { Status } from "@/lib/library";
 import type { Visibility } from "@/lib/authz";
 import { VERDICTS } from "@/lib/veredito";
 import { GLIFO, TRACO } from "@/components/veredito";
-import { FolderPlus } from "lucide-react";
+import { FolderPlus, Crown } from "lucide-react";
 import { Quando } from "@/components/quando";
 import { Campo } from "@/components/campo";
 import { LIMITS } from "@/lib/limits";
 import {
-  setStatus, setRating, clearRating, saveReview,
+  setStatus, setRating, clearRating, saveReview, favoritarAction, desfavoritarAction,
 } from "@/app/livro/[slug]/actions";
 import { saveShelves } from "@/app/livro/[slug]/curation-actions";
+import { toast } from "@/lib/toast";
 
 const SHELVES: { status: Status; label: string }[] = [
   { status: "want_to_read", label: "esperando" },
@@ -28,6 +30,7 @@ export function BookPanel({
   slug,
   shelves,
   todas,
+  favoritado,
 }: {
   book: Book;
   slug: string;
@@ -35,6 +38,8 @@ export function BookPanel({
   shelves: string[];
   /** TODAS as suas estantes, para o painel oferecê-las em vez de pedir que você digite. */
   todas: string[];
+  /** Este livro está entre os seus até-cinco favoritos. Ver lib/favoritos.ts. */
+  favoritado: boolean;
 }) {
   const [pending, start] = useTransition();
 
@@ -150,6 +155,13 @@ export function BookPanel({
 
       <Verdicts value={mine.rating} pending={pending} slug={slug} workId={book.workId} act={act} />
 
+      {/* SÓ QUEM LEU FAVORITA. Favoritar um livro que você nunca abriu não é
+          favorito, é lista de desejo — que já tem lugar (o botão "quero", e as
+          listas). Ver lib/favoritos.ts. */}
+      {mine.status === "read" && (
+        <Favoritar slug={slug} workId={book.workId} favoritado={favoritado} pending={pending} act={act} />
+      )}
+
       {/* A PROCEDÊNCIA saiu daqui. Ela é sobre o EXEMPLAR, e não sobre a leitura:
           mora no cartão da coleção, e só depois de você dizer que tem o livro.
           Ver components/tenho.tsx. */}
@@ -246,6 +258,66 @@ function Verdicts({
   );
 }
 
+
+/**
+ * FAVORITAR. Até cinco, no perfil inteiro — e não cinco POR LIVRO, então o
+ * botão aqui só liga/desliga; escolher qual dos cinco é o coroado acontece em
+ * /perfil, onde dá para ver os cinco juntos e decidir entre eles. Ver
+ * lib/favoritos.ts.
+ */
+function Favoritar({
+  slug, workId, favoritado, pending, act,
+}: {
+  slug: string;
+  workId: string;
+  favoritado: boolean;
+  pending: boolean;
+  act: (fn: () => Promise<void>) => void;
+}) {
+  const [on, setOn] = useState(favoritado);
+
+  return (
+    <Section label="favorito">
+      <button
+        type="button"
+        disabled={pending}
+        aria-pressed={on}
+        onClick={() =>
+          act(async () => {
+            if (on) {
+              await desfavoritarAction(slug, workId);
+              setOn(false);
+              return;
+            }
+            const r = await favoritarAction(slug, workId);
+            if (r.ok) {
+              setOn(true);
+            } else {
+              toast(r.erro);
+            }
+          })
+        }
+        className={[
+          "pill flex items-center gap-1.5 border px-4 py-2 text-[14px] disabled:opacity-40",
+          on
+            ? "border-[var(--color-accent)] bg-[var(--color-accent)] font-medium text-[var(--color-on-accent)]"
+            : "border-[var(--color-rule)] text-[var(--color-ink-soft)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]",
+        ].join(" ")}
+      >
+        <Crown size={14} strokeWidth={TRACO} aria-hidden />
+        {on ? "é um dos seus favoritos" : "marcar como favorito"}
+      </button>
+      {on && (
+        <p className="mt-3 text-[13px] text-[var(--color-ink-faint)]">
+          Escolher qual deles é O favorito é em{" "}
+          <Link href="/perfil" className="underline underline-offset-4 hover:text-[var(--color-ink)]">
+            /perfil
+          </Link>.
+        </p>
+      )}
+    </Section>
+  );
+}
 
 /** The review. Private is the default, and the default is the product. */
 function Review({

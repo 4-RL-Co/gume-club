@@ -11,6 +11,7 @@ import { Share } from "@/components/share";
 import { BookPanel } from "@/components/book-panel";
 import { Tenho } from "@/components/tenho";
 import { getMinhaCopia } from "@/lib/copies";
+import { jaFavoritei } from "@/lib/favoritos";
 import { Leituras } from "@/components/leituras";
 import { resumoDasLeituras } from "@/lib/leituras-view";
 import { getLeituras } from "@/lib/leituras";
@@ -106,7 +107,7 @@ export default async function BookPage({
   }
 
   const [
-    friends, recommender, shelves, todasAsEstantes, opinions, minhaCopia, resenhas,
+    friends, recommender, shelves, todasAsEstantes, opinions, minhaCopia, resenhas, favoritado,
   ] = await Promise.all([
     actor ? getFollowees(actor.id) : Promise.resolve([]),
     actor ? getRecommender(actor.id, book.workId) : Promise.resolve(null),
@@ -127,6 +128,7 @@ export default async function BookPage({
     // O que OUTRAS pessoas escreveram sobre este livro — a sua já está aberta no
     // editor de "arrumar", e por isso fica fora daqui. Ver lib/explore.ts.
     getResenhasDoLivro(viewer, book.workId, actor?.id ?? null),
+    actor ? jaFavoritei(actor.id, book.workId) : Promise.resolve(false),
   ]);
 
   const opinion = opinions[book.workId];
@@ -567,6 +569,7 @@ export default async function BookPage({
                 slug={slug}
                 shelves={shelves}
                 todas={todasAsEstantes.map((e) => e.name)}
+                favoritado={favoritado}
               />
 
               {/* A COLEÇÃO é um cartão à parte, e não mais um estado da prateleira.

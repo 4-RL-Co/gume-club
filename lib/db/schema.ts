@@ -795,3 +795,33 @@ export const stripeProcessedEvent = pgTable("stripe_processed_event", {
 }, (t) => [
   index("stripe_processed_event_created_at").on(t.createdAt),
 ]);
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  OS FAVORITOS. Até cinco, e o primeiro é o coroado.
+ *
+ *  "O que eu adorei" mostrava TODOS os 5 estrelas, sem limite — quem tem trinta
+ *  virava uma vitrine que não escolhe nada. Favorito é curadoria: cinco no
+ *  máximo, e um deles é O favorito, não só "mais um dos cinco".
+ *
+ *  `position` é 1 a 5 NA PRÁTICA — mas sem CHECK travando o intervalo, de
+ *  propósito: coroar() (lib/favoritos.ts) reordena em duas fases, com um
+ *  offset NEGATIVO temporário dentro da transação (é o jeito seguro de
+ *  reescrever várias posições sem colidir com o unique abaixo, já que um
+ *  CHECK nunca pode ser DEFERRABLE no Postgres — só UNIQUE pode). Quem
+ *  escreve aqui é só lib/favoritos.ts, e ele garante o intervalo sozinho.
+ *
+ *  A posição 1 É a coroa — nunca um booleano à parte (`crowned`) que pudesse
+ *  discordar da posição: duas fontes da mesma verdade são duas fontes que um
+ *  dia divergem. Coroar É virar posição 1.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export const favoriteBooks = pgTable("favorite_books", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  workId: uuid("work_id").notNull().references(() => works.id, { onDelete: "cascade" }),
+  position: smallint("position").notNull(),
+  addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  primaryKey({ columns: [t.userId, t.workId] }),
+  uniqueIndex("favorite_books_user_position").on(t.userId, t.position),
+]);

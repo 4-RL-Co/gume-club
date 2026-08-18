@@ -4278,3 +4278,42 @@ E os favoritos: o carrossel "o que eu adorei" (todos os 5 estrelas, sem
 limite) vai virar uma seção de 5 livros escolhidos à mão, com um
 coroado — inspirado no yourgamerprofile.com. Também fica para a fatia
 seguinte.
+
+## Os favoritos: até cinco, e o primeiro é o coroado.
+
+Inspirado no destaque do yourgamerprofile.com — o dono mandou um print e
+pediu: "ter seção de livros favoritos (onde a pessoa seleciona 5 e coroa
+1) em vez de todos os livros que ela amou". Substitui o carrossel "o que
+eu adorei" (rating 5, sem limite, automático) por uma escolha manual e
+pequena.
+
+`favorite_books` (migration 0063): `(user_id, work_id)` como chave,
+`position` 1 a 5. A posição 1 É a coroa — nunca um booleano `crowned` à
+parte, que pudesse discordar da posição algum dia. Coroar é mover para
+a posição 1; quem estava entre a coroa e a posição antiga do favorito
+desliza uma casa.
+
+**Sem CHECK travando o intervalo, de propósito.** Reordenar dentro de
+`unique(user_id, position)` sem colidir precisa de um offset negativo
+temporário dentro da transação (todo mundo recua pro negativo, onde
+não há como colidir, e só depois cada um grava a posição final) — e um
+CHECK nunca pode ser DEFERRABLE no Postgres, só UNIQUE pode. Descoberto
+escrevendo o teste: a primeira versão tinha o CHECK e a própria
+transação de coroar() quebrava contra o próprio banco.
+
+**Só quem leu favorita.** A trava é no INSERT, como toda escrita deste
+app: sem uma `library_entries` com `status='read'` para aquele livro,
+o select da fonte não devolve linha, e nada grava. Favoritar um livro
+nunca lido não é favorito, é lista de desejo — que já tem lugar.
+
+Onde mora: marcar/desmarcar é na ficha do livro (`components/
+book-panel.tsx`, ao lado do veredito, só quando `status='read'`) — um
+botão, um livro de cada vez. Coroar entre os cinco só faz sentido
+vendo os cinco juntos, e mora em `/perfil`
+(`components/gerenciar-favoritos.tsx`). No perfil público, os
+favoritos substituem o carrossel antigo (`components/
+favoritos-vitrine.tsx`, dentro de `perfil-abas.tsx`).
+
+`lib/favoritos.sql.test.ts`: os três empates que só o Postgres decide —
+coroar o último sem colidir, tirar do meio sem colidir, e o teto de
+cinco recusando o sexto mesmo lido.

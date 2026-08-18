@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Crown, Signpost } from "lucide-react";
 import { Cover } from "@/components/cover";
-import { Carrossel } from "@/components/carrossel";
+import { FavoritosVitrine } from "@/components/favoritos-vitrine";
 import { PerfilEstante } from "@/components/perfil-estante";
 import { ListaGrid } from "@/components/lista-card";
 import { Empty } from "@/components/empty";
@@ -14,6 +14,7 @@ import type { Opinion } from "@/lib/ratings";
 import type { ListaCard } from "@/lib/listas";
 import type { ResenhaDaPessoa } from "@/lib/explore";
 import type { Curadoria } from "@/lib/curadoria-guardada";
+import type { FavoritoBook } from "@/lib/favoritos";
 
 const EYEBROW = "text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]";
 
@@ -40,7 +41,7 @@ const EYEBROW = "text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-f
  */
 export function PerfilAbas({
   mine, primeiroNome,
-  books, opinions, adorou,
+  books, opinions, favoritos,
   resenhas,
   shelves, guardadas, curadorias, curadoriaFixa, ehGuia,
   contagemEstante,
@@ -49,7 +50,8 @@ export function PerfilAbas({
   primeiroNome: string;
   books: ShelfBook[];
   opinions: Record<string, Opinion>;
-  adorou: ShelfBook[];
+  /** Até cinco, escolhidos à mão — nunca mais que isso. Ver lib/favoritos.ts. */
+  favoritos: FavoritoBook[];
   resenhas: ResenhaDaPessoa[];
   shelves: ListaCard[];
   guardadas: ListaCard[];
@@ -63,7 +65,7 @@ export function PerfilAbas({
   contagemEstante: { tudo: number; lidos: number };
 }) {
   const ABAS = [
-    { key: "estante" as const, label: "estante", n: contagemEstante.tudo, existe: books.length > 0 || adorou.length > 0 },
+    { key: "estante" as const, label: "estante", n: contagemEstante.tudo, existe: books.length > 0 || favoritos.length > 0 },
     { key: "resenhas" as const, label: "resenhas", n: resenhas.length, existe: resenhas.length > 0 },
     {
       key: "listas" as const,
@@ -105,11 +107,11 @@ export function PerfilAbas({
 
       {aba === "estante" && (
         <section className="mt-6">
-          {adorou.length > 0 && (
-            <Carrossel titulo={mine ? "o que eu adorei" : `o que ${primeiroNome} adorou`} books={adorou} />
+          {favoritos.length > 0 && (
+            <FavoritosVitrine titulo={mine ? "os favoritos" : `os favoritos de ${primeiroNome}`} favoritos={favoritos} />
           )}
           {books.length > 0 && (
-            <div className={adorou.length > 0 ? "mt-10" : ""}>
+            <div className={favoritos.length > 0 ? "mt-10" : ""}>
               <PerfilEstante books={books} opinions={opinions} />
             </div>
           )}

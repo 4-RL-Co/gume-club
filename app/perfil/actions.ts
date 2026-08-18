@@ -7,6 +7,7 @@ import { users } from "@/lib/db/schema";
 import { getActor } from "@/lib/actor";
 import { LIMITS, clamp } from "@/lib/limits";
 import { assertOwner, type Viewer } from "@/lib/authz";
+import { coroar, desfavoritar } from "@/lib/favoritos";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -118,4 +119,17 @@ export async function saveProfile(form: {
   revalidatePath("/perfil");
   revalidatePath(`/@${handle}`);
   return { ok: true };
+}
+
+/** Coroar: mover um favorito para a posição 1. Ver lib/favoritos.ts. */
+export async function coroarAction(workId: string): Promise<void> {
+  const actor = await getActor();
+  await coroar(actor, workId);
+  revalidatePath("/perfil");
+}
+
+export async function tirarFavoritoAction(workId: string): Promise<void> {
+  const actor = await getActor();
+  await desfavoritar(actor, workId);
+  revalidatePath("/perfil");
 }
