@@ -449,6 +449,13 @@
       "when": 1784700817016,
       "tag": "0063_os_favoritos",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1784700817017,
+      "tag": "0064_o_upvote",
+      "breakpoints": true
     }
   ]
 }

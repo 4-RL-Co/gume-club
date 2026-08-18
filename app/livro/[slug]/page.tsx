@@ -560,7 +560,7 @@ export default async function BookPage({
 
           {/* As resenhas de quem NÃO é você — a sua já está aberta, no editor de
               "arrumar" lá em cima. Ver lib/explore.ts (getResenhasDoLivro). */}
-          <ResenhasDoLivro resenhas={resenhas} />
+          <ResenhasDoLivro resenhas={resenhas} slug={slug} podeVotar={Boolean(actor)} />
 
           {actor ? (
             <>

@@ -484,6 +484,10 @@ export type ResenhaDoLivro = {
   handle: string;
   name: string | null;
   image: string | null;
+  /** Quantos upvotes — nunca em GENTE, só nesta resenha. Ver lib/upvotes.ts. */
+  upvotes: number;
+  /** Você já votou nesta. Nula para quem não está logado. */
+  votei: boolean;
 };
 
 export async function getResenhasDoLivro(
@@ -500,11 +504,18 @@ export async function getResenhasDoLivro(
     handle: string;
     name: string | null;
     image: string | null;
+    upvotes: number;
+    votei: boolean;
   }>(sql`
     -- Sem apelido em "reviews": o visibleTo() emite o nome real da tabela, e um
     -- apelido faz o Postgres não achar a coluna que a regra de visibilidade cita.
     select reviews.id, reviews.body, reviews.created_at,
-           u.handle, u.display_name as name, u.image
+           u.handle, u.display_name as name, u.image,
+           (select count(*) from review_upvotes ru where ru.review_id = reviews.id)::int as upvotes,
+           exists (
+             select 1 from review_upvotes ru
+              where ru.review_id = reviews.id and ru.user_id = ${viewer?.id ?? null}::uuid
+           ) as votei
       from reviews
       join users u on u.id = reviews.user_id and u.deleted_at is null
      where reviews.work_id = ${workId}::uuid
@@ -521,5 +532,7 @@ export async function getResenhasDoLivro(
     handle: r.handle,
     name: r.name,
     image: r.image,
+    upvotes: r.upvotes,
+    votei: r.votei,
   }));
 }

@@ -24,8 +24,10 @@ import type { ListaCard as Lista } from "@/lib/listas";
  *  guardar não é curtir. Curtir custa um toque; guardar é pôr a curadoria de
  *  outra pessoa dentro do seu perfil, assinada com o nome dela.
  *
- *  O que continua sem número nenhum é LEITURA: sem curtida em resenha, sem
- *  contador de seguidores, sem "12 pessoas leram este livro".
+ *  O que continua sem número nenhum é LEITURA: sem contador de seguidores,
+ *  sem "12 pessoas leram este livro". O voto em resenha (lib/upvotes.ts) é a
+ *  exceção deliberada — vale para a RESENHA, nunca para quem a escreveu, e
+ *  nunca vira um placar de gente.
  *
  *  ═══ DOIS DESTINOS, DOIS LINKS IRMÃOS ═══
  *
