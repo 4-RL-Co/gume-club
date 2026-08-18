@@ -13,6 +13,7 @@ import { getViewer } from "@/lib/viewer";
 import { limitarEscrita } from "@/lib/escrita";
 import { editarLeitura, apagarLeitura } from "@/lib/leituras";
 import { ratings, reviews } from "@/lib/db/schema";
+import { favoritar, desfavoritar } from "@/lib/favoritos";
 
 /**
  * Moving the status is also a reading event. Starting a book opens a reading;
@@ -224,4 +225,23 @@ export async function removerLeitura(slug: string, readingId: string): Promise<v
 
   revalidatePath(`/livro/${slug}`);
   revalidatePath("/estatisticas");
+}
+
+/** Favoritar um livro que você já leu. Ver lib/favoritos.ts. */
+export async function favoritarAction(
+  slug: string,
+  workId: string,
+): Promise<{ ok: true } | { ok: false; erro: string }> {
+  const actor = await getActor();
+  const r = await favoritar(actor, workId);
+  revalidatePath(`/livro/${slug}`);
+  revalidatePath("/perfil");
+  return r;
+}
+
+export async function desfavoritarAction(slug: string, workId: string): Promise<void> {
+  const actor = await getActor();
+  await desfavoritar(actor, workId);
+  revalidatePath(`/livro/${slug}`);
+  revalidatePath("/perfil");
 }

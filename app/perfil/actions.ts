@@ -7,6 +7,7 @@ import { users } from "@/lib/db/schema";
 import { getActor } from "@/lib/actor";
 import { LIMITS, clamp } from "@/lib/limits";
 import { assertOwner, type Viewer } from "@/lib/authz";
+import { coroar, desfavoritar, favoritar } from "@/lib/favoritos";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -118,4 +119,32 @@ export async function saveProfile(form: {
   revalidatePath("/perfil");
   revalidatePath(`/@${handle}`);
   return { ok: true };
+}
+
+/**
+ * Favoritar direto da tela de configuração — sem sair pra ficha do livro.
+ * Mesma trava de sempre (só quem já leu), agora alcançável de /perfil, do
+ * jeito que o print do yourgamerprofile.com mostrou: a busca mora dentro da
+ * própria edição do perfil.
+ */
+export async function favoritarDoPerfilAction(
+  workId: string,
+): Promise<{ ok: true } | { ok: false; erro: string }> {
+  const actor = await getActor();
+  const r = await favoritar(actor, workId);
+  revalidatePath("/perfil");
+  return r;
+}
+
+/** Coroar: mover um favorito para a posição 1. Ver lib/favoritos.ts. */
+export async function coroarAction(workId: string): Promise<void> {
+  const actor = await getActor();
+  await coroar(actor, workId);
+  revalidatePath("/perfil");
+}
+
+export async function tirarFavoritoAction(workId: string): Promise<void> {
+  const actor = await getActor();
+  await desfavoritar(actor, workId);
+  revalidatePath("/perfil");
 }

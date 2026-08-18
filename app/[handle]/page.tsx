@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { getViewer } from "@/lib/viewer";
 import { getProfile, isFollowing } from "@/lib/social";
 import { getShelf, getShelfCounts } from "@/lib/shelf";
+import { getFavoritos } from "@/lib/favoritos";
 import { getFriendRatings } from "@/lib/ratings";
 import { ConfirmeSeuEmail } from "@/components/confirme-seu-email";
 import { estaInvisivel, contarLivrosQueProvam, LIVROS_QUE_PROVAM } from "@/lib/descoberta";
@@ -96,7 +97,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
   const viewer = await getViewer();
   const mine = viewer?.id === profile.id;
 
-  const [books, counts, following, badges, shelves, guardadas, resenhas, curadorias] = await Promise.all([
+  const [books, counts, following, badges, shelves, guardadas, resenhas, curadorias, favoritos] = await Promise.all([
     getShelf(viewer, profile.id, { filter: "tudo", sort: "adicionado" }),
     getShelfCounts(viewer, profile.id),
     viewer && !mine ? isFollowing(viewer.id, profile.id) : Promise.resolve(false),
@@ -113,6 +114,9 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
     // E a curadoria da casa que ela guardou. Ela não é uma lista (o Top 100 é
     // calculado a cada visita), então vem de outra tabela. Ver lib/curadoria-guardada.ts.
     getCuradoriasGuardadas(profile.id),
+    // Até cinco, escolhidos à mão — substitui "o que eu adorei" (todo 5
+    // estrelas, sem limite). Ver lib/favoritos.ts.
+    getFavoritos(profile.id),
   ]);
 
   // A HONRA. Uma escada só: livros, HQs e cada volume de mangá contam juntos. Ver
@@ -142,11 +146,6 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
    */
   const ehGuia = shelves.some((s) => s.guardadas > 0);
   const opinions = await getFriendRatings(viewer, books.map((b) => b.workId));
-
-  // O QUE ELA ADOROU vira a vitrine em profundidade; o resto da estante mora numa
-  // parede só com recortes (components/perfil-estante.tsx), derivada de `books`
-  // (filtro "tudo") sem query nova.
-  const adorou = books.filter((b) => b.rating === 5);
 
   /**
    * ═══ VOCÊ ESTÁ INVISÍVEL, E O APP TEM QUE CONTAR ═══
@@ -271,7 +270,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
         primeiroNome={primeiroNome ?? name}
         books={books}
         opinions={opinions}
-        adorou={adorou}
+        favoritos={favoritos}
         resenhas={resenhas}
         shelves={shelves}
         guardadas={guardadas}

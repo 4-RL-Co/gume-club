@@ -15,6 +15,8 @@ import { ProfileForm } from "@/components/profile-form";
 import { HeraldSeal } from "@/components/herald-seal";
 import { ApoioPublico } from "@/components/apoio-publico";
 import { ehApoiador } from "@/lib/apoio";
+import { getFavoritos, getFavoritaveis } from "@/lib/favoritos";
+import { GerenciarFavoritos } from "@/components/gerenciar-favoritos";
 
 export const dynamic = "force-dynamic";
 
@@ -70,10 +72,12 @@ export default async function Perfil() {
 
   if (!me) return <main className="px-6 pt-16">Leitor não encontrado.</main>;
 
-  const [inviter, insignias, convidados, githubLigado] = await Promise.all([
+  const [inviter, insignias, convidados, favoritos, favoritaveis, githubLigado] = await Promise.all([
     getInviter(viewer.id),
     getBadges(viewer.id),
     getConvidados(viewer, viewer.id),
+    getFavoritos(viewer.id),
+    getFavoritaveis(viewer.id),
     // O handle do GitHub já ligado, se houver. É ele que a insígnia de construtor cruza
     // com quem tem PR mesclado. Ver lib/badges.ts.
     db
@@ -117,6 +121,17 @@ export default async function Perfil() {
           bio={me.bio ?? ""}
           image={me.image}
         />
+      </section>
+
+      {/* OS FAVORITOS: até cinco, um coroado. Substitui "o que eu adorei"
+          (todo 5 estrelas, sem limite) no perfil público. Ver lib/favoritos.ts. */}
+      <section className="surface mt-6 p-6">
+        <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+          favoritos
+        </h2>
+        <div className="mt-4">
+          <GerenciarFavoritos favoritos={favoritos} favoritaveis={favoritaveis} />
+        </div>
       </section>
 
       {/* ═══ O CANAL DE CONTATO SAIU DAQUI ═══
