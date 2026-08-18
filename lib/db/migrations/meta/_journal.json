@@ -435,6 +435,13 @@
       "when": 1784700817014,
       "tag": "0061_o_emblema_nunca_gravou",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1784700817015,
+      "tag": "0062_o_colecionador_sai",
+      "breakpoints": true
     }
   ]
 }

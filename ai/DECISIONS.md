@@ -4210,3 +4210,71 @@ frente.
 `lib/conjunto-detalhe.sql.test.ts` e `lib/conjuntos.sql.test.ts`: o mesmo
 teste nos dois lugares — duas edições da mesma editora, só uma com
 tradutor, a mais nova — provado contra Postgres de verdade.
+
+## O colecionador sai. "Acho que vai tirar muito o foco do app que é pra leitura."
+
+O dono, direto: "eu quero tirar a funcionalidade de coleções (a parte de
+colecionador, não de listas) acho que vai tirar muito o foco do app que
+é pra leitura." O colecionismo nasceu de uma vibe explícita de card de
+colecionador — "meio vibe quem gosta de carta pokemon tcg" (6 de
+agosto) — e o app é sobre ler, não sobre completar uma prateleira.
+
+**"Lista" não é isto, e continua intacta.** `collections`/`collection_items`
+(a estante que a pessoa monta com as próprias mãos) é curadoria
+subjetiva; o colecionador (`series`+`colecoes`, "4 de 14", selo dourado,
+"adicionar volume") era catálogo objetivo — a distinção que este projeto
+já tinha documentado antes, e que continua valendo mesmo com um dos dois
+lados saindo.
+
+### O que saiu, e o que ficou
+
+- `colecoes` (tabela inteira) e `works.colecao_id` saíram (migration
+  0062). `lib/conjuntos.ts`, `lib/conjunto-detalhe.ts`, `components/
+  conjunto.tsx`, `conjunto-do-livro.tsx`, `selo-colecionador.tsx`,
+  `adicionar-volume.tsx`, `comecar-colecao.tsx`, `app/colecao/[slug]/`
+  e `app/colecao/actions.ts` saíram inteiros. A aba "coleções" do perfil
+  (`components/perfil-abas.tsx`) saiu.
+- `series` e `works.seriesId` **ficaram** — não são do colecionador, são
+  da LEITURA: `lib/stats.ts` conta "12 livros, 30 volumes, 4 séries"
+  separado (ler trinta volumes de Vagabond não é ler trinta livros), e
+  essa é uma decisão de antes do colecionador existir (13 de julho).
+- `works.volume` **ficou**, apesar de ter nascido preso à coleção (a
+  migration 0038 dizia "é da EDIÇÃO, e não da série"). Na prática o
+  campo virou mais genérico: `lib/corrections.ts` usa `(title, author,
+  volume)` como parte da identidade de uma obra ao fundir duplicatas, e
+  há um `unique(title, author_id, volume)` no schema. Dois scripts de
+  manutenção (`autor-desconhecido.mjs`, `poda-ingles.mjs`) que
+  checavam `colecao_id` para não mexer num volume de coleção passaram a
+  checar `volume` — a proteção real sempre foi "isto tem identidade de
+  número", não "isto pertence a uma coleção editorial".
+- `owned_copies` (tenho/quero) **ficou inteira** — nunca foi do
+  colecionador, só era AGRUPADA por `colecao_id` numa tela à parte.
+  `/colecao` continua existindo, só que agora mostra só "o que você
+  tem" avulso, sem os conjuntos por cima.
+- O cliente da AniList (`lib/anilist.ts`) e o raspador de lojas
+  (`lib/lojas.ts`) ficam no repo, sem uso — decisão do dono: "mantém,
+  só desliga a tela". Os scripts de bootstrap que já rodaram em
+  produção (`perfil-modelo-colecao-livro.mjs`, `dostoievski-colecao-
+  completa.mjs`, `personagens-da-colecao.mjs`, `seed/lojas.ts`) ficam
+  como registro histórico do que já foi feito — não foram reescritos
+  para uma tabela que não existe mais, e não deveriam rodar de novo.
+- `revisions.target_type = 'colecao'` (histórico de quem montou
+  conjunto) continua válido — a constraint da migration 0061 não muda.
+  `lib/contributors.ts` continua contando essas linhas antigas na
+  página de contribuidores: o trabalho que alguém já doou ao catálogo
+  não vira menos trabalho porque a função que o registrou saiu do ar.
+  O número só para de crescer.
+
+### Um efeito colateral: o próximo passo já está pedido
+
+Com o colecionador saindo, a pergunta "onde entra 'tenho todos os
+volumes de uma série, sem estar numa coleção editorial'" ficou em
+aberto — o dono já pediu o começo da resposta: uma aba "coleção" dentro
+da própria estante (`/estante`), ao lado de "esperando"/"lendo"/"lido",
+mostrando tudo que a pessoa tem posse, "como o Skoob faz". Fica para
+uma fatia própria, separada desta.
+
+E os favoritos: o carrossel "o que eu adorei" (todos os 5 estrelas, sem
+limite) vai virar uma seção de 5 livros escolhidos à mão, com um
+coroado — inspirado no yourgamerprofile.com. Também fica para a fatia
+seguinte.

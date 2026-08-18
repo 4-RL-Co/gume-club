@@ -74,7 +74,12 @@ export type DoCatalogo = {
    * Volumes ligados a um conjunto de edição, e emblemas postos. Até aqui isto
    * caía dentro de `correcoes` sem rótulo próprio: quem montou "Hellsing Deluxe
    * tem 10 volumes" contava, mas a tela dizia só "correções" — o mesmo texto de
-   * quem trocou o ano de uma ficha. Ver lib/conjuntos.ts.
+   * quem trocou o ano de uma ficha.
+   *
+   * O colecionador saiu do app (migration 0062), e ninguém grava mais linha
+   * nova aqui — mas o trabalho que já foi feito continua sendo trabalho.
+   * `revisions` não perde histórico só porque a função que a escreveu deixou
+   * de existir, e este número fica congelado, não apagado.
    */
   conjuntos: number;
   /** Correções de ficha que sobreviveram (o que não é livro, capa nem conjunto). */
@@ -147,14 +152,14 @@ export async function getCatalogo(): Promise<DoCatalogo[]> {
              (select count(*) from cover_proposals cp
                where cp.user_id = u.id and cp.state = 'applied')::int as capas,
              -- CONJUNTOS: ligou um volume a uma coleção de edição, ou pôs o emblema
-             -- dela. Mesma tabela da correção (revisions), e por isso precisa de um
-             -- recorte próprio para não contar duas vezes na soma. Ver lib/conjuntos.ts.
+             -- dela. Mesma tabela da correção (revisions), e por isso precisava de um
+             -- recorte próprio para não contar duas vezes na soma. O colecionador saiu
+             -- do app (migration 0062) e ninguém grava linha nova aqui — este filtro só
+             -- continua separando o que já foi feito, contado uma vez em cada balde.
              --
-             -- patch->>'colecao_id' is not null é o que separa LIGAR de SOLTAR: as
-             -- duas ações de lib/conjuntos.ts escrevem a mesma chave (colecao_id), e
-             -- soltarDoConjunto() grava colecao_id como null -- desfazer um erro de
-             -- ligação, que é corretivo, não montagem de conjunto. Sem este filtro, as
-             -- duas contavam igual, e desfazer o próprio erro inflava o balde errado.
+             -- patch->>'colecao_id' is not null era o que separava LIGAR de SOLTAR: as
+             -- duas ações escreviam a mesma chave (colecao_id), e soltar gravava null --
+             -- desfazer um erro de ligação, que é corretivo, não montagem de conjunto.
              (select count(*) from revisions r
                where r.user_id = u.id and r.reverted_at is null
                  and (r.target_type = 'colecao'

@@ -15,7 +15,6 @@ contribuidor vê antes de ler uma linha de lógica. Alguns exemplos reais, hoje:
 | `lib/exportar.ts`, `lib/honras.ts`, `lib/moderacao.ts`, `lib/nomes.ts` | `lib/shelf.ts`, `lib/viewer.ts`, `lib/social.ts`, `lib/stats.ts` | sim |
 | `lib/falta-no-app.ts` (lista de features que faltam) | `lib/gaps.ts` (a consulta das lacunas do catálogo) | dois conceitos, e o de domínio está em EN |
 | `components/gaveta.tsx`, `moldura.tsx`, `prosa.tsx` | `components/glass-bar.tsx`, `dense-list.tsx`, `live-search.tsx` | sim |
-| `colecao_id` (coleção de volumes da editora) | `collection_id` (estante do usuário) | dois conceitos, nomes quase idênticos |
 
 Não é que uma língua esteja errada. É que **não há uma regra**, e sem regra cada arquivo novo
 é uma moeda jogada para o alto. O sinal que isso manda ("ninguém está no comando aqui") é pior
@@ -87,11 +86,10 @@ fronteira:
 - `lib/gaps.ts` → `lacunas.ts` (ou outro nome PT). **NÃO fundir com `falta-no-app.ts`:** investiguei, e são conceitos diferentes: `gaps.ts` é a consulta das lacunas do CATÁLOGO (dado de livro faltando), `falta-no-app.ts` é a lista curada de features que faltam no APP. Coincidem só na palavra "falta".
 - ~~`lib/veredito.ts` → `veredito.ts`, `components/veredito.tsx` → `veredito.tsx`~~ **feito** (a
   nota é domínio, e a tela já diz "veredito"). Foi a primeira violação corrigida.
-- `colecao_id` (obra) e `collection_id` (item de estante) **não são a mesma coluna**, e não dá
-  para "escolher uma": são a coleção-de-volumes-da-editora e a estante-do-usuário. O problema
-  real é o oposto de duplicata: dois conceitos com nomes quase idênticos, um convite a confundir
-  um pelo outro. Desambiguar (ex.: `series_collection_id` vs `shelf_id`) é migration, e é decisão
-  de gente, não de faxina.
+- ~~`colecao_id` (obra) e `collection_id` (item de estante)~~ **resolvido por outro caminho**: a
+  coluna `colecao_id` saiu do schema (migration 0062) quando o colecionador saiu do app. Só
+  `collection_id` (estante do usuário) continua existindo, e a ambiguidade acabou porque um dos
+  dois conceitos deixou de existir — não porque alguém renomeou.
 - decidir a borda de: `library.ts`, `book.ts`, `people.ts`, `copies.ts`, `curation.ts`,
   `contributors.ts` (infra ou domínio? cada um é uma linha de decisão).
 
@@ -107,9 +105,9 @@ Três decisões menores que andam junto:
   Manter.
 - **Colunas do banco: inglês**, com uma exceção declarada para o que é domínio puro sem tradução
   boa. Hoje é quase tudo EN (`added_at`, `author_id`, `abandoned_on`), com alguns vazamentos PT
-  (`colecao_id`, `cover_proposals_fila`, `badge_grants_uma_por_pessoa`). Migração de coluna é a
-  mais cara de todas (append-only, precisa de migration), então esta é a que menos vale mexer
-  agora e a que mais vale **congelar a regra** para não piorar: **coluna nova nasce em inglês.**
+  (`cover_proposals_fila`, `badge_grants_uma_por_pessoa`). Migração de coluna é a mais cara de
+  todas (append-only, precisa de migration), então esta é a que menos vale mexer agora e a que
+  mais vale **congelar a regra** para não piorar: **coluna nova nasce em inglês.**
 
 ## A recomendação, em uma frase
 

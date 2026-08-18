@@ -1,0 +1,51 @@
+-- ════════════════════════════════════════════════════════════════════
+--  O COLECIONADOR SAI. "Acho que vai tirar muito o foco do app que é pra leitura."
+--
+--  ═══ O QUE ESTA MIGRATION DESFAZ, E O QUE ELA NÃO TOCA ═══
+--
+--  `colecoes` (0038) e o que ela ganhou depois (0060: emblema) saem inteiros —
+--  junto com `works.colecao_id`, que era o elo entre um volume e a edição
+--  editorial de que ele fazia parte ("Berserk — Edição de Luxo", "Dostoiévski —
+--  Martin Claret").
+--
+--  `series` FICA — ela não é do colecionador, é da LEITURA: `lib/stats.ts` conta
+--  "12 livros, 30 volumes, 4 séries" separado (ler trinta volumes de Vagabond não
+--  é ler trinta livros), e isso é uma decisão independente, de antes do
+--  colecionador existir (ver a migration 0033 e ai/DECISIONS.md, 13 de julho).
+--
+--  `works.volume` também FICA — apesar do comentário da 0038 dizer que ele "é da
+--  coleção, não da série", na prática o campo virou mais genérico do que isso:
+--  `lib/corrections.ts` usa `(title, author, volume)` como parte da identidade de
+--  uma obra ao fundir duplicatas, e há um `unique(title, author_id, volume)` no
+--  schema. Tirar a coluna quebraria as duas coisas para ganhar pouco — o campo
+--  sem `colecao_id` continua dizendo "este é o volume N de alguma série", só
+--  sem saber de qual EDIÇÃO editorial.
+--
+--  `owned_copies` (tenho/quero) FICA inteira — nunca foi do colecionador. Era a
+--  tabela de posse genérica desde a migration que a criou, e o colecionador só
+--  a AGRUPAVA por `colecao_id` numa tela à parte. Essa função de agrupar
+--  (`getConjuntos`, em lib/copies.ts) é o que sai, no código.
+--
+--  Os revisões (`revisions.target_type = 'colecao'`) já gravadas continuam
+--  válidas: a constraint de 0061 não muda aqui. História não se apaga só porque
+--  a função que a escreveu deixou de existir — ver AGENTS.md.
+--
+--  ═══ POR QUE ═══
+--
+--  O dono, direto: "eu quero tirar a funcionalidade de coleções (a parte de
+--  colecionador, não de listas) acho que vai tirar muito o foco do app que é
+--  pra leitura." O colecionismo (barra "X de Y", selo dourado de completo,
+--  "adicionar volume") nasceu de uma vibe explícita de card de colecionador
+--  ("meio vibe quem gosta de carta pokemon tcg", 6 de agosto) — e o app é sobre
+--  ler, não sobre completar uma prateleira. "Lista" (collections/collection_items,
+--  a estante que a pessoa monta com as próprias mãos) não é isto, e continua
+--  intacta.
+--
+--  O cliente da AniList (lib/anilist.ts) e o raspador de lojas (lib/lojas.ts)
+--  continuam no repo, sem uso — decisão do dono: "mantém, só desliga a tela".
+--  Se um dia mangá voltar a ter uma tela própria, o cliente já está pronto.
+-- ════════════════════════════════════════════════════════════════════
+
+DROP INDEX IF EXISTS "works_colecao_idx";
+ALTER TABLE "works" DROP COLUMN IF EXISTS "colecao_id";
+DROP TABLE IF EXISTS "colecoes";

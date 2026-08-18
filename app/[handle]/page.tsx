@@ -16,7 +16,6 @@ import { chegadaDe, getBadges } from "@/lib/badges";
 import { BadgesExplicadas } from "@/components/badges";
 import { getListasDe, getListasGuardadas } from "@/lib/listas";
 import { getCuradoriasGuardadas } from "@/lib/curadoria-guardada";
-import { getConjuntos } from "@/lib/copies";
 import { souIdealizador } from "@/lib/authz";
 import { getResenhasDe } from "@/lib/explore";
 import { PerfilAbas } from "@/components/perfil-abas";
@@ -97,7 +96,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
   const viewer = await getViewer();
   const mine = viewer?.id === profile.id;
 
-  const [books, counts, following, badges, shelves, guardadas, resenhas, curadorias, conjuntos] = await Promise.all([
+  const [books, counts, following, badges, shelves, guardadas, resenhas, curadorias] = await Promise.all([
     getShelf(viewer, profile.id, { filter: "tudo", sort: "adicionado" }),
     getShelfCounts(viewer, profile.id),
     viewer && !mine ? isFollowing(viewer.id, profile.id) : Promise.resolve(false),
@@ -114,14 +113,6 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
     // E a curadoria da casa que ela guardou. Ela não é uma lista (o Top 100 é
     // calculado a cada visita), então vem de outra tabela. Ver lib/curadoria-guardada.ts.
     getCuradoriasGuardadas(profile.id),
-    /**
-     * A COLEÇÃO DELA. O dono chamou de "a graça": colecionar é para mostrar, e uma
-     * coleção que só o dono vê é um armário trancado.
-     *
-     * Só os exemplares públicos saem daqui quando o perfil é de outra pessoa — a
-     * consulta é quem decide, e não a tela. Ver lib/copies.ts.
-     */
-    getConjuntos(viewer, profile.id),
   ]);
 
   // A HONRA. Uma escada só: livros, HQs e cada volume de mangá contam juntos. Ver
@@ -272,14 +263,12 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
           Sete seções empilhadas (coleção, adorei, resenhas, listas feitas, listas
           guardadas, estante) viravam um pergaminho — a mesma reclamação que já valia
           para /painel antes das abas. Mesmo padrão: um componente de cliente troca o
-          que aparece, sem voltar ao servidor. A ordem das abas (coleções primeiro)
-          preserva a prioridade que a página já tinha: "o que é mais difícil de
-          conseguir vem primeiro". Ver components/perfil-abas.tsx. */}
+          que aparece, sem voltar ao servidor. A ordem das abas preserva a prioridade
+          que a página já tinha: "o que é mais difícil de conseguir vem primeiro".
+          Ver components/perfil-abas.tsx. */}
       <PerfilAbas
         mine={mine}
         primeiroNome={primeiroNome ?? name}
-        podeEditarConjunto={!!viewer}
-        conjuntos={conjuntos}
         books={books}
         opinions={opinions}
         adorou={adorou}

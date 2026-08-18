@@ -1,15 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Package, Trophy } from "lucide-react";
+import { Package } from "lucide-react";
 import { origemAceita } from "@/lib/imagens";
 import { Empty } from "@/components/empty";
 import { Cover } from "@/components/cover";
 import { getActorOrNull } from "@/lib/actor";
-import { getColecao, contarColecao, getConjuntos } from "@/lib/copies";
-import { ConjuntoCard } from "@/components/conjunto";
-import { ComecarColecao } from "@/components/comecar-colecao";
+import { getColecao, contarColecao } from "@/lib/copies";
 import { nomeDoAutor } from "@/lib/autores";
-import { DOURADO } from "@/lib/dourado";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +17,6 @@ export const dynamic = "force-dynamic";
  *  A estante responde "o que eu li". Esta responde "o que eu tenho", e as duas se
  *  cruzam sem se conter: dá para ter lido sem ter o livro (emprestado, biblioteca,
  *  vendido depois) e para ter sem nunca abrir.
- *
- *  Quem coleciona vive na segunda, e o app não tinha onde pôr isso: um livro comprado
- *  e nunca aberto virava "esperando" na prateleira, que é uma intenção de ler que a
- *  pessoa nunca teve.
  *
  *  ═══ ELA É SUA, E DE MAIS NINGUÉM ═══
  *
@@ -36,6 +29,14 @@ export const dynamic = "force-dynamic";
  *  "Tenho e ainda não li" é a única contagem desta tela, e é a pergunta de quem
  *  coleciona. Não há placar de quantos livros você tem: isso seria medir a pessoa
  *  pela pilha, e este app se recusa a ordenar gente por esforço.
+ *
+ *  ═══ O COLECIONADOR SAIU DAQUI ═══
+ *
+ *  Esta tela já abriu com os CONJUNTOS (edições editoriais completas, "4 de 14",
+ *  selo dourado, "adicionar volume") por cima dos avulsos. "Acho que vai tirar
+ *  muito o foco do app que é pra leitura" — o dono, sobre o colecionismo, e não
+ *  sobre "tenho/quero" em si, que continua existindo. Ver a migration 0062 e
+ *  ai/DECISIONS.md.
  * ════════════════════════════════════════════════════════════════════
  */
 export default async function Colecao({
@@ -66,54 +67,13 @@ export default async function Colecao({
     );
   }
 
-  const [itens, contas, conjuntos] = await Promise.all([
+  const [itens, contas] = await Promise.all([
     getColecao(actor, quero ? "wanted" : "owned"),
     contarColecao(actor),
-    // Os CONJUNTOS abrem a tela: é o que separa colecionar de possuir. Ver lib/copies.ts.
-    getConjuntos(actor),
   ]);
 
-  /**
-   * Os avulsos são o que NÃO pertence a conjunto nenhum. Eles continuam na tela, sem
-   * barra e sem cobrança: inventar um conjunto de um volume só para toda obra encheria
-   * a tela de barras completas, que não dizem nada.
-   */
-  const emConjunto = new Set(conjuntos.flatMap((c) => c.volumes.map((v) => v.slug)));
-  const avulsos = itens.filter((i) => !emConjunto.has(i.slug));
-
-  /**
-   * O QUE A LISTA DE BAIXO DESENHA, e é ele que decide se ela existe.
-   *
-   * A condição olhava `itens` (tudo que você tem) e renderizava `avulsos` (o que não
-   * está em conjunto). Com todos os volumes dentro de um conjunto — o caso de quem
-   * coleciona, que é para quem esta tela existe — sobrava uma GRADE VAZIA embaixo do
-   * cartão, e o "nenhum livro ainda" não aparecia nunca.
-   *
-   * Uma condição que pergunta de uma lista e desenha outra é um bug esperando o dado
-   * certo para aparecer.
-   */
-  const lista = quero ? itens : avulsos;
-  /** E o vazio da tela é sobre a COLEÇÃO INTEIRA, e não sobre os avulsos. */
-  const vazia = conjuntos.length === 0 && lista.length === 0;
-
-  /**
-   * A CAPA QUE BANHA O TOPO. A do conjunto mais completo, e não a primeira que veio.
-   *
-   * Uma coleção é um objeto de orgulho, e a tela precisava parecer isso — o dono pediu
-   * "um pouco glamurosa". A aura é o mesmo material da tela de queridinhos: nada
-   * inventado, o vocabulário que a casa já tem.
-   *
-   * Ela escolhe o conjunto mais adiantado porque é ele que a pessoa está montando, e
-   * porque uma capa qualquer no topo é enfeite, enquanto essa é a coleção olhando de
-   * volta para quem a montou.
-   */
-  const heroi = [...conjuntos]
-    .sort((a, b) => b.tenho / Math.max(1, b.total) - a.tenho / Math.max(1, a.total))
-    .flatMap((c) => c.volumes.filter((v) => v.tenho && v.coverUrl))[0]?.coverUrl
-    ?? itens.find((i) => i.coverUrl)?.coverUrl
-    ?? null;
-
-  const completas = conjuntos.filter((c) => c.completo).length;
+  /** A CAPA QUE BANHA O TOPO. A primeira que veio, e não uma escolhida a dedo. */
+  const heroi = itens.find((i) => i.coverUrl)?.coverUrl ?? null;
 
   return (
     <main className="relative mx-auto max-w-6xl px-6 pb-32 sm:px-10">
@@ -123,8 +83,7 @@ export default async function Colecao({
         </div>
       )}
 
-      {/* O CABEÇALHO EDITORIAL: a coleção abre como uma sala, e não como uma tabela.
-          A serifa da voz, o número que importa, e nada de placar de quantos livros. */}
+      {/* O CABEÇALHO EDITORIAL: a coleção abre como uma sala, e não como uma tabela. */}
       <header className="mt-16 sm:mt-24">
         <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-[var(--color-ink-faint)]">
           <Package size={14} strokeWidth={1.75} aria-hidden />
@@ -133,40 +92,6 @@ export default async function Colecao({
         <h1 className="voice mt-3 max-w-3xl text-[40px] leading-[1.04] tracking-[-0.015em] sm:text-[52px]">
           O que você tem
         </h1>
-        {/* ═══ A TELA NÃO SE EXPLICA ═══
-
-            Aqui dizia "Ter não é ler: isto é sobre o exemplar", e o dono cortou:
-            "a pessoa sabe que isso é coleção".
-
-            Ele está certo, e o erro é meu de sempre — legendar o óbvio. Uma frase que
-            explica a própria tela é a tela desconfiando de quem a olha, e num lugar
-            que é para dar orgulho isso soa a manual. O que fica é o FATO: quantas
-            estão completas. */}
-        {/* ═══ O SELO DE COLECIONADOR. AQUI, E EM MAIS LUGAR NENHUM ═══
-
-            Não é insígnia: não mora em lib/badges-view.ts, não entra no painel de
-            honras, não aparece no perfil nem no feed. As insígnias existem para
-            marcar DOAÇÃO à comunidade, e completar uma coleção é para o próprio
-            colecionador — ele não deve nada a mais ninguém por isso. Ver
-            ai/DECISIONS.md.
-
-            O dourado é o mesmo do selo "completa" em cada card (components/conjunto.tsx):
-            a única cor da tela, e ela já marca conquista aqui dentro. Isto só junta o
-            nome à cor, na primeira vez que ela aparece. */}
-        {completas > 0 && (
-          <p className="voice mt-5 flex flex-wrap items-center gap-2.5 text-[17px] leading-relaxed text-[var(--color-ink-soft)]">
-            <span
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-control)] border px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.1em]"
-              style={{ color: DOURADO, borderColor: DOURADO }}
-            >
-              <Trophy size={12} strokeWidth={1.75} aria-hidden />
-              colecionador
-            </span>
-            {completas === 1 ? "Uma coleção completa." : `${completas} coleções completas.`}
-          </p>
-        )}
-
-        <ComecarColecao />
       </header>
 
       <nav className="mt-8 flex flex-wrap gap-2">
@@ -199,24 +124,7 @@ export default async function Colecao({
         </p>
       )}
 
-      {/* ═══ OS CONJUNTOS PRIMEIRO ═══
-          A estante conta livros lidos; a coleção conta CONJUNTOS. "4 de 14" é a
-          gramática de quem coleciona, e é ela que precisa abrir a tela. */}
-      {!quero && conjuntos.length > 0 && (
-        <div className="mt-8 flex flex-col gap-5">
-          {conjuntos.map((c) => (
-            <ConjuntoCard key={c.id} c={c} />
-          ))}
-        </div>
-      )}
-
-      {!quero && conjuntos.length > 0 && avulsos.length > 0 && (
-        <h2 className="mt-10 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-          fora de conjunto
-        </h2>
-      )}
-
-      {vazia && (
+      {itens.length === 0 && (
         <div className="mt-10">
           <Empty>
             {quero
@@ -226,9 +134,9 @@ export default async function Colecao({
         </div>
       )}
 
-      {lista.length > 0 && (
+      {itens.length > 0 && (
         <ul className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {lista.map((i) => (
+          {itens.map((i) => (
             <li key={i.slug}>
               <Link href={`/livro/${i.slug}`} className="card group flex h-full flex-col p-5">
                 <span className="cover-lift block w-[58%] self-center">

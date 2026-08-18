@@ -235,7 +235,6 @@ const [livro] = await sql`
    limit 1`;
 
 const [autor] = await sql`select slug from authors limit 1`;
-const [colecao] = await sql`select slug from colecoes limit 1`;
 
 /** caminho → o que cada papel deve receber. */
 const PORTAS = [
@@ -247,7 +246,9 @@ const PORTAS = [
   ["/o-que-falta", 200, 200, 200, 200],
   [`/livro/${livro.slug}`, 200, 200, 200, 200],
   [`/autor/${autor.slug}`, 200, 200, 200, 200],
-  [`/colecao/${colecao.slug}`, 200, 200, 200, 200],
+  // /colecao (sem slug) é "tenho/quero" — o colecionador (conjuntos, /colecao/[slug])
+  // saiu do app na migration 0062.
+  ["/colecao", 200, 200, 200, 200],
   ["/estante", 200, 200, 200, 200],
   ["/colecoes", 200, 200, 200, 200],
   ["/estatisticas", 200, 200, 200, 200],
@@ -434,11 +435,9 @@ console.log("\n7. o catálogo: cem páginas ao acaso, procurando tela quebrada\n
 const AMOSTRA = await sql`
   (select 'livro'   as tipo, slug from works   order by random() limit 40)
   union all
-  (select 'autor'   as tipo, slug from authors order by random() limit 30)
-  union all
-  (select 'colecao' as tipo, slug::text from colecoes order by random() limit 20)`;
+  (select 'autor'   as tipo, slug from authors order by random() limit 30)`;
 
-const ROTA = { livro: "/livro/", autor: "/autor/", colecao: "/colecao/" };
+const ROTA = { livro: "/livro/", autor: "/autor/" };
 let quebradas = 0;
 
 for (const a of AMOSTRA) {

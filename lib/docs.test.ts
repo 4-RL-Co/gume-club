@@ -81,7 +81,22 @@ const CAMINHO =
 // próxima pessoa aprende a ignorá-lo.
 
 describe("os documentos não citam arquivo que não existe", () => {
-  const docs = [...documentos(), ...codigo("lib"), ...codigo("app"), ...codigo("components")];
+  /**
+   * ═══ `ai/DECISIONS.md` FICA DE FORA, E ISSO NÃO É UMA BRECHA ═══
+   *
+   * Mesmo motivo do describe de baixo ("quem promete uma trava, nomeia o teste"):
+   * DECISIONS.md é HISTÓRICO e append-only (ver CLAUDE.md). Uma entrada de meses
+   * atrás pode citar um arquivo que existia NAQUELE DIA e saiu de propósito depois
+   * — foi o que aconteceu quando o colecionador saiu do app (migration 0062):
+   * `lib/conjuntos.ts`, `components/conjunto.tsx` e o resto existiram de verdade,
+   * e a entrada que os cita continua sendo o registro correto do que se decidiu
+   * naquele dia. Exigir que o passado se reescreva para sempre apontar só para
+   * arquivo vivo transformaria o registro em propaganda, não em história.
+   */
+  const docs = [
+    ...documentos().filter((d) => !d.includes("DECISIONS.md")),
+    ...codigo("lib"), ...codigo("app"), ...codigo("components"),
+  ];
 
   it("há documentos para varrer", () => {
     // Um teste que não acha nada passa sorrindo.

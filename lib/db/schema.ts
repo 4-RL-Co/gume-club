@@ -206,12 +206,6 @@ export const works = pgTable("works", {
   authorId: uuid("author_id").references(() => authors.id, { onDelete: "set null" }),
   seriesId: uuid("series_id").references(() => series.id, { onDelete: "set null" }),
   /**
-   * A COLEÇÃO de que esta obra é volume. É da EDIÇÃO, e não da série: a Panini publica
-   * Berserk em duas edições, e o "volume 25" de uma não é o "volume 25" da outra.
-   * Ver a migration 0038.
-   */
-  colecaoId: uuid("colecao_id"),
-  /**
    * QUEM TROUXE ESTE LIVRO para o acervo.
    *
    * A página de contribuidores contava só CORREÇÕES, e quem cria a ficha de um livro
@@ -223,6 +217,14 @@ export const works = pgTable("works", {
    * de terceiros. O nome sai; o livro fica.
    */
   createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+  /**
+   * A POSIÇÃO desta obra dentro de uma série (o volume 3 de Vagabond). Nasceu
+   * ligado à extinta `colecoes` (a "edição editorial" que um conjunto
+   * representava — ver a migration 0062), mas sobreviveu à saída do
+   * colecionador: `lib/corrections.ts` usa `(title, author, volume)` como parte
+   * da identidade de uma obra ao fundir duplicatas, e o `unique` logo abaixo
+   * depende dele.
+   */
   volume: numeric("volume", { precision: 6, scale: 1 }),
   /** The year it was WRITTEN. Not the year this edition was printed. */
   firstPublished: integer("first_published"),

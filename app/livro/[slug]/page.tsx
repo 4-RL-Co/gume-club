@@ -106,7 +106,7 @@ export default async function BookPage({
   }
 
   const [
-    friends, recommender, shelves, todasAsEstantes, opinions, minhaCopia, conjuntoDoLivro, resenhas,
+    friends, recommender, shelves, todasAsEstantes, opinions, minhaCopia, resenhas,
   ] = await Promise.all([
     actor ? getFollowees(actor.id) : Promise.resolve([]),
     actor ? getRecommender(actor.id, book.workId) : Promise.resolve(null),
@@ -124,15 +124,6 @@ export default async function BookPage({
     getFriendRatings(viewer, [book.workId]),
     // O exemplar: é SEU, e ninguém mais lê. Ver lib/copies.ts.
     getMinhaCopia(actor, book.workId),
-    /**
-     * O CONJUNTO DE EDIÇÃO a que este volume pertence, se pertence. É catálogo, e não
-     * preferência: "Hellsing Deluxe tem 3 volumes" vale para todo mundo.
-     */
-    book.colecaoId
-      ? db.execute<{ title: string; total_volumes: number | null }>(sql`
-          select title, total_volumes from colecoes where id = ${book.colecaoId}::uuid`)
-          .then((r) => (r[0] ? { titulo: r[0].title, total: r[0].total_volumes } : null))
-      : Promise.resolve(null),
     // O que OUTRAS pessoas escreveram sobre este livro — a sua já está aberta no
     // editor de "arrumar", e por isso fica fora daqui. Ver lib/explore.ts.
     getResenhasDoLivro(viewer, book.workId, actor?.id ?? null),
@@ -259,9 +250,9 @@ export default async function BookPage({
   /**
    * Entre duas edições com capa, a mais CATALOGADA vence — ter tradutor é o sinal
    * de que alguém preencheu esta ficha à mão, e não só herdou o que veio pronto de
-   * um import em lote. Sem isso, a ordem crua de `created_at` podia escolher uma
+   * um import em lote. Sem isso, a ordem crua de created_at podia escolher uma
    * capa genérica emprestada da OpenLibrary em vez da capa de verdade que acabou
-   * de ser cadastrada — mesma causa do conserto em lib/conjunto-detalhe.ts.
+   * de ser cadastrada.
    */
   const comCapa = book.editions.find((e) => e.coverUrl && e.translator) ?? book.editions.find((e) => e.coverUrl);
 
@@ -590,8 +581,6 @@ export default async function BookPage({
                   ? minhaCopia.state
                   : null}
                 historia={minhaCopia?.acquiredNote ?? null}
-                conjunto={conjuntoDoLivro}
-                volume={book.volume === null ? null : Number(book.volume)}
               />
 
               {/* QUANDO você leu, em UMA LINHA discreta, encostada no painel: o resumo

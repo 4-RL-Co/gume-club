@@ -95,19 +95,18 @@ console.log("\n2. o que é de alguma PESSOA, e por isso não sai\n");
  *
  * 2. A PRATELEIRA que alguém montou à mão.
  *
- * 3. O VOLUME DE UMA COLEÇÃO. Este é o que eu quase deixei passar: a amostra trouxe
- *    "Knights of the Zodiac, vol. 14". Se um volume sair do acervo, a prateleira da
- *    coleção abre um buraco — e o buraco é a coisa mais importante daquela tela.
- *
- *    A coleção passaria a dizer "falta o volume 14" quando o volume 14 existe e a
- *    pessoa até o tem. Uma poda que faz a tela MENTIR é pior do que não podar.
+ * 3. O VOLUME DE UMA SÉRIE. Este é o que eu quase deixei passar: a amostra trouxe
+ *    "Knights of the Zodiac, vol. 14". `works.volume` é a identidade do volume
+ *    dentro da série (não do título) — apagar um por engano criaria um segundo
+ *    "volume 14" no dia em que o de verdade fosse reimportado, e a estatística de
+ *    "30 volumes lidos" (lib/stats.ts) contaria errado sem ninguém notar.
  */
 const CONDICAO = sql`
      exists (select 1 from library_entries le
                join editions e on e.id = le.edition_id
               where e.work_id = t.work_id)
   or exists (select 1 from collection_items ci where ci.work_id = t.work_id)
-  or exists (select 1 from works w where w.id = t.work_id and w.colecao_id is not null)`;
+  or exists (select 1 from works w where w.id = t.work_id and w.volume is not null)`;
 
 const [protegidas] = await sql`
   select count(distinct t.work_id)::int as n from alvo_ingles t where ${CONDICAO}`;
