@@ -14,7 +14,7 @@ import { limitarEscrita } from "@/lib/escrita";
 import { editarLeitura, apagarLeitura } from "@/lib/leituras";
 import { ratings, reviews } from "@/lib/db/schema";
 import { favoritar, desfavoritar } from "@/lib/favoritos";
-import { upvotar, tirarUpvote } from "@/lib/upvotes";
+import { upvotar, tirarUpvote, quemUpvotouResenha, type QuemVotou } from "@/lib/upvotes";
 
 /**
  * Moving the status is also a reading event. Starting a book opens a reading;
@@ -259,4 +259,16 @@ export async function tirarUpvoteAction(slug: string, reviewId: string): Promise
   const actor = await getActor();
   await tirarUpvote(actor, reviewId);
   revalidatePath(`/livro/${slug}`);
+}
+
+/**
+ * "Quem votou" — só o autor da resenha recebe rosto (a checagem de dono é no
+ * SQL, ver lib/upvotes.ts). Um endpoint público que devolve rosto de gente
+ * também precisa de teto: sem ele, é uma forma de raspar identidade em
+ * massa, mesmo devolvendo vazio para quem não é dono.
+ */
+export async function quemVotouResenhaAction(reviewId: string): Promise<QuemVotou[]> {
+  const viewer = await getViewer();
+  if (viewer) await limitarEscrita(viewer.id);
+  return quemUpvotouResenha(viewer, reviewId);
 }

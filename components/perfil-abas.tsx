@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Crown, Signpost } from "lucide-react";
 import { Cover } from "@/components/cover";
+import { UpvoteResenha } from "@/components/upvote-resenha";
 import { FavoritosVitrine } from "@/components/favoritos-vitrine";
 import { PerfilEstante } from "@/components/perfil-estante";
 import { ListaGrid } from "@/components/lista-card";
@@ -40,7 +41,7 @@ const EYEBROW = "text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-f
  * ════════════════════════════════════════════════════════════════════
  */
 export function PerfilAbas({
-  mine, primeiroNome,
+  mine, primeiroNome, podeVotar,
   books, opinions, favoritos,
   resenhas,
   shelves, guardadas, curadorias, curadoriaFixa, ehGuia,
@@ -48,6 +49,8 @@ export function PerfilAbas({
 }: {
   mine: boolean;
   primeiroNome: string;
+  /** Está logado e não é o dono do perfil — quem vê a própria resenha aqui não vota nela. */
+  podeVotar: boolean;
   books: ShelfBook[];
   opinions: Record<string, Opinion>;
   /** Até cinco, escolhidos à mão — nunca mais que isso. Ver lib/favoritos.ts. */
@@ -154,16 +157,30 @@ export function PerfilAbas({
                     ler resenha inteira
                   </Link>
 
-                  <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-                    {new Date(r.createdAt).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })}
-                    {/* Só o dono precisa saber o que está fechado: para os outros, o que
-                        eles estão vendo já É o que dá para ver. */}
-                    {mine && r.visibility !== "public" && (
-                      <span className="normal-case tracking-normal">
-                        {r.visibility === "private" ? " · só para você" : " · para quem te segue"}
-                      </span>
-                    )}
-                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+                      {new Date(r.createdAt).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })}
+                      {/* Só o dono precisa saber o que está fechado: para os outros, o que
+                          eles estão vendo já É o que dá para ver. */}
+                      {mine && r.visibility !== "public" && (
+                        <span className="normal-case tracking-normal">
+                          {r.visibility === "private" ? " · só para você" : " · para quem te segue"}
+                        </span>
+                      )}
+                    </p>
+
+                    {/* "quem votou" só faz sentido AQUI: é a única tela onde alguém vê a
+                        própria resenha — ela nunca aparece na lista de outra pessoa
+                        (components/resenhas-do-livro.tsx). Ver components/upvote-resenha.tsx. */}
+                    <UpvoteResenha
+                      reviewId={r.id}
+                      slug={r.slug}
+                      votei={r.votei}
+                      upvotes={r.upvotes}
+                      podeVotar={!mine && podeVotar}
+                      souAutor={mine}
+                    />
+                  </div>
                 </div>
               </li>
             ))}

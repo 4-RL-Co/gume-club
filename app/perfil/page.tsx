@@ -17,6 +17,7 @@ import { ApoioPublico } from "@/components/apoio-publico";
 import { ehApoiador } from "@/lib/apoio";
 import { getFavoritos, getFavoritaveis } from "@/lib/favoritos";
 import { GerenciarFavoritos } from "@/components/gerenciar-favoritos";
+import { GerenciarLinks } from "@/components/gerenciar-links";
 
 export const dynamic = "force-dynamic";
 
@@ -55,10 +56,11 @@ export default async function Perfil() {
     lidos: number;
     tem: number;
     autores: number;
+    social_links: string[];
   }>(sql`
     select u.handle, u.display_name, u.bio, u.image, u.email, u."twoFactorEnabled" as two_factor_enabled,
            ${ehApoiador(sql`u`)} as apoia,
-           u.supporter_public,
+           u.supporter_public, u.social_links,
            (select count(*) from library_entries le where le.user_id = u.id)::int as livros,
            (select count(*) from library_entries le
              where le.user_id = u.id and le.status = 'read')::int as lidos,
@@ -121,6 +123,17 @@ export default async function Perfil() {
           bio={me.bio ?? ""}
           image={me.image}
         />
+      </section>
+
+      {/* OS LINKS: até 5, texto livre — "não achei onde colocar rede social".
+          Ver lib/links-sociais.ts. */}
+      <section className="surface mt-6 p-6">
+        <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+          links
+        </h2>
+        <div className="mt-4">
+          <GerenciarLinks links={me.social_links ?? []} />
+        </div>
       </section>
 
       {/* OS FAVORITOS: até cinco, um coroado. Substitui "o que eu adorei"

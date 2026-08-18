@@ -100,6 +100,9 @@
   --grafico-veredito: #7b4fc0;   /* o julgamento. roxo: nenhum dos cinco
                                     vereditos é "verde = bom, vermelho = ruim";
                                     a cor é do assunto, não da nota. */
+  --grafico-generos: #a3492e;    /* gêneros. terracota: hue distante dos seis
+                                    de cima, sem navegador aqui pra calibrar
+                                    no olho — conferir contraste ao vivo. */
 
   /* ── THE SURFACE SYSTEM ───────────────────────────────────────────
      Harmony comes from repetition, not from taste applied case by case.
@@ -232,6 +235,7 @@
     --grafico-origens: #bd5484;
     --grafico-formatos: #1e97ab;
     --grafico-veredito: #8a68cf;
+    --grafico-generos: #c05a3c;
 
     --glass-tint: 48%;
     --glass-edge: 14%;
@@ -291,6 +295,7 @@
     --grafico-origens: #bd5484;
     --grafico-formatos: #1e97ab;
     --grafico-veredito: #8a68cf;
+    --grafico-generos: #c05a3c;
 
     --glass-tint: 48%;
     --glass-edge: 14%;

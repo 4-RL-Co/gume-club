@@ -4,10 +4,13 @@ import { revalidatePath } from "next/cache";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { getActor } from "@/lib/actor";
+import { getViewer } from "@/lib/viewer";
+import { limitarEscrita } from "@/lib/escrita";
 import {
   moverNaLista, numerarLista, descreverLista, guardarLista, esquecerLista, escolherCapaDaLista, fotografarLista,
   porNaLista, tirarDaLista,
 } from "@/lib/listas";
+import { upvotarLista, tirarUpvoteLista, quemUpvotouLista, type QuemVotou } from "@/lib/upvotes";
 
 /**
  * As ações da estante inventada. Toda ação resolve o ator primeiro (é a regra de
@@ -100,4 +103,29 @@ export async function tirarDaEstante(slug: string, collectionId: string, workId:
   const actor = await getActor();
   await tirarDaLista(actor, collectionId, workId);
   revalidatePath(`/estante/${slug}`);
+}
+
+/** Upvote numa lista — mais leve que guardar. Ver lib/upvotes.ts. */
+export async function upvotarListaAction(slug: string, collectionId: string): Promise<{ ok: boolean }> {
+  const actor = await getActor();
+  const r = await upvotarLista(actor, collectionId);
+  revalidatePath(`/estante/${slug}`);
+  return r;
+}
+
+export async function tirarUpvoteListaAction(slug: string, collectionId: string): Promise<void> {
+  const actor = await getActor();
+  await tirarUpvoteLista(actor, collectionId);
+  revalidatePath(`/estante/${slug}`);
+}
+
+/**
+ * "Quem votou" — só o dono da lista recebe rosto (a checagem é no SQL, ver
+ * lib/upvotes.ts). Mesmo teto de quemVotouResenhaAction, e pelo mesmo
+ * motivo: endpoint público que devolve rosto de gente precisa de limite.
+ */
+export async function quemVotouListaAction(collectionId: string): Promise<QuemVotou[]> {
+  const viewer = await getViewer();
+  if (viewer) await limitarEscrita(viewer.id);
+  return quemUpvotouLista(viewer, collectionId);
 }
