@@ -153,6 +153,7 @@ export async function saveBookEdit(
     title: clampRequired(form.title, LIMITS.title),
     author: clampRequired(form.author, LIMITS.author),
     firstPublished: num(form.firstPublished),
+    description: str(form.description, LIMITS.description),
     publisher: str(form.publisher, LIMITS.publisher),
     publishedYear: num(form.publishedYear),
     pageCount: num(form.pageCount),

@@ -78,6 +78,7 @@ function rotulo(campo: string): string {
     title: "título",
     authorId: "autor",
     firstPublished: "ano da obra",
+    description: "sinopse",
   };
   return conhecidos[campo] ?? campo;
 }

@@ -32,6 +32,14 @@ export const LIMITS = {
    * que a pessoa não vê chegando não é um limite, é uma armadilha.
    */
   authorBio: 1_200,
+  /**
+   * A sinopse — "do que se trata o livro, em algumas frases". Mesma ideia da
+   * ficha de autor, um degrau maior: um livro tem mais o que resumir que uma
+   * pessoa. Ver "sinopse não é fato, é obra" em ai/DECISIONS.md — por isso o
+   * campo pede as PRÓPRIAS palavras de quem edita, e não um espaço para colar
+   * o texto da loja.
+   */
+  description: 2_000,
   displayName: 60,
   handle: 30,
   /** Onde o livro foi comprado, ganhado, herdado. */
