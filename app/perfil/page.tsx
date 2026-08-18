@@ -15,7 +15,7 @@ import { ProfileForm } from "@/components/profile-form";
 import { HeraldSeal } from "@/components/herald-seal";
 import { ApoioPublico } from "@/components/apoio-publico";
 import { ehApoiador } from "@/lib/apoio";
-import { getFavoritos } from "@/lib/favoritos";
+import { getFavoritos, getFavoritaveis } from "@/lib/favoritos";
 import { GerenciarFavoritos } from "@/components/gerenciar-favoritos";
 
 export const dynamic = "force-dynamic";
@@ -72,11 +72,12 @@ export default async function Perfil() {
 
   if (!me) return <main className="px-6 pt-16">Leitor não encontrado.</main>;
 
-  const [inviter, insignias, convidados, favoritos, githubLigado] = await Promise.all([
+  const [inviter, insignias, convidados, favoritos, favoritaveis, githubLigado] = await Promise.all([
     getInviter(viewer.id),
     getBadges(viewer.id),
     getConvidados(viewer, viewer.id),
     getFavoritos(viewer.id),
+    getFavoritaveis(viewer.id),
     // O handle do GitHub já ligado, se houver. É ele que a insígnia de construtor cruza
     // com quem tem PR mesclado. Ver lib/badges.ts.
     db
@@ -129,7 +130,7 @@ export default async function Perfil() {
           favoritos
         </h2>
         <div className="mt-4">
-          <GerenciarFavoritos favoritos={favoritos} />
+          <GerenciarFavoritos favoritos={favoritos} favoritaveis={favoritaveis} />
         </div>
       </section>
 

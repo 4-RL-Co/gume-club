@@ -59,6 +59,34 @@ export async function getFavoritos(userId: string): Promise<FavoritoBook[]> {
   }));
 }
 
+/**
+ * Todo livro que você já leu e AINDA não favoritou — a lista que
+ * GerenciarFavoritos (/perfil) filtra na hora, sem voltar ao servidor a cada
+ * letra, mesmo padrão de components/shelf-select.tsx. Só entra quem pode de
+ * fato virar favorito: já leu, e ainda não é um dos cinco.
+ */
+export async function getFavoritaveis(userId: string): Promise<FavoritoBook[]> {
+  const rows = await db.execute<{
+    work_id: string; slug: string; title: string; author: string | null; cover_url: string | null;
+  }>(sql`
+    select distinct w.id as work_id, w.slug, w.title, a.name as author,
+           (select e.cover_url from editions e
+             where e.work_id = w.id and e.cover_url is not null
+             order by e.created_at asc, e.id asc limit 1) as cover_url
+      from library_entries le
+      join works w on w.id = le.work_id
+      left join authors a on a.id = w.author_id
+     where le.user_id = ${userId}::uuid and le.status = 'read'
+       and not exists (
+         select 1 from favorite_books fb where fb.user_id = ${userId}::uuid and fb.work_id = w.id)
+     order by w.title asc`);
+
+  return rows.map((r) => ({
+    workId: r.work_id, slug: r.slug, title: r.title, author: r.author,
+    coverUrl: r.cover_url, position: 0,
+  }));
+}
+
 /** Você já favoritou este livro? Para a ficha do livro saber que botão mostrar. */
 export async function jaFavoritei(userId: string, workId: string): Promise<boolean> {
   const [row] = await db.execute<{ n: number }>(sql`
