@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { ArrowBigUp } from "lucide-react";
+import { useState } from "react";
 import { AvatarLink } from "@/components/avatar";
-import { upvotarAction, tirarUpvoteAction } from "@/app/livro/[slug]/actions";
+import { UpvoteResenha } from "@/components/upvote-resenha";
 import type { ResenhaDoLivro } from "@/lib/explore";
 
 /**
@@ -14,18 +13,16 @@ import type { ResenhaDoLivro } from "@/lib/explore";
  *  (getResenhasDoLivro), que já tira a sua desta lista. Aqui é só o que os
  *  OUTROS escreveram, público ou visível para quem segue.
  *
+ *  E por isso "quem votou" (components/upvote-resenha.tsx) nunca aparece
+ *  aqui: essa revelação é só para o AUTOR, e o autor nunca vê a própria
+ *  resenha nesta lista. Ela mora na aba "resenhas" do perfil dele.
+ *
  *  ═══ POR QUE "LER MAIS" EXPANDE NO LUGAR, E NÃO LINKA PARA OUTRA PÁGINA ═══
  *
  *  No perfil e no Explorar, a resenha cortada linka para a página do livro — é
  *  para lá que a resenha inteira mora. Aqui a gente JÁ ESTÁ na página do
  *  livro: não existe um "lá" para onde mandar o clique. Expandir no lugar é a
  *  única saída que não é um link para a própria tela.
- *
- *  ═══ O UPVOTE, E O QUE ELE NÃO É ═══
- *
- *  Vota na RESENHA, nunca na pessoa que escreveu — não existe placar de
- *  "quem recebe mais votos" em lugar nenhum do app, só o número desta
- *  resenha, aqui. Ver a migration 0064 e lib/upvotes.ts.
  * ════════════════════════════════════════════════════════════════════
  */
 export function ResenhasDoLivro({
@@ -55,33 +52,10 @@ export function ResenhasDoLivro({
 
 function Uma({ r, slug, podeVotar }: { r: ResenhaDoLivro; slug: string; podeVotar: boolean }) {
   const [aberta, setAberta] = useState(false);
-  const [votei, setVotei] = useState(r.votei);
-  const [upvotes, setUpvotes] = useState(r.upvotes);
-  const [pending, start] = useTransition();
 
   // Um corte grosseiro, só para decidir se vale a pena oferecer "ler mais": uma
   // resenha de duas frases não precisa do botão, e ele ali seria um convite vazio.
   const longa = r.body.length > 320;
-
-  const votar = () => {
-    const antes = { votei, upvotes };
-    setVotei(!votei);
-    setUpvotes((n) => n + (votei ? -1 : 1));
-    start(async () => {
-      if (antes.votei) {
-        await tirarUpvoteAction(slug, r.id);
-        return;
-      }
-      const res = await upvotarAction(slug, r.id);
-      if (!res.ok) {
-        // A resenha sumiu ou deixou de ser visível entre o clique e o servidor
-        // responder — o otimista desfaz, calado: não é um erro que a pessoa
-        // causou.
-        setVotei(antes.votei);
-        setUpvotes(antes.upvotes);
-      }
-    });
-  };
 
   return (
     <li className="flex items-start gap-4">
@@ -118,30 +92,14 @@ function Uma({ r, slug, podeVotar }: { r: ResenhaDoLivro; slug: string; podeVota
             {new Date(r.createdAt).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })}
           </p>
 
-          {podeVotar ? (
-            <button
-              type="button"
-              disabled={pending}
-              aria-pressed={votei}
-              onClick={votar}
-              className={[
-                "flex items-center gap-1 rounded-[var(--radius-control)] border px-2 py-1 text-[12px] disabled:opacity-40",
-                votei
-                  ? "border-[var(--color-accent)] text-[var(--color-accent)]"
-                  : "border-[var(--color-rule)] text-[var(--color-ink-faint)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]",
-              ].join(" ")}
-            >
-              <ArrowBigUp size={13} strokeWidth={1.75} fill={votei ? "currentColor" : "none"} aria-hidden />
-              {upvotes > 0 && <span className="tabular">{upvotes}</span>}
-            </button>
-          ) : (
-            upvotes > 0 && (
-              <span className="flex items-center gap-1 text-[12px] text-[var(--color-ink-faint)]">
-                <ArrowBigUp size={13} strokeWidth={1.75} aria-hidden />
-                <span className="tabular">{upvotes}</span>
-              </span>
-            )
-          )}
+          <UpvoteResenha
+            reviewId={r.id}
+            slug={slug}
+            votei={r.votei}
+            upvotes={r.upvotes}
+            podeVotar={podeVotar}
+            souAutor={false}
+          />
         </div>
       </div>
     </li>

@@ -95,6 +95,8 @@ export type Stats = {
 
   centuries: { century: number; label: string; n: number }[];
   nationalities: Slice[];
+  /** Os gêneros mais lidos. Livro sem gênero cadastrado não entra — nunca um "outros". */
+  genres: Slice[];
   publishers: Slice[];
   /** De onde vieram: sebo, feira, presente, herança. Nas palavras do leitor. */
   origins: Slice[];
@@ -329,6 +331,18 @@ export async function getStats(
     order by n desc, label asc
     limit 12`);
 
+  const genres = await db.execute<{ label: string; n: number }>(sql`
+    select w.genre as label, count(*)::int as n
+    from library_entries
+    join works w on w.id = library_entries.work_id
+    where library_entries.user_id = ${ownerId}::uuid
+      and ${visible}
+      and w.genre is not null
+      and ${finished(year)}
+    group by w.genre
+    order by n desc, label asc
+    limit 8`);
+
   // Procedência é texto livre. A gente agrupa por texto normalizado e mostra o que
   // a pessoa escreveu. Nunca uma categoria que a gente inventou por ela.
   const origins = await db.execute<{ label: string; n: number }>(sql`
@@ -470,6 +484,7 @@ export async function getStats(
       n: r.n,
     })),
     nationalities: nat.map((r) => ({ label: r.label, n: r.n })),
+    genres: genres.map((r) => ({ label: r.label, n: r.n })),
     publishers: publishers.map((r) => ({ label: r.label, n: r.n })),
     origins: origins.map((r) => ({ label: r.label, n: r.n })),
     formats: formats.map((r) => ({ label: r.label, n: r.n })),
@@ -484,6 +499,85 @@ export async function getStats(
     abandoned: abandoned?.n ?? 0,
     patienceMonths: patience?.days ? patience.days / 30.44 : null,
     years: years.map((r) => r.year),
+  };
+}
+
+export type ResumoDoPerfil = {
+  /** Os cinco degraus SEMPRE, com os zeros dentro. Vida inteira. Ver Stats.verdicts. */
+  verdicts: { value: number; n: number }[];
+  /** Os gêneros mais lidos, vida inteira. Ver Stats.genres. */
+  genres: Slice[];
+  /** O ano corrente: livros terminados e páginas. `null` de página é "sem contagem". */
+  anoCorrente: { ano: number; livros: number; paginas: number | null };
+};
+
+/**
+ * A VERSÃO LEVE, pro PERFIL — inspirada no destaque do yourgamerprofile.com,
+ * traduzido pelas regras de sempre: sem contador de seguidores, sem mapa de
+ * atividade tipo streak (README, "o que não vai ser"), e o veredito continua
+ * sem nenhum dígito de MÉDIA (só contagem por palavra — lib/veredito.ts).
+ *
+ * getStats() já calcula tudo isto e mais uma dúzia de coisas — pesado demais
+ * pra rodar (duas vezes, vida inteira + ano) numa página vista bem mais que
+ * /estatisticas. Esta função calcula só o que os três cartões do perfil
+ * precisam.
+ */
+export async function getResumoDoPerfil(viewer: Viewer, ownerId: string): Promise<ResumoDoPerfil> {
+  const visible = and(
+    eq(libraryEntries.userId, ownerId),
+    visibleTo(viewer, libraryEntries.userId, libraryEntries.visibility),
+  );
+
+  const verdicts = await db.execute<{ value: number; n: number }>(sql`
+    select rt.value::int as value, count(*)::int as n
+    from library_entries
+    join ratings rt
+      on rt.work_id = library_entries.work_id and rt.user_id = library_entries.user_id
+    where library_entries.user_id = ${ownerId}::uuid
+      and ${visible}
+    group by rt.value`);
+
+  const genres = await db.execute<{ label: string; n: number }>(sql`
+    select w.genre as label, count(*)::int as n
+    from library_entries
+    join works w on w.id = library_entries.work_id
+    where library_entries.user_id = ${ownerId}::uuid
+      and ${visible}
+      and w.genre is not null
+      and ${finished(null)}
+    group by w.genre
+    order by n desc, label asc
+    limit 8`);
+
+  const ano = new Date().getFullYear();
+  const [doAno] = await db.execute<{ livros: number; soma: number | null; com_pagina: number }>(sql`
+    select count(*)::int as livros,
+           sum(e.page_count)::int as soma,
+           count(e.page_count)::int as com_pagina
+      from library_entries
+      join readings r on r.entry_id = library_entries.id
+      left join editions e on e.id = coalesce(
+        library_entries.edition_id,
+        (select oc.edition_id from owned_copies oc
+          where oc.work_id = library_entries.work_id and oc.user_id = library_entries.user_id),
+        (select e2.id from editions e2 where e2.work_id = library_entries.work_id
+          order by e2.created_at asc, e2.id asc limit 1))
+     where library_entries.user_id = ${ownerId}::uuid
+       and ${visible}
+       and r.finished_on is not null
+       and extract(year from r.finished_on) = ${ano}`);
+
+  return {
+    verdicts: [5, 4, 3, 2, 1].map((value) => ({
+      value,
+      n: verdicts.find((r) => r.value === value)?.n ?? 0,
+    })),
+    genres: genres.map((r) => ({ label: r.label, n: r.n })),
+    anoCorrente: {
+      ano,
+      livros: doAno?.livros ?? 0,
+      paginas: doAno && doAno.com_pagina > 0 ? doAno.soma : null,
+    },
   };
 }
 

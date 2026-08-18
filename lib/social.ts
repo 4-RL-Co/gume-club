@@ -466,6 +466,7 @@ export async function getProfile(handle: string) {
       image: users.image,
       createdAt: users.createdAt,
       emailVerified: users.emailVerified,
+      socialLinks: users.socialLinks,
     })
     .from(users)
     .where(and(

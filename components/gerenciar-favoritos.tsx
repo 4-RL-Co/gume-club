@@ -109,7 +109,12 @@ export function GerenciarFavoritos({
                     <Crown size={13} strokeWidth={2} className="text-[var(--color-on-accent)]" />
                   </span>
                 )}
-                <Link href={`/livro/${f.slug}`} className="cover-lift block" title={f.title}>
+                <Link
+                  href={`/livro/${f.slug}`}
+                  className="cover-lift block rounded-[var(--radius-2)]"
+                  title={f.title}
+                  style={i === 0 ? { boxShadow: `0 0 0 2px color-mix(in srgb, var(--color-accent) 55%, transparent)` } : undefined}
+                >
                   <Cover title={f.title} author={f.author} src={f.coverUrl} />
                 </Link>
               </div>

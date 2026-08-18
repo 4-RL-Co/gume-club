@@ -5,6 +5,9 @@ import { getViewer } from "@/lib/viewer";
 import { getProfile, isFollowing } from "@/lib/social";
 import { getShelf, getShelfCounts } from "@/lib/shelf";
 import { getFavoritos } from "@/lib/favoritos";
+import { LinksDoPerfil } from "@/components/links-do-perfil";
+import { getResumoDoPerfil } from "@/lib/stats";
+import { ResumoDoPerfil } from "@/components/resumo-do-perfil";
 import { getFriendRatings } from "@/lib/ratings";
 import { ConfirmeSeuEmail } from "@/components/confirme-seu-email";
 import { estaInvisivel, contarLivrosQueProvam, LIVROS_QUE_PROVAM } from "@/lib/descoberta";
@@ -97,7 +100,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
   const viewer = await getViewer();
   const mine = viewer?.id === profile.id;
 
-  const [books, counts, following, badges, shelves, guardadas, resenhas, curadorias, favoritos] = await Promise.all([
+  const [books, counts, following, badges, shelves, guardadas, resenhas, curadorias, favoritos, resumo] = await Promise.all([
     getShelf(viewer, profile.id, { filter: "tudo", sort: "adicionado" }),
     getShelfCounts(viewer, profile.id),
     viewer && !mine ? isFollowing(viewer.id, profile.id) : Promise.resolve(false),
@@ -117,6 +120,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
     // Até cinco, escolhidos à mão — substitui "o que eu adorei" (todo 5
     // estrelas, sem limite). Ver lib/favoritos.ts.
     getFavoritos(profile.id),
+    getResumoDoPerfil(viewer, profile.id),
   ]);
 
   // A HONRA. Uma escada só: livros, HQs e cada volume de mangá contam juntos. Ver
@@ -203,6 +207,8 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
             </p>
           )}
 
+          <LinksDoPerfil links={profile.socialLinks} />
+
           {/* As insígnias reconhecem DOAÇÃO À COMUNIDADE, nunca leitura. São um sim ou
               um não: você tem, ou não tem. Nenhuma delas diz quanto a pessoa leu,
               avaliou ou seguiu, e nenhuma carrega um número aqui — o número de
@@ -257,6 +263,8 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
 
       {invisivel && <ConfirmeSeuEmail faltam={LIVROS_QUE_PROVAM - livrosQueProvam} />}
 
+      <ResumoDoPerfil resumo={resumo} primeiroNome={primeiroNome ?? name} mine={mine} />
+
       {/* ═══ O RESTO DO PERFIL, EM ABAS ═══
 
           Sete seções empilhadas (coleção, adorei, resenhas, listas feitas, listas
@@ -268,6 +276,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
       <PerfilAbas
         mine={mine}
         primeiroNome={primeiroNome ?? name}
+        podeVotar={Boolean(viewer)}
         books={books}
         opinions={opinions}
         favoritos={favoritos}

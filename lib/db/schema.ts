@@ -89,6 +89,14 @@ export const users = pgTable("users", {
    */
   emailVerified: boolean("email_verified").notNull().default(false),
   /**
+   * OS LINKS DO PERFIL. Até 5 URLs, na ordem que a pessoa escolheu — o
+   * teto é aplicado em app/perfil/actions.ts, não aqui. Sem rótulo, sem
+   * "plataforma": o ícone e o nome se decidem olhando o domínio, na tela
+   * (components/links-do-perfil.tsx). Um enum de plataformas seria um
+   * formulário fingindo saber tudo que existe. Ver a migration 0065.
+   */
+  socialLinks: text("social_links").array().notNull().default([]),
+  /**
    * BANIDO. Uma data, e nunca um DELETE.
    *
    * Erro de moderação acontece (quem modera é uma pessoa cansada), e um banimento
@@ -661,6 +669,21 @@ export const collectionItems = pgTable("collection_items", {
 }, (t) => [
   uniqueIndex("collection_items_pk").on(t.collectionId, t.workId),
   index("collection_items_work_idx").on(t.workId),
+]);
+
+/**
+ * O UPVOTE, NAS LISTAS. Mesma forma de reviewUpvotes, tabela própria — não
+ * uma FK polimórfica. NÃO é o mesmo gesto de "guardar" (collectionSaves):
+ * guardar é comprometer (a curadoria de alguém dentro do seu próprio
+ * perfil); upvote é mais leve. Ver a migration 0066.
+ */
+export const listUpvotes = pgTable("list_upvotes", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  collectionId: uuid("collection_id").notNull().references(() => collections.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  primaryKey({ columns: [t.userId, t.collectionId] }),
+  index("list_upvotes_collection_idx").on(t.collectionId),
 ]);
 
 

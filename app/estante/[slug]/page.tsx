@@ -21,6 +21,8 @@ import { PorNaEstante } from "@/components/por-na-estante";
 import { jaGuardei, quemGuardou } from "@/lib/listas";
 import { QuemGuardouEsta } from "@/components/quem-guardou";
 import { origemAceita } from "@/lib/imagens";
+import { contarUpvotesLista } from "@/lib/upvotes";
+import { UpvoteLista } from "@/components/upvote-lista";
 
 export const dynamic = "force-dynamic";
 
@@ -68,10 +70,11 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
    * lista sempre e deixar o servidor decidir é mais seguro do que perguntar
    * "sou dono?" aqui e confiar na resposta.
    */
-  const [[contagem], guardaram] = await Promise.all([
+  const [[contagem], guardaram, upvotos] = await Promise.all([
     db.execute<{ n: number }>(sql`
       select count(*)::int as n from collection_saves where collection_id = ${shelf.id}::uuid`),
     quemGuardou(viewer, shelf.id),
+    contarUpvotesLista(shelf.id, viewer?.id ?? null),
   ]);
 
   const books = await db
@@ -182,6 +185,18 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
         ]}
       >
         <span className="flex items-center gap-5">
+          {/* O upvote é mais leve que guardar: "gostei", sem levar para casa.
+              Ver lib/upvotes.ts. */}
+          {shelf.visibility !== "private" && (
+            <UpvoteLista
+              slug={shelf.slug}
+              collectionId={shelf.id}
+              votei={upvotos.votei}
+              upvotes={upvotos.n}
+              podeVotar={!mine && Boolean(viewer)}
+              souDono={mine}
+            />
+          )}
           {/* Estante privada não ganha botão de compartilhar: o link não abriria
               para quem recebesse, e um botão que promete o que não cumpre é pior
               que nenhum botão. */}

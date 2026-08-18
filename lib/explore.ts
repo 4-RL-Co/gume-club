@@ -419,6 +419,9 @@ export type ResenhaDaPessoa = {
   coverUrl: string | null;
   /** Só o dono vê isto: é o que deixa ele saber o que está aberto e o que não está. */
   visibility: string;
+  /** Quantos upvotes — nunca em GENTE, só nesta resenha. Ver lib/upvotes.ts. */
+  upvotes: number;
+  votei: boolean;
 };
 
 export async function getResenhasDe(
@@ -434,11 +437,18 @@ export async function getResenhasDe(
     title: string;
     cover_url: string | null;
     visibility: string;
+    upvotes: number;
+    votei: boolean;
   }>(sql`
     -- Sem apelido em "reviews": o visibleTo() emite o nome real da tabela, e um
     -- apelido faz o Postgres não achar a coluna que a regra de visibilidade cita.
     select reviews.id, reviews.body, reviews.created_at, reviews.visibility,
-           w.slug, w.title, ${capaDeQuemEscreveu} as cover_url
+           w.slug, w.title, ${capaDeQuemEscreveu} as cover_url,
+           (select count(*) from review_upvotes ru where ru.review_id = reviews.id)::int as upvotes,
+           exists (
+             select 1 from review_upvotes ru
+              where ru.review_id = reviews.id and ru.user_id = ${viewer?.id ?? null}::uuid
+           ) as votei
       from reviews
       join works w on w.id = reviews.work_id
      where reviews.user_id = ${donoId}::uuid
@@ -455,6 +465,8 @@ export async function getResenhasDe(
     title: r.title,
     coverUrl: r.cover_url,
     visibility: r.visibility,
+    upvotes: r.upvotes,
+    votei: r.votei,
   }));
 }
 

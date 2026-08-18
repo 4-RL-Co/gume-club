@@ -8,6 +8,7 @@ import { getActor } from "@/lib/actor";
 import { LIMITS, clamp } from "@/lib/limits";
 import { assertOwner, type Viewer } from "@/lib/authz";
 import { coroar, desfavoritar, favoritar } from "@/lib/favoritos";
+import { urlValida } from "@/lib/links-sociais";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -147,4 +148,28 @@ export async function tirarFavoritoAction(workId: string): Promise<void> {
   const actor = await getActor();
   await desfavoritar(actor, workId);
   revalidatePath("/perfil");
+}
+
+/**
+ * OS LINKS DO PERFIL. Até 5, na ordem que a pessoa mandou — sem rótulo:
+ * ele se decide olhando o domínio, na tela (lib/links-sociais.ts). Toda a
+ * lista se salva de uma vez, do mesmo jeito que a bio ou o nome: não existe
+ * "adicionar link" como escrita separada de "salvar o perfil".
+ */
+export async function saveSocialLinks(
+  links: string[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const actor = await getActor();
+  assertOwner(actor as Viewer, { userId: actor.id });
+
+  const limpos = links.map((l) => l.trim()).filter(Boolean);
+  if (limpos.length > 5) return { ok: false, error: "no máximo 5 links" };
+
+  const invalido = limpos.find((l) => !urlValida(l));
+  if (invalido) return { ok: false, error: `isso não parece um link: "${invalido}"` };
+
+  await db.update(users).set({ socialLinks: limpos }).where(eq(users.id, actor.id));
+
+  revalidatePath("/perfil");
+  return { ok: true };
 }

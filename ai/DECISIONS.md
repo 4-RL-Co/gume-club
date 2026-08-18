@@ -4358,3 +4358,63 @@ resenha — sem `join` que multiplicasse linha.
 ser") e `ai/PRD.md` (item 7, "sem comentários"), os dois reescritos
 para dizer a verdade nova sem prometer mais do que existe — comentário
 continua fora, só o voto entrou.
+
+## O upvote chega nas listas, "quem votou" fica visível pro dono, e os links do perfil.
+
+Três pedidos seguidos do dono, no mesmo fôlego:
+
+**"onde é possível dar upvotes? já que upvote é ferramenta de amizade, tem
+que ser possível ver quem deu upvote. E quero que dê pra dar upvote em
+resenhas e listas."** — `list_upvotes` (migration 0066), mesma forma de
+`review_upvotes`: tabela própria, não uma FK polimórfica (este repo não usa
+esse padrão em lugar nenhum). Upvote em lista NÃO é o mesmo gesto de
+guardar (`collection_saves`) — guardar é comprometer, pôr a curadoria de
+alguém dentro do próprio perfil; upvote é mais leve, "gostei", sem levar
+para casa. Os dois convivem.
+
+"Quem votou" segue exatamente o padrão que `quemGuardou()` já usava em
+`lib/listas.ts`: o NÚMERO é público, a LISTA de rostos só para o dono — a
+checagem mora dentro da própria consulta SQL (`c.user_id = viewer.id`),
+nunca uma checagem separada que um refactor esqueceria de chamar. Diferença
+deliberada de `quemGuardou()`: ali os rostos vêm prontos (uma revelação por
+tela); aqui são buscados sob demanda, por uma ação de servidor, porque uma
+lista de resenhas tem UMA revelação por resenha, e buscar todas de uma vez
+seria trabalho pro banco que a tela não usa.
+
+`lib/acoes.test.ts` pegou um real: as duas ações novas de "quem votou" são
+endpoints públicos que devolvem rosto de gente, e não tinham teto de uso.
+Corrigido com `limitarEscrita()`, mesmo em sendo leitura — um endpoint sem
+limite é convite para raspar identidade em massa.
+
+**"não achei onde colocar rede social."** — `users.social_links` (migration
+0065), `text[]`, até 5. Sem "qual plataforma?": um enum fixo seria um
+formulário fingindo saber toda rede que existe, a mesma lição de
+`owned_copies.acquired_note`. Só a URL entra; o rótulo (Instagram, GitHub,
+ou o domínio nu quando ninguém aqui conhece) se decide olhando o domínio,
+em `lib/links-sociais.ts` — puro, sem banco, fácil de testar.
+
+E o perfil modelo mockado (`@perfil-modelo`) saiu, pedido direto do dono —
+`scripts/seed-perfil-modelo.mjs --undo`.
+
+## O resumo do perfil, e os favoritos centralizados.
+
+Continuação da tradução do yourgamerprofile.com. Três cartões novos no
+perfil (`components/resumo-do-perfil.tsx`), reaproveitando os mesmos
+gráficos de `/estatisticas` (extraídos para `components/graficos-leitura.tsx`
+— um lugar só, e não duas cópias que um dia divergem): distribuição de
+veredito (sem média, sem dígito de nota), gêneros mais lidos (a versão
+comportada do gráfico radar do print) e o ano corrente (livros e páginas,
+reaproveitando a régua que a honra já usa).
+
+`lib/stats.ts` ganhou `getResumoDoPerfil()` — deliberadamente LEVE:
+`getStats()` já calcula tudo isso e mais uma dúzia de coisas, pesado demais
+pra rodar (duas vezes, vida inteira + ano) numa página vista bem mais que
+`/estatisticas`.
+
+**Fora, de propósito**: contador de seguidores/curtida (README: "sem
+contador de seguidores") e o mapa de atividade estilo GitHub — perto demais
+de "ofensiva" (streak), que o README também recusa. O print tem os dois; a
+tradução para cá parou antes deles.
+
+E os favoritos ganharam centralização e um anel dourado no coroado — "os
+favoritos tem que estar centralizados e de forma mais bonita".

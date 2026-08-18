@@ -7,8 +7,8 @@ import {
 import { ScreenHeader } from "@/components/screen-header";
 import { Empty } from "@/components/empty";
 import { ShelfTabs } from "@/components/shelf-tabs";
-import { GLIFO } from "@/components/veredito";
 import { mine } from "@/lib/veredito";
+import { material, Barras, Vereditos } from "@/components/graficos-leitura";
 
 export const dynamic = "force-dynamic";
 
@@ -542,33 +542,6 @@ function Card({
 /** A altura do gráfico é FIXA, e as barras escalam dentro dela. */
 const ALTURA = 132;
 
-/**
- * O MATERIAL DA BARRA, e ele vai no estilo inline.
- *
- * Um volume de luz baixa (14%) com a ARESTA SUPERIOR ACESA (1px a 100%). O topo
- * aceso é o que dá borda, contraste e vida a um gráfico sem cor, e ele É A MARCA:
- * o fio é onde a luz bate.
- *
- * Inline, e não numa classe, porque uma classe pode não chegar: em desenvolvimento
- * o Next injeta o CSS por JavaScript, e este gráfico já apareceu VAZIO por causa
- * disso, com as barras no HTML e invisíveis na tela. Um gráfico é conteúdo, e
- * conteúdo não pode depender de uma folha de estilo chegar.
- *
- * A luz vem de `--barra-luz`, que o hover do item muda. É assim que o hover
- * funciona sem precisar ganhar do inline, o que ele nunca ganharia.
- */
-function material(zero: boolean, cor: string): React.CSSProperties {
-  return {
-    // Valor zero: SÓ o filete, sem preenchimento. A barra existe, e é honesta:
-    // sumir com a categoria que deu zero é a mentira mais fácil de um gráfico.
-    background: zero
-      ? "transparent"
-      : `color-mix(in srgb, var(${cor}) var(--barra-luz, 30%), transparent)`,
-    borderTop: `1px solid var(${cor})`,
-    transition: "background 160ms ease",
-  };
-}
-
 /** Os séculos. O tempo é um eixo, então ele deita. */
 function Seculos({ dados }: { dados: { century: number; label: string; n: number }[] }) {
   const cor = "--grafico-tempo";
@@ -612,93 +585,6 @@ function Seculos({ dados }: { dados: { century: number; label: string; n: number
           </span>
         </li>
       ))}
-    </ul>
-  );
-}
-
-/**
- * Uma barra por linha, para quando o rótulo é uma palavra.
- *
- * Sem pizza, sem donut, sem legenda: a barra é a única forma em que o olho compara
- * tamanhos sem errar, e o rótulo fica do lado do dado, em vez de numa legenda que
- * obriga a ir e voltar.
- */
-function Barras({ dados, cor }: { dados: Slice[]; cor: string }) {
-  const maior = Math.max(...dados.map((d) => d.n), 1);
-
-  return (
-    <ul className="flex flex-col gap-3.5">
-      {dados.map((d) => (
-        <li key={d.label} className="barra-item flex items-center gap-4">
-          <span className="w-32 shrink-0 truncate text-[13px] text-[var(--color-ink-soft)]">
-            {d.label}
-          </span>
-
-          <span className="flex min-w-0 flex-1 items-center">
-            <span
-              className="block h-2.5 shrink-0"
-              style={{
-                width: `${Math.max((d.n / maior) * 100, 1.5)}%`,
-                ...material(d.n === 0, cor),
-              }}
-            />
-          </span>
-
-          <span className="tabular w-6 shrink-0 text-right text-[12px] text-[var(--color-ink-faint)]">
-            {d.n}
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-/**
- * O QUE VOCÊ ACHOU: uma linha por palavra, do "adorei" ao "detestei", com o
- * glifo de cada uma. Os cinco degraus aparecem SEMPRE, com os zeros dentro:
- * sumir com a palavra que ninguém usou é a mentira mais fácil de um gráfico.
- *
- * E as cinco barras têm a MESMA cor de propósito: verde no "adorei" e vermelho
- * no "detestei" transformaria a palavra numa escala de semáforo, e escala vira
- * média, que é o que a nota-palavra existe para matar. Ver lib/veredito.ts.
- */
-function Vereditos({ dados }: { dados: { value: number; n: number }[] }) {
-  const maior = Math.max(...dados.map((d) => d.n), 1);
-
-  return (
-    <ul className="flex flex-col gap-3.5">
-      {dados.map((d) => {
-        const Glifo = GLIFO[d.value as keyof typeof GLIFO];
-        return (
-          <li key={d.value} className="barra-item flex items-center gap-4">
-            <span className="flex w-32 shrink-0 items-center gap-2.5">
-              <Glifo
-                size={15}
-                strokeWidth={1.5}
-                aria-hidden
-                className="shrink-0 text-[var(--color-ink-faint)]"
-              />
-              <span className="truncate text-[13px] text-[var(--color-ink-soft)]">
-                {mine(d.value)}
-              </span>
-            </span>
-
-            <span className="flex min-w-0 flex-1 items-center">
-              <span
-                className="block h-2.5 shrink-0"
-                style={{
-                  width: `${Math.max((d.n / maior) * 100, 1.5)}%`,
-                  ...material(d.n === 0, "--grafico-veredito"),
-                }}
-              />
-            </span>
-
-            <span className="tabular w-6 shrink-0 text-right text-[12px] text-[var(--color-ink-faint)]">
-              {d.n}
-            </span>
-          </li>
-        );
-      })}
     </ul>
   );
 }
