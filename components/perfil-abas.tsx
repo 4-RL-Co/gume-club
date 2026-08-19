@@ -8,6 +8,7 @@ import { UpvoteResenha } from "@/components/upvote-resenha";
 import { FavoritosVitrine } from "@/components/favoritos-vitrine";
 import { PerfilEstante } from "@/components/perfil-estante";
 import { ListaGrid } from "@/components/lista-card";
+import { Diario } from "@/components/diario";
 import { Empty } from "@/components/empty";
 import { DOURADO } from "@/lib/dourado";
 import type { ShelfBook } from "@/lib/shelf-view";
@@ -16,6 +17,7 @@ import type { ListaCard } from "@/lib/listas";
 import type { ResenhaDaPessoa } from "@/lib/explore";
 import type { Curadoria } from "@/lib/curadoria-guardada";
 import type { FavoritoBook } from "@/lib/favoritos";
+import type { EntradaDiario } from "@/lib/diario";
 
 const EYEBROW = "text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]";
 
@@ -43,7 +45,7 @@ const EYEBROW = "text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-f
 export function PerfilAbas({
   mine, primeiroNome, podeVotar,
   books, opinions, favoritos,
-  resenhas,
+  resenhas, diario,
   shelves, guardadas, curadorias, curadoriaFixa, ehGuia,
   contagemEstante,
 }: {
@@ -56,6 +58,8 @@ export function PerfilAbas({
   /** Até cinco, escolhidos à mão — nunca mais que isso. Ver lib/favoritos.ts. */
   favoritos: FavoritoBook[];
   resenhas: ResenhaDaPessoa[];
+  /** Cada leitura, mais recente primeiro — releitura inclusa. Ver lib/diario.ts. */
+  diario: EntradaDiario[];
   shelves: ListaCard[];
   guardadas: ListaCard[];
   curadorias: Curadoria[];
@@ -69,6 +73,7 @@ export function PerfilAbas({
 }) {
   const ABAS = [
     { key: "estante" as const, label: "estante", n: contagemEstante.tudo, existe: books.length > 0 || favoritos.length > 0 },
+    { key: "diario" as const, label: "diário", n: diario.length, existe: diario.length > 0 },
     { key: "resenhas" as const, label: "resenhas", n: resenhas.length, existe: resenhas.length > 0 },
     {
       key: "listas" as const,
@@ -118,6 +123,12 @@ export function PerfilAbas({
               <PerfilEstante books={books} opinions={opinions} />
             </div>
           )}
+        </section>
+      )}
+
+      {aba === "diario" && (
+        <section className="surface mt-6 p-7">
+          <Diario entradas={diario} />
         </section>
       )}
 

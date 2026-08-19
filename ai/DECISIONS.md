@@ -4452,3 +4452,43 @@ de jargão que este app promete nunca mostrar na tela.
 Testado contra Postgres de verdade em `lib/curation.sql.test.ts`: a fonte
 vira `gume`, a linha do histórico existe e é rotulada "sinopse", a fonte
 não aparece como campo próprio, e limpar o texto limpa a fonte.
+
+## O diário
+
+Comparando com o Letterboxd — o dono trouxe um print do Diary dele. "é legal
+também ter uma linha do tempo tipo um diario de livros terminados, isso vai
+ajudar o usuario e tb quem quer ver o perfil da pessoa".
+
+`lib/diario.ts`, aba nova em `components/perfil-abas.tsx`, ao lado de
+estante/resenhas/listas: cada LEITURA, mais recente primeiro — inclusive as
+releituras, que viram linha própria em vez de sobrescrever a primeira,
+exatamente como `lib/leituras.ts` já promete na ficha de um livro. O
+veredito mostrado é o do LIVRO (`ratings`, uma nota por pessoa por livro,
+nunca por leitura — reavaliar a cada releitura não é o que a palavra-
+veredito promete), e se repete em toda linha do mesmo título. "Tem resenha"
+só acende na leitura que a resenha de fato referencia (`reviews.reading_id`
+— já existia essa coluna, subaproveitada). Visível pra quem visita, filtrado
+por `visibility` no SQL como sempre. Sem paginação nesta primeira versão
+(teto de 120 leituras, mesmo padrão do histórico de correções).
+
+Isto só foi possível construir de um jeito simples porque releitura já era
+de primeira classe no banco — ver a entrada seguinte, sobre `book-panel.tsx`
+ter ganhado o rótulo "reler" pro mesmo mecanismo que já existia.
+
+Testado contra Postgres de verdade em `lib/diario.sql.test.ts`: a releitura
+vira linha nova sem apagar a primeira, a visibilidade filtra igual a
+`getLeituras`, e "tem resenha" só acende na leitura certa.
+
+## Reler já existia, e ninguém sabia
+
+"tem que ter uma maneira de reler um livro, se eu li uma vez ele fica como
+lido, e se eu ler dnv?" — o dono. Investigando: `shelveAndRead`
+(`lib/library.ts`) já tratava releitura como primeira classe desde antes —
+"lendo" num livro "lido" abre uma segunda leitura; "lido" de novo a fecha,
+sem apagar a primeira. `lib/leituras.ts`, o card "o que você releu" em
+`/estatisticas` e `lib/escada.ts` já tratavam isso como conceito central.
+
+O gap era descobribilidade, não função. `components/book-panel.tsx` agora
+troca o rótulo do pill "lendo" para "reler" quando o livro já está "lido", e
+um toast confirma o que aconteceu ("Nova leitura aberta. Quando terminar,
+marque 'lido' de novo."). Sem migration, sem endpoint novo.
