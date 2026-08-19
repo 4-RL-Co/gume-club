@@ -487,6 +487,7 @@ export default async function BookPage({
                   livro={{
                     title: book.title,
                     author: book.author,
+                    description: book.description,
                     publisher: edition.publisher,
                     firstPublished: book.firstPublished,
                     publishedYear: edition.publishedYear,

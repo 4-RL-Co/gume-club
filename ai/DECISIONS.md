@@ -4418,3 +4418,37 @@ tradução para cá parou antes deles.
 
 E os favoritos ganharam centralização e um anel dourado no coroado — "os
 favoritos tem que estar centralizados e de forma mais bonita".
+
+## A sinopse, escrita por quem edita o livro
+
+**A dor:** só 185 de 1.132 livros nas estantes (16%) tinham sinopse — o
+resto veio do dump da Open Library sem cobertura, e ficção brasileira é
+onde ela falha mais (ver "O viés que obrigou a terceira fonte", acima:
+Jorge Amado, zero de 25). "Se um usuário quiser colocar uma sinopse ele tem
+que conseguir, ao clicar pra editar o livro" — o dono, direto.
+
+**A tensão com "sinopse não é fato, é obra":** essa regra (a mesma que
+recusou raspar a sinopse autorizada da Panini) nunca foi sobre proibir
+sinopse — foi sobre **de onde ela pode vir**. Texto de terceiro com direito
+autoral não entra num dataset CC0; texto que a PESSOA escreve, com as
+próprias palavras, é o mesmo princípio que já sustenta a resenha, que é "o
+produto do Gume, e não o da Panini". O campo (`components/correction.tsx`,
+dentro de "Arrumar este livro") pede isso explicitamente no rótulo: "com
+suas palavras, não copiada de outro lugar" — não é uma trava técnica (nada
+impede colar), é a mesma aposta que já sustenta todo o resto da correção
+livre: expor com nome quem editou é o que encarece fazer errado.
+
+**A implementação, em `lib/curation.ts` (`editBook`):** a sinopse é mais um
+campo da OBRA, ao lado de título e ano. A novidade é `descriptionSource`:
+quando o texto muda por aqui, a fonte vira `'gume'` (mesmo valor que
+`scripts/importar-biblioteca.mjs` já grava para sinopse trazida na
+importação — não é um valor novo, é o mesmo caminho). Limpar o campo limpa
+a fonte junto: um `null` não tem de onde ter vindo. E `descriptionSource`
+grava no banco mas **não vira uma segunda linha no histórico** — ninguém
+"corrigiu a fonte", corrigiu a sinopse, e ela já é uma linha; duas linhas
+pra uma ação só, com o nome cru da coluna na segunda, é o tipo de vazamento
+de jargão que este app promete nunca mostrar na tela.
+
+Testado contra Postgres de verdade em `lib/curation.sql.test.ts`: a fonte
+vira `gume`, a linha do histórico existe e é rotulada "sinopse", a fonte
+não aparece como campo próprio, e limpar o texto limpa a fonte.

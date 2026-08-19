@@ -43,6 +43,7 @@ export type BookEdit = {
   title?: string;
   author?: string;
   firstPublished?: number | null;
+  description?: string | null;
   publisher?: string | null;
   publishedYear?: number | null;
   pageCount?: number | null;
@@ -91,6 +92,21 @@ export async function editBook(
       workPatch.firstPublished = edit.firstPublished;
     }
 
+    /**
+     * A sinopse escrita por quem edita. "Sinopse não é fato, é obra" (ver
+     * ai/DECISIONS.md) é a mesma razão pela qual o Gume nunca raspou uma da
+     * loja — e é a razão pela qual, quando ELA muda por aqui, a fonte vira
+     * "gume": é texto de quem está na tela, não texto importado. Limpar o
+     * campo (string vazia vira null, ver lib/limits.ts) apaga a fonte junto,
+     * porque um texto que não existe não tem de onde ter vindo.
+     */
+    if (edit.description !== undefined && edit.description !== work.description) {
+      workBefore.description = work.description;
+      workPatch.description = edit.description;
+      workBefore.descriptionSource = work.descriptionSource;
+      workPatch.descriptionSource = edit.description ? "gume" : null;
+    }
+
     // ── the author. A new name is a new (or existing) author row, never an
     //    in-place rename: renaming would silently rewrite every other book by them.
     //
@@ -116,12 +132,24 @@ export async function editBook(
 
     if (Object.keys(workPatch).length) {
       await tx.update(works).set(workPatch).where(eq(works.id, workId));
+
+      /**
+       * `descriptionSource` grava no banco, mas não vira uma linha própria no
+       * histórico: ninguém "corrigiu a fonte", alguém corrigiu a sinopse, e ela
+       * já aparece como uma linha. Duas linhas para uma ação só (e a segunda
+       * mostrando o nome cru da coluna) é o tipo de coisa que este app promete
+       * nunca fazer na tela. Ver components/corrections-log.tsx.
+       */
+      const patchVisivel = { ...workPatch };
+      const beforeVisivel = { ...workBefore };
+      delete patchVisivel.descriptionSource;
+      delete beforeVisivel.descriptionSource;
       await tx.insert(revisions).values({
         userId: viewer.id,
         targetType: "work",
         targetId: workId,
-        patch: workPatch,
-        previous: workBefore,
+        patch: patchVisivel,
+        previous: beforeVisivel,
         reason,
       });
     }

@@ -34,6 +34,7 @@ import { LIMITS } from "@/lib/limits";
 type Livro = {
   title: string;
   author: string | null;
+  description: string | null;
   publisher: string | null;
   firstPublished: number | null;
   publishedYear: number | null;
@@ -241,6 +242,7 @@ export function Correcao({
           const form = {
             title: String(data.get("title") ?? ""),
             author: String(data.get("author") ?? ""),
+            description: String(data.get("description") ?? ""),
             publisher: String(data.get("publisher") ?? ""),
             firstPublished: String(data.get("firstPublished") ?? ""),
             publishedYear: String(data.get("publishedYear") ?? ""),
@@ -329,6 +331,24 @@ export function Correcao({
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <Campo name="title" label="título" defaultValue={livro.title} required maxLength={LIMITS.title} />
         <Campo name="author" label="autor" defaultValue={livro.author ?? ""} maxLength={LIMITS.author} />
+        {/* ═══ A SINOPSE, COM AS PRÓPRIAS PALAVRAS ═══
+            "Sinopse não é fato, é obra" (ai/DECISIONS.md) — é por isso que o Gume nunca
+            raspou uma de loja nenhuma, nem quando estava autorizado. Este campo não muda
+            essa regra: ele é para quem quer CONTAR do que o livro trata, não para colar o
+            texto de uma orelha ou de uma página de venda. */}
+        <div className="sm:col-span-2">
+          <label className="block">
+            <Rotulo>sinopse (com suas palavras, não copiada de outro lugar)</Rotulo>
+            <textarea
+              name="description"
+              defaultValue={livro.description ?? ""}
+              maxLength={LIMITS.description}
+              rows={5}
+              placeholder="do que se trata o livro, em algumas frases"
+              className="mt-1.5 w-full resize-y rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-transparent px-3 py-2 text-[14px] leading-relaxed outline-none placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-ink)]"
+            />
+          </label>
+        </div>
         <Campo name="publisher" label="editora" defaultValue={livro.publisher ?? ""} maxLength={LIMITS.publisher} />
         <Campo name="firstPublished" label="ano da obra" defaultValue={livro.firstPublished ?? ""} inputMode="numeric" />
         <Campo name="publishedYear" label="ano da edição" defaultValue={livro.publishedYear ?? ""} inputMode="numeric" />
