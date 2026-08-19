@@ -4526,3 +4526,25 @@ retângulo de aresta viva), mais saturada (opacidade de 30%/44% para
 46%/62%), número maior e com peso, em vez de pequeno e cinza. Ainda cor por
 ASSUNTO, nunca por valor — ninguém pintou o dado, só a barra que já existia.
 Ver `components/graficos-leitura.tsx`.
+
+## O ícone de cada rede social, e por que a cor da marca fica de fora
+
+"não achei nenhum ícone bonitinho" — o dono, sobre os links do perfil. O
+lucide-react (o único pacote de ícone que o Gume tinha) não desenha marca
+nenhuma — Instagram, X, GitHub, todos vêm `undefined` na versão instalada.
+
+Entrou `simple-icons` como dependência nova: um desenho por marca, licença
+livre, exports nomeados (`sideEffects: false`), então importar só os ~16 que
+o Gume usa não traz as milhares de marcas do pacote pro bundle. `lib/links-
+sociais.ts` ganhou `slugDoLink()` ao lado de `rotuloDoLink()` — o mesmo mapa
+de domínio, agora também dizendo qual desenho usar (`null` quando o Gume
+reconhece o NOME mas não tem o desenho: Mastodon é federado, e o LinkedIn
+saiu do simple-icons por pedido da própria empresa).
+
+**A cor da marca fica de fora, de propósito.** simple-icons dá o hex oficial
+de cada logo, e ele nunca chega na tela: "a ÚNICA coisa colorida no Gume é a
+capa de um livro" (`components/veredito.tsx`) — um perfil com o rosa do
+Instagram do lado do azul do Bluesky vira confete, e rouba a atenção que é
+da capa. O DESENHO de cada marca entra (`components/icone-rede-social.tsx`);
+a cor de cada marca não — `currentColor`, a mesma tinta neutra de todo ícone
+do app.
