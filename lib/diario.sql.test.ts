@@ -124,19 +124,86 @@ describe("o diário: uma linha por leitura, mais recente primeiro", () => {
       .where(sql`${libraryEntries.userId} = ${leitor.id}::uuid and ${libraryEntries.workId} = ${obra}::uuid`);
     expect(entry).toBeDefined();
 
-    // A resenha referencia a leitura MAIS RECENTE (a releitura de 2024).
+    // A resenha referencia a leitura MAIS RECENTE (a releitura de 2024), e é
+    // escrita no MESMO DIA da leitura — este teste é sobre "tem_resenha", não
+    // sobre a linha própria de "resenhei" (isso é o describe() de baixo).
     await db.insert(reviews).values({
       userId: leitor.id,
       workId: obra,
       readingId: linhas[0]!.readingId,
       body: "resenha da releitura",
       visibility: "public",
+      createdAt: new Date("2024-02-20T12:00:00-03:00"),
     });
 
     const diario = await getDiario(leitor, leitor.id);
-    const [releitura, original] = diario.filter((d) => d.workId === obra);
+    const linhasDoLivro = diario.filter((d) => d.workId === obra);
 
+    // Mesmo dia: NÃO vira uma terceira linha — só as duas leituras de sempre.
+    expect(linhasDoLivro.length, "resenha no mesmo dia da leitura virou uma linha a mais").toBe(2);
+
+    const [releitura, original] = linhasDoLivro;
     expect(releitura!.temResenha, "a leitura que tem a resenha não acendeu").toBe(true);
     expect(original!.temResenha, "a leitura antiga acendeu 'tem resenha' sem ter uma").toBe(false);
+
+    await db.execute(sql`delete from reviews where reading_id = ${linhas[0]!.readingId}::uuid`);
+  });
+});
+
+describe("\"resenhei\" vira linha própria só quando a data é OUTRA", () => {
+  let obraDaResenha: string;
+  let readingId: string;
+
+  it("resenha escrita dias depois da leitura vira uma SEGUNDA linha, com 'resenhei'", async () => {
+    const { workId } = await findOrCreateWork({
+      title: `O livro resenhado depois ${marca}`,
+      author: `Autor de teste ${marca}`,
+    });
+    obraDaResenha = workId;
+
+    await shelveAndRead(leitor, workId, "read", "2025-01-10");
+    const antes = await getDiario(leitor, leitor.id);
+    readingId = antes.find((d) => d.workId === workId)!.readingId;
+
+    await db.insert(reviews).values({
+      userId: leitor.id,
+      workId,
+      readingId,
+      body: "escrevi essa resenha bem depois",
+      visibility: "public",
+      createdAt: new Date("2025-01-20T12:00:00-03:00"),
+    });
+
+    const diario = await getDiario(leitor, leitor.id);
+    const linhas = diario.filter((d) => d.workId === workId);
+
+    expect(linhas.length, "a resenha em outro dia não virou uma linha nova").toBe(2);
+
+    // mais recente primeiro: a resenha (20) vem antes da leitura (10)
+    expect(linhas[0]!.tipo).toBe("resenha");
+    expect(linhas[0]!.quando).toBe("2025-01-20");
+    expect(linhas[1]!.tipo).toBe("leitura");
+    expect(linhas[1]!.quando).toBe("2025-01-10");
+  });
+
+  it("a linha da resenha respeita a MESMA visibilidade — não some pro dono, some pro estranho", async () => {
+    const paraODono = await getDiario(leitor, leitor.id);
+    expect(paraODono.some((d) => d.readingId === readingId && d.tipo === "resenha")).toBe(true);
+
+    const paraOEstranho = await getDiario(estranho, leitor.id);
+    // a estante é pública por padrão, então a resenha pública também aparece
+    expect(paraOEstranho.some((d) => d.readingId === readingId && d.tipo === "resenha")).toBe(true);
+
+    // tornando a RESENHA privada (não a estante), ela some só pro estranho
+    await db.execute(sql`update reviews set visibility = 'private' where reading_id = ${readingId}::uuid`);
+
+    const depois = await getDiario(estranho, leitor.id);
+    expect(
+      depois.some((d) => d.readingId === readingId && d.tipo === "resenha"),
+      "uma resenha privada apareceu como linha pra um estranho",
+    ).toBe(false);
+
+    const aindaParaODono = await getDiario(leitor, leitor.id);
+    expect(aindaParaODono.some((d) => d.readingId === readingId && d.tipo === "resenha")).toBe(true);
   });
 });

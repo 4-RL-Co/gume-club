@@ -4760,3 +4760,30 @@ veredito dado ficava sem nada nenhum naquele canto — um buraco que lia como
 veredito, quando existe, é um segundo fato, embaixo dele. "Resenha" e
 "releitura" continuam como fatos EXTRAS (à esquerda, junto do título):
 nenhuma linha do diário é só resenha, toda leitura terminou primeiro.
+
+## A paciência saiu, e "resenhei" virou uma linha própria no diário
+
+"Pode tirar isso: a paciência" — o dono, sobre o cartão de /estatisticas
+que media quanto tempo um livro espera na estante antes de ser aberto.
+Saiu o cartão, a função `espera()`, a consulta (`patience`) e o campo
+`patienceMonths` de `Stats` — nada mais lia esse dado (o resumo público do
+perfil já excluía de propósito, por ser íntimo demais).
+
+Na mesma conversa: "não tem 'resenhei' no diario ou o gume não guarda a
+data da resenha?" — o Gume guarda (`reviews.created_at`); o diário só não
+mostrava. `lib/diario.ts` ganhou um `union all`: a leitura continua uma
+linha ("terminei"/"abandonei"), e a resenha vira uma SEGUNDA linha
+("resenhei") só quando foi escrita num dia DIFERENTE do da leitura — no
+mesmo dia, o fato já está contado no selo "resenha" que já existia ao lado
+do título, e uma segunda linha seria o mesmo dia duas vezes. A ordenação
+usa a DATA de verdade (`quando_real`, um `date`), nunca o texto já
+formatado — comparar "2019" com "2019-06-15" como string faria um ano vago
+parecer mais cedo que uma data certa do mesmo ano, por acidente de string.
+A linha da resenha respeita a visibilidade DELA (não só a da estante):
+uma resenha privada não vira linha pra quem não é o autor, mesmo com a
+estante pública.
+
+Testado contra Postgres de verdade em `lib/diario.sql.test.ts`: resenha no
+mesmo dia não vira linha extra; resenha em outro dia vira, com `tipo:
+"resenha"` e a data certa; a linha da resenha some pro estranho quando ela
+fica privada, e continua visível pro dono.
