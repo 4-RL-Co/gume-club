@@ -1,5 +1,6 @@
 import { Gaveta } from "@/components/gaveta";
 import { Barras, Vereditos, Seculos } from "@/components/graficos-leitura";
+import { MapaMundi } from "@/components/mapa-mundi";
 import type { ResumoDoPerfil as Resumo } from "@/lib/stats";
 
 /**
@@ -16,7 +17,8 @@ import type { ResumoDoPerfil as Resumo } from "@/lib/stats";
  *   - gêneros mais lidos (a versão comportada do gráfico radar do print);
  *   - os autores mais lidos;
  *   - quem publica o que a pessoa lê (editoras);
- *   - de onde vêm os autores (nacionalidade);
+ *   - de onde vêm os autores, num MAPA MÚNDI (components/mapa-mundi.tsx —
+ *     "em países, pq não fazemos um mapa mundi com um heatmap?", o dono);
  *   - papel ou tela (formato);
  *   - o século das obras.
  *
@@ -140,12 +142,12 @@ export function ResumoDoPerfil({ resumo, primeiroNome, mine }: { resumo: Resumo;
           )}
 
           {nationalities.length > 0 && (
-            <section className="surface p-6">
+            <section className="surface p-6 sm:col-span-3">
               <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
                 de onde vêm os autores
               </h2>
               <div className="mt-5">
-                <Barras dados={nationalities} cor="--grafico-paises" />
+                <MapaMundi dados={nationalities} />
               </div>
             </section>
           )}
