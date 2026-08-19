@@ -159,7 +159,7 @@ const capaDeQuemEscreveu = sql`coalesce(
  *  leitor novo a seguir uma conta morta é o pior que esta tela pode fazer: ele segue,
  *  o feed não enche nunca, e ele conclui que o app é vazio.
  *
- *  Agora são DEZ livros com capa e SINAL DE VIDA (visto nos últimos 90 dias). Não é
+ *  Eram DEZ livros com capa e SINAL DE VIDA (visto nos últimos 90 dias). Não é
  *  mérito nem placar: é a diferença entre uma estante que dá para olhar e uma conta
  *  que ainda não começou.
  *
@@ -171,9 +171,17 @@ const capaDeQuemEscreveu = sql`coalesce(
  *
  *  Trocar "fantasma" por "vazio" não seria ganho. Por isso a tela abre na CURADORIA,
  *  que é a coisa mais cheia que o Gume tem, e gente vem depois. Ver app/explorar.
+ *
+ *  ═══ E A CAPA SAIU DA CONTA ═══
+ *
+ *  "o problema de não ter capa é nosso, então basta ter 10 livros, seja com capa ou
+ *  sem" — o dono. Faltar capa é um buraco do CATÁLOGO (o backfill do Google Books não
+ *  chegou em todo canto ainda, ver ai/PLAN.md), não um defeito da estante de quem leu
+ *  dez livros de verdade. Contar só quem tem foto escondia leitores reais atrás de um
+ *  problema que é nosso de resolver, não deles de pagar.
  * ════════════════════════════════════════════════════════════════════
  */
-/** Livros COM CAPA para a estante valer uma vitrine. Ver a nota acima. */
+/** Dez livros e SINAL DE VIDA para a estante valer uma vitrine. Ver a nota acima. */
 const LIVROS_PARA_A_VITRINE = 10;
 /** E sinal de vida: uma estante de quem sumiu é uma porta para um quarto vazio. */
 const DIAS_DE_VIDA = 90;
@@ -237,7 +245,12 @@ export async function getEstantes(viewer: Viewer, limite = 12): Promise<Estante[
        -- reproduz isso, porque lá o literal já vem tipado.
        and u.last_seen_on >= (now() at time zone 'America/Sao_Paulo')::date - ${DIAS_DE_VIDA}::int
      group by u.id
-    having count(*) filter (where ${capaDaObra} is not null) >= ${LIVROS_PARA_A_VITRINE}
+    -- Já exigiu capa (count(*) filter (where cover_url is not null) >= 10). "o
+    -- problema de não ter capa é nosso, então basta ter 10 livros, seja com
+    -- capa ou sem" — o dono. Não ter capa não é um defeito da estante de
+    -- ninguém; é um buraco no catálogo, e o catálogo é responsabilidade do
+    -- Gume, não motivo pra esconder o leitor da vitrine.
+    having count(*) >= ${LIVROS_PARA_A_VITRINE}
      -- SORTEIA, e não ordena por atividade. Ver a nota acima: ordenar por atividade
      -- premia quem cadastra livro toda semana, e some com quem lê devagar.
      order by random()

@@ -7,6 +7,7 @@ import { Cover } from "@/components/cover";
 import { coroarAction, tirarFavoritoAction, favoritarDoPerfilAction } from "@/app/perfil/actions";
 import { semAcento } from "@/lib/texto";
 import { toast } from "@/lib/toast";
+import { DOURADO } from "@/lib/dourado";
 import type { FavoritoBook } from "@/lib/favoritos";
 
 /**
@@ -99,11 +100,13 @@ export function GerenciarFavoritos({
             <li key={f.slug} className="flex flex-col items-center gap-2">
               <div className="relative w-full">
                 {/* A posição 1 É a coroa — nunca um selo à parte que pudesse
-                    discordar dela. Ver lib/favoritos.ts. */}
+                    discordar dela. Ver lib/favoritos.ts. DOURADO, e não o
+                    accent — mesma cor da coroa em todo o resto do app
+                    (Top 100, guia). Ver lib/dourado.ts. */}
                 {i === 0 && (
                   <span
                     className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full"
-                    style={{ background: "var(--color-accent)" }}
+                    style={{ background: DOURADO }}
                     aria-label="o favorito"
                   >
                     <Crown size={13} strokeWidth={2} className="text-[var(--color-on-accent)]" />
@@ -113,7 +116,7 @@ export function GerenciarFavoritos({
                   href={`/livro/${f.slug}`}
                   className="cover-lift block rounded-[var(--radius-2)]"
                   title={f.title}
-                  style={i === 0 ? { boxShadow: `0 0 0 2px color-mix(in srgb, var(--color-accent) 55%, transparent)` } : undefined}
+                  style={i === 0 ? { boxShadow: `0 0 0 2px color-mix(in srgb, ${DOURADO} 55%, transparent)` } : undefined}
                 >
                   <Cover title={f.title} author={f.author} src={f.coverUrl} />
                 </Link>

@@ -331,14 +331,19 @@ export function Correcao({
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <Campo name="title" label="título" defaultValue={livro.title} required maxLength={LIMITS.title} />
         <Campo name="author" label="autor" defaultValue={livro.author ?? ""} maxLength={LIMITS.author} />
-        {/* ═══ A SINOPSE, COM AS PRÓPRIAS PALAVRAS ═══
+        {/* ═══ A SINOPSE ═══
             "Sinopse não é fato, é obra" (ai/DECISIONS.md) — é por isso que o Gume nunca
             raspou uma de loja nenhuma, nem quando estava autorizado. Este campo não muda
-            essa regra: ele é para quem quer CONTAR do que o livro trata, não para colar o
-            texto de uma orelha ou de uma página de venda. */}
+            essa regra: ele é para quem quer CONTAR do que o livro trata.
+
+            SEM o aviso "não copiada de outro lugar" que morava no rótulo: soava como
+            acusação antecipada, o tipo de comunicação que o app promete não fazer — a
+            mesma régua que deixa "ou a capa te chama, ou não te chama" em pé
+            (components/explore.tsx) e tira o resto. Confiar é a postura padrão em toda
+            correção livre daqui; avisar antes do fato não é. */}
         <div className="sm:col-span-2">
           <label className="block">
-            <Rotulo>sinopse (com suas palavras, não copiada de outro lugar)</Rotulo>
+            <Rotulo>sinopse</Rotulo>
             <textarea
               name="description"
               defaultValue={livro.description ?? ""}
