@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home, Library, Users, Search, LogIn, LogOut, Info, UserRound, HeartHandshake,
-  MessagesSquare, ArrowUpRight, ChevronUp, BarChart3, Compass, Package,
+  MessagesSquare, ArrowUpRight, ChevronUp, BarChart3, Compass,
 } from "lucide-react";
 import { CONVERSA } from "@/lib/onde";
 import { GlassBar } from "@/components/glass-bar";
@@ -85,23 +85,22 @@ export type QuemEntrou = {
  * estantes montadas, queridinhos, curadores. Ver ai/DECISIONS.md.
  */
 /**
- * ═══ COLEÇÃO É UM LUGAR, E NÃO UM RECORTE DA ESTANTE ═══
+ * ═══ COLEÇÃO NÃO É MAIS UM LUGAR — VIROU UM MODO DA ESTANTE ═══
  *
- * A regra desta barra é que recorte mora na tela que ele recorta — foi por isso que
- * "lendo" e "lidos" saíram daqui. Ela vale para recortes de LEITURA.
+ * Era o contrário até aqui: "recorte mora na tela que ele recorta" valia só pra
+ * recortes de LEITURA (foi por isso que "lendo" e "lidos" saíram desta barra), e
+ * coleção — "o que eu li" contra "o que eu tenho", as duas coisas se cruzando sem
+ * se conter — parecia grande demais pra ser um filtro.
  *
- * Coleção não é um deles. A estante responde "o que eu li"; a coleção responde "o que
- * eu tenho", e as duas se cruzam sem se conter: dá para ter lido sem ter o livro, e
- * para ter sem nunca abrir. Quem coleciona vive na segunda, e ela não cabe como filtro
- * da primeira — foi tentando isso que um livro comprado e nunca aberto virou
- * "esperando", que é uma intenção de ler que ninguém teve.
- *
- * Ela fica DEPOIS da estante porque ler é o produto e ter é o acompanhamento.
+ * "acho que dá pra ficar apenas mais uma aba dentro da pagina /estante, ou até
+ * mesmo um filtro: tenho, aí filtra na estante" — o dono, revendo essa mesma
+ * decisão. Agora é `?posse=tenho`/`?posse=quero` dentro de /estante (ver
+ * app/estante/page.tsx e components/colecao-grid.tsx); /colecao virou um
+ * redirect pra lá, e saiu da barra — não é mais um destino próprio.
  */
 const LUGARES = [
   { href: "/", label: "Início", Icon: Home },
   { href: "/estante", label: "Estante", Icon: Library },
-  { href: "/colecao", label: "Coleção", Icon: Package },
   { href: "/pessoas", label: "Amigos", Icon: Users },
   { href: "/explorar", label: "Explorar", Icon: Compass },
 ];

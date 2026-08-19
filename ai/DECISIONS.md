@@ -4690,3 +4690,31 @@ hover por cima — os dois nunca mais competem pelo mesmo `transform`. De
 quebra, capas maiores nesses dois lugares, e o Top 100 (`/explorar`) ganhou
 o mesmo lift de capa que o resto do app já tem (o `.card` só erguia o
 CARTÃO inteiro 2px; a capa ficava parada).
+
+## /colecao vira `?posse=` dentro de /estante, revendo a própria decisão
+
+"acho que dá pra ficar apenas mais uma aba dentro da pagina /estante, ou
+até mesmo um filtro: tenho, aí filtra na estante" — o dono. Isto reabre uma
+decisão documentada (o comentário que morava em `components/sidebar.tsx`,
+"COLEÇÃO É UM LUGAR, E NÃO UM RECORTE DA ESTANTE"): que posse não cabia
+como filtro porque "a estante responde 'o que eu li'; a coleção responde
+'o que eu tenho'". A pergunta continua diferente — só a TELA parou de ser.
+
+`?posse=tenho`/`?posse=quero` dentro de `app/estante/page.tsx`, um
+parâmetro À PARTE de `?filtro=` (não um valor de `FILTERS`): posse
+(`owned_copies`) não é status de leitura (`library_entries`) — dá pra TER
+um livro sem nunca tê-lo marcado na estante, e `getShelf()` não sabe
+procurar por isso. Em modo posse a página usa `getColecao()`/
+`contarColecao()` (as mesmas consultas que `/colecao` já usava, intactas)
+e `components/colecao-grid.tsx` (extraído de `app/colecao/page.tsx`) — sem
+`ShelfControls`, sem prateleira: são perguntas diferentes, e o cartão de
+posse mostra editora/procedência, nunca nota ou honra.
+
+**Só seu.** A coleção nunca teve visão de visitante — um `?posse=` na
+estante de outra pessoa é ignorado, e os pills "tenho"/"quero ter" só
+aparecem pra quem é dono. `/colecao` virou um redirect (preserva
+`?ver=quero`), e saiu da barra lateral — não é mais um destino próprio,
+`LUGARES` perdeu um item.
+
+De quebra: "as capas devem ser um pouquinho maiores" — a capa da coleção
+foi de 58% pra 64% do cartão.
