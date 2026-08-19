@@ -6,12 +6,21 @@ import type { ResumoDoPerfil as Resumo } from "@/lib/stats";
  *  O RESUMO DO PERFIL. Inspirado na barra lateral do yourgamerprofile.com,
  *  traduzido pelas regras de sempre.
  *
- *  Três cartões, e só três — o que sobrevive da tradução:
+ *  Cinco cartões — o que sobrevive da tradução, e o que "abrir /estatisticas
+ *  pra visitantes" trouxe depois:
+ *   - o ano corrente (livros e páginas, reaproveitando a régua que a HONRA
+ *     já usa — nunca tempo de leitura, nunca ofensiva);
  *   - distribuição de veredito (sem média, sem dígito de nota — só contagem
  *     por palavra, a mesma régua de /estatisticas);
  *   - gêneros mais lidos (a versão comportada do gráfico radar do print);
- *   - o ano corrente (livros e páginas, reaproveitando a régua que a HONRA
- *     já usa — nunca tempo de leitura, nunca ofensiva).
+ *   - de onde vêm os autores (nacionalidade);
+ *   - papel ou tela (formato).
+ *
+ *  Os dois últimos são o "recorte curador" que /estatisticas nunca abriu pra
+ *  visitante: veredito, gênero, nacionalidade e formato são GOSTO, não
+ *  posse — a mesma linha que separa "e a comunidade" do resto daquela
+ *  página. Quantos livros na estante e a paciência ficam de fora, e ficam
+ *  só na tela privada. Ver lib/stats.ts, getResumoDoPerfil().
  *
  *  O que NÃO traduz, de propósito: contador de seguidores/curtida (README:
  *  "sem contador de seguidores") e o mapa de atividade estilo GitHub — perto
@@ -19,10 +28,13 @@ import type { ResumoDoPerfil as Resumo } from "@/lib/stats";
  * ════════════════════════════════════════════════════════════════════
  */
 export function ResumoDoPerfil({ resumo, primeiroNome, mine }: { resumo: Resumo; primeiroNome: string; mine: boolean }) {
-  const { verdicts, genres, anoCorrente } = resumo;
+  const { verdicts, genres, nationalities, formats, anoCorrente } = resumo;
   const totalVerdicts = verdicts.reduce((s, v) => s + v.n, 0);
 
-  if (totalVerdicts === 0 && genres.length === 0 && anoCorrente.livros === 0) return null;
+  if (
+    totalVerdicts === 0 && genres.length === 0 && nationalities.length === 0 &&
+    formats.length === 0 && anoCorrente.livros === 0
+  ) return null;
 
   return (
     <div className="mt-8 grid gap-5 sm:grid-cols-3">
@@ -76,6 +88,28 @@ export function ResumoDoPerfil({ resumo, primeiroNome, mine }: { resumo: Resumo;
           </h2>
           <div className="mt-5">
             <Barras dados={genres} cor="--grafico-generos" />
+          </div>
+        </section>
+      )}
+
+      {nationalities.length > 0 && (
+        <section className="surface p-6">
+          <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+            de onde vêm os autores
+          </h2>
+          <div className="mt-5">
+            <Barras dados={nationalities} cor="--grafico-paises" />
+          </div>
+        </section>
+      )}
+
+      {formats.length > 0 && (
+        <section className="surface p-6">
+          <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+            papel ou tela
+          </h2>
+          <div className="mt-5">
+            <Barras dados={formats} cor="--grafico-formatos" />
           </div>
         </section>
       )}
