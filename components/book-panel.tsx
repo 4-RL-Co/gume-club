@@ -65,7 +65,22 @@ export function BookPanel({
       return;
     }
     // "lendo" grava hoje e não pergunta nada. Um clique é um clique.
-    act(() => setStatus(slug, book.workId, status));
+    act(async () => {
+      await setStatus(slug, book.workId, status);
+      /**
+       * ═══ RELER JÁ FUNCIONAVA. NINGUÉM SABIA. ═══
+       * "se eu li uma vez ele fica como lido, e se eu ler dnv?" — o dono. A
+       * releitura já é de primeira classe no banco (lib/library.ts,
+       * shelveAndRead): clicar "lendo" de novo num livro "lido" ABRE uma
+       * segunda leitura, e "lido" de novo a FECHA como uma leitura nova, sem
+       * apagar a primeira. O que faltava não era a função — era a pessoa
+       * saber que aconteceu. Ver também o rótulo do próprio pill, logo
+       * abaixo: em "lido", ele já troca de "lendo" para "reler".
+       */
+      if (status === "reading" && mine.status === "read") {
+        toast("Nova leitura aberta. Quando terminar, marque “lido” de novo.");
+      }
+    });
   };
 
   return (
@@ -86,7 +101,11 @@ export function BookPanel({
                   : "border-[var(--color-rule)] text-[var(--color-ink-soft)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]",
               ].join(" ")}
             >
-              {s.label}
+              {/* "lido" já tem um lugar para virar "lendo" de novo: é o mesmo pill, e ele
+                  abre uma releitura (ver marcar(), acima). Sem o rótulo mudar, o pill parecia
+                  um erro de sincronismo ("por que 'lendo' ainda aparece clicável?"), não um
+                  convite. */}
+              {s.status === "reading" && mine.status === "read" ? "reler" : s.label}
             </button>
           ))}
         </div>
