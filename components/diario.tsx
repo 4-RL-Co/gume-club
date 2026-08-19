@@ -37,6 +37,15 @@ import type { EntradaDiario } from "@/lib/diario";
  *  vazia é uma pergunta sem resposta possível) — e cada linha agora ESCREVE
  *  o que ela é ("releitura", "resenha"), em vez de só um ícone pequeno fácil
  *  de não notar.
+ *
+ *  ═══ "RESENHEI" É UMA LINHA À PARTE, QUANDO A DATA É OUTRA ═══
+ *
+ *  "não tem 'resenhei' no diario ou o gume não guarda a data da resenha?" —
+ *  o dono. O Gume guarda; lib/diario.ts agora dá a cada resenha escrita num
+ *  dia DIFERENTE do da leitura a sua PRÓPRIA linha (`tipo === "resenha"`),
+ *  com "resenhei" no lugar de "terminei". No mesmo dia, o fato já está
+ *  contado na linha da leitura (o selo "resenha" ao lado do título) — uma
+ *  segunda linha ali seria o mesmo dia duas vezes.
  * ════════════════════════════════════════════════════════════════════
  */
 export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
@@ -127,7 +136,7 @@ export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
 
             return (
               <li
-                key={e.readingId}
+                key={`${e.readingId}-${e.tipo}`}
                 className="flex items-start gap-4 border-b border-[var(--color-rule)] py-4 first:pt-0 last:border-0 last:pb-0"
               >
                 <div className="w-14 shrink-0 pt-0.5">
@@ -159,8 +168,10 @@ export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
 
                   {/* O RÓTULO: "não dá pra saber oq foi leitura e oq foi resenha" — o
                       dono. O ícone sozinho já dizia isso, mas fácil de não notar; a
-                      palavra ao lado não deixa dúvida. */}
-                  {(e.releitura || e.temResenha) && (
+                      palavra ao lado não deixa dúvida. Numa linha que JÁ é a resenha
+                      (e.tipo === "resenha"), repetir o selo "resenha" aqui seria o
+                      mesmo fato duas vezes — o lado direito já diz "resenhei". */}
+                  {(e.releitura || (e.temResenha && e.tipo !== "resenha")) && (
                     <div className="mt-1.5 flex flex-wrap items-center gap-3">
                       {e.releitura && (
                         <span className="flex items-center gap-1 text-[11px] text-[var(--color-ink-faint)]">
@@ -168,7 +179,7 @@ export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
                           releitura
                         </span>
                       )}
-                      {e.temResenha && (
+                      {e.temResenha && e.tipo !== "resenha" && (
                         <Link
                           href={`/livro/${e.slug}`}
                           className="flex items-center gap-1 text-[11px] text-[var(--color-ink-faint)] hover:text-[var(--color-ink)]"
@@ -182,16 +193,20 @@ export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
                 </div>
 
                 {/* "no diario, o que é livro terminado e o que é resenha feita?" — o
-                    dono. Toda linha aqui É um livro terminado (ou abandonado) — a
+                    dono. Toda LEITURA aqui É um livro terminado (ou abandonado) — a
                     palavra dizia isso pela AUSÊNCIA de "abandonei", nunca em voz
                     alta, e sem veredito dado a linha ficava sem nada nesse canto.
-                    Agora "terminei"/"abandonei" aparece sempre; o veredito, quando
-                    existe, é um segundo fato, embaixo. "Resenha" e "releitura"
-                    (à esquerda, junto do título) são os fatos extras — nenhuma
-                    linha do diário é "só resenha": toda leitura terminou primeiro. */}
+                    Agora "terminei"/"abandonei" aparece sempre.
+                    "não tem 'resenhei' no diario ou o gume não guarda a data da
+                    resenha?" — o dono. Guarda (reviews.created_at); quando ela foi
+                    escrita num dia DIFERENTE do da leitura, vira a própria linha
+                    (e.tipo === "resenha"), com "resenhei" aqui no lugar de
+                    "terminei". No MESMO dia, o fato já está contado na linha da
+                    leitura — daí o selo "resenha" à esquerda, e não uma segunda
+                    linha para o mesmo dia. */}
                 <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5 text-right">
                   <span className="text-[12px] text-[var(--color-ink-faint)]">
-                    {e.abandonado ? "abandonei" : "terminei"}
+                    {e.tipo === "resenha" ? "resenhei" : e.abandonado ? "abandonei" : "terminei"}
                   </span>
                   {!e.abandonado && e.rating !== null && (
                     <span className="flex items-center gap-1.5 text-[12px] text-[var(--color-ink-soft)]">

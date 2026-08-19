@@ -370,13 +370,6 @@ export default async function Estatisticas({
             </Card>
           )}
 
-          {s.patienceMonths !== null && (
-            <Card titulo="a paciência" frase={espera(s.patienceMonths)}>
-              <p className="text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
-                É o tempo entre o livro chegar na estante e você abrir ele.
-              </p>
-            </Card>
-          )}
         </div>
 
         {/* ══ 4. A COMUNIDADE ═══════════════════════════════════════════
@@ -660,15 +653,3 @@ function fraseFormato(dados: Slice[]): string {
 }
 
 /** "Seus livros esperam, em média, oito meses." Nunca um dígito solto e frio. */
-function espera(meses: number): string {
-  if (meses < 1) {
-    const dias = Math.round(meses * 30.44);
-    return `Seus livros esperam ${dias} ${dias === 1 ? "dia" : "dias"} antes de você abrir.`;
-  }
-  if (meses < 18) {
-    const m = Math.round(meses);
-    return `Seus livros esperam ${m} ${m === 1 ? "mês" : "meses"} antes de você abrir.`;
-  }
-  const anos = (meses / 12).toFixed(1).replace(".", ",");
-  return `Seus livros esperam ${anos} anos antes de você abrir.`;
-}
