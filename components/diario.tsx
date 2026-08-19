@@ -181,18 +181,26 @@ export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
                   )}
                 </div>
 
-                <div className="flex shrink-0 items-center pt-0.5">
-                  {e.abandonado ? (
-                    <span className="text-[12px] text-[var(--color-ink-faint)]">abandonei</span>
-                  ) : (
-                    e.rating !== null && (
-                      <span title={palavraDoVeredito(e.rating)} className="text-[var(--color-ink-faint)]">
-                        {(() => {
-                          const Glifo = GLIFO[e.rating as keyof typeof GLIFO];
-                          return <Glifo size={15} strokeWidth={1.75} aria-hidden />;
-                        })()}
-                      </span>
-                    )
+                {/* "no diario, o que é livro terminado e o que é resenha feita?" — o
+                    dono. Toda linha aqui É um livro terminado (ou abandonado) — a
+                    palavra dizia isso pela AUSÊNCIA de "abandonei", nunca em voz
+                    alta, e sem veredito dado a linha ficava sem nada nesse canto.
+                    Agora "terminei"/"abandonei" aparece sempre; o veredito, quando
+                    existe, é um segundo fato, embaixo. "Resenha" e "releitura"
+                    (à esquerda, junto do título) são os fatos extras — nenhuma
+                    linha do diário é "só resenha": toda leitura terminou primeiro. */}
+                <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5 text-right">
+                  <span className="text-[12px] text-[var(--color-ink-faint)]">
+                    {e.abandonado ? "abandonei" : "terminei"}
+                  </span>
+                  {!e.abandonado && e.rating !== null && (
+                    <span className="flex items-center gap-1.5 text-[12px] text-[var(--color-ink-soft)]">
+                      {(() => {
+                        const Glifo = GLIFO[e.rating as keyof typeof GLIFO];
+                        return <Glifo size={13} strokeWidth={1.75} aria-hidden />;
+                      })()}
+                      {palavraDoVeredito(e.rating)}
+                    </span>
                   )}
                 </div>
               </li>

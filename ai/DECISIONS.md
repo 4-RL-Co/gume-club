@@ -4737,3 +4737,26 @@ E cada linha ganhou uma PALAVRA além do ícone: "releitura" e "resenha"
 escritas ao lado do glifo, não só o ícone pequeno de antes. "Não dá pra
 saber oq foi leitura e oq foi resenha" — um ícone sozinho é fácil de não
 notar; a palavra ao lado não deixa dúvida.
+
+## O tooltip do mapa, e o diário sempre diz "terminei"
+
+Dois ajustes olhando as telas de novo.
+
+**"tem que ser possível colocar o mouse em cima do país e ver o número"** —
+o `<title>` nativo do SVG já fazia isso tecnicamente, mas o navegador
+demora quase um segundo pra mostrar, sem estilo — na prática lia como "não
+dá pra ver". `components/mapa-mundi-tooltip.tsx` (novo, a única parte disto
+que é `"use client"`) escuta o mouse por cima do SVG que o servidor já
+mandou pronto e lê os atributos `data-pais`/`data-n` de cada `<path>` —
+delegação de evento, então os 175 países continuam nunca viajando pro
+JavaScript do navegador (confirmado no build: `/estatisticas` cresceu ~450B,
+não 160KB). O `<title>` nativo fica, pra leitor de tela.
+
+**"no diario, o que é livro terminado e o que é resenha feita?"** — toda
+linha do diário JÁ é um livro terminado (ou abandonado); a palavra só
+aparecia pela AUSÊNCIA de "abandonei", nunca em voz alta, e uma linha sem
+veredito dado ficava sem nada nenhum naquele canto — um buraco que lia como
+"e essa aqui, o que é?". Agora "terminei"/"abandonei" aparece sempre; o
+veredito, quando existe, é um segundo fato, embaixo dele. "Resenha" e
+"releitura" continuam como fatos EXTRAS (à esquerda, junto do título):
+nenhuma linha do diário é só resenha, toda leitura terminou primeiro.
