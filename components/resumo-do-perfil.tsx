@@ -26,20 +26,35 @@ export function ResumoDoPerfil({ resumo, primeiroNome, mine }: { resumo: Resumo;
 
   return (
     <div className="mt-8 grid gap-5 sm:grid-cols-3">
+      {/* ═══ O NÚMERO GRANDE, E NÃO UMA FRASE PERDIDA NO ALTO DO CARTÃO ═══
+          Era uma linha de texto só, do tamanho de qualquer parágrafo, boiando no topo
+          de um cartão do tamanho dos vizinhos (que têm cinco barras cada) — sobrava
+          vazio embaixo. docs/design.md já reserva a serifa de display para "número
+          grande" (é a mesma escolha da home, em Numero()); aqui ela ganha o mesmo
+          tratamento, e o bloco centraliza no espaço que o grid dá ao cartão — o que
+          só existe em telas largas, onde os três cartões dividem uma linha; numa
+          coluna só (mobile) cada cartão já tem a altura do próprio conteúdo, e o
+          `justify-center` não move nada. */}
       {anoCorrente.livros > 0 && (
-        <section className="surface p-6">
+        <section className="surface flex flex-col p-6">
           <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
             {anoCorrente.ano}
           </h2>
-          <p className="voice mt-3 text-[19px] leading-snug text-[var(--color-ink)]">
-            {mine ? "Você terminou" : `${primeiroNome} terminou`}{" "}
-            <span className="tabular">{anoCorrente.livros}</span>{" "}
-            {anoCorrente.livros === 1 ? "livro" : "livros"}
+
+          <div className="mt-5 flex flex-1 flex-col justify-center gap-1.5">
+            <span className="voice tabular text-[40px] leading-none text-[var(--color-ink)]">
+              {anoCorrente.livros}
+            </span>
+            <span className="text-[13px] text-[var(--color-ink-soft)]">
+              {anoCorrente.livros === 1 ? "livro terminado" : "livros terminados"}
+              {!mine && ` por ${primeiroNome}`}
+            </span>
             {anoCorrente.paginas !== null && (
-              <>, <span className="tabular">{anoCorrente.paginas.toLocaleString("pt-BR")}</span> páginas</>
+              <span className="tabular mt-2 text-[13px] text-[var(--color-ink-faint)]">
+                {anoCorrente.paginas.toLocaleString("pt-BR")} páginas
+              </span>
             )}
-            .
-          </p>
+          </div>
         </section>
       )}
 
