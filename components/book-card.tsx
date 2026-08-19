@@ -193,10 +193,14 @@ export function BookCard({
           </span>
         )}
 
-        <span className="voice mt-6 line-clamp-2 text-[15px] leading-snug text-[var(--color-ink)]">
+        {/* "títulos dos livros nas estantes... muito pequenos" — o dono. Eram
+            15px/12px; a estante é onde a pessoa passa mais tempo olhando
+            título, e ele perdia pro resto do app (17px na aba de resenhas,
+            por exemplo). */}
+        <span className="voice mt-6 line-clamp-2 text-[16px] leading-snug text-[var(--color-ink)]">
           {book.title}
         </span>
-        <span className="mt-1 line-clamp-1 text-[12px] text-[var(--color-ink-faint)]">
+        <span className="mt-1 line-clamp-1 text-[13px] text-[var(--color-ink-faint)]">
           {nomeDoAutor(book.author)}
         </span>
 
