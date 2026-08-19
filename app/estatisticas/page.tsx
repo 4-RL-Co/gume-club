@@ -266,8 +266,15 @@ export default async function Estatisticas({
           </section>
         )}
 
-        {/* ══ 3. A GRADE ════════════════════════════════════════════════ */}
-        <div className="grid gap-4 sm:grid-cols-2">
+        {/* ══ 3. A GRADE ════════════════════════════════════════════════
+            "as boxes estão meio jogadas, não quero espaços vazios" — o dono.
+            Um GRID de duas colunas estica todo cartão pra bater a altura do
+            vizinho mais alto — um cartão de três linhas ao lado de um de dez
+            vira três linhas de conteúdo e sete de nada. `columns` (o mesmo
+            empacotamento de jornal, sem JavaScript) deixa cada cartão com a
+            SUA altura, e o próximo cartão da coluna sobe pra preencher o que
+            sobrou — nunca um vazio no meio de uma caixa. */}
+        <div className="sm:columns-2 sm:gap-4">
           {/* O que você achou do que leu. Pedido do dono: as palavras que você
               dá também são um retrato, e elas não apareciam em lugar nenhum. */}
           {s.verdicts.some((v) => v.n > 0) && (
@@ -288,13 +295,13 @@ export default async function Estatisticas({
             <Card
               titulo="de onde vêm os seus autores"
               frase={fraseNacoes(s.nationalities)}
-              className="sm:col-span-2"
+              className="sm:[column-span:all]"
             >
               <MapaMundi dados={s.nationalities} />
             </Card>
           ) : (
             year !== null && (
-              <Card titulo="de onde vêm os seus autores" className="sm:col-span-2">
+              <Card titulo="de onde vêm os seus autores" className="sm:[column-span:all]">
                 <p className="text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
                   Nenhum autor com nacionalidade cadastrada entre os livros que você
                   terminou em {year}.{" "}
@@ -521,7 +528,16 @@ function Card({
   className?: string;
 }) {
   return (
-    <section className={["surface flex flex-col p-7 sm:p-8", className].filter(Boolean).join(" ")}>
+    <section
+      className={[
+        // break-inside-avoid: numa coluna de jornal, um cartão cortado ao
+        // meio (título numa coluna, gráfico na outra) é pior que qualquer
+        // vazio. mb-4: o `gap` do container só afeta o respiro ENTRE
+        // colunas, nunca entre cartões empilhados na MESMA coluna — isso é
+        // margem, como sempre foi antes do CSS ter `gap`.
+        "surface mb-4 flex flex-col break-inside-avoid p-7 sm:p-8",
+        className,
+      ].filter(Boolean).join(" ")}>
       <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
         {titulo}
       </h2>

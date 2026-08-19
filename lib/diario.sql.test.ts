@@ -151,7 +151,6 @@ describe("o diário: uma linha por leitura, mais recente primeiro", () => {
 });
 
 describe("\"resenhei\" vira linha própria só quando a data é OUTRA", () => {
-  let obraDaResenha: string;
   let readingId: string;
 
   it("resenha escrita dias depois da leitura vira uma SEGUNDA linha, com 'resenhei'", async () => {
@@ -159,7 +158,6 @@ describe("\"resenhei\" vira linha própria só quando a data é OUTRA", () => {
       title: `O livro resenhado depois ${marca}`,
       author: `Autor de teste ${marca}`,
     });
-    obraDaResenha = workId;
 
     await shelveAndRead(leitor, workId, "read", "2025-01-10");
     const antes = await getDiario(leitor, leitor.id);
