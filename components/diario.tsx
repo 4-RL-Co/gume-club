@@ -46,6 +46,15 @@ import type { EntradaDiario } from "@/lib/diario";
  *  com "resenhei" no lugar de "terminei". No mesmo dia, o fato já está
  *  contado na linha da leitura (o selo "resenha" ao lado do título) — uma
  *  segunda linha ali seria o mesmo dia duas vezes.
+ *
+ *  ═══ MAIOR, IGUAL DO LETTERBOXD ═══
+ *
+ *  "e acho que a parte do diario tem que ser um pouco maior igual do
+ *  letterboxd (...) acho que as coisas devem ser mais amplas/maiores" — o
+ *  dono, com o print do Diary. Capa, tipografia e altura de linha cresceram
+ *  juntas (não só a capa: um diário maior só na capa fica desproporcional);
+ *  a seção em volta (components/perfil-abas.tsx) e a página do perfil
+ *  ganharam mais largura pelo mesmo pedido — ver ai/DECISIONS.md.
  * ════════════════════════════════════════════════════════════════════
  */
 export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
@@ -137,9 +146,9 @@ export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
             return (
               <li
                 key={`${e.readingId}-${e.tipo}`}
-                className="flex items-start gap-4 border-b border-[var(--color-rule)] py-4 first:pt-0 last:border-0 last:pb-0"
+                className="flex items-start gap-5 border-b border-[var(--color-rule)] py-5 first:pt-0 last:border-0 last:pb-0"
               >
-                <div className="w-14 shrink-0 pt-0.5">
+                <div className="w-16 shrink-0 pt-0.5">
                   {mesChave === null ? (
                     <span className="tabular block text-center text-[13px] text-[var(--color-ink-faint)]">
                       {e.quando ?? "sem data"}
@@ -151,19 +160,19 @@ export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
                   )}
                 </div>
 
-                <Link href={`/livro/${e.slug}`} className="cover-lift w-12 shrink-0">
+                <Link href={`/livro/${e.slug}`} className="cover-lift w-16 shrink-0">
                   <Cover title={e.title} author={e.author} src={e.coverUrl} />
                 </Link>
 
                 <div className="min-w-0 flex-1 pt-0.5">
                   <Link
                     href={`/livro/${e.slug}`}
-                    className="voice block truncate text-[16px] leading-snug text-[var(--color-ink)] hover:underline"
+                    className="voice block truncate text-[18px] leading-snug text-[var(--color-ink)] hover:underline"
                   >
                     {e.title}
                   </Link>
                   {e.author && (
-                    <span className="mt-0.5 block truncate text-[13px] text-[var(--color-ink-faint)]">{e.author}</span>
+                    <span className="mt-1 block truncate text-[14px] text-[var(--color-ink-faint)]">{e.author}</span>
                   )}
 
                   {/* O RÓTULO: "não dá pra saber oq foi leitura e oq foi resenha" — o
@@ -204,15 +213,15 @@ export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
                     "terminei". No MESMO dia, o fato já está contado na linha da
                     leitura — daí o selo "resenha" à esquerda, e não uma segunda
                     linha para o mesmo dia. */}
-                <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5 text-right">
-                  <span className="text-[12px] text-[var(--color-ink-faint)]">
+                <div className="flex shrink-0 flex-col items-end gap-1.5 pt-0.5 text-right">
+                  <span className="text-[13px] text-[var(--color-ink-faint)]">
                     {e.tipo === "resenha" ? "resenhei" : e.abandonado ? "abandonei" : "terminei"}
                   </span>
                   {!e.abandonado && e.rating !== null && (
-                    <span className="flex items-center gap-1.5 text-[12px] text-[var(--color-ink-soft)]">
+                    <span className="flex items-center gap-1.5 text-[13px] text-[var(--color-ink-soft)]">
                       {(() => {
                         const Glifo = GLIFO[e.rating as keyof typeof GLIFO];
-                        return <Glifo size={13} strokeWidth={1.75} aria-hidden />;
+                        return <Glifo size={14} strokeWidth={1.75} aria-hidden />;
                       })()}
                       {palavraDoVeredito(e.rating)}
                     </span>
@@ -261,19 +270,19 @@ function SeloDoMes({ quando }: { quando: string }) {
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="w-14 overflow-hidden rounded-[10px] border border-[var(--color-rule)] text-center">
-        <div className="bg-[var(--color-ink)] py-1 text-[10px] font-semibold tracking-[0.08em] text-[var(--color-canvas)]">
+      <div className="w-16 overflow-hidden rounded-[10px] border border-[var(--color-rule)] text-center">
+        <div className="bg-[var(--color-ink)] py-1.5 text-[11px] font-semibold tracking-[0.08em] text-[var(--color-canvas)]">
           {MESES[(mes ?? 1) - 1]}
         </div>
-        <div className="py-1 text-[11px] text-[var(--color-ink-faint)]">{ano}</div>
+        <div className="py-1.5 text-[12px] text-[var(--color-ink-faint)]">{ano}</div>
       </div>
-      <span className="tabular text-[15px] text-[var(--color-ink)]">{dia}</span>
+      <span className="tabular text-[16px] text-[var(--color-ink)]">{dia}</span>
     </div>
   );
 }
 
 /**
- * Só o dia, alinhado embaixo de onde o selo do mês ficaria — o `mt-[52px]` é
+ * Só o dia, alinhado embaixo de onde o selo do mês ficaria — o `mt-[58px]` é
  * a altura do selo (duas linhas de texto + borda) medida no código, sem
  * navegador aqui pra calibrar no olho. Conferir ao vivo e ajustar se as duas
  * colunas (selo vs. dia solto) não baterem exatamente.
@@ -281,7 +290,7 @@ function SeloDoMes({ quando }: { quando: string }) {
 function DiaSolto({ quando }: { quando: string }) {
   const dia = Number(quando.split("-")[2]);
   return (
-    <span className="tabular mt-[52px] block text-center text-[15px] text-[var(--color-ink)]">
+    <span className="tabular mt-[58px] block text-center text-[16px] text-[var(--color-ink)]">
       {dia}
     </span>
   );
