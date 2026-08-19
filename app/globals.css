@@ -626,11 +626,11 @@
    * ganhar do inline (o que ele nunca ganharia).
    */
   .barra-item {
-    --barra-luz: 30%;
+    --barra-luz: 46%;
   }
 
   .barra-item:hover {
-    --barra-luz: 44%;
+    --barra-luz: 62%;
   }
 }
 

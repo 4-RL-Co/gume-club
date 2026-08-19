@@ -15,6 +15,21 @@ import type { Slice } from "@/lib/stats";
  *  Sem pizza, sem donut, sem legenda: a barra é a única forma em que o olho
  *  compara tamanhos sem errar, e o rótulo fica do lado do dado, em vez de
  *  numa legenda que obriga a ir e voltar.
+ *
+ *  ═══ "OS GRÁFICOS DO GUME SÃO RÚSTICOS DEMAIS" — O DONO ═══
+ *
+ *  A barra continua sendo a única forma (a razão acima não mudou: pizza e
+ *  donut escondem a comparação honesta de tamanho atrás de ângulo, que o
+ *  olho lê pior que comprimento). O que era rústico era a EXECUÇÃO: um
+ *  filete fino de 30% de opacidade, achatado, com um número pequeno e
+ *  cinza no fim. Print de referência: o Letterboxd, que também é tudo
+ *  barra/medidor — só grossa, arredondada e com cor de verdade.
+ *
+ *  Três mudanças, na mesma barra: mais grossa e com as pontas arredondadas
+ *  (`rounded-full`, em vez do retângulo de aresta viva), mais saturada
+ *  (opacidade sobe de 30%/44% para 46%/62% — ainda é a MESMA cor por
+ *  assunto, nunca cor por valor), e o número cresce e ganha peso, porque
+ *  ele é dado, não rodapé.
  * ════════════════════════════════════════════════════════════════════
  */
 
@@ -25,12 +40,13 @@ import type { Slice } from "@/lib/stats";
  */
 export function material(zero: boolean, cor: string): React.CSSProperties {
   return {
-    // Valor zero: SÓ o filete, sem preenchimento. A barra existe, e é honesta:
+    // Valor zero: SÓ o contorno, sem preenchimento. A barra existe, e é honesta:
     // sumir com a categoria que deu zero é a mentira mais fácil de um gráfico.
     background: zero
       ? "transparent"
-      : `color-mix(in srgb, var(${cor}) var(--barra-luz, 30%), transparent)`,
-    borderTop: `1px solid var(${cor})`,
+      : `color-mix(in srgb, var(${cor}) var(--barra-luz, 46%), transparent)`,
+    border: zero ? `1px solid var(${cor})` : `1px solid color-mix(in srgb, var(${cor}) 75%, transparent)`,
+    borderRadius: 999,
     transition: "background 160ms ease",
   };
 }
@@ -39,7 +55,7 @@ export function Barras({ dados, cor }: { dados: Slice[]; cor: string }) {
   const maior = Math.max(...dados.map((d) => d.n), 1);
 
   return (
-    <ul className="flex flex-col gap-3.5">
+    <ul className="flex flex-col gap-4">
       {dados.map((d) => (
         <li key={d.label} className="barra-item flex items-center gap-4">
           <span className="w-32 shrink-0 truncate text-[13px] text-[var(--color-ink-soft)]">
@@ -48,15 +64,15 @@ export function Barras({ dados, cor }: { dados: Slice[]; cor: string }) {
 
           <span className="flex min-w-0 flex-1 items-center">
             <span
-              className="block h-2.5 shrink-0"
+              className="block h-3.5 shrink-0"
               style={{
-                width: `${Math.max((d.n / maior) * 100, 1.5)}%`,
+                width: `${Math.max((d.n / maior) * 100, 3)}%`,
                 ...material(d.n === 0, cor),
               }}
             />
           </span>
 
-          <span className="tabular w-6 shrink-0 text-right text-[12px] text-[var(--color-ink-faint)]">
+          <span className="tabular w-7 shrink-0 text-right text-[14px] font-medium text-[var(--color-ink)]">
             {d.n}
           </span>
         </li>
@@ -78,7 +94,7 @@ export function Vereditos({ dados }: { dados: { value: number; n: number }[] }) 
   const maior = Math.max(...dados.map((d) => d.n), 1);
 
   return (
-    <ul className="flex flex-col gap-3.5">
+    <ul className="flex flex-col gap-4">
       {dados.map((d) => {
         const Glifo = GLIFO[d.value as keyof typeof GLIFO];
         return (
@@ -97,15 +113,15 @@ export function Vereditos({ dados }: { dados: { value: number; n: number }[] }) 
 
             <span className="flex min-w-0 flex-1 items-center">
               <span
-                className="block h-2.5 shrink-0"
+                className="block h-3.5 shrink-0"
                 style={{
-                  width: `${Math.max((d.n / maior) * 100, 1.5)}%`,
+                  width: `${Math.max((d.n / maior) * 100, 3)}%`,
                   ...material(d.n === 0, "--grafico-veredito"),
                 }}
               />
             </span>
 
-            <span className="tabular w-6 shrink-0 text-right text-[12px] text-[var(--color-ink-faint)]">
+            <span className="tabular w-7 shrink-0 text-right text-[14px] font-medium text-[var(--color-ink)]">
               {d.n}
             </span>
           </li>

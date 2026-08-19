@@ -4512,3 +4512,17 @@ Testado contra Postgres de verdade em `lib/resumo-do-perfil.sql.test.ts`:
 nacionalidade e formato são o MESMO recorte pro dono e pro estranho, e uma
 estante privada não vaza pra ninguém.
 
+
+## A barra mais rica
+
+"eu não gosto muito dos estilos de gráfico do gume, acho que tem q ficar
+mais modernos e menos rústicos" — o dono, com um print do Letterboxd.
+
+A barra continua sendo a única forma (pizza/donut escondem comparação de
+tamanho atrás de ângulo, que o olho lê pior que comprimento — essa razão não
+mudou, e o Letterboxd do próprio print também é tudo barra/medidor). O que
+mudou foi a execução: mais grossa, pontas arredondadas (`rounded-full`, era
+retângulo de aresta viva), mais saturada (opacidade de 30%/44% para
+46%/62%), número maior e com peso, em vez de pequeno e cinza. Ainda cor por
+ASSUNTO, nunca por valor — ninguém pintou o dado, só a barra que já existia.
+Ver `components/graficos-leitura.tsx`.
