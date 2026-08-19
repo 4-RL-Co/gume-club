@@ -4718,3 +4718,22 @@ aparecem pra quem é dono. `/colecao` virou um redirect (preserva
 
 De quebra: "as capas devem ser um pouquinho maiores" — a capa da coleção
 foi de 58% pra 64% do cartão.
+
+## O diário ganha filtro de ano e veredito, e cada linha diz o que é
+
+"no diario tem que ter filtros e também não dá pra saber oq foi leitura e
+oq foi resenha" — o dono, com o print do toolbar do Letterboxd (RATING,
+DIARY YEAR).
+
+Dois filtros novos em `components/diario.tsx`, por cima do livros/resenhas
+que já existia: por ANO e por VEREDITO. Os dois só oferecem os valores que
+EXISTEM na lista da pessoa — mesma régua do "todo ano" de /estatisticas: um
+filtro com opção vazia é o app inventando uma pergunta sem resposta
+possível. Tudo client-side, sobre os dados que já vieram do servidor (a
+lista inteira já está na tela pro filtro livros/resenhas) — sem consulta
+nova.
+
+E cada linha ganhou uma PALAVRA além do ícone: "releitura" e "resenha"
+escritas ao lado do glifo, não só o ícone pequeno de antes. "Não dá pra
+saber oq foi leitura e oq foi resenha" — um ícone sozinho é fácil de não
+notar; a palavra ao lado não deixa dúvida.

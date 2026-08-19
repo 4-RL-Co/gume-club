@@ -28,18 +28,46 @@ import type { EntradaDiario } from "@/lib/diario";
  *  Datas com só o ano (sem dia) não entram nesse agrupamento — não tem selo
  *  de mês pra elas, porque não existe mês pra mostrar. Ver formataQuando().
  *
- *  ═══ LIVROS OU RESENHAS ═══
+ *  ═══ FILTROS, E O QUE CADA LINHA É ═══
  *
- *  "no diario dá pra ter os livros terminados e resenhas feitas também" — a
- *  mesma lista, filtrada: "resenhas" mostra só as leituras que têm uma
- *  resenha escrita (o ícone de página já marcava isso; agora também filtra).
+ *  "no diario tem que ter filtros e também não dá pra saber oq foi leitura e
+ *  oq foi resenha" — o dono, com o print do toolbar do Letterboxd (RATING,
+ *  DIARY YEAR). Dois filtros por cima do livros/resenhas que já existia — ano
+ *  e veredito, só com os valores que EXISTEM na lista (um filtro com opção
+ *  vazia é uma pergunta sem resposta possível) — e cada linha agora ESCREVE
+ *  o que ela é ("releitura", "resenha"), em vez de só um ícone pequeno fácil
+ *  de não notar.
  * ════════════════════════════════════════════════════════════════════
  */
 export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
   const [filtro, setFiltro] = useState<"livros" | "resenhas">("livros");
+  const [ano, setAno] = useState<number | null>(null);
+  const [veredito, setVeredito] = useState<number | null>(null);
 
   const comResenha = useMemo(() => entradas.filter((e) => e.temResenha), [entradas]);
-  const visiveis = filtro === "resenhas" ? comResenha : entradas;
+
+  // Só os anos e vereditos que EXISTEM nesta lista — a mesma régua do "todo
+  // ano" de /estatisticas: um filtro com opção vazia é o app inventando uma
+  // pergunta que não tem resposta.
+  const anosDisponiveis = useMemo(() => {
+    const anos = new Set<number>();
+    for (const e of entradas) {
+      if (e.quando) anos.add(Number(e.quando.slice(0, 4)));
+    }
+    return [...anos].sort((a, b) => b - a);
+  }, [entradas]);
+
+  const vereditosDisponiveis = useMemo(() => {
+    const presentes = new Set(entradas.map((e) => e.rating).filter((v): v is number => v !== null));
+    return [5, 4, 3, 2, 1].filter((v) => presentes.has(v));
+  }, [entradas]);
+
+  const visiveis = useMemo(() => {
+    let lista = filtro === "resenhas" ? comResenha : entradas;
+    if (ano !== null) lista = lista.filter((e) => e.quando?.startsWith(String(ano)));
+    if (veredito !== null) lista = lista.filter((e) => e.rating === veredito);
+    return lista;
+  }, [entradas, comResenha, filtro, ano, veredito]);
 
   if (entradas.length === 0) return null;
 
@@ -47,90 +75,131 @@ export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
 
   return (
     <div>
-      {comResenha.length > 0 && (
-        <div className="mb-5 flex gap-1.5">
-          <BotaoFiltro ativo={filtro === "livros"} onClick={() => setFiltro("livros")}>
-            livros terminados
-          </BotaoFiltro>
-          <BotaoFiltro ativo={filtro === "resenhas"} onClick={() => setFiltro("resenhas")}>
-            resenhas
-          </BotaoFiltro>
-        </div>
-      )}
+      <div className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-2">
+        {comResenha.length > 0 && (
+          <div className="flex gap-1.5">
+            <BotaoFiltro ativo={filtro === "livros"} onClick={() => setFiltro("livros")}>
+              livros terminados
+            </BotaoFiltro>
+            <BotaoFiltro ativo={filtro === "resenhas"} onClick={() => setFiltro("resenhas")}>
+              resenhas
+            </BotaoFiltro>
+          </div>
+        )}
 
-      <ul className="flex flex-col">
-        {visiveis.map((e) => {
-          const mesChave = mesChaveDe(e.quando);
-          const primeiroDoMes = mesChave !== null && mesChave !== ultimoMes;
-          ultimoMes = mesChave;
+        {anosDisponiveis.length > 1 && (
+          <div className="flex flex-wrap gap-1.5">
+            <BotaoFiltro ativo={ano === null} onClick={() => setAno(null)}>
+              todo ano
+            </BotaoFiltro>
+            {anosDisponiveis.map((a) => (
+              <BotaoFiltro key={a} ativo={ano === a} onClick={() => setAno(a)}>
+                {a}
+              </BotaoFiltro>
+            ))}
+          </div>
+        )}
 
-          return (
-            <li
-              key={e.readingId}
-              className="flex items-start gap-4 border-b border-[var(--color-rule)] py-4 first:pt-0 last:border-0 last:pb-0"
-            >
-              <div className="w-14 shrink-0 pt-0.5">
-                {mesChave === null ? (
-                  <span className="tabular block text-center text-[13px] text-[var(--color-ink-faint)]">
-                    {e.quando ?? "sem data"}
-                  </span>
-                ) : primeiroDoMes ? (
-                  <SeloDoMes quando={e.quando!} />
-                ) : (
-                  <DiaSolto quando={e.quando!} />
-                )}
-              </div>
+        {vereditosDisponiveis.length > 1 && (
+          <div className="flex flex-wrap gap-1.5">
+            <BotaoFiltro ativo={veredito === null} onClick={() => setVeredito(null)}>
+              todo veredito
+            </BotaoFiltro>
+            {vereditosDisponiveis.map((v) => (
+              <BotaoFiltro key={v} ativo={veredito === v} onClick={() => setVeredito(v)}>
+                {palavraDoVeredito(v)}
+              </BotaoFiltro>
+            ))}
+          </div>
+        )}
+      </div>
 
-              <Link href={`/livro/${e.slug}`} className="cover-lift w-12 shrink-0">
-                <Cover title={e.title} author={e.author} src={e.coverUrl} />
-              </Link>
+      {visiveis.length === 0 ? (
+        <p className="py-8 text-center text-[14px] text-[var(--color-ink-faint)]">
+          Nada com esse recorte.
+        </p>
+      ) : (
+        <ul className="flex flex-col">
+          {visiveis.map((e) => {
+            const mesChave = mesChaveDe(e.quando);
+            const primeiroDoMes = mesChave !== null && mesChave !== ultimoMes;
+            ultimoMes = mesChave;
 
-              <div className="min-w-0 flex-1 pt-0.5">
-                <Link
-                  href={`/livro/${e.slug}`}
-                  className="voice block truncate text-[16px] leading-snug text-[var(--color-ink)] hover:underline"
-                >
-                  {e.title}
+            return (
+              <li
+                key={e.readingId}
+                className="flex items-start gap-4 border-b border-[var(--color-rule)] py-4 first:pt-0 last:border-0 last:pb-0"
+              >
+                <div className="w-14 shrink-0 pt-0.5">
+                  {mesChave === null ? (
+                    <span className="tabular block text-center text-[13px] text-[var(--color-ink-faint)]">
+                      {e.quando ?? "sem data"}
+                    </span>
+                  ) : primeiroDoMes ? (
+                    <SeloDoMes quando={e.quando!} />
+                  ) : (
+                    <DiaSolto quando={e.quando!} />
+                  )}
+                </div>
+
+                <Link href={`/livro/${e.slug}`} className="cover-lift w-12 shrink-0">
+                  <Cover title={e.title} author={e.author} src={e.coverUrl} />
                 </Link>
-                {e.author && (
-                  <span className="mt-0.5 block truncate text-[13px] text-[var(--color-ink-faint)]">{e.author}</span>
-                )}
-              </div>
 
-              <div className="flex shrink-0 items-center gap-3 pt-0.5">
-                {e.releitura && (
-                  <span title="uma releitura" className="text-[var(--color-ink-faint)]">
-                    <RotateCcw size={14} strokeWidth={1.75} aria-hidden />
-                  </span>
-                )}
-
-                {e.temResenha && (
+                <div className="min-w-0 flex-1 pt-0.5">
                   <Link
                     href={`/livro/${e.slug}`}
-                    title="tem resenha"
-                    className="text-[var(--color-ink-faint)] hover:text-[var(--color-ink)]"
+                    className="voice block truncate text-[16px] leading-snug text-[var(--color-ink)] hover:underline"
                   >
-                    <FileText size={14} strokeWidth={1.75} aria-hidden />
+                    {e.title}
                   </Link>
-                )}
+                  {e.author && (
+                    <span className="mt-0.5 block truncate text-[13px] text-[var(--color-ink-faint)]">{e.author}</span>
+                  )}
 
-                {e.abandonado ? (
-                  <span className="text-[12px] text-[var(--color-ink-faint)]">abandonei</span>
-                ) : (
-                  e.rating !== null && (
-                    <span title={palavraDoVeredito(e.rating)} className="text-[var(--color-ink-faint)]">
-                      {(() => {
-                        const Glifo = GLIFO[e.rating as keyof typeof GLIFO];
-                        return <Glifo size={15} strokeWidth={1.75} aria-hidden />;
-                      })()}
-                    </span>
-                  )
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+                  {/* O RÓTULO: "não dá pra saber oq foi leitura e oq foi resenha" — o
+                      dono. O ícone sozinho já dizia isso, mas fácil de não notar; a
+                      palavra ao lado não deixa dúvida. */}
+                  {(e.releitura || e.temResenha) && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-3">
+                      {e.releitura && (
+                        <span className="flex items-center gap-1 text-[11px] text-[var(--color-ink-faint)]">
+                          <RotateCcw size={11} strokeWidth={1.75} aria-hidden />
+                          releitura
+                        </span>
+                      )}
+                      {e.temResenha && (
+                        <Link
+                          href={`/livro/${e.slug}`}
+                          className="flex items-center gap-1 text-[11px] text-[var(--color-ink-faint)] hover:text-[var(--color-ink)]"
+                        >
+                          <FileText size={11} strokeWidth={1.75} aria-hidden />
+                          resenha
+                        </Link>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex shrink-0 items-center pt-0.5">
+                  {e.abandonado ? (
+                    <span className="text-[12px] text-[var(--color-ink-faint)]">abandonei</span>
+                  ) : (
+                    e.rating !== null && (
+                      <span title={palavraDoVeredito(e.rating)} className="text-[var(--color-ink-faint)]">
+                        {(() => {
+                          const Glifo = GLIFO[e.rating as keyof typeof GLIFO];
+                          return <Glifo size={15} strokeWidth={1.75} aria-hidden />;
+                        })()}
+                      </span>
+                    )
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }
