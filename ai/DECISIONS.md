@@ -4548,3 +4548,29 @@ Instagram do lado do azul do Bluesky vira confete, e rouba a atenção que é
 da capa. O DESENHO de cada marca entra (`components/icone-rede-social.tsx`);
 a cor de cada marca não — `currentColor`, a mesma tinta neutra de todo ícone
 do app.
+
+## As estatísticas do perfil ganham gaveta, autor, editora e século
+
+"no perfil os stats tem que ser um lugar que tu clica e vê, se não o perfil
+vai ficar gigante novamente, além disso, ainda falta coisa: autores mais
+lidos, editoras, século/decada" — o dono.
+
+`getResumoDoPerfil()` ganhou três campos a mais (`authors`, `publishers`,
+`centuries`), reaproveitando as MESMAS consultas de `getStats()`, lifetime,
+mesma régua de `genres`/`nationalities`/`formats` já públicos. Oito cartões
+agora, todos gosto (nunca posse) — a mesma linha que já separa esse resumo
+de `/estatisticas`.
+
+E o bloco inteiro entrou na `Gaveta` (`components/gaveta.tsx`, a mesma que já
+esconde o que é raro na página de um livro): fechada por padrão, com o
+número que mais importa (o ano corrente) já escrito no resumo de fora — abre
+só quem quer o resto. `Seculos` (o gráfico de coluna por século) saiu de
+`app/estatisticas/page.tsx` pra `components/graficos-leitura.tsx`, mesmo
+motivo de sempre: um lugar só, as duas telas usam a mesma barra.
+
+Cor nova: `--grafico-autores` (oliva), no maior vão livre entre os hues que
+já existiam.
+
+Testado contra Postgres de verdade em `lib/resumo-do-perfil.sql.test.ts`:
+autor, editora e século são o mesmo recorte pro dono e pro estranho, e não
+vazam de uma estante privada.

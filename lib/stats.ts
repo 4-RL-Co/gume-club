@@ -511,6 +511,12 @@ export type ResumoDoPerfil = {
   nationalities: Slice[];
   /** Papel ou tela, vida inteira. Ver Stats.formats. */
   formats: Slice[];
+  /** Os autores mais lidos, vida inteira. */
+  authors: Slice[];
+  /** Quem publica o que você lê, vida inteira. Ver Stats.publishers. */
+  publishers: Slice[];
+  /** Século da obra, vida inteira. Ver Stats.centuries. */
+  centuries: { century: number; label: string; n: number }[];
   /** O ano corrente: livros terminados e páginas. `null` de página é "sem contagem". */
   anoCorrente: { ano: number; livros: number; paginas: number | null };
 };
@@ -523,8 +529,7 @@ export type ResumoDoPerfil = {
  *
  * getStats() já calcula tudo isto e mais uma dúzia de coisas — pesado demais
  * pra rodar (duas vezes, vida inteira + ano) numa página vista bem mais que
- * /estatisticas. Esta função calcula só o que os cinco cartões do perfil
- * precisam.
+ * /estatisticas. Esta função calcula só o que os cartões do perfil precisam.
  *
  * ═══ ISTO É PÚBLICO, E A ESCOLHA DO QUE ENTRA FOI DELIBERADA ═══
  *
@@ -532,9 +537,10 @@ export type ResumoDoPerfil = {
  * de um estranho'") — ela fala em segunda pessoa, e tem números íntimos
  * demais para um estranho ver (quantos livros esperam na estante, a
  * paciência). Este resumo é outra coisa: um recorte pequeno e seguro,
- * pensado desde sempre para quem VISITA. Veredito, gêneros, nacionalidade e
- * formato entram porque são gosto, não volume nem posse — a mesma linha que
- * já separa "e a comunidade" (gosto) do resto de /estatisticas (números).
+ * pensado desde sempre para quem VISITA. Veredito, gêneros, nacionalidade,
+ * autor, editora, século e formato entram porque são gosto, não volume nem
+ * posse — a mesma linha que já separa "e a comunidade" (gosto) do resto de
+ * /estatisticas (números).
  */
 export async function getResumoDoPerfil(viewer: Viewer, ownerId: string): Promise<ResumoDoPerfil> {
   const visible = and(
@@ -594,6 +600,50 @@ export async function getResumoDoPerfil(viewer: Viewer, ownerId: string): Promis
     group by a.nationality
     order by n desc, label asc`);
 
+  /**
+   * "no perfil os stats... ainda falta coisa: autores mais lidos, editoras,
+   * século/década" — o dono. Mesmas régua e limites de getStats().
+   */
+  const authors = await db.execute<{ label: string; n: number }>(sql`
+    select a.name as label, count(*)::int as n
+    from library_entries
+    join works w on w.id = library_entries.work_id
+    join authors a on a.id = w.author_id
+    where library_entries.user_id = ${ownerId}::uuid
+      and ${visible}
+      and ${finished(null)}
+    group by a.name
+    order by n desc, label asc
+    limit 8`);
+
+  const publishers = await db.execute<{ label: string; n: number }>(sql`
+    select e.publisher as label, count(*)::int as n
+    from library_entries
+    join editions e on e.id = ${edition}
+    where library_entries.user_id = ${ownerId}::uuid
+      and ${visible}
+      and e.publisher is not null
+      and ${finished(null)}
+    group by e.publisher
+    order by n desc, label asc
+    limit 12`);
+
+  const centuries = await db.execute<{ century: number; n: number }>(sql`
+    select
+      case when w.first_published > 0
+           then ceil(w.first_published / 100.0)::int
+           else -ceil(abs(w.first_published) / 100.0)::int
+      end as century,
+      count(*)::int as n
+    from library_entries
+    join works w on w.id = library_entries.work_id
+    where library_entries.user_id = ${ownerId}::uuid
+      and ${visible}
+      and w.first_published is not null
+      and ${finished(null)}
+    group by 1
+    order by 1 asc`);
+
   const formats = await db.execute<{ label: string; n: number }>(sql`
     select case when e.format in ('ebook', 'audiobook') then 'digital' else 'físico' end as label,
            count(*)::int as n
@@ -631,6 +681,9 @@ export async function getResumoDoPerfil(viewer: Viewer, ownerId: string): Promis
     genres: genres.map((r) => ({ label: r.label, n: r.n })),
     nationalities: nationalities.map((r) => ({ label: r.label, n: r.n })),
     formats: formats.map((r) => ({ label: r.label, n: r.n })),
+    authors: authors.map((r) => ({ label: r.label, n: r.n })),
+    publishers: publishers.map((r) => ({ label: r.label, n: r.n })),
+    centuries: centuries.map((r) => ({ century: r.century, label: centuryLabel(r.century), n: r.n })),
     anoCorrente: {
       ano,
       livros: doAno?.livros ?? 0,
