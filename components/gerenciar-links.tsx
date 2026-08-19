@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { X, Plus } from "lucide-react";
 import { saveSocialLinks } from "@/app/perfil/actions";
 import { rotuloDoLink, urlValida } from "@/lib/links-sociais";
+import { IconeRedeSocial } from "@/components/icone-rede-social";
 
 /**
  * OS LINKS DO PERFIL. Até 5 URLs, texto livre — sem "qual rede social?".
@@ -54,6 +55,9 @@ export function GerenciarLinks({ links: iniciais }: { links: string[] }) {
         <ul className="flex flex-col gap-2">
           {links.map((l) => (
             <li key={l} className="flex items-center gap-3">
+              <span className="shrink-0 text-[var(--color-ink-faint)]">
+                <IconeRedeSocial url={l} size={15} />
+              </span>
               <span className="min-w-0 flex-1 truncate text-[14px] text-[var(--color-ink-soft)]">
                 <span className="text-[var(--color-ink)]">{rotuloDoLink(l)}</span>
                 <span className="ml-2 text-[12px] text-[var(--color-ink-faint)]">{l}</span>

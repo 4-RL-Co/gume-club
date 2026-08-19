@@ -43,6 +43,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "recharts": "^3.10.1",
+    "simple-icons": "16.28.0",
     "stripe": "^22.4.0"
   },
   "devDependencies": {

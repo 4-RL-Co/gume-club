@@ -1,4 +1,4 @@
-import { Link2 } from "lucide-react";
+import { IconeRedeSocial } from "@/components/icone-rede-social";
 import { rotuloDoLink, urlValida } from "@/lib/links-sociais";
 
 /**
@@ -20,7 +20,7 @@ export function LinksDoPerfil({ links }: { links: string[] }) {
             rel="noopener noreferrer nofollow"
             className="flex items-center gap-1.5 text-[13px] text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
           >
-            <Link2 size={13} strokeWidth={1.75} aria-hidden />
+            <IconeRedeSocial url={l} />
             {rotuloDoLink(l)}
           </a>
         </li>
