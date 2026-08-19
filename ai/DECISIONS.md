@@ -4787,3 +4787,25 @@ Testado contra Postgres de verdade em `lib/diario.sql.test.ts`: resenha no
 mesmo dia não vira linha extra; resenha em outro dia vira, com `tipo:
 "resenha"` e a data certa; a linha da resenha some pro estranho quando ela
 fica privada, e continua visível pro dono.
+
+## As boxes não ficam jogadas: a grade de /estatisticas vira colunas de jornal
+
+"e acho que as boxes estão meio jogadas, não quero espaços vazios" — o
+dono, com quatro prints mostrando espaço morto embaixo de cartões curtos
+(vereditos, formatos) ao lado de cartões altos (editoras, o mapa). O
+`grid` do CSS estica toda célula de uma linha até a altura da mais alta
+(`align-items: stretch` é o padrão) — é o mesmo problema que já tinha sido
+corrigido uma vez no "ano corrente" do resumo do perfil, mas ali havia só
+UM vizinho alto conhecido; aqui a seção inteira tem cartões de alturas bem
+diferentes lado a lado, então o conserto certo não é centralizar dentro da
+célula esticada — é nunca esticar.
+
+A "GRADE" de /estatisticas trocou `grid gap-4 sm:grid-cols-2` por
+`sm:columns-2 sm:gap-4` (CSS multi-column): cada cartão empilha na coluna
+mais curta, na sua altura natural, sem sobrar vazio. Isso exige
+`break-inside-avoid` em cada cartão (senão um cartão pode ser cortado ao
+meio entre as duas colunas) e `mb-4` no lugar do `gap` vertical (o `gap`
+de `columns` só controla o respiro ENTRE colunas, nunca entre cartões
+empilhados na MESMA coluna — isso sempre foi margem, mesmo antes do CSS
+ter `gap`). O cartão do mapa, que já ocupava as duas colunas, trocou
+`col-span-2` por `[column-span:all]`, o equivalente em `columns`.
