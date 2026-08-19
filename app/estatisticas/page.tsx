@@ -8,7 +8,7 @@ import { ScreenHeader } from "@/components/screen-header";
 import { Empty } from "@/components/empty";
 import { ShelfTabs } from "@/components/shelf-tabs";
 import { mine } from "@/lib/veredito";
-import { material, Barras, Vereditos } from "@/components/graficos-leitura";
+import { Barras, Vereditos, Seculos } from "@/components/graficos-leitura";
 
 export const dynamic = "force-dynamic";
 
@@ -538,56 +538,6 @@ function Card({
  *  gráfico pedindo desculpa.
  * ════════════════════════════════════════════════════════════════════
  */
-
-/** A altura do gráfico é FIXA, e as barras escalam dentro dela. */
-const ALTURA = 132;
-
-/** Os séculos. O tempo é um eixo, então ele deita. */
-function Seculos({ dados }: { dados: { century: number; label: string; n: number }[] }) {
-  const cor = "--grafico-tempo";
-  const maior = Math.max(...dados.map((d) => d.n), 1);
-
-  return (
-    <ul className="flex items-end gap-2 sm:gap-3">
-      {dados.map((d) => (
-        <li key={d.century} className="barra-item flex min-w-0 flex-1 flex-col items-center">
-          {/* A área do gráfico: altura FIXA, e a coluna cresce de baixo para cima.
-              A linha de base é a borda INFERIOR desta área, e não uma linha solta:
-              assim ela nunca sai do lugar quando a coluna muda de altura. */}
-          <span
-            className="flex w-full flex-col justify-end border-b border-[var(--color-rule)]"
-            style={{ height: ALTURA + 26 }}
-          >
-            {/* O número é REFERÊNCIA, e não manchete: pequeno e fraco. */}
-            <span className="tabular mb-2 shrink-0 text-center text-[11px] text-[var(--color-ink-faint)]">
-              {d.n}
-            </span>
-
-            {/* Largura ≈ 60% do passo: o respiro entre as colunas é o que faz o olho
-                ler uma série, e não uma parede. `shrink-0` para o flex nunca comer a
-                altura que a gente calculou. */}
-            <span
-              className="mx-auto block shrink-0"
-              style={{
-                // A largura também é inline, e pelo mesmo motivo do material: se a
-                // classe não chegar, a coluna vira um bloco de largura inteira e o
-                // respiro entre as colunas (que é o que faz o olho ler uma série)
-                // desaparece.
-                width: "60%",
-                height: Math.round((d.n / maior) * ALTURA),
-                ...material(d.n === 0, cor),
-              }}
-            />
-          </span>
-
-          <span className="mt-3 w-full truncate text-center text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-            {d.label.replace("século ", "")}
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 function Ponta({ livro, rotulo }: { livro: Extremo; rotulo: string }) {
   return (

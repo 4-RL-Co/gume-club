@@ -10,9 +10,10 @@ import { getResumoDoPerfil } from "@/lib/stats";
  *  O RESUMO DO PERFIL. Contra o Postgres de verdade.
  *
  *  Este é o recorte que "abrir /estatisticas pra visitantes" virou: veredito,
- *  gêneros, nacionalidade e formato são PÚBLICOS (gosto, não posse). A prova
- *  que importa aqui é a mesma de sempre — visibilidade filtrada no SQL —
- *  mais o fato de nacionalidade e formato aparecerem de verdade.
+ *  gêneros, autor, editora, nacionalidade, formato e século são PÚBLICOS
+ *  (gosto, não posse). A prova que importa aqui é a mesma de sempre —
+ *  visibilidade filtrada no SQL — mais o fato de todos eles aparecerem de
+ *  verdade.
  * ════════════════════════════════════════════════════════════════════
  */
 const criados: string[] = [];
@@ -20,6 +21,7 @@ const marca = Date.now().toString(36);
 
 let dono: { id: string };
 let estranho: { id: string };
+let autora: string;
 
 async function criar(handle: string) {
   const [u] = await db
@@ -33,10 +35,13 @@ async function criar(handle: string) {
 beforeAll(async () => {
   dono = await criar("resumo-dono");
   estranho = await criar("resumo-estranho");
+  autora = `Autora do resumo ${marca}`;
 
   const { workId, editionId } = await findOrCreateWork({
     title: `O livro do resumo ${marca}`,
-    author: `Autora do resumo ${marca}`,
+    author: autora,
+    publisher: `Editora do resumo ${marca}`,
+    firstPublished: 1950,
     formato: "ebook",
   });
   await db.execute(sql`
@@ -58,13 +63,17 @@ afterAll(async () => {
   await db.execute(sql`delete from authors where name like ${"%" + marca}`);
 });
 
-describe("o recorte curador: veredito, nacionalidade e formato são públicos", () => {
-  it("o dono vê nacionalidade, formato e o veredito", async () => {
+describe("o recorte curador: veredito, autor, editora, nacionalidade, formato e século são públicos", () => {
+  it("o dono vê tudo isso", async () => {
     const resumo = await getResumoDoPerfil(dono, dono.id);
 
     expect(resumo.nationalities.find((n) => n.label === "brasileira")?.n).toBe(1);
     expect(resumo.formats.find((f) => f.label === "digital")?.n).toBe(1);
     expect(resumo.verdicts.find((v) => v.value === 5)?.n).toBe(1);
+    expect(resumo.authors.find((a) => a.label === autora)?.n).toBe(1);
+    expect(resumo.publishers.find((p) => p.label === `Editora do resumo ${marca}`)?.n).toBe(1);
+    // firstPublished: 1950 → século XX (ceil(1950/100) = 20)
+    expect(resumo.centuries.find((c) => c.century === 20)?.n).toBe(1);
   });
 
   it("um estranho vê o MESMO recorte — é público, não é o dono que decide", async () => {
@@ -72,6 +81,9 @@ describe("o recorte curador: veredito, nacionalidade e formato são públicos", 
 
     expect(resumo.nationalities.find((n) => n.label === "brasileira")?.n).toBe(1);
     expect(resumo.formats.find((f) => f.label === "digital")?.n).toBe(1);
+    expect(resumo.authors.find((a) => a.label === autora)?.n).toBe(1);
+    expect(resumo.publishers.find((p) => p.label === `Editora do resumo ${marca}`)?.n).toBe(1);
+    expect(resumo.centuries.find((c) => c.century === 20)?.n).toBe(1);
   });
 
   it("uma estante privada não aparece pra ninguém além do dono", async () => {
@@ -82,6 +94,9 @@ describe("o recorte curador: veredito, nacionalidade e formato são públicos", 
     const paraOEstranho = await getResumoDoPerfil(estranho, dono.id);
     expect(paraOEstranho.nationalities.length, "a nacionalidade vazou de uma estante privada").toBe(0);
     expect(paraOEstranho.formats.length, "o formato vazou de uma estante privada").toBe(0);
+    expect(paraOEstranho.authors.length, "o autor vazou de uma estante privada").toBe(0);
+    expect(paraOEstranho.publishers.length, "a editora vazou de uma estante privada").toBe(0);
+    expect(paraOEstranho.centuries.length, "o século vazou de uma estante privada").toBe(0);
 
     const paraODono = await getResumoDoPerfil(dono, dono.id);
     expect(paraODono.nationalities.length, "o dono deixou de ver a própria estante privada").toBe(1);

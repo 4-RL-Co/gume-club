@@ -103,6 +103,10 @@
   --grafico-generos: #a3492e;    /* gêneros. terracota: hue distante dos seis
                                     de cima, sem navegador aqui pra calibrar
                                     no olho — conferir contraste ao vivo. */
+  --grafico-autores: #6f7d2c;    /* autores mais lidos. oliva: o maior vão
+                                    livre entre os hues de cima (entre o ocre
+                                    de editoras e o verde de países), mesmo
+                                    aviso de calibração do generos acima. */
 
   /* ── THE SURFACE SYSTEM ───────────────────────────────────────────
      Harmony comes from repetition, not from taste applied case by case.
@@ -236,6 +240,7 @@
     --grafico-formatos: #1e97ab;
     --grafico-veredito: #8a68cf;
     --grafico-generos: #c05a3c;
+    --grafico-autores: #9fae46;
 
     --glass-tint: 48%;
     --glass-edge: 14%;
@@ -296,6 +301,7 @@
     --grafico-formatos: #1e97ab;
     --grafico-veredito: #8a68cf;
     --grafico-generos: #c05a3c;
+    --grafico-autores: #9fae46;
 
     --glass-tint: 48%;
     --glass-edge: 14%;
