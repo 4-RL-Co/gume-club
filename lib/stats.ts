@@ -507,6 +507,10 @@ export type ResumoDoPerfil = {
   verdicts: { value: number; n: number }[];
   /** Os gêneros mais lidos, vida inteira. Ver Stats.genres. */
   genres: Slice[];
+  /** De onde vêm os autores, vida inteira. Ver Stats.nationalities. */
+  nationalities: Slice[];
+  /** Papel ou tela, vida inteira. Ver Stats.formats. */
+  formats: Slice[];
   /** O ano corrente: livros terminados e páginas. `null` de página é "sem contagem". */
   anoCorrente: { ano: number; livros: number; paginas: number | null };
 };
@@ -519,14 +523,36 @@ export type ResumoDoPerfil = {
  *
  * getStats() já calcula tudo isto e mais uma dúzia de coisas — pesado demais
  * pra rodar (duas vezes, vida inteira + ano) numa página vista bem mais que
- * /estatisticas. Esta função calcula só o que os três cartões do perfil
+ * /estatisticas. Esta função calcula só o que os cinco cartões do perfil
  * precisam.
+ *
+ * ═══ ISTO É PÚBLICO, E A ESCOLHA DO QUE ENTRA FOI DELIBERADA ═══
+ *
+ * /estatisticas continua estritamente sua ("não existe 'ver as estatísticas
+ * de um estranho'") — ela fala em segunda pessoa, e tem números íntimos
+ * demais para um estranho ver (quantos livros esperam na estante, a
+ * paciência). Este resumo é outra coisa: um recorte pequeno e seguro,
+ * pensado desde sempre para quem VISITA. Veredito, gêneros, nacionalidade e
+ * formato entram porque são gosto, não volume nem posse — a mesma linha que
+ * já separa "e a comunidade" (gosto) do resto de /estatisticas (números).
  */
 export async function getResumoDoPerfil(viewer: Viewer, ownerId: string): Promise<ResumoDoPerfil> {
   const visible = and(
     eq(libraryEntries.userId, ownerId),
     visibleTo(viewer, libraryEntries.userId, libraryEntries.visibility),
   );
+
+  /** A edição que É a sua — mesma régua de getStats(). */
+  const edition = sql`(
+    select e.id from editions e
+    where e.id = coalesce(
+      ${libraryEntries.editionId},
+      (select oc.edition_id from owned_copies oc
+       where oc.work_id = ${libraryEntries.workId} and oc.user_id = ${libraryEntries.userId}),
+      (select e2.id from editions e2 where e2.work_id = ${libraryEntries.workId}
+       order by e2.created_at asc, e2.id asc limit 1)
+    )
+  )`;
 
   const verdicts = await db.execute<{ value: number; n: number }>(sql`
     select rt.value::int as value, count(*)::int as n
@@ -548,6 +574,36 @@ export async function getResumoDoPerfil(viewer: Viewer, ownerId: string): Promis
     group by w.genre
     order by n desc, label asc
     limit 8`);
+
+  /**
+   * "Abrir /estatisticas pra visitantes — um recorte curador": veredito, gêneros,
+   * países e formatos são seguros de mostrar a um estranho (o mesmo dado que
+   * getStats() já calcula, sem o que é íntimo demais — quantos livros na estante,
+   * a paciência). Nacionalidade e formato ficam LIFETIME, mesma régua de genres
+   * acima, e não presas ao ano corrente.
+   */
+  const nationalities = await db.execute<{ label: string; n: number }>(sql`
+    select a.nationality as label, count(*)::int as n
+    from library_entries
+    join works w on w.id = library_entries.work_id
+    join authors a on a.id = w.author_id
+    where library_entries.user_id = ${ownerId}::uuid
+      and ${visible}
+      and a.nationality is not null
+      and ${finished(null)}
+    group by a.nationality
+    order by n desc, label asc`);
+
+  const formats = await db.execute<{ label: string; n: number }>(sql`
+    select case when e.format in ('ebook', 'audiobook') then 'digital' else 'físico' end as label,
+           count(*)::int as n
+    from library_entries
+    join editions e on e.id = ${edition}
+    where library_entries.user_id = ${ownerId}::uuid
+      and ${visible}
+      and ${finished(null)}
+    group by 1
+    order by n desc`);
 
   const ano = new Date().getFullYear();
   const [doAno] = await db.execute<{ livros: number; soma: number | null; com_pagina: number }>(sql`
@@ -573,6 +629,8 @@ export async function getResumoDoPerfil(viewer: Viewer, ownerId: string): Promis
       n: verdicts.find((r) => r.value === value)?.n ?? 0,
     })),
     genres: genres.map((r) => ({ label: r.label, n: r.n })),
+    nationalities: nationalities.map((r) => ({ label: r.label, n: r.n })),
+    formats: formats.map((r) => ({ label: r.label, n: r.n })),
     anoCorrente: {
       ano,
       livros: doAno?.livros ?? 0,

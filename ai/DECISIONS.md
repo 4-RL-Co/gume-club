@@ -4492,3 +4492,23 @@ O gap era descobribilidade, não função. `components/book-panel.tsx` agora
 troca o rótulo do pill "lendo" para "reler" quando o livro já está "lido", e
 um toast confirma o que aconteceu ("Nova leitura aberta. Quando terminar,
 marque 'lido' de novo."). Sem migration, sem endpoint novo.
+
+## O recorte público das estatísticas
+
+"acho que dá pra gente pegar algumas coisas do your gamer profile... os
+stats da pessoa podem ser vistos no perfil por outras pessoas" — mais o
+print da janela de Stats do Letterboxd.
+
+`/estatisticas` continua estritamente sua — segunda pessoa, números íntimos
+(quantos livros esperam, a paciência) não são pra estranho ver, e "não
+existe 'ver as estatísticas de um estranho'" continua valendo ao pé da
+letra. Mas `getResumoDoPerfil()` (a versão leve que já alimentava o perfil
+com veredito/gêneros/ano corrente) ganhou nacionalidade e formato — o mesmo
+recorte que já separa "e a comunidade" (gosto) do resto da página (números):
+GOSTO é público, POSSE não é. Cinco cartões agora em
+`components/resumo-do-perfil.tsx`, todos vida inteira exceto o ano corrente.
+
+Testado contra Postgres de verdade em `lib/resumo-do-perfil.sql.test.ts`:
+nacionalidade e formato são o MESMO recorte pro dono e pro estranho, e uma
+estante privada não vaza pra ninguém.
+
