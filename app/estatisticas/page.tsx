@@ -9,6 +9,7 @@ import { Empty } from "@/components/empty";
 import { ShelfTabs } from "@/components/shelf-tabs";
 import { mine } from "@/lib/veredito";
 import { Barras, Vereditos, Seculos } from "@/components/graficos-leitura";
+import { MapaMundi } from "@/components/mapa-mundi";
 
 export const dynamic = "force-dynamic";
 
@@ -276,8 +277,12 @@ export default async function Estatisticas({
           )}
 
           {s.nationalities.length > 0 && (
-            <Card titulo="de onde vêm os seus autores" frase={fraseNacoes(s.nationalities)}>
-              <Barras dados={s.nationalities} cor="--grafico-paises" />
+            <Card
+              titulo="de onde vêm os seus autores"
+              frase={fraseNacoes(s.nationalities)}
+              className="sm:col-span-2"
+            >
+              <MapaMundi dados={s.nationalities} />
             </Card>
           )}
 
@@ -493,14 +498,16 @@ function Comunidade({ c, s }: { c: Community; s: Stats }) {
 
 /** Um assunto, um card. Nada flutua solto na página. */
 function Card({
-  titulo, frase, children,
+  titulo, frase, children, className,
 }: {
   titulo: string;
   frase?: string;
   children: React.ReactNode;
+  /** Pro mapa múndi, que precisa da linha inteira — é largo, não quadrado. */
+  className?: string;
 }) {
   return (
-    <section className="surface flex flex-col p-7 sm:p-8">
+    <section className={["surface flex flex-col p-7 sm:p-8", className].filter(Boolean).join(" ")}>
       <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
         {titulo}
       </h2>

@@ -4598,3 +4598,40 @@ livro em `components/book-card.tsx` (a estante) de 15px pra 16px, o autor de
 `components/resenhas-do-livro.tsx` de 13px pra 14px, o avatar de 36px pra
 40px; e o próprio diário nasceu com capa maior (w-12, era w-10 nas versões
 anteriores de listas parecidas) e título em 16px.
+
+## O mapa múndi, calculado uma vez, nunca em produção
+
+"em países, pq não fazemos um mapa mundi com um heatmap?" — o dono. A barra
+de "de onde vêm os autores" virou um mapa, em `/estatisticas` e no resumo
+público do perfil.
+
+**A geometria nasce OFFLINE, e fica.** `scripts/gerar-mapa-mundi.mjs` usa
+`world-atlas` (fronteiras do Natural Earth, domínio público) +
+`topojson-client` + `d3-geo` pra projetar o mundo (geoEqualEarth, sem
+Antártida — nenhum autor tem essa nacionalidade, e ela come espaço vertical
+à toa) e escreve o resultado — 175 países, cada um já com o caminho SVG
+pronto — em `lib/mapa-mundi-formas.ts`, commitado. Mesmo espírito dos
+`scripts/backfill-*.mjs`: um enriquecimento que roda uma vez, não uma
+dependência que viaja pra produção. `components/mapa-mundi.tsx` só LÊ essa
+lista: nem `d3-geo` nem `topojson-client` entram no bundle do cliente, e o
+build confirma — `/estatisticas` e `/perfil` não mudaram de tamanho com o
+mapa, porque o componente é servidor puro, sem `"use client"`.
+
+**A ponte do nome pro desenho**: `lib/pais-iso.ts`, uma tabela numérico-ISO
+→ `{ iso2, nome em português }`, na MESMA grafia que `lib/paises.ts` já usa
+como canônica onde as duas se cruzam. `paisPorNome()` casa pelo nome
+normalizado (a mesma régua de `lib/paises.ts`) e devolve `null` pro que não
+reconhece — o país correspondente fica cinza no mapa, nunca inventado. Três
+territórios sem código ISO no Natural Earth (Kosovo, Chipre do Norte,
+Somalilândia) ficam sempre cinza, por desenho.
+
+**A cor por intensidade não é "cor por valor" proibida**: a regra de
+`components/graficos-leitura.tsx` ("toda barra de um gráfico tem a MESMA
+cor — quem compara é o comprimento") é sobre BARRA, onde a forma já tem um
+eixo pra comparar. Um mapa de calor não tem comprimento, só geografia — a
+intensidade da MESMA cor (`--grafico-paises`, o mesmo verde da barra
+antiga) é a única linguagem que sobra, e ela mede quantos livros vieram
+daquele país, nunca a qualidade de quem escreveu lá.
+
+Testado: `lib/pais-iso.test.ts` (o nome e o apelido casam com o país certo,
+o que não bate devolve `null`, sem iso2 nem nome duplicado na tabela).
