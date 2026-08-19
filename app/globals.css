@@ -734,17 +734,34 @@
      O LEQUE RESPIRA. No hover de um card de estante, as capas se afastam um
      dedo, como quem folheia a pilha para ver o que tem embaixo. É um convite
      de meio segundo, e não um truque: solta o mouse e elas se guardam.
+
+     O giro ESTÁTICO de cada capa (quando o leque tem um por card, ver
+     components/leque-capas.tsx) mora em `--giro`, uma custom property —
+     nunca em `transform` inline, porque `style` sempre venceria esta regra.
+     Em repouso, cada capa só gira `--giro` (0deg pras capas de
+     components/lista-card.tsx, que não usam essa variável — a var some,
+     `var(--giro, 0deg)` cai no zero). No hover, soma-se o giro extra do
+     leque abrindo por cima do giro estático de cada capa, no MESMO
+     `transform` — os dois efeitos nunca competiram, e agora nunca competem.
+     Dois donos possíveis pro `.card`/`.surface-hover` que envolve o leque:
+     estante montada usa `.card`; card de pessoa usa `.surface`+`.surface-hover`
+     (components/amigos-lendo.tsx, components/explore.tsx).
      ══════════════════════════════════════════════════════════════════ */
   .leque > * {
+    transform: rotate(var(--giro, 0deg));
     transition: transform 380ms var(--ease-spring, cubic-bezier(0.22, 0.9, 0.3, 1));
   }
-  .card:hover .leque > *:nth-child(2) { transform: translateX(7px) rotate(0.6deg); }
-  .card:hover .leque > *:nth-child(3) { transform: translateX(14px) rotate(1.1deg); }
-  .card:hover .leque > *:nth-child(4) { transform: translateX(21px) rotate(1.6deg); }
-  .card:hover .leque > *:nth-child(5) { transform: translateX(28px) rotate(2.1deg); }
+  .card:hover .leque > *:nth-child(2),
+  .surface-hover:hover .leque > *:nth-child(2) { transform: translateX(7px) rotate(calc(var(--giro, 0deg) + 0.6deg)); }
+  .card:hover .leque > *:nth-child(3),
+  .surface-hover:hover .leque > *:nth-child(3) { transform: translateX(14px) rotate(calc(var(--giro, 0deg) + 1.1deg)); }
+  .card:hover .leque > *:nth-child(4),
+  .surface-hover:hover .leque > *:nth-child(4) { transform: translateX(21px) rotate(calc(var(--giro, 0deg) + 1.6deg)); }
+  .card:hover .leque > *:nth-child(5),
+  .surface-hover:hover .leque > *:nth-child(5) { transform: translateX(28px) rotate(calc(var(--giro, 0deg) + 2.1deg)); }
 
   @media (prefers-reduced-motion: reduce) {
     .leque > * { transition: none; }
-    .card:hover .leque > * { transform: none; }
+    .card:hover .leque > *, .surface-hover:hover .leque > * { transform: rotate(var(--giro, 0deg)); }
   }
 }
