@@ -5,6 +5,7 @@ import { getViewer } from "@/lib/viewer";
 import { getProfile, isFollowing } from "@/lib/social";
 import { getShelf, getShelfCounts } from "@/lib/shelf";
 import { getFavoritos } from "@/lib/favoritos";
+import { getDiario } from "@/lib/diario";
 import { LinksDoPerfil } from "@/components/links-do-perfil";
 import { getResumoDoPerfil } from "@/lib/stats";
 import { ResumoDoPerfil } from "@/components/resumo-do-perfil";
@@ -100,7 +101,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
   const viewer = await getViewer();
   const mine = viewer?.id === profile.id;
 
-  const [books, counts, following, badges, shelves, guardadas, resenhas, curadorias, favoritos, resumo] = await Promise.all([
+  const [books, counts, following, badges, shelves, guardadas, resenhas, curadorias, favoritos, resumo, diario] = await Promise.all([
     getShelf(viewer, profile.id, { filter: "tudo", sort: "adicionado" }),
     getShelfCounts(viewer, profile.id),
     viewer && !mine ? isFollowing(viewer.id, profile.id) : Promise.resolve(false),
@@ -121,6 +122,9 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
     // estrelas, sem limite). Ver lib/favoritos.ts.
     getFavoritos(profile.id),
     getResumoDoPerfil(viewer, profile.id),
+    // "é legal também ter uma linha do tempo tipo um diario de livros
+    // terminados" — cada leitura, mais recente primeiro. Ver lib/diario.ts.
+    getDiario(viewer, profile.id),
   ]);
 
   // A HONRA. Uma escada só: livros, HQs e cada volume de mangá contam juntos. Ver
@@ -281,6 +285,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
         opinions={opinions}
         favoritos={favoritos}
         resenhas={resenhas}
+        diario={diario}
         shelves={shelves}
         guardadas={guardadas}
         curadorias={curadorias}
