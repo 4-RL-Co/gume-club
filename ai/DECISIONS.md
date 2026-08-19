@@ -4635,3 +4635,27 @@ daquele país, nunca a qualidade de quem escreveu lá.
 
 Testado: `lib/pais-iso.test.ts` (o nome e o apelido casam com o país certo,
 o que não bate devolve `null`, sem iso2 nem nome duplicado na tabela).
+
+## "Cuidar do acervo" sai do menu do avatar, fica só no painel
+
+Continuação da rodada anterior. Perguntei se "no perfil" queria dizer o menu
+do avatar (onde o link sempre morou, nunca em `/perfil`) — porque tirá-lo de
+lá sem outro caminho deixaria bibliotecários e moderadores que não são o
+idealizador sem nenhuma porta pra `/cuidar`. "eu quero que esteja no painel
+e não no meu menu do avatar, tendeu?" — o dono confirmou, revendo a própria
+decisão anterior (documentada como "é um PAPEL e não um lugar").
+
+O link saiu de `components/sidebar.tsx` (desktop e celular) — o atalho pra
+`/cuidar` já existia dentro de `/painel` (aba moderação, `components/painel.tsx`),
+então nada precisou nascer, só a porta velha fechou.
+
+De quebra: `souModerador()`/`podeVerAFila()` saíram de `app/layout.tsx`. Elas
+só existiam ali para acender esse link — rodavam em TODA página de TODA
+visita, para decidir se um botão aparecia, e o botão não existe mais. As duas
+funções continuam de pé (usadas em `/cuidar`, `/pedidos`, `/moderacao`), só
+pararam de rodar de graça em cada carregamento do app inteiro.
+
+Hoje só o dono é idealizador e bibliotecário ao mesmo tempo, então não há
+ninguém realmente sem porta agora — mas é a troca real: quando houver um
+segundo bibliotecário, ele só chega em `/cuidar` sabendo a URL de cor, até
+`/painel` ganhar um jeito de abrir pra além do idealizador (não hoje).

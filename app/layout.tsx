@@ -13,8 +13,6 @@ import { getViewer, getUser } from "@/lib/viewer";
 import { souIdealizador } from "@/lib/authz";
 import { apoioLigado } from "@/lib/stripe";
 import { getCollections } from "@/lib/curation";
-import { souModerador } from "@/lib/moderacao";
-import { podeVerAFila } from "@/lib/torneira";
 import { getNovidades } from "@/lib/novidades";
 import "./globals.css";
 
@@ -106,18 +104,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   // A barra não recebe mais contagem: contagem é de FILTRO, e filtro mora na
   // tela que ele filtra. Ela só precisa das estantes que você inventou.
-  const [eu, shelves, moderador, fila, idealizador, novidades] = await Promise.all([
+  //
+  // souModerador()/podeVerAFila() saíram daqui: eram buscados em TODA página do
+  // app só para acender "Cuidar do acervo" no menu do avatar, e esse link saiu
+  // de lá — "eu quero que esteja no painel e não no meu menu do avatar", o
+  // dono. O atalho pra /cuidar já mora dentro de /painel (aba moderação); as
+  // duas funções continuam de pé, só não rodam mais em toda visita de todo
+  // mundo por causa de um link que não existe mais aqui.
+  const [eu, shelves, idealizador, novidades] = await Promise.all([
     // QUEM ESTÁ DENTRO, dito aqui. A barra não pergunta isso ao navegador: enquanto a
     // resposta do `useSession()` não chegava, ela desenhava a versão de visitante e
     // oferecia "Entrar" a quem já tinha entrado. Ver a nota em components/sidebar.tsx.
     getUser(viewer.id),
     getCollections(viewer, viewer.id),
-    // MODERADOR, e não bibliotecário: bibliotecário mexe em ficha de livro, moderador
-    // mexe em gente, e os dois cargos deixaram de ser o mesmo. Ver lib/moderacao.ts.
-    souModerador(viewer),
-    // A FILA DE PEDIDOS é de BIBLIOTECÁRIO ou moderador: ela é trabalho de catálogo.
-    // Ver lib/torneira.ts.
-    podeVerAFila(viewer),
     // Só o idealizador vê a porta do painel privado. A defesa é no servidor; isto é só
     // sobre não desenhar um link que dá 404 para todo mundo menos uma pessoa.
     souIdealizador(viewer),
@@ -137,8 +136,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Sidebar
             eu={eu && { nome: eu.displayName, handle: eu.handle, image: eu.image }}
             shelves={shelves}
-            moderador={moderador}
-            fila={fila}
             idealizador={idealizador}
             novidades={novidades}
             apoio={apoioLigado()}
