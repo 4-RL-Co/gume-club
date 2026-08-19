@@ -4659,3 +4659,34 @@ Hoje só o dono é idealizador e bibliotecário ao mesmo tempo, então não há
 ninguém realmente sem porta agora — mas é a troca real: quando houver um
 segundo bibliotecário, ele só chega em `/cuidar` sabendo a URL de cor, até
 `/painel` ganhar um jeito de abrir pra além do idealizador (não hoje).
+
+## A bola virou coluna, o mapa ganhou um escape, e o leque abre no hover
+
+Três achados olhando a tela ao vivo, todos pequenos.
+
+**"isso aqui parece uma bola"**: `material()` (`components/graficos-leitura.tsx`)
+arredonda em 999 (pílula) — perfeito numa barra deitada, larga e baixa, onde o
+raio nunca chega perto de fechar um círculo. Numa COLUNA de século curta e
+estreita, largura e altura ficam perto uma da outra, e 999 vira bola de
+verdade. Colunas agora arredondam só o topo, raio fixo pequeno — base reta,
+encostada no eixo, como todo gráfico de coluna.
+
+**"o mapa nao apareceu nas estatisticas"**: não era bug do mapa. `/estatisticas`
+sem `?ano=` na URL filtra pro ano corrente, e a consulta de nacionalidades
+sempre respeitou esse filtro — um ano sem livro com nacionalidade cadastrada
+apagava o cartão inteiro, sem dizer por quê. Mesma armadilha que o "Nada
+terminado" no topo da página já resolve pro total de livros; o cartão do mapa
+ganhou o mesmo escape ("Ver a vida inteira").
+
+**"quando coloca o mouse o leque abre um pouquinho igual nas listas"**: o
+leque de `components/lista-card.tsx` já respirava no hover
+(`.leque > *` em globals.css, animado no `:hover` do card ancestral) — os
+cards de PESSOA (`components/amigos-lendo.tsx`, `components/explore.tsx`)
+tinham a MESMA classe `leque` só de nome; o giro estático de cada capa ia
+direto num `transform` inline, que sempre vence CSS externo, então a regra de
+hover nunca tinha chance. `estiloDoLeque()` (`components/leque-capas.tsx`)
+agora escreve o giro numa custom property (`--giro`), e o CSS soma o giro do
+hover por cima — os dois nunca mais competem pelo mesmo `transform`. De
+quebra, capas maiores nesses dois lugares, e o Top 100 (`/explorar`) ganhou
+o mesmo lift de capa que o resto do app já tem (o `.card` só erguia o
+CARTÃO inteiro 2px; a capa ficava parada).

@@ -107,9 +107,9 @@ export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; s
                       uma fileira plana lado a lado; virou a mesma vitrine de troféu.
                       Ver components/leque-capas.tsx. */}
                   {e.capas.length > 0 && (
-                    <div className="flex h-32 items-center justify-center">
+                    <div className="leque flex h-36 items-center justify-center">
                       {e.capas.slice(0, 5).map((c, i, arr) => (
-                        <span key={i} className="cover-lift block w-16 shrink-0" style={estiloDoLeque(i, arr.length)}>
+                        <span key={i} className="cover-lift block w-20 shrink-0" style={estiloDoLeque(i, arr.length)}>
                           <Cover title="" src={c} />
                         </span>
                       ))}
@@ -180,9 +180,9 @@ export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; s
                           mesma geometria de "os seus amigos estão lendo" (/pessoas). Ver
                           components/leque-capas.tsx. */}
                       {e.capas.length > 0 && (
-                        <div className="flex h-32 items-center justify-center">
+                        <div className="leque flex h-36 items-center justify-center">
                           {e.capas.slice(0, 5).map((c, i, arr) => (
-                            <span key={i} className="cover-lift block w-16 shrink-0" style={estiloDoLeque(i, arr.length)}>
+                            <span key={i} className="cover-lift block w-20 shrink-0" style={estiloDoLeque(i, arr.length)}>
                               <Cover title="" src={c} />
                             </span>
                           ))}

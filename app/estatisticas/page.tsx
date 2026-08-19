@@ -276,7 +276,15 @@ export default async function Estatisticas({
             </Card>
           )}
 
-          {s.nationalities.length > 0 && (
+          {/**
+            * "O mapa nao apareceu nas estatisticas" — o dono. Não era bug do mapa: o
+            * recorte de país segue o MESMO filtro de ano da página inteira (a régua
+            * de sempre, aqui), e um ano sem livro com nacionalidade cadastrada
+            * apagava o cartão inteiro, sem dizer por quê — a mesma armadilha que o
+            * "Nada terminado" no topo desta página já resolve para o total de
+            * livros. Este cartão ganha o mesmo escape: fica, e diz o que aconteceu.
+            */}
+          {s.nationalities.length > 0 ? (
             <Card
               titulo="de onde vêm os seus autores"
               frase={fraseNacoes(s.nationalities)}
@@ -284,6 +292,19 @@ export default async function Estatisticas({
             >
               <MapaMundi dados={s.nationalities} />
             </Card>
+          ) : (
+            year !== null && (
+              <Card titulo="de onde vêm os seus autores" className="sm:col-span-2">
+                <p className="text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
+                  Nenhum autor com nacionalidade cadastrada entre os livros que você
+                  terminou em {year}.{" "}
+                  <Link href="/estatisticas?ano=sempre" className="underline decoration-[var(--color-rule)] underline-offset-4 hover:decoration-[var(--color-ink)]">
+                    Ver a vida inteira
+                  </Link>
+                  .
+                </p>
+              </Card>
+            )
           )}
 
           {s.publishers.length > 0 && (
