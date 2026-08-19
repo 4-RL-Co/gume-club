@@ -4574,3 +4574,27 @@ já existiam.
 Testado contra Postgres de verdade em `lib/resumo-do-perfil.sql.test.ts`:
 autor, editora e século são o mesmo recorte pro dono e pro estranho, e não
 vazam de uma estante privada.
+
+## O diário ganha o selo do mês, um filtro, e três fontes crescem
+
+Três pedidos pequenos, na mesma rodada.
+
+**"os posicionamentos devem ser mais criativos, olha que bonito o diário do
+letterboxd"** — o print mostrava o selo de calendário (mês + ano) só na
+primeira leitura de cada mês; as seguintes do mesmo mês mostram só o dia
+solto, alinhado embaixo. `components/diario.tsx` ganhou esse agrupamento.
+Data com só o ano (sem dia) fica fora do agrupamento — não tem mês pra
+mostrar.
+
+**"no diario dá pra ter os livros terminados e resenhas feitas também"** — um
+filtro simples (`livros terminados` / `resenhas`) sobre a mesma lista,
+usando o `temResenha` que já existia por linha; só aparece quando existe
+pelo menos uma resenha, pra não oferecer um filtro vazio.
+
+**"alguns containers, fontes etc são muito pequenos... tela do diario,
+resenhas, titulos dos livros nas estantes"** — três ajustes: o título do
+livro em `components/book-card.tsx` (a estante) de 15px pra 16px, o autor de
+12px pra 13px; o nome de quem escreveu a resenha em
+`components/resenhas-do-livro.tsx` de 13px pra 14px, o avatar de 36px pra
+40px; e o próprio diário nasceu com capa maior (w-12, era w-10 nas versões
+anteriores de listas parecidas) e título em 16px.

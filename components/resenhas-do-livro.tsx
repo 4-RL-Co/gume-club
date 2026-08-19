@@ -59,10 +59,12 @@ function Uma({ r, slug, podeVotar }: { r: ResenhaDoLivro; slug: string; podeVota
 
   return (
     <li className="flex items-start gap-4">
-      <AvatarLink src={r.image} name={r.name} handle={r.handle} size={36} />
+      <AvatarLink src={r.image} name={r.name} handle={r.handle} size={40} />
 
       <div className="min-w-0 flex-1">
-        <p className="text-[13px]">
+        {/* "as fontes... são muito pequenas" — o dono. Era 13px, e essa é a
+            única linha da resenha que carrega um NOME de gente. */}
+        <p className="text-[14px]">
           <a href={`/@${r.handle}`} className="font-medium text-[var(--color-ink)] hover:underline">
             {r.name ?? r.handle}
           </a>
