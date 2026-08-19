@@ -48,7 +48,7 @@ export default async function Estatisticas({
   const viewer = await getViewer();
   if (!viewer) {
     return (
-      <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+      <main className="mx-auto max-w-7xl px-6 pb-32 sm:px-10">
         <ScreenHeader title={<>O seu <em className="italic text-[var(--color-ink-soft)]">gosto</em>.</>} />
         <Empty>
           <Link href="/entrar" className="underline decoration-[var(--color-ink)] underline-offset-4">
@@ -75,7 +75,7 @@ export default async function Estatisticas({
 
   if (s.books === 0 && s.shelf === 0) {
     return (
-      <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+      <main className="mx-auto max-w-7xl px-6 pb-32 sm:px-10">
         <ScreenHeader title={<>O seu <em className="italic text-[var(--color-ink-soft)]">gosto</em>.</>} />
         <ShelfTabs active="estatisticas" />
         <Empty>
@@ -86,7 +86,7 @@ export default async function Estatisticas({
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+    <main className="mx-auto max-w-7xl px-6 pb-32 sm:px-10">
       <ScreenHeader
         title={<>O seu <em className="italic text-[var(--color-ink-soft)]">gosto</em>.</>}
         meta={[year === null ? "a vida inteira" : String(year)]}

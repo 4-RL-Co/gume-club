@@ -170,7 +170,7 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
   const invisivel = mine && estaInvisivel(profile.emailVerified, livrosQueProvam);
 
   return (
-    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+    <main className="mx-auto max-w-7xl px-6 pb-32 sm:px-10">
       <div className="surface mt-16 flex items-start gap-6 p-7 sm:mt-24 sm:gap-8 sm:p-8">
         {/* A person is round. A book is a rectangle. The shape alone tells you
             which is which, and it is why a page carrying both can be skimmed. */}

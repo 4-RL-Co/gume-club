@@ -40,6 +40,12 @@ const EYEBROW = "text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-f
  *  A aba "coleções" (os conjuntos editoriais — "Berserk Deluxe", "4 de 14")
  *  saiu inteira: colecionismo tirava o foco de um app que é sobre ler. Ver a
  *  migration 0062 e ai/DECISIONS.md.
+ *
+ *  DIÁRIO e RESENHAS ganharam mais respiro (`p-9`, capa e texto maiores) —
+ *  "acho que a parte do diario tem que ser um pouco maior igual do
+ *  letterboxd (...) resenhas também" — o dono. A página do perfil em volta
+ *  também alargou (app/[handle]/page.tsx), e o mesmo token de largura
+ *  compartilhado subiu em toda página densa do site. Ver ai/DECISIONS.md.
  * ════════════════════════════════════════════════════════════════════
  */
 export function PerfilAbas({
@@ -127,27 +133,27 @@ export function PerfilAbas({
       )}
 
       {aba === "diario" && (
-        <section className="surface mt-6 p-7">
+        <section className="surface mt-6 p-7 sm:p-9">
           <Diario entradas={diario} />
         </section>
       )}
 
       {aba === "resenhas" && (
-        <section className="surface mt-6 p-7">
-          <ul className="flex flex-col gap-6">
+        <section className="surface mt-6 p-7 sm:p-9">
+          <ul className="flex flex-col gap-7">
             {resenhas.map((r) => (
               // `items-start`: sem isto, o flex esticava o <Link> da capa até a
               // altura da coluna de texto (título + 4 linhas + data) — a capa em si
               // ficava do tamanho certo (aspect-2/3), mas a sombra e o brilho de
               // `.cover-lift` (que cobrem 100% do próprio elemento) continuavam
               // esticados, e sobrava um retrato fantasma embaixo da capa de verdade.
-              <li key={r.id} className="flex items-start gap-5">
-                <Link href={`/livro/${r.slug}`} className="cover-lift w-14 shrink-0">
+              <li key={r.id} className="flex items-start gap-6">
+                <Link href={`/livro/${r.slug}`} className="cover-lift w-16 shrink-0">
                   <Cover title={r.title} src={r.coverUrl} />
                 </Link>
 
                 <div className="min-w-0 flex-1">
-                  <Link href={`/livro/${r.slug}`} className="voice text-[17px] leading-snug hover:underline">
+                  <Link href={`/livro/${r.slug}`} className="voice text-[19px] leading-snug hover:underline">
                     {r.title}
                   </Link>
 
@@ -157,13 +163,13 @@ export function PerfilAbas({
                       achando que a resenha ACABAVA ali — "ler resenha inteira" é o
                       caminho até a página do livro, dito, e não só implícito no clique
                       da capa ou do título. */}
-                  <p className="voice mt-2 line-clamp-4 whitespace-pre-wrap text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
+                  <p className="voice mt-2.5 line-clamp-5 whitespace-pre-wrap text-[16px] leading-relaxed text-[var(--color-ink-soft)]">
                     {r.body}
                   </p>
 
                   <Link
                     href={`/livro/${r.slug}`}
-                    className="mt-1 inline-block text-[12px] text-[var(--color-ink-faint)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+                    className="mt-1.5 inline-block text-[12px] text-[var(--color-ink-faint)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
                   >
                     ler resenha inteira
                   </Link>

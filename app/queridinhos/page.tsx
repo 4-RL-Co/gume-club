@@ -34,7 +34,7 @@ export default async function Queridinhos() {
   const livros = await getQueridinhos(100);
 
   return (
-    <main className="relative mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+    <main className="relative mx-auto max-w-7xl px-6 pb-32 sm:px-10">
       {/* A aura do 1º colocado banha o topo: a lista editorial abre com a cara do
           livro que a comunidade mais ama hoje. Ver .aura-capa em globals.css. */}
       {livros[0]?.coverUrl && origemAceita(livros[0].coverUrl) && (

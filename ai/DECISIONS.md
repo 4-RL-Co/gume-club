@@ -4809,3 +4809,27 @@ de `columns` só controla o respiro ENTRE colunas, nunca entre cartões
 empilhados na MESMA coluna — isso sempre foi margem, mesmo antes do CSS
 ter `gap`). O cartão do mapa, que já ocupava as duas colunas, trocou
 `col-span-2` por `[column-span:all]`, o equivalente em `columns`.
+
+## O perfil alarga, e o mesmo token de largura sobe em toda página densa
+
+"e acho que a parte do diario tem que ser um pouco maior igual do
+letterboxd (...) resenhas também (...) acho que as coisas devem ser mais
+amplas/maiores" — o dono, com o print do Diary. E, na sequência: "acho que
+isso pode valer pra outras páginas também, avalie".
+
+O diário e as resenhas do perfil (`components/diario.tsx`,
+`components/perfil-abas.tsx`) ganharam capa, tipografia e altura de linha
+maiores — não só a capa: um diário maior só na capa fica desproporcional.
+`app/[handle]/page.tsx` foi conferido: `max-w-6xl` (1152px) é o MESMO
+token, literalmente a mesma classe no mesmo `<main>`, usado por praticamente
+toda página densa do site (estatísticas, explorar, estante, listas, livro,
+autor, contribuidores, pessoas, insígnias, o-que-falta) — não uma largura
+inventada por página. Confirmado: subir esse token de uma vez, em todo
+lugar que o usa, é mais consistente que alargar só o perfil e deixar as
+outras páginas com uma régua diferente. Virou `max-w-7xl` (1280px) nas 17
+ocorrências, incluindo `components/public-header.tsx` (o topo de quem não
+está logado, para continuar alinhado com o conteúdo mais largo abaixo).
+Fora do escopo, de propósito: páginas de formulário/prosa (`/sobre`,
+`/apoiar`, `/entrar`, `/perfil`, `/pedidos`) usam larguras menores
+(`max-w-xl`/`max-w-3xl`/`max-w-prose`) por serem leitura corrida, não
+grade — não fazem parte do mesmo token e não foram tocadas.
