@@ -4890,3 +4890,66 @@ Três pedidos concretos, com print:
    grande vs. cinco barras vs. um mapa), sobrava vazio embaixo dos
    curtos. Mesmo conserto, com 3 colunas em vez de 2: `columns-3`,
    `break-inside-avoid` por cartão, `mb-5` no lugar do `gap` vertical.
+
+## O accent vira lilás, e a mudança arrasta uma insígnia e um degrau da escada
+
+"As cores do nosso site podem ser as mesmas cores do catppuccino puxando
+uns botões meio pro lilaz, salmão etc, parecido com essa IDE" — o dono,
+com o print de um editor no tema Catppuccin. O fundo escuro já tinha ido
+nessa direção numa rodada anterior (o canvas é um cinza-roxinho, `#17151d`
+— ver a entrada de dark mode); o accent (`--color-accent`, até aqui
+verde-água, `#7DD3C0`) continuava do jeito antigo.
+
+Trocar não foi só mudar um hex. `--color-accent` é um dos poucos tokens do
+Gume que uma REGRA inteira protege: nenhuma insígnia (`lib/badges.test.ts`)
+nem o anel de apoiador (`lib/paleta.test.ts`) pode chegar perto do matiz da
+marca — cada sistema mede a distância em graus, contra o Postgres da cor,
+não contra a vista de alguém. Calculei o matiz OKLCH de verdade de dois
+candidatos catppuccin (Mauve e Peach) e os dois colidiam: Mauve ficava a
+4,8° da insígnia "violeta" (Construtor), Peach a 12,4° do "âmbar" (Arauto).
+As oito insígnias já ocupam quase o círculo inteiro, sempre a ≥30° uma da
+outra — só sobrava, livre, a fatia onde o PRÓPRIO accent verde-água já
+morava.
+
+Perguntado como seguir, a resposta foi realocar a insígnia mais próxima.
+Fiz a conta pra valer e achei uma SEGUNDA colisão, mais funda: a escada de
+honra (`lib/paleta.ts`, `DEGRAU`) também tem dois degraus na faixa
+roxa/rosa — "Lâmina" (272°) e "Navalha" (304°) — competindo pelo mesmo
+espaço que um accent mauve ocuparia. Voltei a perguntar; a resposta foi
+mexer nos degraus também, e não desistir do lilás.
+
+O accent foi para **#D0B1EC** (matiz 308° em OKLCH — mesma claridade e
+croma do verde-água antigo, só o matiz girando) porque é o único ponto do
+círculo, calculado por busca exaustiva de 0° a 359°, que fica a ≥30° de
+toda insígnia fixa E a ≥60° do apoiador (a régua mais rígida das duas,
+específica para a moldura de quem paga a conta). Dentro desse conserto:
+
+- **A insígnia "Construtor"** (era violeta, 300°) foi para **176°**, o vão
+  que o accent deixou vago ao se mudar dali.
+- **O degrau "Lâmina"** (era roxo, `#9D5ED4`/272°) foi para **`#8DD45E`,
+  verde-limão, 96°** — o único vão com folga de sobra na régua da escada,
+  já que a faixa roxo-rosa (240°–336°) ficou lotada por Diamante, o accent
+  novo e a Navalha.
+- **O degrau "Navalha"** (304°) não precisou se mexer: a 33° do accent
+  novo, folgada.
+
+Nenhum dos dois nomes mudou (`HONRAS`/`INSIGNIAS` continuam "Lâmina" e
+"Construtor") — só a cor do anel/selo, que nunca foi o nome, e o nome
+nunca prometeu literalmente a própria cor (Diamante já não é azul-diamante
+de verdade; Platina já não é cinza-platina).
+
+**Fora do escopo, por decisão explícita:** a moldura de apoiador e
+`--color-colaborar` (o rosa de "quem faz") não se mexeram — mexer nelas
+também abriria uma janela mais larga pro accent chegar mais perto do
+mauve exato do catppuccin (305°, contra os 308° que couberam), e essa
+terceira cascata não foi perguntada nem aprovada. `#D0B1EC` já é
+claramente lilás/roxo, só não é o swatch exato do Catppuccin Mauve — a
+diferença é de 3°, imperceptível lado a lado.
+
+Testado: `lib/badges.test.ts` (as oito insígnias, incluindo a distância
+delas até o accent) e `lib/paleta.test.ts` (os 55 pares da escada +
+apoiador, incluindo a régua de 60° entre apoiador e accent) passam com o
+`ACCENT` de cada arquivo atualizado para o novo matiz — cada um na sua
+própria régua (OKLCH pras insígnias, HSL simples pra escada; as duas não
+convertem 1:1, e por isso o mesmo tom carrega dois números diferentes,
+308° e 272°, um em cada arquivo).
