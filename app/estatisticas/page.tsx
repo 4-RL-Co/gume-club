@@ -10,6 +10,7 @@ import { ShelfTabs } from "@/components/shelf-tabs";
 import { mine } from "@/lib/veredito";
 import { Barras, Vereditos, Seculos } from "@/components/graficos-leitura";
 import { MapaMundi } from "@/components/mapa-mundi";
+import { empacotar } from "@/lib/masonry";
 
 export const dynamic = "force-dynamic";
 
@@ -266,118 +267,8 @@ export default async function Estatisticas({
           </section>
         )}
 
-        {/* ══ 3. A GRADE ════════════════════════════════════════════════
-            "as boxes estão meio jogadas, não quero espaços vazios" — o dono.
-            Um GRID de duas colunas estica todo cartão pra bater a altura do
-            vizinho mais alto — um cartão de três linhas ao lado de um de dez
-            vira três linhas de conteúdo e sete de nada. `columns` (o mesmo
-            empacotamento de jornal, sem JavaScript) deixa cada cartão com a
-            SUA altura, e o próximo cartão da coluna sobe pra preencher o que
-            sobrou — nunca um vazio no meio de uma caixa. */}
-        <div className="sm:columns-2 sm:gap-4">
-          {/* O que você achou do que leu. Pedido do dono: as palavras que você
-              dá também são um retrato, e elas não apareciam em lugar nenhum. */}
-          {s.verdicts.some((v) => v.n > 0) && (
-            <Card titulo="o que você achou" frase={fraseVeredito(s.verdicts)}>
-              <Vereditos dados={s.verdicts} />
-            </Card>
-          )}
-
-          {/**
-            * "O mapa nao apareceu nas estatisticas" — o dono. Não era bug do mapa: o
-            * recorte de país segue o MESMO filtro de ano da página inteira (a régua
-            * de sempre, aqui), e um ano sem livro com nacionalidade cadastrada
-            * apagava o cartão inteiro, sem dizer por quê — a mesma armadilha que o
-            * "Nada terminado" no topo desta página já resolve para o total de
-            * livros. Este cartão ganha o mesmo escape: fica, e diz o que aconteceu.
-            */}
-          {s.nationalities.length > 0 ? (
-            <Card
-              titulo="de onde vêm os seus autores"
-              frase={fraseNacoes(s.nationalities)}
-              className="sm:[column-span:all]"
-            >
-              <MapaMundi dados={s.nationalities} />
-            </Card>
-          ) : (
-            year !== null && (
-              <Card titulo="de onde vêm os seus autores" className="sm:[column-span:all]">
-                <p className="text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
-                  Nenhum autor com nacionalidade cadastrada entre os livros que você
-                  terminou em {year}.{" "}
-                  <Link href="/estatisticas?ano=sempre" className="underline decoration-[var(--color-rule)] underline-offset-4 hover:decoration-[var(--color-ink)]">
-                    Ver a vida inteira
-                  </Link>
-                  .
-                </p>
-              </Card>
-            )
-          )}
-
-          {s.publishers.length > 0 && (
-            <Card titulo="quem publica o que você lê" frase={fraseEditoras(s.publishers)}>
-              <Barras dados={s.publishers} cor="--grafico-editoras" />
-            </Card>
-          )}
-
-          {/* Ninguém tem esse dado. É o mais bonito da página. */}
-          {s.origins.length > 0 && (
-            <Card titulo="de onde vieram os seus livros" frase={fraseOrigens(s.origins)}>
-              <Barras dados={s.origins} cor="--grafico-origens" />
-            </Card>
-          )}
-
-          {s.formats.length > 0 && (
-            <Card titulo="papel ou tela" frase={fraseFormato(s.formats)}>
-              <Barras dados={s.formats} cor="--grafico-formatos" />
-            </Card>
-          )}
-
-          {/* O card "as suas pontas" morava aqui, e saiu: as duas pontas agora são a
-              manchete do card da distância, com nome e link. Mostrar os mesmos dois
-              livros de novo, três dedos abaixo, não é reforço: é eco. */}
-
-          {s.reread.length > 0 && (
-            <Card
-              titulo="o que você releu"
-              frase={
-                s.reread.length === 1
-                  ? "Um livro você quis de novo."
-                  : `${s.reread.length} livros você quis de novo.`
-              }
-            >
-              <ul className="flex flex-col gap-3">
-                {s.reread.map((r) => (
-                  <li key={r.slug}>
-                    <Link href={`/livro/${r.slug}`} className="group flex items-baseline gap-3">
-                      <span className="voice min-w-0 flex-1 truncate text-[16px] group-hover:underline">
-                        {r.title}
-                      </span>
-                      <span className="tabular shrink-0 text-[12px] text-[var(--color-ink-faint)]">
-                        {r.times}x
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          )}
-
-          {/* Sem julgamento, e sem "taxa de conclusão". É um fato sobre o seu ano. */}
-          {s.abandoned > 0 && (
-            <Card titulo="o que você largou">
-              <p className="voice text-[24px] leading-snug">
-                {s.abandoned === 1
-                  ? "Um livro você deixou pelo caminho."
-                  : `${s.abandoned} livros você deixou pelo caminho.`}
-              </p>
-              <p className="mt-5 text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
-                Largar um livro é uma escolha, e ela diz tanto sobre você quanto terminar.
-              </p>
-            </Card>
-          )}
-
-        </div>
+        {/* ══ 3. A GRADE ═══════════════════════════════════════════════ */}
+        <Grade s={s} year={year} />
 
         {/* ══ 4. A COMUNIDADE ═══════════════════════════════════════════
             E aqui está a linha que NÃO se cruza: a estatística da comunidade
@@ -387,6 +278,184 @@ export default async function Estatisticas({
         <Comunidade c={c} s={s} />
       </div>
     </main>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════ grade
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  "as boxes estão meio jogadas, não quero espaços vazios" — e depois,
+ *  vendo o resultado: "olha essas boxes todas tortas" — o dono.
+ *
+ *  Um GRID de duas colunas estica todo cartão pra bater a altura do
+ *  vizinho mais alto — o primeiro conserto. Só que `columns-2` (CSS puro,
+ *  sem cálculo) empacota SOZINHO, e com meia dúzia de cartões de alturas
+ *  bem diferentes o algoritmo de balanceamento do navegador erra: mede a
+ *  altura total, divide por 2, e não sabe redistribuir quando um cartão
+ *  sozinho já estoura essa média — sobrava uma coluna murcha do lado de
+ *  uma torta. `lib/masonry.ts` (`empacotar()`) faz à mão o que o navegador
+ *  fazia mal: cada cartão entra com um PESO (linhas que desenha), e o
+ *  guloso bota cada um na coluna mais vazia no momento.
+ *
+ *  O mapa (e o card vazio que o substitui, sem dado) continua de fora do
+ *  empacotamento — ele é largo por natureza, não uma coluna. Fica em cima,
+ *  como sempre foi a segunda coisa da grade.
+ *
+ *  Tela estreita não tem coluna pra desequilibrar: os mesmos cartões
+ *  aparecem de novo, empilhados em ORDEM NATURAL (`sm:hidden`), e o
+ *  empacotado some (`hidden sm:grid`). Ver o mesmo par em
+ *  components/resumo-do-perfil.tsx.
+ * ════════════════════════════════════════════════════════════════════
+ */
+function Grade({ s, year }: { s: Stats; year: number | null }) {
+  const mapa = s.nationalities.length > 0 ? (
+    <Card key="mapa" titulo="de onde vêm os seus autores" frase={fraseNacoes(s.nationalities)}>
+      <MapaMundi dados={s.nationalities} />
+    </Card>
+  ) : (
+    year !== null && (
+      <Card key="mapa" titulo="de onde vêm os seus autores">
+        <p className="text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
+          Nenhum autor com nacionalidade cadastrada entre os livros que você
+          terminou em {year}.{" "}
+          <Link href="/estatisticas?ano=sempre" className="underline decoration-[var(--color-rule)] underline-offset-4 hover:decoration-[var(--color-ink)]">
+            Ver a vida inteira
+          </Link>
+          .
+        </p>
+      </Card>
+    )
+  );
+
+  // Cada cartão entra com um PESO: aproximadamente quantas linhas ele desenha.
+  const blocos: { key: string; peso: number; node: React.ReactNode }[] = [];
+
+  // O que você achou do que leu. Pedido do dono: as palavras que você dá
+  // também são um retrato, e elas não apareciam em lugar nenhum.
+  if (s.verdicts.some((v) => v.n > 0)) {
+    blocos.push({
+      key: "verdicts",
+      peso: 1 + s.verdicts.length, // os cinco degraus aparecem sempre
+      node: (
+        <Card key="verdicts" titulo="o que você achou" frase={fraseVeredito(s.verdicts)}>
+          <Vereditos dados={s.verdicts} />
+        </Card>
+      ),
+    });
+  }
+
+  if (s.publishers.length > 0) {
+    blocos.push({
+      key: "publishers",
+      peso: 1 + s.publishers.length,
+      node: (
+        <Card key="publishers" titulo="quem publica o que você lê" frase={fraseEditoras(s.publishers)}>
+          <Barras dados={s.publishers} cor="--grafico-editoras" />
+        </Card>
+      ),
+    });
+  }
+
+  // Ninguém tem esse dado. É o mais bonito da página.
+  if (s.origins.length > 0) {
+    blocos.push({
+      key: "origins",
+      peso: 1 + s.origins.length,
+      node: (
+        <Card key="origins" titulo="de onde vieram os seus livros" frase={fraseOrigens(s.origins)}>
+          <Barras dados={s.origins} cor="--grafico-origens" />
+        </Card>
+      ),
+    });
+  }
+
+  if (s.formats.length > 0) {
+    blocos.push({
+      key: "formats",
+      peso: 1 + s.formats.length,
+      node: (
+        <Card key="formats" titulo="papel ou tela" frase={fraseFormato(s.formats)}>
+          <Barras dados={s.formats} cor="--grafico-formatos" />
+        </Card>
+      ),
+    });
+  }
+
+  // O card "as suas pontas" morava aqui, e saiu: as duas pontas agora são a
+  // manchete do card da distância, com nome e link. Mostrar os mesmos dois
+  // livros de novo, três dedos abaixo, não é reforço: é eco.
+  if (s.reread.length > 0) {
+    blocos.push({
+      key: "reread",
+      peso: 1 + s.reread.length,
+      node: (
+        <Card
+          key="reread"
+          titulo="o que você releu"
+          frase={
+            s.reread.length === 1
+              ? "Um livro você quis de novo."
+              : `${s.reread.length} livros você quis de novo.`
+          }
+        >
+          <ul className="flex flex-col gap-3">
+            {s.reread.map((r) => (
+              <li key={r.slug}>
+                <Link href={`/livro/${r.slug}`} className="group flex items-baseline gap-3">
+                  <span className="voice min-w-0 flex-1 truncate text-[16px] group-hover:underline">
+                    {r.title}
+                  </span>
+                  <span className="tabular shrink-0 text-[12px] text-[var(--color-ink-faint)]">
+                    {r.times}x
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ),
+    });
+  }
+
+  // Sem julgamento, e sem "taxa de conclusão". É um fato sobre o seu ano.
+  if (s.abandoned > 0) {
+    blocos.push({
+      key: "abandoned",
+      peso: 3,
+      node: (
+        <Card key="abandoned" titulo="o que você largou">
+          <p className="voice text-[24px] leading-snug">
+            {s.abandoned === 1
+              ? "Um livro você deixou pelo caminho."
+              : `${s.abandoned} livros você deixou pelo caminho.`}
+          </p>
+          <p className="mt-5 text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
+            Largar um livro é uma escolha, e ela diz tanto sobre você quanto terminar.
+          </p>
+        </Card>
+      ),
+    });
+  }
+
+  const colunas = empacotar(blocos, (b) => b.peso, 2);
+
+  return (
+    <>
+      {mapa}
+
+      <div className="sm:hidden">
+        {blocos.map((b) => b.node)}
+      </div>
+
+      <div className="hidden sm:grid sm:grid-cols-2 sm:gap-4">
+        {colunas.map((coluna, i) => (
+          <div key={i} className="flex flex-col">
+            {coluna.map((b) => b.node)}
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -519,25 +588,18 @@ function Comunidade({ c, s }: { c: Community; s: Stats }) {
 
 /** Um assunto, um card. Nada flutua solto na página. */
 function Card({
-  titulo, frase, children, className,
+  titulo, frase, children,
 }: {
   titulo: string;
   frase?: string;
   children: React.ReactNode;
-  /** Pro mapa múndi, que precisa da linha inteira — é largo, não quadrado. */
-  className?: string;
 }) {
+  // mb-4: os cartões empilham dentro de uma coluna calculada por
+  // lib/masonry.ts (ver Grade(), acima) — sem `columns` do CSS, o `gap`
+  // do container não existe mais, e o respiro entre cartões da MESMA
+  // coluna volta a ser margem, como sempre foi antes do CSS ter `gap`.
   return (
-    <section
-      className={[
-        // break-inside-avoid: numa coluna de jornal, um cartão cortado ao
-        // meio (título numa coluna, gráfico na outra) é pior que qualquer
-        // vazio. mb-4: o `gap` do container só afeta o respiro ENTRE
-        // colunas, nunca entre cartões empilhados na MESMA coluna — isso é
-        // margem, como sempre foi antes do CSS ter `gap`.
-        "surface mb-4 flex flex-col break-inside-avoid p-7 sm:p-8",
-        className,
-      ].filter(Boolean).join(" ")}>
+    <section className="surface mb-4 flex flex-col p-7 sm:p-8">
       <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
         {titulo}
       </h2>

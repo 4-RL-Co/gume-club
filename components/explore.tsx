@@ -308,7 +308,7 @@ export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; s
                           link do título, dito de novo aqui, junto do resto das
                           ações); ver o mesmo par em components/perfil-abas.tsx. */}
                       <Link
-                        href={`/livro/${r.slug}`}
+                        href={`/livro/${r.slug}#resenha-${r.id}`}
                         className="mt-1 inline-block text-[12px] text-[var(--color-ink-faint)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
                       >
                         ler resenha inteira

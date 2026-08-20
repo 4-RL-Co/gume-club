@@ -4953,3 +4953,63 @@ apoiador, incluindo a régua de 60° entre apoiador e accent) passam com o
 própria régua (OKLCH pras insígnias, HSL simples pra escada; as duas não
 convertem 1:1, e por isso o mesmo tom carrega dois números diferentes,
 308° e 272°, um em cada arquivo).
+
+## As colunas das estatísticas viram cálculo, não sorte do navegador
+
+"e sobre estatisticas, olha essas boxes todas tortas" — o dono, com o
+print do resumo do perfil: uma coluna com um cartão de catorze linhas
+("quem publica") ao lado de outras duas com metade da altura.
+
+O `columns-N` do CSS (usado no conserto anterior, "as boxes estão meio
+jogadas") empacota sozinho — mede a altura total, divide por N, e enche
+cada coluna até bater esse alvo. Com meia dúzia de cartões de alturas bem
+diferentes, esse algoritmo de balanceamento do navegador erra feio: não
+sabe redistribuir quando um cartão sozinho já estoura a média.
+
+`lib/masonry.ts` (`empacotar()`) faz à mão o que o navegador fazia mal:
+cada cartão entra com um PESO (quantas linhas ele desenha — número exato,
+não estimado, porque o servidor já sabe `dados.length` de cada gráfico), e
+um algoritmo guloso bota cada um na coluna mais vazia no momento, do mais
+pesado pro mais leve. Usado em `components/resumo-do-perfil.tsx` (3
+colunas) e na grade de `/estatisticas` (2 colunas, extraída pra um
+componente `Grade` novo).
+
+Isso troca `sm:columns-N` por `sm:grid sm:grid-cols-N`, com cada coluna
+sendo um `flex flex-col` cujos filhos já vêm na ordem calculada. Efeito
+colateral que precisou de conserto: numa tela estreita não existe coluna
+pra desequilibrar, e a ORDEM NATURAL (ano corrente primeiro, sempre)
+importa mais que o balanceamento — então os mesmos cartões são
+renderizados duas vezes, uma vez empilhados em ordem natural (`sm:hidden`)
+e uma vez empacotados (`hidden sm:grid`). Não são componentes com estado
+(Server Components), então usar os mesmos elementos duas vezes não tem
+custo de comportamento — só um pouco mais de HTML, num trecho que é só
+texto e barra.
+
+Testado em `lib/masonry.test.ts`: não perde nem duplica item, distribui
+pesos iguais igualmente, e — o caso que motivou o arquivo — um item muito
+mais pesado que os outros não deixa nenhuma coluna vazia.
+
+## "Ler resenha inteira" não larga você numa pilha de resenhas
+
+"quando eu clico pra ler a resenha inteira ele vai la pra pagina do
+livro, e se tiverem um monte de resenhas la eu perco a q eu fui ver?" —
+o dono.
+
+Os links "ler resenha inteira" (Explorar, resenhas do perfil) levavam só
+para `/livro/[slug]`, sem dizer qual das N resenhas era a que a pessoa
+tinha acabado de clicar. Agora levam para `/livro/[slug]#resenha-<id>`;
+cada `<li>` de `components/resenhas-do-livro.tsx` carrega esse mesmo
+`id`, e o navegador rola até ela sozinho.
+
+Duas coisas a mais, pro alvo do link: ele abre inteiro sem precisar de um
+segundo clique em "ler resenha inteira" (chegar cortada de novo, tendo
+acabado de clicar exatamente para ler inteira, seria a mesma pergunta
+duas vezes), e ganha um contorno (`--color-accent`) pro olho achar rápido
+qual das várias é a certa. A leitura do hash roda só depois de montar
+(`useEffect`): o servidor não sabe o hash da URL, e ler `location.hash` no
+primeiro render faria o HTML do servidor e o do cliente discordarem.
+
+Fora do alcance, e tudo bem: a SUA PRÓPRIA resenha nunca aparece em
+`ResenhasDoLivro` (ela mora no editor de "arrumar", acima) — mas ali
+nunca existe "pilha" nem "qual das várias": é uma caixa só, e o problema
+que este conserto resolve não existe nesse caminho.
