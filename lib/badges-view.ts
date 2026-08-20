@@ -135,7 +135,7 @@ export const INSIGNIAS: Record<
     sobre: "cuida da convivência daqui: das pessoas, e não do catálogo",
     como:
       "É quem cuida da comunidade: acolhe quem chega, ajuda a manter a conversa boa entre os leitores, olha as denúncias e tira do ar quem veio para atrapalhar. É trabalho de convivência, e não de ficha de livro. Quem imaginou o Gume é quem convida.",
-    matiz: 220, // azul. 45° de folga do verde-água e 45° do índigo: nenhuma cor colide.
+    matiz: 220, // azul. 45° de folga do índigo (265°) e 44° do construtor (176°): nenhuma cor colide.
     icone: "ShieldCheck",
   },
   /**
@@ -187,7 +187,17 @@ export const INSIGNIAS: Record<
     sobre: "construiu um pedaço do Gume, e ele está no ar",
     como:
       "Você fez uma parte do Gume (uma tela, um conserto, uma melhoria) e ela entrou no app que todo mundo usa. O Gume é aberto: qualquer pessoa pode propor uma mudança, e o que for bom fica. Ela chega sozinha quando a sua conta do GitHub estiver ligada aqui.",
-    matiz: 300, // violeta
+    /**
+     * 176°, ciano-esverdeado. Era 300° (violeta) — e o accent do Gume virou
+     * lilás, matiz 308° (era verde-água, 178°). A 8° de distância, violeta
+     * e o novo accent seriam a mesma cor: o accent quer dizer "o app está
+     * falando com você", e a insígnia quer dizer "esta pessoa construiu uma
+     * parte do Gume". Ver ai/DECISIONS.md.
+     *
+     * 176° é o vão que o accent deixou vago ao se mudar: 43° do verde
+     * (133°) e 44° do azul (220°). Nenhuma cor colide.
+     */
+    matiz: 176,
     icone: "Hammer",
   },
   arauto: {
