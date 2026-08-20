@@ -4857,3 +4857,36 @@ só a porta de chegada. Removida a página inteira
 (`app/bem-vindo/page.tsx`), e com ela `getShelvesToFollow()`
 (`lib/invite.ts`) e `lib/invite.sql.test.ts`, que só existiam para o
 estado "chegou sozinho" — nada mais os chamava.
+
+## Resenhas recentes ganham ação, o resumo do perfil não herda estado de outro perfil, e sua grade também vira colunas de jornal
+
+Três pedidos concretos, com print:
+
+1. **"no explorar, em resenhas recentes eu não tenho opção de ler a resenha
+   toda e nem dar upvote"** — `getResenhas()` (lib/explore.ts) não trazia
+   `upvotes`/`votei`, e `components/explore.tsx` não tinha o link "ler
+   resenha inteira" nem `<UpvoteResenha>` — só o corte de 4 linhas e a
+   data. Os dois vieram, mesma consulta e mesmo par de ações que já
+   existiam em `components/perfil-abas.tsx` e
+   `components/resenhas-do-livro.tsx`.
+
+2. **"quando eu entro no perfil de alguém, essa parte de estatísticas já
+   vem aberta, fica gigante o perfil, tem q estar fechada"** — a Gaveta
+   (`abertaPorPadrao = false`) já nascia fechada, mas nunca REMONTAVA: o
+   Next reaproveita o mesmo componente de cliente ao navegar de um
+   `/@handle` para outro (mesma rota, só o parâmetro muda), e o
+   `useState` de dentro de `<Gaveta>` e de `<PerfilAbas>` sobrevivia à
+   troca — quem tinha aberto as estatísticas (ou trocado de aba) no
+   próprio perfil chegava no de outra pessoa já assim. Os dois ganharam
+   `key={profile.id}` em `app/[handle]/page.tsx`: uma instância nova por
+   dono de perfil, cada uma com o próprio estado, do zero.
+
+3. **"não quero espaços vazios entre boxes nas estatisticas (nem no
+   perfil e nem na pagina dedicada)"** — a página dedicada já tinha
+   recebido este conserto (`columns-2`, ver a entrada da grade de
+   /estatisticas). O resumo do perfil (`components/resumo-do-perfil.tsx`)
+   ainda usava `grid sm:grid-cols-3`, que estica toda célula até a mais
+   alta da linha — com oito cartões de alturas bem diferentes (um número
+   grande vs. cinco barras vs. um mapa), sobrava vazio embaixo dos
+   curtos. Mesmo conserto, com 3 colunas em vez de 2: `columns-3`,
+   `break-inside-avoid` por cartão, `mb-5` no lugar do `gap` vertical.
