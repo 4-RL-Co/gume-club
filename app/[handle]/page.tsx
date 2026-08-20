@@ -267,7 +267,14 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
 
       {invisivel && <ConfirmeSeuEmail faltam={LIVROS_QUE_PROVAM - livrosQueProvam} />}
 
-      <ResumoDoPerfil resumo={resumo} primeiroNome={primeiroNome ?? name} mine={mine} />
+      {/* `key={profile.id}`: sem isto, o Next reaproveita a MESMA instância de
+          cliente ao navegar de um perfil para outro (mesma rota, `[handle]`
+          só troca de parâmetro) — e o `useState` de dentro da Gaveta
+          (components/gaveta.tsx) carrega o "aberta" de quem você via antes.
+          "quando eu entro no perfil de alguém, essa parte de estatísticas já
+          vem aberta" — o dono. A chave força um componente NOVO por dono de
+          perfil, e cada um nasce com o próprio estado, do zero. */}
+      <ResumoDoPerfil key={profile.id} resumo={resumo} primeiroNome={primeiroNome ?? name} mine={mine} />
 
       {/* ═══ O RESTO DO PERFIL, EM ABAS ═══
 
@@ -277,7 +284,12 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
           que aparece, sem voltar ao servidor. A ordem das abas preserva a prioridade
           que a página já tinha: "o que é mais difícil de conseguir vem primeiro".
           Ver components/perfil-abas.tsx. */}
+      {/* Mesmo motivo do `key` na Gaveta acima: sem ele, a aba selecionada
+          ("resenhas", digamos) sobrevive à troca de perfil, e você entra no
+          perfil de outra pessoa já dentro da aba que estava aberta na
+          última que você viu. */}
       <PerfilAbas
+        key={profile.id}
         mine={mine}
         primeiroNome={primeiroNome ?? name}
         podeVotar={Boolean(viewer)}

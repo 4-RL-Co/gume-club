@@ -64,23 +64,24 @@ export function ResumoDoPerfil({ resumo, primeiroNome, mine }: { resumo: Resumo;
   return (
     <div className="mt-8">
       <Gaveta titulo={mine ? "as suas estatísticas" : `as estatísticas de ${primeiroNome}`} resumo={resumoDaGaveta}>
-        <div className="grid gap-5 sm:grid-cols-3">
-          {/* ═══ O NÚMERO GRANDE, E NÃO UMA FRASE PERDIDA NO ALTO DO CARTÃO ═══
-              Era uma linha de texto só, do tamanho de qualquer parágrafo, boiando no topo
-              de um cartão do tamanho dos vizinhos (que têm cinco barras cada) — sobrava
-              vazio embaixo. docs/design.md já reserva a serifa de display para "número
-              grande" (é a mesma escolha da home, em Numero()); aqui ela ganha o mesmo
-              tratamento, e o bloco centraliza no espaço que o grid dá ao cartão — o que
-              só existe em telas largas, onde os três cartões dividem uma linha; numa
-              coluna só (mobile) cada cartão já tem a altura do próprio conteúdo, e o
-              `justify-center` não move nada. */}
+        {/* `columns-3`, não `grid-cols-3`: o grid estica toda célula até a mais alta
+            da LINHA (o padrão é `align-items: stretch`) — com oito cartões de
+            alturas bem diferentes (um número grande vs. cinco barras vs. um mapa),
+            isso sobrava vazio embaixo dos curtos. "não quero espaços vazios entre
+            boxes nas estatisticas (nem no perfil e nem na pagina dedicada)" — o
+            dono; mesmo conserto de app/estatisticas/page.tsx, aqui com 3 colunas em
+            vez de 2. `break-inside-avoid` por cartão evita um cartão cortado ao
+            meio entre colunas; `mb-5` no lugar do `gap` vertical, porque o `gap` de
+            `columns` só afeta o respiro ENTRE colunas, nunca entre cartões
+            empilhados na MESMA coluna. */}
+        <div className="sm:columns-3 sm:gap-5">
           {anoCorrente.livros > 0 && (
-            <section className="surface flex flex-col p-6">
+            <section className="surface mb-5 flex flex-col break-inside-avoid p-6">
               <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
                 {anoCorrente.ano}
               </h2>
 
-              <div className="mt-5 flex flex-1 flex-col justify-center gap-1.5">
+              <div className="mt-5 flex flex-col gap-1.5">
                 <span className="voice tabular text-[40px] leading-none text-[var(--color-ink)]">
                   {anoCorrente.livros}
                 </span>
@@ -98,7 +99,7 @@ export function ResumoDoPerfil({ resumo, primeiroNome, mine }: { resumo: Resumo;
           )}
 
           {totalVerdicts > 0 && (
-            <section className="surface p-6">
+            <section className="surface mb-5 break-inside-avoid p-6">
               <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
                 o que {mine ? "você achou" : `${primeiroNome} achou`}
               </h2>
@@ -109,7 +110,7 @@ export function ResumoDoPerfil({ resumo, primeiroNome, mine }: { resumo: Resumo;
           )}
 
           {genres.length > 0 && (
-            <section className="surface p-6">
+            <section className="surface mb-5 break-inside-avoid p-6">
               <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
                 gêneros mais lidos
               </h2>
@@ -120,7 +121,7 @@ export function ResumoDoPerfil({ resumo, primeiroNome, mine }: { resumo: Resumo;
           )}
 
           {authors.length > 0 && (
-            <section className="surface p-6">
+            <section className="surface mb-5 break-inside-avoid p-6">
               <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
                 autores mais lidos
               </h2>
@@ -131,7 +132,7 @@ export function ResumoDoPerfil({ resumo, primeiroNome, mine }: { resumo: Resumo;
           )}
 
           {publishers.length > 0 && (
-            <section className="surface p-6">
+            <section className="surface mb-5 break-inside-avoid p-6">
               <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
                 {mine ? "quem publica o que você lê" : `quem publica o que ${primeiroNome} lê`}
               </h2>
@@ -142,7 +143,7 @@ export function ResumoDoPerfil({ resumo, primeiroNome, mine }: { resumo: Resumo;
           )}
 
           {nationalities.length > 0 && (
-            <section className="surface p-6 sm:col-span-3">
+            <section className="surface mb-5 break-inside-avoid p-6 sm:[column-span:all]">
               <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
                 de onde vêm os autores
               </h2>
@@ -153,7 +154,7 @@ export function ResumoDoPerfil({ resumo, primeiroNome, mine }: { resumo: Resumo;
           )}
 
           {formats.length > 0 && (
-            <section className="surface p-6">
+            <section className="surface mb-5 break-inside-avoid p-6">
               <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
                 papel ou tela
               </h2>
@@ -164,7 +165,7 @@ export function ResumoDoPerfil({ resumo, primeiroNome, mine }: { resumo: Resumo;
           )}
 
           {centuries.length > 0 && (
-            <section className="surface p-6 sm:col-span-3">
+            <section className="surface mb-5 break-inside-avoid p-6 sm:[column-span:all]">
               <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
                 o século das obras
               </h2>
