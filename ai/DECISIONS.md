@@ -4833,3 +4833,27 @@ Fora do escopo, de propósito: páginas de formulário/prosa (`/sobre`,
 `/apoiar`, `/entrar`, `/perfil`, `/pedidos`) usam larguras menores
 (`max-w-xl`/`max-w-3xl`/`max-w-prose`) por serem leitura corrida, não
 grade — não fazem parte do mesmo token e não foram tocadas.
+
+## /bem-vindo sai: quem cadastra cai direto na página inicial
+
+"tire a pagina de bem-vindo do gume, muito ruim, se algum usuario novo
+cria a conta, pode já redirecionar pra pasta inicial mesmo" — o dono.
+
+`/bem-vindo` tinha dois estados: quem entrou por convite via "Fulano te
+trouxe" (a estante de quem chamou, com botão de seguir); quem chegou
+sozinho via uma grade de estantes curadas à mão — o estado do print, e o
+que o dono achou feio. Perguntado o escopo, a resposta foi tirar os dois:
+depois de criar conta ou entrar (com ou sem convite, e-mail/senha ou
+Google), todo mundo cai em `/`, do mesmo jeito que quem já tinha conta
+sempre caiu. `/` já cobre a estante vazia com o próprio estado vazio
+("A estante está vazia. Comece por um livro.") — não é um cadastro largado
+num quarto escuro, só não é mais uma segunda tela para chegar lá.
+
+Isso reabre uma decisão de 2026-07-11 ("O convite... é a solução da tela
+vazia") só na METADE que criava a tela em si — o mecanismo do convite
+continua o mesmo (o handle é o convite, sem tabela, sem escassez), e "quem
+te trouxe" continua visível em `/perfil` via `getInviter()`. O que saiu foi
+só a porta de chegada. Removida a página inteira
+(`app/bem-vindo/page.tsx`), e com ela `getShelvesToFollow()`
+(`lib/invite.ts`) e `lib/invite.sql.test.ts`, que só existiam para o
+estado "chegou sozinho" — nada mais os chamava.
