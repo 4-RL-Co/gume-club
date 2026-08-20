@@ -168,7 +168,7 @@ export function PerfilAbas({
                   </p>
 
                   <Link
-                    href={`/livro/${r.slug}`}
+                    href={`/livro/${r.slug}#resenha-${r.id}`}
                     className="mt-1.5 inline-block text-[12px] text-[var(--color-ink-faint)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
                   >
                     ler resenha inteira
