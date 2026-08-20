@@ -94,7 +94,7 @@ Sem isto o Gume é uma planilha bonita: dez amigos entram, cadastram os livros e
 - [x] `reviews`, incluindo resenhas privadas (grátis, para sempre)
 - [x] **Recomendar um livro a um amigo**: um livro, uma pessoa, uma linha de por quê. Cai na estante dela vindo de uma PESSOA.
 - [x] **Linhagem**: `users.invited_by` é gravado no cadastro.
-- [x] **A porta (o convite).** O handle **é** o convite: `/entrar?convite=<handle>`, sem tabela de códigos, sem escassez, sem fila. Quem entra por convite cai em `/bem-vindo`, que diz "fulano te trouxe" e abre a estante dele. Quem chega sozinho vê estantes curadas **à mão**. Ninguém cai no vazio.
+- [x] **A porta (o convite).** O handle **é** o convite: `/entrar?convite=<handle>`, sem tabela de códigos, sem escassez, sem fila. `/bem-vindo` saiu: todo mundo, com ou sem convite, cai direto em `/` depois do cadastro — a régua atual é "não relitigue" no que sobrou dela; "quem te trouxe" continua em `/perfil`. Ver ai/DECISIONS.md.
 - [x] **Arauto**: quem trouxe leitores que ficaram. Frase no perfil, **sem número, sem ponto, sem ranking**.
 - [ ] **Sem comentários.** Se um PR os adicionar, feche.
 
