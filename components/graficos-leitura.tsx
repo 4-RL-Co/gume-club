@@ -172,6 +172,16 @@ export function Seculos({ dados }: { dados: { century: number; label: string; n:
                 width: "60%",
                 height: Math.round((d.n / maior) * ALTURA),
                 ...material(d.n === 0, cor),
+                /**
+                 * "isso aqui parece uma bola" — o dono, vendo o século com um valor
+                 * baixo. `material()` arredonda em 999 (pílula), o que funciona numa
+                 * BARRA DEITADA (larga, baixa — o raio nunca chega perto de fechar um
+                 * círculo). Numa COLUNA curta e estreita, largura e altura ficam perto
+                 * uma da outra, e 999 vira bola de verdade. Colunas arredondam só o
+                 * TOPO, com um raio fixo pequeno — a base fica reta, encostada na
+                 * linha do eixo, do jeito que todo gráfico de coluna já faz.
+                 */
+                borderRadius: "5px 5px 0 0",
               }}
             />
           </span>

@@ -1,5 +1,6 @@
 import { FORMAS_DO_MUNDO, LARGURA_DO_MAPA, ALTURA_DO_MAPA } from "@/lib/mapa-mundi-formas";
 import { paisPorNome } from "@/lib/pais-iso";
+import { MapaMundiTooltip } from "@/components/mapa-mundi-tooltip";
 import type { Slice } from "@/lib/stats";
 
 /**
@@ -30,6 +31,16 @@ import type { Slice } from "@/lib/stats";
  *  (`lib/pais-iso.ts` não é o mundo inteiro) simplesmente não teria onde
  *  pintar — o resto do mundo continua desenhado, só sem cor. Ver
  *  paisPorNome(): ela nunca inventa um país que o texto não disse.
+ *
+ *  ═══ O HOVER ═══
+ *
+ *  "tem que ser possível colocar o mouse em cima do país e ver o número" —
+ *  o dono. O `<title>` nativo do SVG já fazia isso tecnicamente, mas o
+ *  navegador demora quase um segundo pra mostrar, sem estilo — na prática
+ *  lia como "não dá pra ver". `components/mapa-mundi-tooltip.tsx` (a única
+ *  parte disto que é `"use client"`) escuta o mouse e lê os atributos
+ *  `data-pais`/`data-n` de cada `<path>` — o desenho continua todo do
+ *  servidor, sem os 175 países viajando pro JavaScript do navegador.
  * ════════════════════════════════════════════════════════════════════
  */
 export function MapaMundi({ dados }: { dados: Slice[] }) {
@@ -42,30 +53,36 @@ export function MapaMundi({ dados }: { dados: Slice[] }) {
   const maior = Math.max(...porIso2.values(), 1);
 
   return (
-    <svg
-      role="img"
-      aria-label="mapa múndi, com os países de onde vêm os autores mais escuros"
-      viewBox={`0 0 ${LARGURA_DO_MAPA} ${ALTURA_DO_MAPA}`}
-      className="w-full"
-    >
-      {FORMAS_DO_MUNDO.map((f) => {
-        const n = f.iso2 ? porIso2.get(f.iso2) : undefined;
-        return (
-          <path
-            key={f.numerico ?? f.d.slice(0, 12)}
-            d={f.d}
-            stroke="var(--color-rule)"
-            strokeWidth={0.5}
-            fill={
-              n
-                ? `color-mix(in srgb, var(--grafico-paises) ${Math.round((n / maior) * 75) + 15}%, transparent)`
-                : "transparent"
-            }
-          >
-            {f.pt && <title>{n ? `${f.pt}: ${n}` : f.pt}</title>}
-          </path>
-        );
-      })}
-    </svg>
+    <MapaMundiTooltip>
+      <svg
+        role="img"
+        aria-label="mapa múndi, com os países de onde vêm os autores mais escuros"
+        viewBox={`0 0 ${LARGURA_DO_MAPA} ${ALTURA_DO_MAPA}`}
+        className="w-full"
+      >
+        {FORMAS_DO_MUNDO.map((f) => {
+          const n = f.iso2 ? porIso2.get(f.iso2) : undefined;
+          return (
+            <path
+              key={f.numerico ?? f.d.slice(0, 12)}
+              d={f.d}
+              data-pais={f.pt ?? undefined}
+              data-n={n ?? undefined}
+              stroke="var(--color-rule)"
+              strokeWidth={0.5}
+              fill={
+                n
+                  ? `color-mix(in srgb, var(--grafico-paises) ${Math.round((n / maior) * 75) + 15}%, transparent)`
+                  : "transparent"
+              }
+            >
+              {/* O <title> continua existindo: é o que um leitor de tela anuncia,
+                  e quem prefere o tooltip nativo do navegador ainda o tem. */}
+              {f.pt && <title>{n ? `${f.pt}: ${n}` : f.pt}</title>}
+            </path>
+          );
+        })}
+      </svg>
+    </MapaMundiTooltip>
   );
 }

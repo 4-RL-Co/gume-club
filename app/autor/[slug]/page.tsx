@@ -88,7 +88,7 @@ export default async function Autor({ params }: { params: Promise<{ slug: string
      limit 60`);
 
   return (
-    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+    <main className="mx-auto max-w-7xl px-6 pb-32 sm:px-10">
       <ScreenHeader
         title={autor.name}
         meta={[

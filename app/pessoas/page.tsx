@@ -60,7 +60,7 @@ export default async function Pessoas({
   const appUrl = process.env.APP_URL ?? "";
 
   return (
-    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+    <main className="mx-auto max-w-7xl px-6 pb-32 sm:px-10">
       <ScreenHeader
         title="Amigos"
         meta={aba === "amigos" ? ["cronológico", "sem algoritmo"] : undefined}

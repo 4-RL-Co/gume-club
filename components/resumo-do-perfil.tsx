@@ -1,6 +1,7 @@
 import { Gaveta } from "@/components/gaveta";
 import { Barras, Vereditos, Seculos } from "@/components/graficos-leitura";
 import { MapaMundi } from "@/components/mapa-mundi";
+import { empacotar } from "@/lib/masonry";
 import type { ResumoDoPerfil as Resumo } from "@/lib/stats";
 
 /**
@@ -40,6 +41,26 @@ import type { ResumoDoPerfil as Resumo } from "@/lib/stats";
  *  O que NÃO traduz, de propósito: contador de seguidores/curtida (README:
  *  "sem contador de seguidores") e o mapa de atividade estilo GitHub — perto
  *  demais de "ofensiva" (streak), que o README também recusa.
+ *
+ *  ═══ AS COLUNAS SÃO EMPACOTADAS, NÃO SÃO `columns-3` ═══
+ *
+ *  "e sobre estatisticas, olha essas boxes todas tortas" — o dono, com um
+ *  print de uma coluna gigante ("quem publica", catorze linhas) ao lado de
+ *  duas bem mais curtas. O CSS `columns-N` empacota sozinho, mas com meia
+ *  dúzia de cartões de alturas bem diferentes ele erra: mede a altura
+ *  total, divide por N, e não sabe redistribuir quando um cartão sozinho já
+ *  estoura essa média. `lib/masonry.ts` (`empacotar()`) faz à mão o que o
+ *  navegador faz mal aqui — cada cartão entra com um PESO (quantas linhas
+ *  ele desenha), e o algoritmo guloso bota cada um na coluna mais vazia no
+ *  momento.
+ *
+ *  Isso exige duas renderizações dos mesmos cartões: uma em ORDEM NATURAL
+ *  (empilhada, `sm:hidden`) pra tela estreita — onde não existe coluna, e a
+ *  prioridade é a mesma de sempre, o ano corrente primeiro — e outra
+ *  EMPACOTADA (`hidden sm:grid`) pra tela larga, onde as colunas existem e
+ *  precisam ficar parecidas em altura. Os mesmos elementos, usados duas
+ *  vezes: React não se importa (não são componentes com estado), e o custo
+ *  é um pouco de HTML a mais num trecho que é só texto e barra.
  * ════════════════════════════════════════════════════════════════════
  */
 export function ResumoDoPerfil({ resumo, primeiroNome, mine }: { resumo: Resumo; primeiroNome: string; mine: boolean }) {
@@ -61,119 +82,166 @@ export function ResumoDoPerfil({ resumo, primeiroNome, mine }: { resumo: Resumo;
         ? `${totalVerdicts} ${totalVerdicts === 1 ? "livro avaliado" : "livros avaliados"}`
         : null;
 
+  // Cada cartão entra com um PESO: aproximadamente quantas linhas ele desenha.
+  // O cabeçalho conta como 1 linha; uma barra por item da lista.
+  const blocos: { key: string; peso: number; node: React.ReactNode }[] = [];
+
+  if (anoCorrente.livros > 0) {
+    blocos.push({
+      key: "ano",
+      peso: 4,
+      node: (
+        <section key="ano" className="surface mb-5 flex flex-col break-inside-avoid p-6">
+          <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+            {anoCorrente.ano}
+          </h2>
+
+          <div className="mt-5 flex flex-col gap-1.5">
+            <span className="voice tabular text-[40px] leading-none text-[var(--color-ink)]">
+              {anoCorrente.livros}
+            </span>
+            <span className="text-[13px] text-[var(--color-ink-soft)]">
+              {anoCorrente.livros === 1 ? "livro terminado" : "livros terminados"}
+              {!mine && ` por ${primeiroNome}`}
+            </span>
+            {anoCorrente.paginas !== null && (
+              <span className="tabular mt-2 text-[13px] text-[var(--color-ink-faint)]">
+                {anoCorrente.paginas.toLocaleString("pt-BR")} páginas
+              </span>
+            )}
+          </div>
+        </section>
+      ),
+    });
+  }
+
+  if (totalVerdicts > 0) {
+    blocos.push({
+      key: "verdicts",
+      peso: 1 + verdicts.length, // os cinco degraus aparecem sempre — ver Vereditos()
+      node: (
+        <section key="verdicts" className="surface mb-5 break-inside-avoid p-6">
+          <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+            o que {mine ? "você achou" : `${primeiroNome} achou`}
+          </h2>
+          <div className="mt-5">
+            <Vereditos dados={verdicts} />
+          </div>
+        </section>
+      ),
+    });
+  }
+
+  if (genres.length > 0) {
+    blocos.push({
+      key: "genres",
+      peso: 1 + genres.length,
+      node: (
+        <section key="genres" className="surface mb-5 break-inside-avoid p-6">
+          <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+            gêneros mais lidos
+          </h2>
+          <div className="mt-5">
+            <Barras dados={genres} cor="--grafico-generos" />
+          </div>
+        </section>
+      ),
+    });
+  }
+
+  if (authors.length > 0) {
+    blocos.push({
+      key: "authors",
+      peso: 1 + authors.length,
+      node: (
+        <section key="authors" className="surface mb-5 break-inside-avoid p-6">
+          <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+            autores mais lidos
+          </h2>
+          <div className="mt-5">
+            <Barras dados={authors} cor="--grafico-autores" />
+          </div>
+        </section>
+      ),
+    });
+  }
+
+  if (publishers.length > 0) {
+    blocos.push({
+      key: "publishers",
+      peso: 1 + publishers.length,
+      node: (
+        <section key="publishers" className="surface mb-5 break-inside-avoid p-6">
+          <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+            {mine ? "quem publica o que você lê" : `quem publica o que ${primeiroNome} lê`}
+          </h2>
+          <div className="mt-5">
+            <Barras dados={publishers} cor="--grafico-editoras" />
+          </div>
+        </section>
+      ),
+    });
+  }
+
+  if (formats.length > 0) {
+    blocos.push({
+      key: "formats",
+      peso: 1 + formats.length,
+      node: (
+        <section key="formats" className="surface mb-5 break-inside-avoid p-6">
+          <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+            papel ou tela
+          </h2>
+          <div className="mt-5">
+            <Barras dados={formats} cor="--grafico-formatos" />
+          </div>
+        </section>
+      ),
+    });
+  }
+
+  const COLUNAS = 3;
+  const colunas = empacotar(blocos, (b) => b.peso, COLUNAS);
+
   return (
     <div className="mt-8">
       <Gaveta titulo={mine ? "as suas estatísticas" : `as estatísticas de ${primeiroNome}`} resumo={resumoDaGaveta}>
-        <div className="grid gap-5 sm:grid-cols-3">
-          {/* ═══ O NÚMERO GRANDE, E NÃO UMA FRASE PERDIDA NO ALTO DO CARTÃO ═══
-              Era uma linha de texto só, do tamanho de qualquer parágrafo, boiando no topo
-              de um cartão do tamanho dos vizinhos (que têm cinco barras cada) — sobrava
-              vazio embaixo. docs/design.md já reserva a serifa de display para "número
-              grande" (é a mesma escolha da home, em Numero()); aqui ela ganha o mesmo
-              tratamento, e o bloco centraliza no espaço que o grid dá ao cartão — o que
-              só existe em telas largas, onde os três cartões dividem uma linha; numa
-              coluna só (mobile) cada cartão já tem a altura do próprio conteúdo, e o
-              `justify-center` não move nada. */}
-          {anoCorrente.livros > 0 && (
-            <section className="surface flex flex-col p-6">
-              <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-                {anoCorrente.ano}
-              </h2>
-
-              <div className="mt-5 flex flex-1 flex-col justify-center gap-1.5">
-                <span className="voice tabular text-[40px] leading-none text-[var(--color-ink)]">
-                  {anoCorrente.livros}
-                </span>
-                <span className="text-[13px] text-[var(--color-ink-soft)]">
-                  {anoCorrente.livros === 1 ? "livro terminado" : "livros terminados"}
-                  {!mine && ` por ${primeiroNome}`}
-                </span>
-                {anoCorrente.paginas !== null && (
-                  <span className="tabular mt-2 text-[13px] text-[var(--color-ink-faint)]">
-                    {anoCorrente.paginas.toLocaleString("pt-BR")} páginas
-                  </span>
-                )}
-              </div>
-            </section>
-          )}
-
-          {totalVerdicts > 0 && (
-            <section className="surface p-6">
-              <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-                o que {mine ? "você achou" : `${primeiroNome} achou`}
-              </h2>
-              <div className="mt-5">
-                <Vereditos dados={verdicts} />
-              </div>
-            </section>
-          )}
-
-          {genres.length > 0 && (
-            <section className="surface p-6">
-              <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-                gêneros mais lidos
-              </h2>
-              <div className="mt-5">
-                <Barras dados={genres} cor="--grafico-generos" />
-              </div>
-            </section>
-          )}
-
-          {authors.length > 0 && (
-            <section className="surface p-6">
-              <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-                autores mais lidos
-              </h2>
-              <div className="mt-5">
-                <Barras dados={authors} cor="--grafico-autores" />
-              </div>
-            </section>
-          )}
-
-          {publishers.length > 0 && (
-            <section className="surface p-6">
-              <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-                {mine ? "quem publica o que você lê" : `quem publica o que ${primeiroNome} lê`}
-              </h2>
-              <div className="mt-5">
-                <Barras dados={publishers} cor="--grafico-editoras" />
-              </div>
-            </section>
-          )}
-
-          {nationalities.length > 0 && (
-            <section className="surface p-6 sm:col-span-3">
-              <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-                de onde vêm os autores
-              </h2>
-              <div className="mt-5">
-                <MapaMundi dados={nationalities} />
-              </div>
-            </section>
-          )}
-
-          {formats.length > 0 && (
-            <section className="surface p-6">
-              <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-                papel ou tela
-              </h2>
-              <div className="mt-5">
-                <Barras dados={formats} cor="--grafico-formatos" />
-              </div>
-            </section>
-          )}
-
-          {centuries.length > 0 && (
-            <section className="surface p-6 sm:col-span-3">
-              <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-                o século das obras
-              </h2>
-              <div className="mt-7">
-                <Seculos dados={centuries} />
-              </div>
-            </section>
-          )}
+        {/* Tela estreita: ordem natural, empilhada — não existe coluna pra
+            desequilibrar. Tela larga: as mesmas seções, empacotadas por
+            peso em 3 colunas. Ver o comentário de topo do arquivo. */}
+        <div className="flex flex-col sm:hidden">
+          {blocos.map((b) => b.node)}
         </div>
+
+        <div className="hidden sm:grid sm:grid-cols-3 sm:gap-5">
+          {colunas.map((coluna, i) => (
+            <div key={i} className="flex flex-col">
+              {coluna.map((b) => b.node)}
+            </div>
+          ))}
+        </div>
+
+        {nationalities.length > 0 && (
+          <section className="surface mt-5 p-6">
+            <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+              de onde vêm os autores
+            </h2>
+            <div className="mt-5">
+              <MapaMundi dados={nationalities} />
+            </div>
+          </section>
+        )}
+
+        {centuries.length > 0 && (
+          <section className="surface mt-5 p-6">
+            <h2 className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+              o século das obras
+            </h2>
+            <div className="mt-7">
+              <Seculos dados={centuries} />
+            </div>
+          </section>
+        )}
       </Gaveta>
     </div>
   );

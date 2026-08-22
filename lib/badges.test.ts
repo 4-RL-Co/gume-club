@@ -116,21 +116,25 @@ describe("nenhuma pode parecer mais preciosa que outra", () => {
   /**
    * ═══ E NENHUMA DELAS PODE SER A COR DA MARCA ═══
    *
-   * O accent do Gume é a LÂMINA: #7DD3C0, verde-água, matiz **167°**.
+   * O accent do Gume é a LÂMINA: #D0B1EC, lilás, matiz **308°** (OKLCH). Era
+   * #7DD3C0, verde-água, 167° — "as cores do nosso site podem ser as mesmas
+   * cores do catppuccino puxando uns botões meio pro lilaz" — o dono. Ver
+   * ai/DECISIONS.md.
    *
-   * A insígnia de zelador era 175° — oito graus. São a mesma cor. E aí a cor para de
-   * dizer qualquer coisa: o accent quer dizer "o app está falando com você", e a
-   * insígnia quer dizer "esta pessoa cuida do acervo". O olho não aprende duas coisas
-   * com a mesma cor; ele desiste das duas.
+   * A insígnia de construtor era 300° — oito graus do novo accent. São a mesma
+   * cor. E aí a cor para de dizer qualquer coisa: o accent quer dizer "o app
+   * está falando com você", e a insígnia quer dizer "esta pessoa construiu uma
+   * parte do Gume". O olho não aprende duas coisas com a mesma cor; ele
+   * desiste das duas.
    *
    * Isso não estava em teste nenhum, e só apareceu no dia em que o accent mudou. Agora
    * está: se alguém trocar o accent de novo, ou puxar uma insígnia para perto dele, a
    * build quebra.
    */
   it("nenhuma insígnia tem a cor do accent", () => {
-    // #7DD3C0. Se o accent mudar, este número muda com ele — de propósito: é o teste que
+    // #D0B1EC. Se o accent mudar, este número muda com ele — de propósito: é o teste que
     // obriga a pessoa a olhar para as oito insígnias antes de trocar a cor do app.
-    const ACCENT = 167;
+    const ACCENT = 308;
 
     for (const nome of ORDEM) {
       const matiz = INSIGNIAS[nome].matiz;

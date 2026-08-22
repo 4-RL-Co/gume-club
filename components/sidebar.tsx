@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home, Library, Users, Search, LogIn, LogOut, Info, UserRound, HeartHandshake,
-  MessagesSquare, ArrowUpRight, ChevronUp, BarChart3, Compass, Package,
+  MessagesSquare, ArrowUpRight, ChevronUp, BarChart3, Compass,
 } from "lucide-react";
 import { CONVERSA } from "@/lib/onde";
 import { GlassBar } from "@/components/glass-bar";
@@ -85,23 +85,22 @@ export type QuemEntrou = {
  * estantes montadas, queridinhos, curadores. Ver ai/DECISIONS.md.
  */
 /**
- * ═══ COLEÇÃO É UM LUGAR, E NÃO UM RECORTE DA ESTANTE ═══
+ * ═══ COLEÇÃO NÃO É MAIS UM LUGAR — VIROU UM MODO DA ESTANTE ═══
  *
- * A regra desta barra é que recorte mora na tela que ele recorta — foi por isso que
- * "lendo" e "lidos" saíram daqui. Ela vale para recortes de LEITURA.
+ * Era o contrário até aqui: "recorte mora na tela que ele recorta" valia só pra
+ * recortes de LEITURA (foi por isso que "lendo" e "lidos" saíram desta barra), e
+ * coleção — "o que eu li" contra "o que eu tenho", as duas coisas se cruzando sem
+ * se conter — parecia grande demais pra ser um filtro.
  *
- * Coleção não é um deles. A estante responde "o que eu li"; a coleção responde "o que
- * eu tenho", e as duas se cruzam sem se conter: dá para ter lido sem ter o livro, e
- * para ter sem nunca abrir. Quem coleciona vive na segunda, e ela não cabe como filtro
- * da primeira — foi tentando isso que um livro comprado e nunca aberto virou
- * "esperando", que é uma intenção de ler que ninguém teve.
- *
- * Ela fica DEPOIS da estante porque ler é o produto e ter é o acompanhamento.
+ * "acho que dá pra ficar apenas mais uma aba dentro da pagina /estante, ou até
+ * mesmo um filtro: tenho, aí filtra na estante" — o dono, revendo essa mesma
+ * decisão. Agora é `?posse=tenho`/`?posse=quero` dentro de /estante (ver
+ * app/estante/page.tsx e components/colecao-grid.tsx); /colecao virou um
+ * redirect pra lá, e saiu da barra — não é mais um destino próprio.
  */
 const LUGARES = [
   { href: "/", label: "Início", Icon: Home },
   { href: "/estante", label: "Estante", Icon: Library },
-  { href: "/colecao", label: "Coleção", Icon: Package },
   { href: "/pessoas", label: "Amigos", Icon: Users },
   { href: "/explorar", label: "Explorar", Icon: Compass },
 ];
@@ -212,8 +211,6 @@ const ICONE_DO_CELULAR = { size: 22, strokeWidth: 1.75 } as const;
 export function Sidebar({
   eu,
   shelves,
-  moderador = false,
-  fila = false,
   idealizador = false,
   novidades = [],
   apoio = false,
@@ -226,9 +223,6 @@ export function Sidebar({
    */
   eu: QuemEntrou | null;
   shelves: Shelf[];
-  moderador?: boolean;
-  /** Bibliotecário ou moderador: quem cuida do acervo vê a fila de pedidos. */
-  fila?: boolean;
   /** Só o idealizador vê a porta do painel privado. Esconder o link não é a defesa
       (quem protege é lib/authz.ts, no servidor): é não pôr na cara de todo mundo um
       botão que dá 404 para a maioria. */
@@ -355,12 +349,12 @@ export function Sidebar({
               pessoa está olhando quando precisa dela.
 
               "Pedidos" e "Moderação" saíram da barra e viraram uma sala só — /cuidar.
-              Eles não são lugares de LER: são um papel. Quem tem o papel entra pelo
-              próprio nome, no rodapé. Quem não tem nunca precisou ver a porta.
+              Eles não são lugares de LER: são um papel, e nenhum item aqui leva até
+              lá — o atalho mora dentro de /painel (aba moderação). Ver a nota no
+              componente Eu, embaixo, sobre onde "Cuidar do acervo" morou antes.
 
               Esconder o link nunca protegeu nada: quem protege é lib/moderacao.ts, no
-              servidor. Isto é sobre não pôr na cara de todo mundo três botões que a
-              maioria não pode apertar. */}
+              servidor. */}
           {/* A porta do painel privado. Só aparece para o idealizador, pela mesma razão
               que os links de papel: quem não pode nunca precisou ver a porta. */}
           {idealizador && (
@@ -391,7 +385,6 @@ export function Sidebar({
               image={eu.image}
               name={eu.nome}
               handle={eu.handle}
-              cuidar={fila || moderador}
               onSair={sair}
             />
           ) : (
@@ -448,10 +441,9 @@ export function Sidebar({
 
         {/* ═══ O PERFIL DO CELULAR ABRE UM MENU, e não só uma página ═══
 
-            Sair, o tema, o Sobre e o "cuidar do acervo" moravam SÓ na coluna do
-            desktop. No telefone, que é metade das pessoas, não existia caminho:
-            quem entrou no celular de outra pessoa ficava logado para sempre, e um
-            bibliotecário não chegava na própria sala. O menu é o MESMO do rodapé
+            Sair, o tema e o Sobre moravam SÓ na coluna do desktop. No telefone,
+            que é metade das pessoas, não existia caminho: quem entrou no celular
+            de outra pessoa ficava logado para sempre. O menu é o MESMO do rodapé
             do desktop (ver Eu, abaixo), servido pelo único item que já era seu. */}
         {eu ? (
           <button
@@ -494,8 +486,8 @@ export function Sidebar({
           quebrado — havia botão que abre o nada, que é pior, porque a pessoa
           conclui que o app não tem aquilo.
 
-          Levava junto TUDO o que só se alcança por aqui: o perfil, o sobre, o
-          cuidar do acervo, e o sair. Metade do app dependia de um menu invisível.
+          Levava junto TUDO o que só se alcança por aqui: o perfil e o sair. Metade
+          do app dependia de um menu invisível.
 
           Por isso ele é irmão da barra, e não filho: nenhum menu deste app pode
           depender de escapar de uma caixa de vidro.
@@ -511,7 +503,6 @@ export function Sidebar({
             className="fixed inset-0 z-40 cursor-default sm:hidden"
           />
           <MenuCelular
-            cuidar={fila || moderador}
             idealizador={idealizador}
             apoio={apoio}
             fecha={() => setMenu(false)}
@@ -570,9 +561,16 @@ function BuscaFalsa() {
   );
 }
 
-/** A sua cara, no rodapé. Perfil, o acervo (se for seu papel) e sair moram debaixo dela. */
+/**
+ * A sua cara, no rodapé. Perfil e sair moram debaixo dela.
+ *
+ * "Cuidar do acervo" morou aqui, debaixo do seu nome — "é um PAPEL e não um
+ * lugar". "eu quero que esteja no painel e não no meu menu do avatar" — o
+ * dono, revendo a própria decisão. O atalho pra /cuidar agora mora só dentro
+ * de /painel (aba moderação).
+ */
 function Eu({
-  image, name, handle, cuidar, onSair,
+  image, name, handle, onSair,
 }: {
   image: string | null;
   name: string | null;
@@ -585,8 +583,6 @@ function Eu({
    * com o resto, e a inicial é a certa.
    */
   handle: string;
-  /** Bibliotecário ou moderador. O papel abre uma porta a mais, e só para quem o tem. */
-  cuidar: boolean;
   onSair: () => void;
 }) {
   const [aberto, setAberto] = useState(false);
@@ -606,19 +602,6 @@ function Eu({
           >
             Perfil
           </Link>
-
-          {/* CUIDAR DO ACERVO. A fila de pedidos e a moderação, numa sala só.
-              Mora aqui, debaixo do seu nome, porque é um PAPEL e não um lugar: quem
-              cuida do acervo faz isso além de ler, e não em vez de ler. */}
-          {cuidar && (
-            <Link
-              href="/cuidar"
-              onClick={() => setAberto(false)}
-              className="block rounded-[var(--radius-2)] px-3 py-2 text-[14px] text-[var(--color-ink-soft)] hover:bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)] hover:text-[var(--color-ink)]"
-            >
-              Cuidar do acervo
-            </Link>
-          )}
 
           <button
             onClick={onSair}
@@ -684,9 +667,8 @@ function Eu({
  * tela. O menu encosta 12px acima disso — o mesmo respiro que o vidro tem da borda.
  */
 function MenuCelular({
-  cuidar, idealizador, apoio, fecha, onSair,
+  idealizador, apoio, fecha, onSair,
 }: {
-  cuidar: boolean;
   idealizador: boolean;
   apoio: boolean;
   fecha: () => void;
@@ -703,12 +685,6 @@ function MenuCelular({
       <Link href="/eu" onClick={fecha} className={linha}>
         Perfil
       </Link>
-
-      {cuidar && (
-        <Link href="/cuidar" onClick={fecha} className={linha}>
-          Cuidar do acervo
-        </Link>
-      )}
 
       {/* ════════════════════════════════════════════════════════════
           ═══ ESTAS DUAS NÃO EXISTIAM NO CELULAR ═══

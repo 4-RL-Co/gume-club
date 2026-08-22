@@ -80,7 +80,7 @@ describe("a frase-resumo cala a boca quando não sabe", () => {
     age: { median: 40, from: 1900, to: 2020, midpoint: 1980 },
     centuries: [], nationalities: [], genres: [], publishers: [], origins: [], formats: [],
     verdicts: [], oldest: null, newest: null, reread: [], abandoned: 0,
-    patienceMonths: null, years: [],
+    years: [],
   };
 
   it("não inventa retrato em cima de 3 livros", () => {

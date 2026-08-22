@@ -147,7 +147,7 @@ export default async function Estante({ params }: { params: Promise<{ slug: stri
   ].find((u) => u && origemAceita(u)) ?? null;
 
   return (
-    <main className="relative mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+    <main className="relative mx-auto max-w-7xl px-6 pb-32 sm:px-10">
       {/* A aura do topo: a FOTO subida, se houver, senão a capa escolhida. */}
       {(shelf.fotoUrl ?? capaDaEstante) && origemAceita(shelf.fotoUrl ?? capaDaEstante!) && (
         <div className="aura-capa" aria-hidden>
