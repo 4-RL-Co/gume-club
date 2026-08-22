@@ -1,0 +1,8 @@
+# Estas são as opções de custom sponsorship do GitHub. Ver:
+# https://docs.github.com/pt/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+#
+# O Gume já tem o próprio caminho de apoio — cartão, Pix, assinatura — em
+# /apoiar (app/apoiar/page.tsx). Não usa GitHub Sponsors, Patreon, Ko-fi
+# nem Open Collective: um só lugar, e é o mesmo que a barra lateral do app
+# já mostra ("Apoiar o Gume").
+custom: ["https://gume.club/apoiar"]
