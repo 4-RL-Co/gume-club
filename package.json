@@ -34,7 +34,7 @@
   "dependencies": {
     "@sentry/nextjs": "^10.69.0",
     "@vercel/blob": "^2.7.0",
-    "better-auth": "^1.6.26",
+    "better-auth": "^1.6.29",
     "drizzle-orm": "^0.45.2",
     "heic2any": "^0.0.4",
     "lucide-react": "^1.30.0",
