@@ -502,7 +502,7 @@ async function Casa({ viewerId }: { viewerId: string }) {
   const primeiro = me?.displayName?.split(" ")[0] ?? null;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+    <main className="mx-auto max-w-7xl px-6 pb-32 sm:px-10">
       <header className="mt-20 sm:mt-28">
         <h1 className="voice text-[40px] leading-[1.02] tracking-[-0.015em] sm:text-[56px]">
           {primeiro ? <>Oi, {primeiro}.</> : <>A casa é sua.</>}

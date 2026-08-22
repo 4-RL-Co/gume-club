@@ -58,7 +58,7 @@ export default async function OQueFalta() {
   const fila = bibliotecario ? await getFilaDeCapas(viewer) : [];
 
   return (
-    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+    <main className="mx-auto max-w-7xl px-6 pb-32 sm:px-10">
       <Cabecalho
         eyebrow="o que falta"
         titulo={<>O que <em className="italic text-[var(--color-ink-soft)]">falta</em>.</>}

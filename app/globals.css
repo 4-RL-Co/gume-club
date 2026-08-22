@@ -21,19 +21,26 @@
   --color-rule: #ddd7cb;          /* 1px hairlines instead of shadows */
 
   /* ── O ACCENT: A LÂMINA ───────────────────────────────────────────
-     #7DD3C0. Verde-água frio — aço, fio de faca, terminal.
+     Era #7DD3C0, verde-água frio — aço, fio de faca, terminal. Virou
+     #D0B1EC, lilás — "as cores do nosso site podem ser as mesmas cores do
+     catppuccino puxando uns botões meio pro lilaz" — o dono. Mesma
+     claridade e croma do accent antigo (só o matiz girou, de 178° pra
+     308° em OKLCH): o que muda é a família da cor, não o peso dela na
+     tela. Ver ai/DECISIONS.md — a troca empurrou de roda uma insígnia
+     (lib/badges-view.ts) e um degrau da escada de honra (lib/paleta.ts),
+     que também moravam nessa faixa do círculo.
 
      Ele sai do NOME do produto, e não de uma tendência. Gume é fio de faca, e
      um accent que se explica em quatro palavras é um accent que sobrevive.
 
      E ele é o que MENOS BRIGA COM A CAPA, que é o que a regra antiga estava
-     protegendo o tempo todo: nenhum livro tem capa verde-água. O olho aprende,
+     protegendo o tempo todo: nenhum livro tem capa lilás. O olho aprende,
      em um dia, que essa cor quer dizer "o app está falando com você" — e todo o
      resto da tela continua sendo do livro.
 
      ONDE ELE VIVE: link, estado ligado, moldura de apoiador. E em mais nada.
      Ver docs/design.md. */
-  --color-accent: #7dd3c0;
+  --color-accent: #d0b1ec;
 
   /* ── COLABORAR TEM COR PRÓPRIA ────────────────────────────────────
      #E8709F. Rosa.
@@ -56,12 +63,15 @@
   --color-colaborar: #e8709f;
 
   /* ── O QUE SE ESCREVE EM CIMA DO ACCENT ───────────────────────────
-     O accent é CLARO. `bg-accent text-white` era legível com o vermelho-tijolo
-     de antes, e é ilegível agora: branco sobre verde-água não se lê.
+     O accent é CLARO, verde-água ou lilás — as duas versões deste tom
+     tiveram claridade parecida de propósito, então o mesmo quase-preto
+     serve para as duas. `bg-accent text-white` era legível com o
+     vermelho-tijolo de antes, e é ilegível agora: branco sobre um pastel
+     claro não se lê.
 
      Isto não é detalhe de acabamento — é a diferença entre um botão que a
      pessoa consegue ler e um que ela não consegue. */
-  --color-on-accent: #08110f;
+  --color-on-accent: #0c0515;
 
   /* ── O VERMELHO NÃO É O ACCENT ────────────────────────────────────
      Eram a mesma cor, e nunca foram a mesma coisa. Funcionava por ACIDENTE: o
@@ -223,10 +233,10 @@
     --color-ink-faint: #7b7492;
     --color-rule: #3c3849;
 
-    /* No escuro, a lâmina brilha um pouco mais: o mesmo verde-água sobre preto
-       quase absoluto lê mais apagado do que sobre papel. */
-    --color-accent: #7dd3c0;
-    --color-on-accent: #06100e;
+    /* No escuro, a lâmina brilha um pouco mais: o mesmo lilás sobre o
+       cinza-roxinho lê mais apagado do que sobre papel. */
+    --color-accent: #d0b1ec;
+    --color-on-accent: #080310;
     /* E o vermelho clareia: #c2503a sobre preto vira uma mancha marrom. */
     --color-perigo: #e8705a;
     --color-colaborar: #f087b1;
@@ -284,10 +294,10 @@
     --color-ink-faint: #7b7492;
     --color-rule: #3c3849;
 
-    /* No escuro, a lâmina brilha um pouco mais: o mesmo verde-água sobre preto
-       quase absoluto lê mais apagado do que sobre papel. */
-    --color-accent: #7dd3c0;
-    --color-on-accent: #06100e;
+    /* No escuro, a lâmina brilha um pouco mais: o mesmo lilás sobre o
+       cinza-roxinho lê mais apagado do que sobre papel. */
+    --color-accent: #d0b1ec;
+    --color-on-accent: #080310;
     /* E o vermelho clareia: #c2503a sobre preto vira uma mancha marrom. */
     --color-perigo: #e8705a;
     --color-colaborar: #f087b1;
@@ -734,17 +744,34 @@
      O LEQUE RESPIRA. No hover de um card de estante, as capas se afastam um
      dedo, como quem folheia a pilha para ver o que tem embaixo. É um convite
      de meio segundo, e não um truque: solta o mouse e elas se guardam.
+
+     O giro ESTÁTICO de cada capa (quando o leque tem um por card, ver
+     components/leque-capas.tsx) mora em `--giro`, uma custom property —
+     nunca em `transform` inline, porque `style` sempre venceria esta regra.
+     Em repouso, cada capa só gira `--giro` (0deg pras capas de
+     components/lista-card.tsx, que não usam essa variável — a var some,
+     `var(--giro, 0deg)` cai no zero). No hover, soma-se o giro extra do
+     leque abrindo por cima do giro estático de cada capa, no MESMO
+     `transform` — os dois efeitos nunca competiram, e agora nunca competem.
+     Dois donos possíveis pro `.card`/`.surface-hover` que envolve o leque:
+     estante montada usa `.card`; card de pessoa usa `.surface`+`.surface-hover`
+     (components/amigos-lendo.tsx, components/explore.tsx).
      ══════════════════════════════════════════════════════════════════ */
   .leque > * {
+    transform: rotate(var(--giro, 0deg));
     transition: transform 380ms var(--ease-spring, cubic-bezier(0.22, 0.9, 0.3, 1));
   }
-  .card:hover .leque > *:nth-child(2) { transform: translateX(7px) rotate(0.6deg); }
-  .card:hover .leque > *:nth-child(3) { transform: translateX(14px) rotate(1.1deg); }
-  .card:hover .leque > *:nth-child(4) { transform: translateX(21px) rotate(1.6deg); }
-  .card:hover .leque > *:nth-child(5) { transform: translateX(28px) rotate(2.1deg); }
+  .card:hover .leque > *:nth-child(2),
+  .surface-hover:hover .leque > *:nth-child(2) { transform: translateX(7px) rotate(calc(var(--giro, 0deg) + 0.6deg)); }
+  .card:hover .leque > *:nth-child(3),
+  .surface-hover:hover .leque > *:nth-child(3) { transform: translateX(14px) rotate(calc(var(--giro, 0deg) + 1.1deg)); }
+  .card:hover .leque > *:nth-child(4),
+  .surface-hover:hover .leque > *:nth-child(4) { transform: translateX(21px) rotate(calc(var(--giro, 0deg) + 1.6deg)); }
+  .card:hover .leque > *:nth-child(5),
+  .surface-hover:hover .leque > *:nth-child(5) { transform: translateX(28px) rotate(calc(var(--giro, 0deg) + 2.1deg)); }
 
   @media (prefers-reduced-motion: reduce) {
     .leque > * { transition: none; }
-    .card:hover .leque > * { transform: none; }
+    .card:hover .leque > *, .surface-hover:hover .leque > * { transform: rotate(var(--giro, 0deg)); }
   }
 }
