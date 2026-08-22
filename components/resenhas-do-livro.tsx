@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AvatarLink } from "@/components/avatar";
 import { UpvoteResenha } from "@/components/upvote-resenha";
 import type { ResenhaDoLivro } from "@/lib/explore";
@@ -23,6 +23,18 @@ import type { ResenhaDoLivro } from "@/lib/explore";
  *  para lá que a resenha inteira mora. Aqui a gente JÁ ESTÁ na página do
  *  livro: não existe um "lá" para onde mandar o clique. Expandir no lugar é a
  *  única saída que não é um link para a própria tela.
+ *
+ *  ═══ E O LINK NÃO PODE LARGAR VOCÊ NUM MEIO DE UMA PILHA ═══
+ *
+ *  "quando eu clico pra ler a resenha inteira ele vai la pra pagina do livro,
+ *  e se tiverem um monte de resenhas la eu perco a q eu fui ver?" — o dono.
+ *  O link (components/explore.tsx, components/perfil-abas.tsx) chega com
+ *  `#resenha-<id>` na URL; cada `<li>` tem esse mesmo `id`, e o navegador
+ *  rola até ela sozinho. A que é alvo do link também abre inteira sem
+ *  precisar de um segundo clique em "ler resenha inteira" — chegar cortada
+ *  de novo, depois de ter clicado exatamente para ler inteira, seria a mesma
+ *  pergunta duas vezes — e ganha um contorno para o olho achar rápido qual
+ *  das N é a certa.
  * ════════════════════════════════════════════════════════════════════
  */
 export function ResenhasDoLivro({
@@ -57,8 +69,29 @@ function Uma({ r, slug, podeVotar }: { r: ResenhaDoLivro; slug: string; podeVota
   // resenha de duas frases não precisa do botão, e ele ali seria um convite vazio.
   const longa = r.body.length > 320;
 
+  const ancora = `resenha-${r.id}`;
+
+  // Só depois de montar: no servidor não existe `location.hash`, e ler o hash
+  // no primeiro render faria o HTML do servidor e o do cliente discordarem
+  // (o React acusaria isso como erro de hidratação). A resenha alvo abre
+  // inteira sozinha — chegar cortada de novo, tendo acabado de clicar
+  // exatamente para ler inteira, seria a mesma pergunta duas vezes.
+  const [alvo, setAlvo] = useState(false);
+  useEffect(() => {
+    if (window.location.hash === `#${ancora}`) {
+      setAlvo(true);
+      setAberta(true);
+    }
+  }, [ancora]);
+
   return (
-    <li className="flex items-start gap-4">
+    <li
+      id={ancora}
+      className={[
+        "flex scroll-mt-6 items-start gap-4",
+        alvo && "-m-3 rounded-[var(--radius-2)] border border-[var(--color-accent)] p-3",
+      ].filter(Boolean).join(" ")}
+    >
       <AvatarLink src={r.image} name={r.name} handle={r.handle} size={40} />
 
       <div className="min-w-0 flex-1">

@@ -34,15 +34,17 @@ export function AmigosLendo({ amigos }: { amigos: AmigoLendo[] }) {
         {amigos.map((a) => {
           const n = a.livros.length;
           return (
-            <li key={a.handle} className="surface flex flex-col items-center p-6">
+            <li key={a.handle} className="surface surface-hover flex flex-col items-center p-6">
               {/* O leque de capas. Uma sozinha fica reta; várias se sobrepõem e giram um
-                  pouco, com a do meio por cima. Altura fixa para as caixas baterem. */}
-              <div className="flex h-44 items-center justify-center">
+                  pouco, com a do meio por cima. Altura fixa para as caixas baterem.
+                  .leque: no hover do card as capas se afastam um dedo. Ver globals.css
+                  e components/leque-capas.tsx. */}
+              <div className="leque flex h-48 items-center justify-center">
                 {a.livros.map((livro, i) => (
                   <Link
                     key={livro.slug}
                     href={`/livro/${livro.slug}`}
-                    className="cover-lift block w-24 shrink-0"
+                    className="cover-lift block w-28 shrink-0"
                     style={estiloDoLeque(i, n)}
                   >
                     <Cover title={livro.title} author={livro.author} src={livro.coverUrl} />

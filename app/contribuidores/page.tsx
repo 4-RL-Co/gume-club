@@ -44,7 +44,7 @@ export default async function Contribuidores() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+    <main className="mx-auto max-w-7xl px-6 pb-32 sm:px-10">
       <Cabecalho
         eyebrow="quem faz"
         titulo={<>Quem <em className="italic text-[var(--color-ink-soft)]">faz</em> o Gume.</>}

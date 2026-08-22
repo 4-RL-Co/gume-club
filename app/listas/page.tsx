@@ -32,7 +32,7 @@ export default async function Listas() {
   const listas = await getTodasAsListas(viewer);
 
   return (
-    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+    <main className="mx-auto max-w-7xl px-6 pb-32 sm:px-10">
       <ScreenHeader title="Listas" meta={["a mais nova primeiro", "sem algoritmo"]}>
         {/* Segunda porta pra criar uma lista — a primeira (components/my-shelves.tsx)
             só existe na coluna de vidro do desktop. Ver components/criar-lista.tsx. */}

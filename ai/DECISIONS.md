@@ -4635,3 +4635,381 @@ daquele país, nunca a qualidade de quem escreveu lá.
 
 Testado: `lib/pais-iso.test.ts` (o nome e o apelido casam com o país certo,
 o que não bate devolve `null`, sem iso2 nem nome duplicado na tabela).
+
+## "Cuidar do acervo" sai do menu do avatar, fica só no painel
+
+Continuação da rodada anterior. Perguntei se "no perfil" queria dizer o menu
+do avatar (onde o link sempre morou, nunca em `/perfil`) — porque tirá-lo de
+lá sem outro caminho deixaria bibliotecários e moderadores que não são o
+idealizador sem nenhuma porta pra `/cuidar`. "eu quero que esteja no painel
+e não no meu menu do avatar, tendeu?" — o dono confirmou, revendo a própria
+decisão anterior (documentada como "é um PAPEL e não um lugar").
+
+O link saiu de `components/sidebar.tsx` (desktop e celular) — o atalho pra
+`/cuidar` já existia dentro de `/painel` (aba moderação, `components/painel.tsx`),
+então nada precisou nascer, só a porta velha fechou.
+
+De quebra: `souModerador()`/`podeVerAFila()` saíram de `app/layout.tsx`. Elas
+só existiam ali para acender esse link — rodavam em TODA página de TODA
+visita, para decidir se um botão aparecia, e o botão não existe mais. As duas
+funções continuam de pé (usadas em `/cuidar`, `/pedidos`, `/moderacao`), só
+pararam de rodar de graça em cada carregamento do app inteiro.
+
+Hoje só o dono é idealizador e bibliotecário ao mesmo tempo, então não há
+ninguém realmente sem porta agora — mas é a troca real: quando houver um
+segundo bibliotecário, ele só chega em `/cuidar` sabendo a URL de cor, até
+`/painel` ganhar um jeito de abrir pra além do idealizador (não hoje).
+
+## A bola virou coluna, o mapa ganhou um escape, e o leque abre no hover
+
+Três achados olhando a tela ao vivo, todos pequenos.
+
+**"isso aqui parece uma bola"**: `material()` (`components/graficos-leitura.tsx`)
+arredonda em 999 (pílula) — perfeito numa barra deitada, larga e baixa, onde o
+raio nunca chega perto de fechar um círculo. Numa COLUNA de século curta e
+estreita, largura e altura ficam perto uma da outra, e 999 vira bola de
+verdade. Colunas agora arredondam só o topo, raio fixo pequeno — base reta,
+encostada no eixo, como todo gráfico de coluna.
+
+**"o mapa nao apareceu nas estatisticas"**: não era bug do mapa. `/estatisticas`
+sem `?ano=` na URL filtra pro ano corrente, e a consulta de nacionalidades
+sempre respeitou esse filtro — um ano sem livro com nacionalidade cadastrada
+apagava o cartão inteiro, sem dizer por quê. Mesma armadilha que o "Nada
+terminado" no topo da página já resolve pro total de livros; o cartão do mapa
+ganhou o mesmo escape ("Ver a vida inteira").
+
+**"quando coloca o mouse o leque abre um pouquinho igual nas listas"**: o
+leque de `components/lista-card.tsx` já respirava no hover
+(`.leque > *` em globals.css, animado no `:hover` do card ancestral) — os
+cards de PESSOA (`components/amigos-lendo.tsx`, `components/explore.tsx`)
+tinham a MESMA classe `leque` só de nome; o giro estático de cada capa ia
+direto num `transform` inline, que sempre vence CSS externo, então a regra de
+hover nunca tinha chance. `estiloDoLeque()` (`components/leque-capas.tsx`)
+agora escreve o giro numa custom property (`--giro`), e o CSS soma o giro do
+hover por cima — os dois nunca mais competem pelo mesmo `transform`. De
+quebra, capas maiores nesses dois lugares, e o Top 100 (`/explorar`) ganhou
+o mesmo lift de capa que o resto do app já tem (o `.card` só erguia o
+CARTÃO inteiro 2px; a capa ficava parada).
+
+## /colecao vira `?posse=` dentro de /estante, revendo a própria decisão
+
+"acho que dá pra ficar apenas mais uma aba dentro da pagina /estante, ou
+até mesmo um filtro: tenho, aí filtra na estante" — o dono. Isto reabre uma
+decisão documentada (o comentário que morava em `components/sidebar.tsx`,
+"COLEÇÃO É UM LUGAR, E NÃO UM RECORTE DA ESTANTE"): que posse não cabia
+como filtro porque "a estante responde 'o que eu li'; a coleção responde
+'o que eu tenho'". A pergunta continua diferente — só a TELA parou de ser.
+
+`?posse=tenho`/`?posse=quero` dentro de `app/estante/page.tsx`, um
+parâmetro À PARTE de `?filtro=` (não um valor de `FILTERS`): posse
+(`owned_copies`) não é status de leitura (`library_entries`) — dá pra TER
+um livro sem nunca tê-lo marcado na estante, e `getShelf()` não sabe
+procurar por isso. Em modo posse a página usa `getColecao()`/
+`contarColecao()` (as mesmas consultas que `/colecao` já usava, intactas)
+e `components/colecao-grid.tsx` (extraído de `app/colecao/page.tsx`) — sem
+`ShelfControls`, sem prateleira: são perguntas diferentes, e o cartão de
+posse mostra editora/procedência, nunca nota ou honra.
+
+**Só seu.** A coleção nunca teve visão de visitante — um `?posse=` na
+estante de outra pessoa é ignorado, e os pills "tenho"/"quero ter" só
+aparecem pra quem é dono. `/colecao` virou um redirect (preserva
+`?ver=quero`), e saiu da barra lateral — não é mais um destino próprio,
+`LUGARES` perdeu um item.
+
+De quebra: "as capas devem ser um pouquinho maiores" — a capa da coleção
+foi de 58% pra 64% do cartão.
+
+## O diário ganha filtro de ano e veredito, e cada linha diz o que é
+
+"no diario tem que ter filtros e também não dá pra saber oq foi leitura e
+oq foi resenha" — o dono, com o print do toolbar do Letterboxd (RATING,
+DIARY YEAR).
+
+Dois filtros novos em `components/diario.tsx`, por cima do livros/resenhas
+que já existia: por ANO e por VEREDITO. Os dois só oferecem os valores que
+EXISTEM na lista da pessoa — mesma régua do "todo ano" de /estatisticas: um
+filtro com opção vazia é o app inventando uma pergunta sem resposta
+possível. Tudo client-side, sobre os dados que já vieram do servidor (a
+lista inteira já está na tela pro filtro livros/resenhas) — sem consulta
+nova.
+
+E cada linha ganhou uma PALAVRA além do ícone: "releitura" e "resenha"
+escritas ao lado do glifo, não só o ícone pequeno de antes. "Não dá pra
+saber oq foi leitura e oq foi resenha" — um ícone sozinho é fácil de não
+notar; a palavra ao lado não deixa dúvida.
+
+## O tooltip do mapa, e o diário sempre diz "terminei"
+
+Dois ajustes olhando as telas de novo.
+
+**"tem que ser possível colocar o mouse em cima do país e ver o número"** —
+o `<title>` nativo do SVG já fazia isso tecnicamente, mas o navegador
+demora quase um segundo pra mostrar, sem estilo — na prática lia como "não
+dá pra ver". `components/mapa-mundi-tooltip.tsx` (novo, a única parte disto
+que é `"use client"`) escuta o mouse por cima do SVG que o servidor já
+mandou pronto e lê os atributos `data-pais`/`data-n` de cada `<path>` —
+delegação de evento, então os 175 países continuam nunca viajando pro
+JavaScript do navegador (confirmado no build: `/estatisticas` cresceu ~450B,
+não 160KB). O `<title>` nativo fica, pra leitor de tela.
+
+**"no diario, o que é livro terminado e o que é resenha feita?"** — toda
+linha do diário JÁ é um livro terminado (ou abandonado); a palavra só
+aparecia pela AUSÊNCIA de "abandonei", nunca em voz alta, e uma linha sem
+veredito dado ficava sem nada nenhum naquele canto — um buraco que lia como
+"e essa aqui, o que é?". Agora "terminei"/"abandonei" aparece sempre; o
+veredito, quando existe, é um segundo fato, embaixo dele. "Resenha" e
+"releitura" continuam como fatos EXTRAS (à esquerda, junto do título):
+nenhuma linha do diário é só resenha, toda leitura terminou primeiro.
+
+## A paciência saiu, e "resenhei" virou uma linha própria no diário
+
+"Pode tirar isso: a paciência" — o dono, sobre o cartão de /estatisticas
+que media quanto tempo um livro espera na estante antes de ser aberto.
+Saiu o cartão, a função `espera()`, a consulta (`patience`) e o campo
+`patienceMonths` de `Stats` — nada mais lia esse dado (o resumo público do
+perfil já excluía de propósito, por ser íntimo demais).
+
+Na mesma conversa: "não tem 'resenhei' no diario ou o gume não guarda a
+data da resenha?" — o Gume guarda (`reviews.created_at`); o diário só não
+mostrava. `lib/diario.ts` ganhou um `union all`: a leitura continua uma
+linha ("terminei"/"abandonei"), e a resenha vira uma SEGUNDA linha
+("resenhei") só quando foi escrita num dia DIFERENTE do da leitura — no
+mesmo dia, o fato já está contado no selo "resenha" que já existia ao lado
+do título, e uma segunda linha seria o mesmo dia duas vezes. A ordenação
+usa a DATA de verdade (`quando_real`, um `date`), nunca o texto já
+formatado — comparar "2019" com "2019-06-15" como string faria um ano vago
+parecer mais cedo que uma data certa do mesmo ano, por acidente de string.
+A linha da resenha respeita a visibilidade DELA (não só a da estante):
+uma resenha privada não vira linha pra quem não é o autor, mesmo com a
+estante pública.
+
+Testado contra Postgres de verdade em `lib/diario.sql.test.ts`: resenha no
+mesmo dia não vira linha extra; resenha em outro dia vira, com `tipo:
+"resenha"` e a data certa; a linha da resenha some pro estranho quando ela
+fica privada, e continua visível pro dono.
+
+## As boxes não ficam jogadas: a grade de /estatisticas vira colunas de jornal
+
+"e acho que as boxes estão meio jogadas, não quero espaços vazios" — o
+dono, com quatro prints mostrando espaço morto embaixo de cartões curtos
+(vereditos, formatos) ao lado de cartões altos (editoras, o mapa). O
+`grid` do CSS estica toda célula de uma linha até a altura da mais alta
+(`align-items: stretch` é o padrão) — é o mesmo problema que já tinha sido
+corrigido uma vez no "ano corrente" do resumo do perfil, mas ali havia só
+UM vizinho alto conhecido; aqui a seção inteira tem cartões de alturas bem
+diferentes lado a lado, então o conserto certo não é centralizar dentro da
+célula esticada — é nunca esticar.
+
+A "GRADE" de /estatisticas trocou `grid gap-4 sm:grid-cols-2` por
+`sm:columns-2 sm:gap-4` (CSS multi-column): cada cartão empilha na coluna
+mais curta, na sua altura natural, sem sobrar vazio. Isso exige
+`break-inside-avoid` em cada cartão (senão um cartão pode ser cortado ao
+meio entre as duas colunas) e `mb-4` no lugar do `gap` vertical (o `gap`
+de `columns` só controla o respiro ENTRE colunas, nunca entre cartões
+empilhados na MESMA coluna — isso sempre foi margem, mesmo antes do CSS
+ter `gap`). O cartão do mapa, que já ocupava as duas colunas, trocou
+`col-span-2` por `[column-span:all]`, o equivalente em `columns`.
+
+## O perfil alarga, e o mesmo token de largura sobe em toda página densa
+
+"e acho que a parte do diario tem que ser um pouco maior igual do
+letterboxd (...) resenhas também (...) acho que as coisas devem ser mais
+amplas/maiores" — o dono, com o print do Diary. E, na sequência: "acho que
+isso pode valer pra outras páginas também, avalie".
+
+O diário e as resenhas do perfil (`components/diario.tsx`,
+`components/perfil-abas.tsx`) ganharam capa, tipografia e altura de linha
+maiores — não só a capa: um diário maior só na capa fica desproporcional.
+`app/[handle]/page.tsx` foi conferido: `max-w-6xl` (1152px) é o MESMO
+token, literalmente a mesma classe no mesmo `<main>`, usado por praticamente
+toda página densa do site (estatísticas, explorar, estante, listas, livro,
+autor, contribuidores, pessoas, insígnias, o-que-falta) — não uma largura
+inventada por página. Confirmado: subir esse token de uma vez, em todo
+lugar que o usa, é mais consistente que alargar só o perfil e deixar as
+outras páginas com uma régua diferente. Virou `max-w-7xl` (1280px) nas 17
+ocorrências, incluindo `components/public-header.tsx` (o topo de quem não
+está logado, para continuar alinhado com o conteúdo mais largo abaixo).
+Fora do escopo, de propósito: páginas de formulário/prosa (`/sobre`,
+`/apoiar`, `/entrar`, `/perfil`, `/pedidos`) usam larguras menores
+(`max-w-xl`/`max-w-3xl`/`max-w-prose`) por serem leitura corrida, não
+grade — não fazem parte do mesmo token e não foram tocadas.
+
+## /bem-vindo sai: quem cadastra cai direto na página inicial
+
+"tire a pagina de bem-vindo do gume, muito ruim, se algum usuario novo
+cria a conta, pode já redirecionar pra pasta inicial mesmo" — o dono.
+
+`/bem-vindo` tinha dois estados: quem entrou por convite via "Fulano te
+trouxe" (a estante de quem chamou, com botão de seguir); quem chegou
+sozinho via uma grade de estantes curadas à mão — o estado do print, e o
+que o dono achou feio. Perguntado o escopo, a resposta foi tirar os dois:
+depois de criar conta ou entrar (com ou sem convite, e-mail/senha ou
+Google), todo mundo cai em `/`, do mesmo jeito que quem já tinha conta
+sempre caiu. `/` já cobre a estante vazia com o próprio estado vazio
+("A estante está vazia. Comece por um livro.") — não é um cadastro largado
+num quarto escuro, só não é mais uma segunda tela para chegar lá.
+
+Isso reabre uma decisão de 2026-07-11 ("O convite... é a solução da tela
+vazia") só na METADE que criava a tela em si — o mecanismo do convite
+continua o mesmo (o handle é o convite, sem tabela, sem escassez), e "quem
+te trouxe" continua visível em `/perfil` via `getInviter()`. O que saiu foi
+só a porta de chegada. Removida a página inteira
+(`app/bem-vindo/page.tsx`), e com ela `getShelvesToFollow()`
+(`lib/invite.ts`) e `lib/invite.sql.test.ts`, que só existiam para o
+estado "chegou sozinho" — nada mais os chamava.
+
+## Resenhas recentes ganham ação, o resumo do perfil não herda estado de outro perfil, e sua grade também vira colunas de jornal
+
+Três pedidos concretos, com print:
+
+1. **"no explorar, em resenhas recentes eu não tenho opção de ler a resenha
+   toda e nem dar upvote"** — `getResenhas()` (lib/explore.ts) não trazia
+   `upvotes`/`votei`, e `components/explore.tsx` não tinha o link "ler
+   resenha inteira" nem `<UpvoteResenha>` — só o corte de 4 linhas e a
+   data. Os dois vieram, mesma consulta e mesmo par de ações que já
+   existiam em `components/perfil-abas.tsx` e
+   `components/resenhas-do-livro.tsx`.
+
+2. **"quando eu entro no perfil de alguém, essa parte de estatísticas já
+   vem aberta, fica gigante o perfil, tem q estar fechada"** — a Gaveta
+   (`abertaPorPadrao = false`) já nascia fechada, mas nunca REMONTAVA: o
+   Next reaproveita o mesmo componente de cliente ao navegar de um
+   `/@handle` para outro (mesma rota, só o parâmetro muda), e o
+   `useState` de dentro de `<Gaveta>` e de `<PerfilAbas>` sobrevivia à
+   troca — quem tinha aberto as estatísticas (ou trocado de aba) no
+   próprio perfil chegava no de outra pessoa já assim. Os dois ganharam
+   `key={profile.id}` em `app/[handle]/page.tsx`: uma instância nova por
+   dono de perfil, cada uma com o próprio estado, do zero.
+
+3. **"não quero espaços vazios entre boxes nas estatisticas (nem no
+   perfil e nem na pagina dedicada)"** — a página dedicada já tinha
+   recebido este conserto (`columns-2`, ver a entrada da grade de
+   /estatisticas). O resumo do perfil (`components/resumo-do-perfil.tsx`)
+   ainda usava `grid sm:grid-cols-3`, que estica toda célula até a mais
+   alta da linha — com oito cartões de alturas bem diferentes (um número
+   grande vs. cinco barras vs. um mapa), sobrava vazio embaixo dos
+   curtos. Mesmo conserto, com 3 colunas em vez de 2: `columns-3`,
+   `break-inside-avoid` por cartão, `mb-5` no lugar do `gap` vertical.
+
+## O accent vira lilás, e a mudança arrasta uma insígnia e um degrau da escada
+
+"As cores do nosso site podem ser as mesmas cores do catppuccino puxando
+uns botões meio pro lilaz, salmão etc, parecido com essa IDE" — o dono,
+com o print de um editor no tema Catppuccin. O fundo escuro já tinha ido
+nessa direção numa rodada anterior (o canvas é um cinza-roxinho, `#17151d`
+— ver a entrada de dark mode); o accent (`--color-accent`, até aqui
+verde-água, `#7DD3C0`) continuava do jeito antigo.
+
+Trocar não foi só mudar um hex. `--color-accent` é um dos poucos tokens do
+Gume que uma REGRA inteira protege: nenhuma insígnia (`lib/badges.test.ts`)
+nem o anel de apoiador (`lib/paleta.test.ts`) pode chegar perto do matiz da
+marca — cada sistema mede a distância em graus, contra o Postgres da cor,
+não contra a vista de alguém. Calculei o matiz OKLCH de verdade de dois
+candidatos catppuccin (Mauve e Peach) e os dois colidiam: Mauve ficava a
+4,8° da insígnia "violeta" (Construtor), Peach a 12,4° do "âmbar" (Arauto).
+As oito insígnias já ocupam quase o círculo inteiro, sempre a ≥30° uma da
+outra — só sobrava, livre, a fatia onde o PRÓPRIO accent verde-água já
+morava.
+
+Perguntado como seguir, a resposta foi realocar a insígnia mais próxima.
+Fiz a conta pra valer e achei uma SEGUNDA colisão, mais funda: a escada de
+honra (`lib/paleta.ts`, `DEGRAU`) também tem dois degraus na faixa
+roxa/rosa — "Lâmina" (272°) e "Navalha" (304°) — competindo pelo mesmo
+espaço que um accent mauve ocuparia. Voltei a perguntar; a resposta foi
+mexer nos degraus também, e não desistir do lilás.
+
+O accent foi para **#D0B1EC** (matiz 308° em OKLCH — mesma claridade e
+croma do verde-água antigo, só o matiz girando) porque é o único ponto do
+círculo, calculado por busca exaustiva de 0° a 359°, que fica a ≥30° de
+toda insígnia fixa E a ≥60° do apoiador (a régua mais rígida das duas,
+específica para a moldura de quem paga a conta). Dentro desse conserto:
+
+- **A insígnia "Construtor"** (era violeta, 300°) foi para **176°**, o vão
+  que o accent deixou vago ao se mudar dali.
+- **O degrau "Lâmina"** (era roxo, `#9D5ED4`/272°) foi para **`#8DD45E`,
+  verde-limão, 96°** — o único vão com folga de sobra na régua da escada,
+  já que a faixa roxo-rosa (240°–336°) ficou lotada por Diamante, o accent
+  novo e a Navalha.
+- **O degrau "Navalha"** (304°) não precisou se mexer: a 33° do accent
+  novo, folgada.
+
+Nenhum dos dois nomes mudou (`HONRAS`/`INSIGNIAS` continuam "Lâmina" e
+"Construtor") — só a cor do anel/selo, que nunca foi o nome, e o nome
+nunca prometeu literalmente a própria cor (Diamante já não é azul-diamante
+de verdade; Platina já não é cinza-platina).
+
+**Fora do escopo, por decisão explícita:** a moldura de apoiador e
+`--color-colaborar` (o rosa de "quem faz") não se mexeram — mexer nelas
+também abriria uma janela mais larga pro accent chegar mais perto do
+mauve exato do catppuccin (305°, contra os 308° que couberam), e essa
+terceira cascata não foi perguntada nem aprovada. `#D0B1EC` já é
+claramente lilás/roxo, só não é o swatch exato do Catppuccin Mauve — a
+diferença é de 3°, imperceptível lado a lado.
+
+Testado: `lib/badges.test.ts` (as oito insígnias, incluindo a distância
+delas até o accent) e `lib/paleta.test.ts` (os 55 pares da escada +
+apoiador, incluindo a régua de 60° entre apoiador e accent) passam com o
+`ACCENT` de cada arquivo atualizado para o novo matiz — cada um na sua
+própria régua (OKLCH pras insígnias, HSL simples pra escada; as duas não
+convertem 1:1, e por isso o mesmo tom carrega dois números diferentes,
+308° e 272°, um em cada arquivo).
+
+## As colunas das estatísticas viram cálculo, não sorte do navegador
+
+"e sobre estatisticas, olha essas boxes todas tortas" — o dono, com o
+print do resumo do perfil: uma coluna com um cartão de catorze linhas
+("quem publica") ao lado de outras duas com metade da altura.
+
+O `columns-N` do CSS (usado no conserto anterior, "as boxes estão meio
+jogadas") empacota sozinho — mede a altura total, divide por N, e enche
+cada coluna até bater esse alvo. Com meia dúzia de cartões de alturas bem
+diferentes, esse algoritmo de balanceamento do navegador erra feio: não
+sabe redistribuir quando um cartão sozinho já estoura a média.
+
+`lib/masonry.ts` (`empacotar()`) faz à mão o que o navegador fazia mal:
+cada cartão entra com um PESO (quantas linhas ele desenha — número exato,
+não estimado, porque o servidor já sabe `dados.length` de cada gráfico), e
+um algoritmo guloso bota cada um na coluna mais vazia no momento, do mais
+pesado pro mais leve. Usado em `components/resumo-do-perfil.tsx` (3
+colunas) e na grade de `/estatisticas` (2 colunas, extraída pra um
+componente `Grade` novo).
+
+Isso troca `sm:columns-N` por `sm:grid sm:grid-cols-N`, com cada coluna
+sendo um `flex flex-col` cujos filhos já vêm na ordem calculada. Efeito
+colateral que precisou de conserto: numa tela estreita não existe coluna
+pra desequilibrar, e a ORDEM NATURAL (ano corrente primeiro, sempre)
+importa mais que o balanceamento — então os mesmos cartões são
+renderizados duas vezes, uma vez empilhados em ordem natural (`sm:hidden`)
+e uma vez empacotados (`hidden sm:grid`). Não são componentes com estado
+(Server Components), então usar os mesmos elementos duas vezes não tem
+custo de comportamento — só um pouco mais de HTML, num trecho que é só
+texto e barra.
+
+Testado em `lib/masonry.test.ts`: não perde nem duplica item, distribui
+pesos iguais igualmente, e — o caso que motivou o arquivo — um item muito
+mais pesado que os outros não deixa nenhuma coluna vazia.
+
+## "Ler resenha inteira" não larga você numa pilha de resenhas
+
+"quando eu clico pra ler a resenha inteira ele vai la pra pagina do
+livro, e se tiverem um monte de resenhas la eu perco a q eu fui ver?" —
+o dono.
+
+Os links "ler resenha inteira" (Explorar, resenhas do perfil) levavam só
+para `/livro/[slug]`, sem dizer qual das N resenhas era a que a pessoa
+tinha acabado de clicar. Agora levam para `/livro/[slug]#resenha-<id>`;
+cada `<li>` de `components/resenhas-do-livro.tsx` carrega esse mesmo
+`id`, e o navegador rola até ela sozinho.
+
+Duas coisas a mais, pro alvo do link: ele abre inteiro sem precisar de um
+segundo clique em "ler resenha inteira" (chegar cortada de novo, tendo
+acabado de clicar exatamente para ler inteira, seria a mesma pergunta
+duas vezes), e ganha um contorno (`--color-accent`) pro olho achar rápido
+qual das várias é a certa. A leitura do hash roda só depois de montar
+(`useEffect`): o servidor não sabe o hash da URL, e ler `location.hash` no
+primeiro render faria o HTML do servidor e o do cliente discordarem.
+
+Fora do alcance, e tudo bem: a SUA PRÓPRIA resenha nunca aparece em
+`ResenhasDoLivro` (ela mora no editor de "arrumar", acima) — mas ali
+nunca existe "pilha" nem "qual das várias": é uma caixa só, e o problema
+que este conserto resolve não existe nesse caminho.

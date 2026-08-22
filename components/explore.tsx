@@ -10,6 +10,7 @@ import { Cover } from "@/components/cover";
 import { estiloDoLeque } from "@/components/leque-capas";
 import { AfinidadeLinha } from "@/components/afinidade-linha";
 import { BuscaPessoas } from "@/components/busca-pessoas";
+import { UpvoteResenha } from "@/components/upvote-resenha";
 import type { Viewer } from "@/lib/authz";
 
 /**
@@ -107,9 +108,9 @@ export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; s
                       uma fileira plana lado a lado; virou a mesma vitrine de troféu.
                       Ver components/leque-capas.tsx. */}
                   {e.capas.length > 0 && (
-                    <div className="flex h-32 items-center justify-center">
+                    <div className="leque flex h-36 items-center justify-center">
                       {e.capas.slice(0, 5).map((c, i, arr) => (
-                        <span key={i} className="cover-lift block w-16 shrink-0" style={estiloDoLeque(i, arr.length)}>
+                        <span key={i} className="cover-lift block w-20 shrink-0" style={estiloDoLeque(i, arr.length)}>
                           <Cover title="" src={c} />
                         </span>
                       ))}
@@ -180,9 +181,9 @@ export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; s
                           mesma geometria de "os seus amigos estão lendo" (/pessoas). Ver
                           components/leque-capas.tsx. */}
                       {e.capas.length > 0 && (
-                        <div className="flex h-32 items-center justify-center">
+                        <div className="leque flex h-36 items-center justify-center">
                           {e.capas.slice(0, 5).map((c, i, arr) => (
-                            <span key={i} className="cover-lift block w-16 shrink-0" style={estiloDoLeque(i, arr.length)}>
+                            <span key={i} className="cover-lift block w-20 shrink-0" style={estiloDoLeque(i, arr.length)}>
                               <Cover title="" src={c} />
                             </span>
                           ))}
@@ -302,12 +303,36 @@ export async function Explore({ viewer, soPessoas = false }: { viewer: Viewer; s
                         {r.body}
                       </p>
 
-                      <p className="mt-3 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-                        {new Date(r.createdAt).toLocaleDateString("pt-BR", {
-                          day: "numeric",
-                          month: "long",
-                        })}
-                      </p>
+                      {/* "não tenho opção de ler a resenha toda e nem dar upvote" — o
+                          dono. A resenha inteira mora na página do livro (o mesmo
+                          link do título, dito de novo aqui, junto do resto das
+                          ações); ver o mesmo par em components/perfil-abas.tsx. */}
+                      <Link
+                        href={`/livro/${r.slug}#resenha-${r.id}`}
+                        className="mt-1 inline-block text-[12px] text-[var(--color-ink-faint)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+                      >
+                        ler resenha inteira
+                      </Link>
+
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+                          {new Date(r.createdAt).toLocaleDateString("pt-BR", {
+                            day: "numeric",
+                            month: "long",
+                          })}
+                        </p>
+
+                        {/* Nunca a própria: esta lista já exclui reviews.user_id do
+                            viewer (ver getResenhas), então souAutor é sempre falso. */}
+                        <UpvoteResenha
+                          reviewId={r.id}
+                          slug={r.slug}
+                          votei={r.votei}
+                          upvotes={r.upvotes}
+                          podeVotar={!!viewer}
+                          souAutor={false}
+                        />
+                      </div>
                     </div>
                   </li>
                 ))}
