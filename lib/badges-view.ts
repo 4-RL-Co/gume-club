@@ -4,7 +4,7 @@
  *
  *  ═══ A REGRA QUE FAZ O DESENHO FUNCIONAR ═══
  *
- *  As oito têm LUMINOSIDADE IDÊNTICA e SATURAÇÃO IDÊNTICA. Só o MATIZ
+ *  As sete têm LUMINOSIDADE IDÊNTICA e SATURAÇÃO IDÊNTICA. Só o MATIZ
  *  muda. Em OKLCH: mesmo L, mesmo C, e só o H gira.
  *
  *  Isso torna MATEMATICAMENTE IMPOSSÍVEL uma parecer mais preciosa que a
@@ -30,7 +30,7 @@
  * ════════════════════════════════════════════════════════════════════
  */
 
-/** Mesma luminosidade, mesma saturação, para as oito. Só o H gira. */
+/** Mesma luminosidade, mesma saturação, para as sete. Só o H gira. */
 export const L = 0.74;
 export const C = 0.13;
 
@@ -40,7 +40,7 @@ export const GLOW_ALPHA = 0.26;
 
 /**
  * ════════════════════════════════════════════════════════════════════
- *  O ACABAMENTO. Igual para as nove, e por isso ele pode ser caro.
+ *  O ACABAMENTO. Igual para as sete, e por isso ele pode ser caro.
  *
  *  "Os badges não estão tão premium quanto o acabamento das molduras."
  *
@@ -48,7 +48,7 @@ export const GLOW_ALPHA = 0.26;
  *  contra prata é pódio, todo mundo lê pódio, e no instante em que uma placa parecer
  *  mais rica que a outra, a pessoa passa a QUERER aquela e o sistema inteiro cai.
  *
- *  Então o piso sobe para as nove ao mesmo tempo. Três coisas, e as três são de
+ *  Então o piso sobe para as sete ao mesmo tempo. Três coisas, e as três são de
  *  MATERIAL, e não de hierarquia:
  *
  *    · o BISEL — uma luz fina em cima e uma sombra fina embaixo. É o que faz uma
@@ -57,7 +57,7 @@ export const GLOW_ALPHA = 0.26;
  *      cor com queda é objeto.
  *    · o GLOW, um pouco maior e um pouco mais fundo (12→16px, 0.22→0.26).
  *
- *  Nenhuma delas cria uma escada. Todas as nove ficam mais caras, juntas, e a regra
+ *  Nenhuma delas cria uma escada. Todas as sete ficam mais caras, juntas, e a regra
  *  matemática continua de pé: mesmo L, mesmo C, mesmo glow, e só o matiz girando.
  * ════════════════════════════════════════════════════════════════════
  */
@@ -75,8 +75,7 @@ export type Insignia =
   | "apoiador"
   | "construtor"
   | "arauto"
-  | "fundador"
-  | "idealizador";
+  | "fundador";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -93,9 +92,17 @@ export type Insignia =
  *  Nenhuma depende de alguém lembrar de dá-la. Um cargo distribuído à mão
  *  faz do dono um gargalo, e depois um porteiro.
  *
- *  A ÚNICA exceção é o IDEALIZADOR, e ela é honesta: ninguém pode
- *  "conseguir" ter imaginado uma coisa. Não há o que desbloquear, logo
- *  não há por que ser automática.
+ *  ═══ O IDEALIZADOR SAIU DAQUI ═══
+ *
+ *  "eu acho que em vez de eu ter uma badge de idealizador, poderia ter
+ *  um iconezinho diferente do lado do meu nome" — o dono. Ele era a única
+ *  insígnia CONCEDIDA à mão (ninguém pode "conseguir" ter imaginado uma
+ *  coisa), e a única sobre uma pessoa só — as duas exceções bastavam para
+ *  ele não caber direito na régua das outras sete. Virou um selo à parte,
+ *  fora do círculo de matiz: `components/selo-idealizador.tsx`, ao lado
+ *  do nome em `/@handle`. O fato que ele registra não mudou —
+ *  `badge_grants`, `souIdealizador()` (lib/authz.ts) e `conceder()`
+ *  continuam os mesmos —, só a FORMA como ele aparece na tela.
  * ════════════════════════════════════════════════════════════════════
  */
 export const INSIGNIAS: Record<
@@ -217,17 +224,6 @@ export const INSIGNIAS: Record<
     icone: "Flag",
   },
   /**
-   * A NONA, e ela é única em QUEM a tem, e nunca em como ela BRILHA.
-   *
-   * Só uma pessoa imaginou o Gume, e isso é um fato, não um mérito acumulável: não
-   * dá para farmar "ter tido a ideia". Por isso ela cabe aqui sem quebrar nada.
-   *
-   * Ela tem o MESMO L, o MESMO C, o MESMO glow e o MESMO glifo de traço que as
-   * outras oito. Se um dia ela brilhar mais forte, o sistema inteiro cai junto: a
-   * promessa não é "todo mundo tem as mesmas insígnias", é "nenhuma insígnia vale
-   * mais que outra". Ver ai/DECISIONS.md.
-   */
-  /**
    * ════════════════════════════════════════════════════════════════════
    *  O APOIADOR. E ela contradiz uma regra escrita deste repo.
    *
@@ -262,15 +258,6 @@ export const INSIGNIAS: Record<
     matiz: 340, // rosa. A mesma cor de "quem faz" e da moldura de apoiador: apoiar é contribuir.
     icone: "HeartHandshake",
   },
-
-  idealizador: {
-    label: "idealizador",
-    sobre: "teve a ideia do Gume e começou a construir",
-    como:
-      "É de quem imaginou este lugar e começou a fazê-lo existir. Não tem como conquistar, e nem deveria: ter tido uma ideia não é mérito que se acumula. É só um fato, e ele é de uma pessoa só.",
-    matiz: 100, // oliva. 35° de folga do âmbar e 35° do verde: nenhuma cor colide.
-    icone: "Compass",
-  },
 };
 
 /**
@@ -288,22 +275,11 @@ export const ORDEM: Insignia[] = [
   "zelador",
   "construtor",
   /*
-   * O APOIADOR fica no MEIO, junto com o idealizador, e pela mesma razão: as pontas são
-   * onde o olho lê hierarquia. A insígnia de quem PAGA numa ponta seria a pior de todas
-   * — a primeira posição diria "isto é o que mais vale", e é exatamente a leitura que
-   * este sistema existe para não permitir.
+   * O APOIADOR fica no MEIO, e não numa ponta: a primeira posição é lida como prêmio, e
+   * a insígnia de quem PAGA ali diria "isto é o que mais vale" — exatamente a leitura
+   * que este sistema existe para não permitir.
    */
   "apoiador",
-  /*
-   * O IDEALIZADOR fica no MEIO, e isso é deliberado. A PRIMEIRA posição é lida como
-   * prêmio e a ÚLTIMA como consolo: as duas pontas são onde o olho lê hierarquia, e uma
-   * insígnia única numa delas criaria exatamente a escada que este sistema não tem.
-   *
-   * Ele foi PARAR na última quando o semeador saiu (migration 0046, doar/trocar/emprestar
-   * removidos), e teve que voltar para o meio. Uma remoção que reordena a lista sem
-   * ninguém olhar é como uma hierarquia nasce por acidente.
-   */
-  "idealizador",
   "arauto",
   "fundador",
 ];

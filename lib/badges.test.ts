@@ -26,7 +26,7 @@ const CODIGO = readFileSync(new URL("../components/badges.tsx", import.meta.url)
   .replace(/\/\*[\s\S]*?\*\//g, "")
   .replace(/^\s*\/\/.*$/gm, "");
 
-describe("são OITO, e são estas oito", () => {
+describe("são SETE, e são estas sete", () => {
   it("nem mais, nem menos", () => {
     /**
      * ═══ ERAM OITO, E O SEMEADOR SAIU ═══
@@ -43,12 +43,18 @@ describe("são OITO, e são estas oito", () => {
      * Uma insígnia que não tem mais como ser conquistada não fica de enfeite no catálogo:
      * ela sai, ou vira uma promessa que o app não cumpre.
      *
+     * ═══ E DEPOIS FORAM NOVE, E O IDEALIZADOR SAIU TAMBÉM ═══
+     *
+     * "eu acho que em vez de eu ter uma badge de idealizador, poderia ter um iconezinho
+     * diferente do lado do meu nome" — o dono. Ele virou um selo à parte
+     * (components/selo-idealizador.tsx), fora do círculo de matiz. Ver ai/DECISIONS.md.
+     *
      * A promessa nunca foi "todo mundo tem as mesmas insígnias" (bibliotecário também
      * não é de todo mundo): foi "NENHUMA VALE MAIS QUE OUTRA", e é isso que os testes
      * abaixo continuam travando.
      */
-    expect(Object.keys(INSIGNIAS)).toHaveLength(8);
-    expect(ORDEM).toHaveLength(8);
+    expect(Object.keys(INSIGNIAS)).toHaveLength(7);
+    expect(ORDEM).toHaveLength(7);
   });
 
   it("a ordem de exibição é FIXA, e cobre todas", () => {
@@ -57,51 +63,41 @@ describe("são OITO, e são estas oito", () => {
     // posição viraria prêmio e a última, consolo.
     expect([...ORDEM].sort()).toEqual(Object.keys(INSIGNIAS).sort());
     /**
-     * As PONTAS não se mexem, e isso é o que segura a nona insígnia.
-     *
-     * A primeira posição é lida como prêmio e a última como consolo. Uma insígnia
-     * nova que chegasse numa das duas pontas criaria a hierarquia que este sistema
-     * inteiro existe para não ter. O idealizador entrou no MEIO, de propósito.
-     */
-    /**
      * As PONTAS são as posições que o olho lê como hierarquia: a primeira vira
      * prêmio, a última vira consolo. Elas ficam travadas para que uma insígnia nova
      * (ou a saída de uma velha) não crie essa escada sem ninguém perceber.
      *
-     * A última era "semeador", que saiu junto com doar/trocar/emprestar. Quando ele
-     * saiu, o IDEALIZADOR caiu na última posição sozinho — e a última é lida como
-     * consolo. Ele voltou para o meio, e a ponta virou o fundador.
+     * A última era "semeador", que saiu junto com doar/trocar/emprestar; depois foi o
+     * IDEALIZADOR (que morava no meio da lista, nunca numa ponta) — e nenhuma saída
+     * das duas mexeu nas pontas, porque as pontas nunca dependeram de quem está no
+     * meio.
      *
      * Uma remoção que reordena a lista sem ninguém olhar é como uma hierarquia nasce
      * por acidente.
      */
     expect(ORDEM[0], "a ordem mudou").toBe("bibliotecario");
     expect(ORDEM.at(-1), "a ordem mudou").toBe("fundador");
-
-    // E o idealizador nunca numa ponta.
-    expect(ORDEM.indexOf("idealizador")).toBeGreaterThan(0);
-    expect(ORDEM.indexOf("idealizador")).toBeLessThan(ORDEM.length - 1);
   });
 });
 
 describe("nenhuma pode parecer mais preciosa que outra", () => {
-  it("as oito têm LUMINOSIDADE e SATURAÇÃO idênticas: só o matiz gira", () => {
+  it("as sete têm LUMINOSIDADE e SATURAÇÃO idênticas: só o matiz gira", () => {
     for (const chave of ORDEM) {
       const c = cor(chave);
       expect(
         c,
-        `a insígnia "${chave}" saiu da paleta. As oito têm o mesmo L (${L}) e o mesmo C (${C}); ` +
+        `a insígnia "${chave}" saiu da paleta. As sete têm o mesmo L (${L}) e o mesmo C (${C}); ` +
           "só o H muda. É assim que fica MATEMATICAMENTE IMPOSSÍVEL uma parecer mais " +
           "valiosa. Cor aqui é identidade, nunca hierarquia.",
       ).toContain(`oklch(${L} ${C} `);
     }
   });
 
-  it("os oito matizes são distintos, e bem separados", () => {
+  it("os sete matizes são distintos, e bem separados", () => {
     // Se dois matizes ficarem colados, duas insígnias viram a mesma cor, e a cor deixa
     // de identificar coisa alguma.
     const matizes = ORDEM.map((i) => INSIGNIAS[i].matiz).sort((a, b) => a - b);
-    expect(new Set(matizes).size).toBe(8);
+    expect(new Set(matizes).size).toBe(7);
 
     for (let i = 1; i < matizes.length; i++) {
       const [antes, agora] = [matizes[i - 1]!, matizes[i]!];
@@ -133,7 +129,7 @@ describe("nenhuma pode parecer mais preciosa que outra", () => {
    */
   it("nenhuma insígnia tem a cor do accent", () => {
     // #D0B1EC. Se o accent mudar, este número muda com ele — de propósito: é o teste que
-    // obriga a pessoa a olhar para as oito insígnias antes de trocar a cor do app.
+    // obriga a pessoa a olhar para as sete insígnias antes de trocar a cor do app.
     const ACCENT = 308;
 
     for (const nome of ORDEM) {
@@ -160,7 +156,7 @@ describe("nenhuma pode parecer mais preciosa que outra", () => {
     // Um só `boxShadow` no arquivo inteiro: dois seriam duas placas diferentes.
     expect(CODIGO.match(/boxShadow:/g) ?? []).toHaveLength(1);
 
-    // E o valor é UM. Se alguém quiser mexer, mexe para as nove de uma vez.
+    // E o valor é UM. Se alguém quiser mexer, mexe para as sete de uma vez.
     expect(GLOW_RAIO).toBe(16);
     expect(GLOW_ALPHA).toBe(0.26);
   });
@@ -170,7 +166,7 @@ describe("nenhuma pode parecer mais preciosa que outra", () => {
    *  ═══ ESTE TESTE PROIBIA A PALAVRA "GRADIENT", E ISSO ERA GROSSO DEMAIS ═══
    *
    *  Ele existia para impedir glow holográfico, arco-íris e pulsante — e barrava, junto,
-   *  um degradê **do mesmo matiz**, com alpha fixo, igual nas nove placas. Isso não é
+   *  um degradê **do mesmo matiz**, com alpha fixo, igual nas sete placas. Isso não é
    *  raridade: é acabamento. Cor chapada é adesivo; cor com queda é objeto.
    *
    *  O que faz uma insígnia virar pódio nunca foi o degradê: é o degradê DIFERENTE. E é
@@ -187,7 +183,7 @@ describe("nenhuma pode parecer mais preciosa que outra", () => {
     ).toBe(false);
   });
 
-  it("o degradê é do MESMO matiz, e é UM só para as nove", () => {
+  it("o degradê é do MESMO matiz, e é UM só para as sete", () => {
     /**
      * A LINHA inteira, e não um `linear-gradient\([^)]*\)`.
      *
@@ -378,7 +374,7 @@ describe("a insígnia de quem paga", () => {
 
 /**
  * ════════════════════════════════════════════════════════════════════
- *  A PLACA DO PERFIL: UMA MOLDURA PARA AS NOVE.
+ *  A PLACA DO PERFIL: UMA MOLDURA PARA AS SETE.
  *
  *  A estética de RPG entrou (o dono pediu, e ela é bonita). O veneno
  *  dela NÃO entrou, e é isto que este teste guarda.
@@ -466,7 +462,7 @@ describe("a barra mede contribuição, e jamais leitura", () => {
     expect(META.bibliotecario).toBeGreaterThan(0);
 
     for (const fato of [
-      "construtor", "arauto", "fundador", "idealizador",
+      "construtor", "arauto", "fundador",
       // Apoiar é sim ou não. Não existe "68% de apoiar".
       "apoiador",
       // Confiança não tem barra: não existe "68% de ser confiável".
