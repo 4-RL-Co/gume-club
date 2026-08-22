@@ -5048,3 +5048,37 @@ Achado de refresco, no meio da mudança: um comentário órfão em
 `lib/badges-view.ts` ("A NONA, e ela é única em QUEM a tem...") sobrou de
 um reshuffle anterior, sentado entre `fundador` e `apoiador` sem
 descrever nada ali — removido junto.
+
+## O diário maior só vale a partir de onde cabe
+
+"E também verifique se está tudo ok na versão mobile do gume" — o dono.
+Sem navegador neste ambiente, a verificação foi uma auditoria no código
+das mudanças da sessão — e ela achou uma de verdade.
+
+O aumento do diário ("maior, igual do letterboxd") entrou sem `sm:`: capa
+(w-16), coluna de data (w-16) e coluna da direita ganharam o tamanho do
+print, que era do Letterboxd em tela larga. Feitas as contas — celular
+estreito (375px), sem sidebar (ela já vira menu embaixo abaixo de `sm:`,
+components/sidebar.tsx), com o padding da página — sobravam **uns 70px**
+para o título do livro, que já usa `truncate`: quase sempre cortado ao
+meio de uma palavra.
+
+Cada medida do diário (`components/diario.tsx`) agora tem duas versões:
+uma para telefone, uma a partir de `sm:` — capa, coluna de data (e o selo
+do mês/dia solto dentro dela), tipografia do título e autor, e a coluna
+"terminei"/veredito à direita. A conta refeita com os tamanhos de
+telefone dá **~150px** para o título — bem mais folgado. "Maior" continua
+valendo a partir da tela onde ele cabe; no telefone, o diário volta perto
+do tamanho de antes.
+
+Conferido também, sem achar problema: a aba de resenhas do perfil e o
+card de "resenhas recentes" do Explorar (mesma leva de mudanças) usam
+texto que QUEBRA em várias linhas (nunca `truncate`), então uma coluna
+mais estreita no telefone só significa mais linhas, não corte — não
+precisaram de conserto. A grade de /estatisticas e do resumo do perfil já
+tinham sido feitas com uma versão própria para telefone (`sm:hidden` /
+`hidden sm:grid`) desde que nasceram empacotadas.
+
+Sem dispositivo nem navegador neste ambiente para conferir ao vivo: esta
+é uma auditoria de código, não um teste visual. Vale o dono olhar no
+próprio telefone antes de considerar fechado.

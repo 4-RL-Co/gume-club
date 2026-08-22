@@ -47,7 +47,7 @@ import type { EntradaDiario } from "@/lib/diario";
  *  contado na linha da leitura (o selo "resenha" ao lado do título) — uma
  *  segunda linha ali seria o mesmo dia duas vezes.
  *
- *  ═══ MAIOR, IGUAL DO LETTERBOXD ═══
+ *  ═══ MAIOR, IGUAL DO LETTERBOXD — MAS SÓ ONDE COUBE ═══
  *
  *  "e acho que a parte do diario tem que ser um pouco maior igual do
  *  letterboxd (...) acho que as coisas devem ser mais amplas/maiores" — o
@@ -55,6 +55,14 @@ import type { EntradaDiario } from "@/lib/diario";
  *  juntas (não só a capa: um diário maior só na capa fica desproporcional);
  *  a seção em volta (components/perfil-abas.tsx) e a página do perfil
  *  ganharam mais largura pelo mesmo pedido — ver ai/DECISIONS.md.
+ *
+ *  O print era do Letterboxd em tela larga, e os tamanhos entraram
+ *  primeiro sem `sm:` — no telefone, capa + coluna de data + coluna da
+ *  direita no tamanho do desktop deixavam uns 70px pro título, truncado
+ *  quase inteiro. Cada medida deste componente agora tem duas versões: uma
+ *  pequena (telefone) e uma grande, a partir de `sm:` (tablet/desktop) —
+ *  "maior" continua valendo, só que a partir de onde existe espaço para
+ *  ele. "verifique se está tudo ok na versão mobile" — o dono.
  * ════════════════════════════════════════════════════════════════════
  */
 export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
@@ -146,11 +154,15 @@ export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
             return (
               <li
                 key={`${e.readingId}-${e.tipo}`}
-                className="flex items-start gap-5 border-b border-[var(--color-rule)] py-5 first:pt-0 last:border-0 last:pb-0"
+                className="flex items-start gap-3 border-b border-[var(--color-rule)] py-4 first:pt-0 last:border-0 last:pb-0 sm:gap-5 sm:py-5"
               >
-                <div className="w-16 shrink-0 pt-0.5">
+                {/* "maior, igual do letterboxd" era sobre a tela larga do print — numa
+                    tela de telefone, capa+data+coluna da direita no mesmo tamanho do
+                    desktop deixava o título com ~70px pra existir, truncado quase
+                    inteiro. `sm:` guarda o tamanho maior pra onde ele coube. */}
+                <div className="w-11 shrink-0 pt-0.5 sm:w-16">
                   {mesChave === null ? (
-                    <span className="tabular block text-center text-[13px] text-[var(--color-ink-faint)]">
+                    <span className="tabular block text-center text-[11px] text-[var(--color-ink-faint)] sm:text-[13px]">
                       {e.quando ?? "sem data"}
                     </span>
                   ) : primeiroDoMes ? (
@@ -160,19 +172,19 @@ export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
                   )}
                 </div>
 
-                <Link href={`/livro/${e.slug}`} className="cover-lift w-16 shrink-0">
+                <Link href={`/livro/${e.slug}`} className="cover-lift w-12 shrink-0 sm:w-16">
                   <Cover title={e.title} author={e.author} src={e.coverUrl} />
                 </Link>
 
                 <div className="min-w-0 flex-1 pt-0.5">
                   <Link
                     href={`/livro/${e.slug}`}
-                    className="voice block truncate text-[18px] leading-snug text-[var(--color-ink)] hover:underline"
+                    className="voice block truncate text-[15px] leading-snug text-[var(--color-ink)] hover:underline sm:text-[18px]"
                   >
                     {e.title}
                   </Link>
                   {e.author && (
-                    <span className="mt-1 block truncate text-[14px] text-[var(--color-ink-faint)]">{e.author}</span>
+                    <span className="mt-1 block truncate text-[12px] text-[var(--color-ink-faint)] sm:text-[14px]">{e.author}</span>
                   )}
 
                   {/* O RÓTULO: "não dá pra saber oq foi leitura e oq foi resenha" — o
@@ -214,14 +226,14 @@ export function Diario({ entradas }: { entradas: EntradaDiario[] }) {
                     leitura — daí o selo "resenha" à esquerda, e não uma segunda
                     linha para o mesmo dia. */}
                 <div className="flex shrink-0 flex-col items-end gap-1.5 pt-0.5 text-right">
-                  <span className="text-[13px] text-[var(--color-ink-faint)]">
+                  <span className="text-[11px] text-[var(--color-ink-faint)] sm:text-[13px]">
                     {e.tipo === "resenha" ? "resenhei" : e.abandonado ? "abandonei" : "terminei"}
                   </span>
                   {!e.abandonado && e.rating !== null && (
-                    <span className="flex items-center gap-1.5 text-[13px] text-[var(--color-ink-soft)]">
+                    <span className="flex items-center gap-1.5 text-[11px] text-[var(--color-ink-soft)] sm:text-[13px]">
                       {(() => {
                         const Glifo = GLIFO[e.rating as keyof typeof GLIFO];
-                        return <Glifo size={14} strokeWidth={1.75} aria-hidden />;
+                        return <Glifo size={13} strokeWidth={1.75} aria-hidden />;
                       })()}
                       {palavraDoVeredito(e.rating)}
                     </span>
@@ -269,28 +281,29 @@ function SeloDoMes({ quando }: { quando: string }) {
   const [ano, mes, dia] = quando.split("-").map(Number);
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="w-16 overflow-hidden rounded-[10px] border border-[var(--color-rule)] text-center">
-        <div className="bg-[var(--color-ink)] py-1.5 text-[11px] font-semibold tracking-[0.08em] text-[var(--color-canvas)]">
+    <div className="flex flex-col items-center gap-1.5 sm:gap-2">
+      <div className="w-11 overflow-hidden rounded-[10px] border border-[var(--color-rule)] text-center sm:w-16">
+        <div className="bg-[var(--color-ink)] py-1 text-[9px] font-semibold tracking-[0.08em] text-[var(--color-canvas)] sm:py-1.5 sm:text-[11px]">
           {MESES[(mes ?? 1) - 1]}
         </div>
-        <div className="py-1.5 text-[12px] text-[var(--color-ink-faint)]">{ano}</div>
+        <div className="py-1 text-[10px] text-[var(--color-ink-faint)] sm:py-1.5 sm:text-[12px]">{ano}</div>
       </div>
-      <span className="tabular text-[16px] text-[var(--color-ink)]">{dia}</span>
+      <span className="tabular text-[14px] text-[var(--color-ink)] sm:text-[16px]">{dia}</span>
     </div>
   );
 }
 
 /**
- * Só o dia, alinhado embaixo de onde o selo do mês ficaria — o `mt-[58px]` é
- * a altura do selo (duas linhas de texto + borda) medida no código, sem
- * navegador aqui pra calibrar no olho. Conferir ao vivo e ajustar se as duas
- * colunas (selo vs. dia solto) não baterem exatamente.
+ * Só o dia, alinhado embaixo de onde o selo do mês ficaria — a MESMA altura
+ * do selo em cada tamanho de tela (medida no código, sem navegador aqui pra
+ * calibrar no olho): mais baixo no telefone (selo compacto), mais alto na
+ * tela larga (selo maior — "maior, igual do letterboxd"). Conferir ao vivo
+ * e ajustar se as duas colunas (selo vs. dia solto) não baterem exatamente.
  */
 function DiaSolto({ quando }: { quando: string }) {
   const dia = Number(quando.split("-")[2]);
   return (
-    <span className="tabular mt-[58px] block text-center text-[16px] text-[var(--color-ink)]">
+    <span className="tabular mt-[46px] block text-center text-[14px] text-[var(--color-ink)] sm:mt-[58px] sm:text-[16px]">
       {dia}
     </span>
   );
