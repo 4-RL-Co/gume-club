@@ -27,7 +27,7 @@ export { CORTE_FUNDADOR, CORRECOES_PARA_ZELADOR } from "@/lib/regras";
 
 /**
  * ════════════════════════════════════════════════════════════════════
- *  AS OITO INSÍGNIAS. Todas binárias, todas sobre DOAÇÃO à comunidade.
+ *  AS SETE INSÍGNIAS. Todas binárias, todas sobre DOAÇÃO à comunidade.
  *
  *  ═══ INSÍGNIA É UM FATO. Você é, ou não é. ═══
  *
@@ -81,6 +81,18 @@ export { CORTE_FUNDADOR, CORRECOES_PARA_ZELADOR } from "@/lib/regras";
  *  forma. Ele comprou um selo; não doou trabalho. Se os dois se
  *  parecerem, a mensagem que sobra é "dá para comprar mérito", e isso
  *  mata a página de contribuidores inteira. Ver components/badges.tsx.
+ *
+ *  ═══ IDEALIZADOR TAMBÉM NÃO É MAIS INSÍGNIA. ═══
+ *
+ *  "eu acho que em vez de eu ter uma badge de idealizador, poderia ter
+ *  um iconezinho diferente do lado do meu nome" — o dono. Ela era a
+ *  única concedida à mão e a única sobre uma pessoa só; virou um selo à
+ *  parte (components/selo-idealizador.tsx), ao lado do nome em
+ *  `/@handle`, fora do círculo de matiz de lib/badges-view.ts. O FATO
+ *  continua o mesmo — `badge_grants`, `souIdealizador()` (lib/authz.ts) e
+ *  `conceder()`, abaixo, não mudaram — só a forma como ele aparece na
+ *  tela. `getBadgesOf()` não devolve mais "idealizador": quem precisa
+ *  saber pergunta a `souIdealizador()` diretamente.
  * ════════════════════════════════════════════════════════════════════
  */
 
@@ -169,7 +181,6 @@ export async function getBadgesOf(userIds: string[]): Promise<Record<string, Ins
     apoiador: boolean;
     /** A ordem de chegada. 1 a 100 para quem é fundador; nulo para o resto. */
     chegada: number | null;
-    idealizador: boolean;
   }>(sql`
     select u.id,
 
@@ -252,19 +263,7 @@ export async function getBadgesOf(userIds: string[]): Promise<Record<string, Ins
        * não mede o que a pessoa FEZ, mede QUANDO ela chegou. Ninguém pode fazer mais.
        */
       (select count(*) + 1 from users u2
-        where u2.created_at < u.created_at and u2.deleted_at is null)::int as chegada,
-
-
-      -- IDEALIZADOR. A única concedida, e ela NÃO É DESBLOQUEÁVEL: ninguém pode
-      -- "conseguir" ter imaginado uma coisa. Por isso ela não precisa ser automática,
-      -- e é a única exceção honesta à regra de que tudo aqui se ganha sozinho.
-      --
-      -- E o banco garante que só existe uma no mundo: índice único parcial, migration
-      -- 0024. Não é uma promessa do código.
-      exists (
-        select 1 from badge_grants g
-         where g.user_id = u.id and g.badge = 'idealizador' and g.revoked_at is null
-      ) as idealizador
+        where u2.created_at < u.created_at and u2.deleted_at is null)::int as chegada
 
       from users u
      where u.id = any(${sql.param(userIds)}::uuid[])
@@ -298,7 +297,6 @@ export async function getBadgesOf(userIds: string[]): Promise<Record<string, Ins
     else if (r.zelador) minhas.push("zelador");
 
     if (r.moderador) minhas.push("moderador");
-    if (r.idealizador) minhas.push("idealizador");
     if (r.arauto) minhas.push("arauto");
     if (r.fundador) minhas.push("fundador");
     if (r.apoiador) minhas.push("apoiador");
@@ -446,5 +444,4 @@ export const META: Record<string, number | null> = {
   fundador: null,
   // Não tem meta: não existe "68% de apoiar". Ou você apoia, ou não.
   apoiador: null,
-  idealizador: null,
 };

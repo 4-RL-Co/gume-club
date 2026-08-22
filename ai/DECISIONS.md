@@ -5013,3 +5013,38 @@ Fora do alcance, e tudo bem: a SUA PRÓPRIA resenha nunca aparece em
 `ResenhasDoLivro` (ela mora no editor de "arrumar", acima) — mas ali
 nunca existe "pilha" nem "qual das várias": é uma caixa só, e o problema
 que este conserto resolve não existe nesse caminho.
+
+## O idealizador vira um selo ao lado do nome, e não mais uma insígnia
+
+"eu acho que em vez de eu ter uma badge de idealizador, poderia ter um
+iconezinho diferente do lado do meu nome" — o dono.
+
+O idealizador já era, das sete/oito insígnias, a mais estranha de duas
+formas: a única CONCEDIDA à mão (ninguém "consegue" ter imaginado uma
+coisa — não há o que desbloquear) e a única sobre uma pessoa só no mundo
+inteiro. As duas exceções já bastavam pra ela não caber direito na régua
+matemática das outras (mesmo L, mesmo C, só o matiz girando — ver
+`lib/badges-view.ts`).
+
+Ela saiu do círculo de insígnias e virou `components/selo-idealizador.tsx`:
+um ícone (Compass, o mesmo glifo que ela já usava) em **DOURADO** — a
+mesma cor de toda coroa do app (curadoria da casa, favoritos —
+`lib/dourado.ts`), e não uma cor do círculo de matiz. "Quem imaginou a
+casa" é exatamente o tipo de fato que o dourado já significa: algo sobre
+a CASA em si, nunca sobre trabalho. Aparece ao lado do nome, em
+`/@handle`, só quando `souIdealizador({id: profile.id})` — a mesma
+função que já gatilhava a curadoria fixa nas listas.
+
+O que NÃO mudou: `badge_grants`, `souIdealizador()` (lib/authz.ts) e
+`conceder(viewer, userId, "idealizador", motivo)` (lib/badges.ts)
+continuam exatamente os mesmos — é o mecanismo que grava e protege o
+fato ("só existe UM idealizador no mundo", índice único parcial,
+migration 0024). Só a FORMA como ele aparece na tela mudou:
+`getBadgesOf()` não devolve mais "idealizador" no array de insígnias, e
+`lib/badges.sql.test.ts` passou a medir `badge_grants` direto, em vez de
+medir pela lista de insígnias que não o carrega mais.
+
+Achado de refresco, no meio da mudança: um comentário órfão em
+`lib/badges-view.ts` ("A NONA, e ela é única em QUEM a tem...") sobrou de
+um reshuffle anterior, sentado entre `fundador` e `apoiador` sem
+descrever nada ali — removido junto.

@@ -13,6 +13,11 @@ import { editions, users, works } from "@/lib/db/schema";
  *  dado a quem passava um exemplar adiante, e ninguém mais passa exemplar a ninguém.
  *  Uma insígnia que não tem mais como ser conquistada não fica de enfeite no catálogo.
  *
+ *  Depois foram nove, e o IDEALIZADOR saiu também — não por deixar de existir, mas por
+ *  virar um selo à parte, ao lado do nome (components/selo-idealizador.tsx), fora do
+ *  círculo de matiz. `badge_grants` e `conceder("idealizador", …)` continuam os mesmos;
+ *  só `getBadgesOf()` parou de devolvê-lo. Ver ai/DECISIONS.md.
+ *
  *  O que estes testes protegem não é o cálculo: é o CRITÉRIO. Uma
  *  insígnia com critério frouxo não é generosa, é inflacionária, e a
  *  primeira que inflar leva as outras sete junto — porque a partir daí
@@ -68,13 +73,25 @@ describe("ZELADOR: DEZ correções, e só as que SOBREVIVERAM", () => {
         "vale nada, e leva as outras seis junto.",
     ).rejects.toThrow();
 
-    expect(await insigniasDe(leitor.id)).not.toContain("idealizador");
+    const [tem] = await db.execute<{ n: number }>(sql`
+      select count(*)::int as n from badge_grants
+       where user_id = ${leitor.id}::uuid and badge = 'idealizador' and revoked_at is null`);
+    expect(Number(tem!.n)).toBe(0);
   });
 
   it("o deslogado não concede nada", async () => {
     await expect(conceder(null, leitor.id, "idealizador", "oi")).rejects.toThrow();
   });
 
+  /**
+   * ═══ O IDEALIZADOR SAIU DO CÍRCULO DE INSÍGNIAS, MAS O FATO CONTINUA ═══
+   *
+   * "eu acho que em vez de eu ter uma badge de idealizador, poderia ter um iconezinho
+   * diferente do lado do meu nome" — o dono. `getBadgesOf()` não devolve mais
+   * "idealizador" (virou components/selo-idealizador.tsx, lido de souIdealizador()),
+   * então este teste passou a medir `badge_grants` direto — o mesmo dado que
+   * souIdealizador() lê, e o único lugar onde "só existe UM" é garantido de verdade.
+   */
   it("só existe UM idealizador no mundo, e quem garante é o BANCO", async () => {
     /**
      * Não é uma promessa do código: é um índice único PARCIAL (migration 0024). A
@@ -99,10 +116,10 @@ describe("ZELADOR: DEZ correções, e só as que SOBREVIVERAM", () => {
 
     await conceder(biblio, leitor.id, "idealizador", "quero ser eu também");
 
-    expect(
-      await insigniasDe(leitor.id),
-      "uma SEGUNDA pessoa ficou com a insígnia de idealizador",
-    ).not.toContain("idealizador");
+    const [ficou] = await db.execute<{ n: number }>(sql`
+      select count(*)::int as n from badge_grants
+       where user_id = ${leitor.id}::uuid and badge = 'idealizador' and revoked_at is null`);
+    expect(Number(ficou!.n), "uma SEGUNDA pessoa ficou com a insígnia de idealizador").toBe(0);
 
     const [quantos] = await db.execute<{ n: number }>(sql`
       select count(*)::int as n from badge_grants

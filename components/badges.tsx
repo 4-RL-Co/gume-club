@@ -1,5 +1,5 @@
 import {
-  Stamp, Brush, Hammer, Megaphone, Flag, Compass, ShieldCheck, HeartHandshake,
+  Stamp, Brush, Hammer, Megaphone, Flag, ShieldCheck, HeartHandshake,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -13,7 +13,7 @@ import {
  *
  *  ═══ MESMA LUZ, MESMA SATURAÇÃO. SÓ O MATIZ MUDA. ═══
  *
- *  As oito têm o MESMO L e o MESMO C em OKLCH, o MESMO raio de glow e o
+ *  As sete têm o MESMO L e o MESMO C em OKLCH, o MESMO raio de glow e o
  *  MESMO alpha. Só o H gira. Isso torna matematicamente impossível uma
  *  parecer mais preciosa que a outra: cor aqui é IDENTIDADE, e nunca
  *  hierarquia. Um teste quebra o build se alguém mover o L, o C, o raio
@@ -45,14 +45,12 @@ const GLIFOS: Record<Insignia, LucideIcon> = {
   apoiador: HeartHandshake,
   arauto: Megaphone,
   fundador: Flag,
-  // Única em quem a tem, e nunca em como brilha: mesmo traço, mesmo tamanho.
-  idealizador: Compass,
 };
 
 /**
  * NO FEED: só o glifo, 14px, sem círculo.
  *
- * Trinta linhas de feed com oito medalhas cada viram um cassino. No feed a insígnia
+ * Trinta linhas de feed com sete medalhas cada viram um cassino. No feed a insígnia
  * é uma nota de rodapé ao lado do nome, e é só isso que ela precisa ser.
  */
 export function Badges({ badges, className }: { badges: Insignia[]; className?: string }) {
@@ -101,7 +99,7 @@ export function Badges({ badges, className }: { badges: Insignia[]; className?: 
  *  ═══ E A REGRA DE FERRO CONTINUA ═══
  *
  *  Mesma geometria, mesma espessura, mesmo bisel, mesmo glow, mesmo L e mesmo C para as
- *  oito. **SÓ O MATIZ GIRA.**
+ *  sete. **SÓ O MATIZ GIRA.**
  *
  *  É aqui que a estética de RPG entra sem trazer o veneno dela junto. O que faz um jogo
  *  virar farm não é a medalha: é a medalha DIFERENTE. Ouro contra prata, épico contra
@@ -110,7 +108,7 @@ export function Badges({ badges, className }: { badges: Insignia[]; className?: 
  * ════════════════════════════════════════════════════════════════════
  */
 
-/** A geometria da medalha. UMA para as oito: se você duplicar isto, criou uma raridade. */
+/** A geometria da medalha. UMA para as sete: se você duplicar isto, criou uma raridade. */
 const PLACA = {
   /** O diâmetro. Grande o bastante para o glifo respirar, pequeno o bastante para calar. */
   tamanho: 34,
@@ -171,7 +169,7 @@ export function Placa({
          * ═══ O VERNIZ ═══
          *
          * Um degradê de cima para baixo, e não uma cor chapada. Cor chapada é adesivo;
-         * cor com queda é objeto. Igual para as oito.
+         * cor com queda é objeto. Igual para as sete.
          */
         background: `linear-gradient(180deg, ${cor(badge, VERNIZ_TOPO)}, ${cor(badge, VERNIZ_BASE)})`,
 
@@ -186,7 +184,7 @@ export function Placa({
          * insígnia, a medalha mais clara pareceria mais iluminada — e aí o matiz teria
          * virado hierarquia pela porta dos fundos.
          *
-         * As medidas são as mesmas para as oito. Mexeu numa, criou um pódio.
+         * As medidas são as mesmas para as sete. Mexeu numa, criou um pódio.
          */
         boxShadow: [
           `inset 0 1px 0 rgb(255 255 255 / ${BISEL_LUZ})`,
