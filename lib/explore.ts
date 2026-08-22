@@ -64,6 +64,9 @@ export type Resenha = {
   slug: string;
   title: string;
   coverUrl: string | null;
+  /** Quantos upvotes — nunca em GENTE, só nesta resenha. Ver lib/upvotes.ts. */
+  upvotes: number;
+  votei: boolean;
 };
 
 export type Lendo = { slug: string; title: string; author: string | null; coverUrl: string | null };
@@ -326,6 +329,11 @@ export async function getAfinidade(viewer: Viewer, limite = 5): Promise<Afinidad
  * Nunca "fulano prateleirou um livro" de um estranho: isso é ruído, e é
  * exatamente onde nasce a vontade de performar para desconhecidos. Se a pessoa
  * sentou e escreveu, ela quer ser lida. Essa é a diferença, e ela é toda.
+ *
+ * "em resenhas recentes eu não tenho opção de ler a resenha toda e nem dar
+ * upvote" — o dono. `upvotes`/`votei` vêm junto, mesma consulta de
+ * getResenhasDe(); "ler resenha inteira" é o link pra página do livro
+ * (components/explore.tsx), como em toda lista de resenha cortada.
  */
 export async function getResenhas(viewer: Viewer, limite = 6): Promise<Resenha[]> {
   const rows = await db.execute<{
@@ -338,12 +346,19 @@ export async function getResenhas(viewer: Viewer, limite = 6): Promise<Resenha[]
     slug: string;
     title: string;
     cover_url: string | null;
+    upvotes: number;
+    votei: boolean;
   }>(sql`
     -- Sem apelido em "reviews": o visibleTo() emite o nome real da tabela, e um
     -- apelido faz o Postgres não achar a coluna que a regra de visibilidade cita.
     select reviews.id, reviews.body, reviews.created_at,
            u.handle, u.display_name as name, u.image,
-           w.slug, w.title, ${capaDaObra} as cover_url
+           w.slug, w.title, ${capaDaObra} as cover_url,
+           (select count(*) from review_upvotes ru where ru.review_id = reviews.id)::int as upvotes,
+           exists (
+             select 1 from review_upvotes ru
+              where ru.review_id = reviews.id and ru.user_id = ${viewer?.id ?? null}::uuid
+           ) as votei
       from reviews
       join users u on u.id = reviews.user_id and u.deleted_at is null
       join works w on w.id = reviews.work_id
@@ -363,6 +378,8 @@ export async function getResenhas(viewer: Viewer, limite = 6): Promise<Resenha[]
     slug: r.slug,
     title: r.title,
     coverUrl: r.cover_url,
+    upvotes: r.upvotes,
+    votei: r.votei,
   }));
 }
 

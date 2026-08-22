@@ -106,7 +106,8 @@ Registrada em [ai/DECISIONS.md](../ai/DECISIONS.md). Referências de **espírito
 
 ### O accent: a lâmina
 
-**#7DD3C0.** Verde-água frio: aço, fio de faca, terminal.
+**#D0B1EC.** Lilás — a mesma claridade e o mesmo croma do accent antigo, só o matiz
+girando (de 178° para 308°, em OKLCH).
 
 > **Esta regra dizia o contrário, e foi trocada de propósito.**
 >
@@ -114,12 +115,23 @@ Registrada em [ai/DECISIONS.md](../ai/DECISIONS.md). Referências de **espírito
 > frase foi apagada, e não deixada de pé mentindo — uma frase que sobrevive à decisão
 > que ela descrevia é uma mentira educada, e ela mina tudo o que o arquivo diz depois.
 
+> **E esta dizia #7DD3C0, verde-água — e também foi trocada de propósito.**
+>
+> "as cores do nosso site podem ser as mesmas cores do catppuccino puxando uns botões
+> meio pro lilaz, salmão etc, parecido com essa IDE" — o dono. O verde-água durou uma
+> fase do produto; o lilás bate com a direção que o fundo escuro já tinha tomado (o
+> canvas escuro é um cinza-roxinho, não mais um carvão neutro — ver a seção do modo
+> escuro, abaixo). A troca empurrou de roda uma insígnia (Construtor, que era violeta
+> e ficava a 8° do novo accent) e um degrau da escada de honra (Lâmina, que era roxo e
+> ficava a 36°) — as duas moravam na mesma faixa do círculo que o accent foi ocupar.
+> Ver `ai/DECISIONS.md`.
+
 O accent sai do **nome do produto**, e não de uma tendência. Gume é fio de faca; um
 accent que se explica em quatro palavras é um accent que sobrevive a uma reunião.
 
 E ele foi escolhido, entre três, justamente por ser **o que menos briga com a capa** —
 que é o que a regra antiga estava protegendo o tempo todo. **Nenhum livro tem capa
-verde-água.** O olho aprende, em um dia, que essa cor quer dizer "o app está falando com
+lilás.** O olho aprende, em um dia, que essa cor quer dizer "o app está falando com
 você", e todo o resto da tela continua sendo do livro.
 
 **Onde ele vive:** link, estado ligado, foco, a moldura de apoiador. **E em mais nada.**
@@ -141,7 +153,7 @@ São quatro tokens, e cada um faz um trabalho:
 
 | token | o que é | onde |
 |---|---|---|
-| `--color-accent` | a **marca** (verde-água) | link, selecionado, foco, moldura |
+| `--color-accent` | a **marca** (lilás) | link, selecionado, foco, moldura |
 | `--color-colaborar` | **quem faz** (rosa) | contribuição, "quem faz", o que se conserta |
 | `--color-perigo` | a **semântica** | deu errado, ou não tem volta |
 | `--color-on-accent` | o que se escreve **em cima** do accent | o accent é claro; branco nele não se lê |
@@ -481,7 +493,7 @@ Números são sempre `font-variant-numeric: tabular-nums`. Sentence case em tudo
 
 O canvas claro é neutro quente. A tinta é a arte de capa. Essa é a paleta.
 
-Um acento, usado para no máximo um elemento por tela (uma nota, uma ação primária). Ele é o **verde-água da lâmina** (`--color-accent: #7dd3c0`) — a cor do fio, não um azul de SaaS. Ver "O accent: a lâmina", acima, para por que ele venceu o vermelhão e o azul de carimbo que já foram candidatos.
+Um acento, usado para no máximo um elemento por tela (uma nota, uma ação primária). Ele é o **lilás da lâmina** (`--color-accent: #d0b1ec`) — a cor do fio, não um azul de SaaS. Ver "O accent: a lâmina", acima, para por que ele venceu o vermelhão e o azul de carimbo que já foram candidatos, e por que o verde-água que veio depois deu lugar a este.
 
 O modo escuro não é invertido, é *reduzido*: carvão, não void. Foi `#060606` (preto quase absoluto, neutro quente) até o dono pedir, de olho no oku.club e no catppuccin, um cinza-roxinho — `#17151d` de canvas, subindo em camadas até o cartão-dentro-de-cartão. Ver `ai/DECISIONS.md`: a regra de "nunca frio" que morava aqui foi revista, não apagada. Vidro no modo escuro cai para ~48% de opacidade e a borda especular cai para ~14% de branco.
 

@@ -20,7 +20,9 @@ export async function marcar(
   const actor = await getActor();
   await marcarPosse(actor, workId, editionId, posse);
   revalidatePath(`/livro/${slug}`);
-  revalidatePath("/colecao");
+  // /colecao virou um redirect pra /estante?posse= — quem tem dado pra
+  // revalidar de verdade é a estante. Ver components/sidebar.tsx.
+  revalidatePath("/estante");
 }
 
 /**
@@ -38,5 +40,7 @@ export async function guardarProcedencia(
   const actor = await getActor();
   await guardarHistoria(actor, workId, editionId, nota);
   revalidatePath(`/livro/${slug}`);
-  revalidatePath("/colecao");
+  // /colecao virou um redirect pra /estante?posse= — quem tem dado pra
+  // revalidar de verdade é a estante. Ver components/sidebar.tsx.
+  revalidatePath("/estante");
 }

@@ -11,7 +11,7 @@ import { Logo } from "@/components/logo";
  */
 export function PublicHeader() {
   return (
-    <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 sm:px-10">
+    <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 sm:px-10">
       <Link href="/">
         <Logo />
       </Link>

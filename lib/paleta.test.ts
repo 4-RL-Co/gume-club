@@ -123,13 +123,16 @@ describe("a paleta da moldura", () => {
   /**
    * ═══ E O APOIO NÃO PODE SER A COR DA MARCA ═══
    *
-   * Era. O accent do Gume é #7DD3C0 (167°) e a moldura era exatamente ele.
+   * Era. O accent do Gume era #7DD3C0 (167°), e virou #D0B1EC (272° nesta régua
+   * de matiz — o mesmo tom mede 308° em OKLCH, a régua que lib/badges.test.ts
+   * usa; as duas réguas não convertem 1:1, e cada arquivo mede na sua própria).
+   * A moldura de apoiador nunca pode ser a cor da marca, seja qual for ela.
    *
    * A cor da marca quer dizer "o app está falando com você". Um anel dessa cor numa cara
    * dizia isso sobre uma PESSOA, o que não quer dizer nada.
    */
   it("o apoiador não é a cor da marca", () => {
-    const ACCENT = 167; // #7DD3C0, o verde-água do app
+    const ACCENT = 272; // #D0B1EC, o lilás do app, nesta régua de matiz
     expect(distancia(matiz(APOIADOR.de), ACCENT)).toBeGreaterThanOrEqual(60);
   });
 

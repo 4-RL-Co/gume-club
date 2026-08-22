@@ -120,9 +120,6 @@ export type Stats = {
   /** Abandonados. Sem julgamento, sem "taxa de conclusão": é um fato sobre o seu ano. */
   abandoned: number;
 
-  /** A PACIÊNCIA: quanto tempo um livro espera na estante antes de ser lido. */
-  patienceMonths: number | null;
-
   /** Só os anos que têm alguma leitura terminada. Ano vazio não é oferecido. */
   years: number[];
 };
@@ -430,30 +427,6 @@ export async function getStats(
       and r.abandoned_on is not null
       ${year === null ? sql`` : sql`and extract(year from r.abandoned_on) = ${year}`}`);
 
-  /**
-   * A PACIÊNCIA. Quanto tempo um livro fica na estante antes de ser lido.
-   * Não é cobrança: é autoconhecimento. Ninguém mais mede isso porque ninguém mais
-   * guarda quando o livro entrou E quando ele foi terminado.
-   *
-   * ═══ QUEM MARCOU SÓ O ANO NÃO ENTRA NESTA CONTA ═══
-   *
-   * Esta é a ÚNICA estatística que faz conta com DIA, e é por isso que a precisão
-   * existe. Quem marcou "li em 2019" tem 1º de janeiro no banco, e esse dia é um lugar
-   * de pousar, não uma afirmação: usá-lo aqui inventaria uma espera de meses que
-   * ninguém viveu. Então a leitura marcada só com o ano fica de fora, e a conta
-   * continua dizendo a verdade sobre as que sobraram. Ver a migration 0051.
-   */
-  const [patience] = await db.execute<{ days: number | null }>(sql`
-    select avg(r.finished_on - library_entries.added_at::date)::float as days
-    from library_entries
-    join readings r on r.entry_id = library_entries.id
-    where library_entries.user_id = ${ownerId}::uuid
-      and ${visible}
-      and r.finished_on is not null
-      and r.ended_precision = 'day'
-      and r.finished_on >= library_entries.added_at::date
-      ${year === null ? sql`` : sql`and extract(year from r.finished_on) = ${year}`}`);
-
   const years = await db.execute<{ year: number }>(sql`
     select distinct extract(year from r.finished_on)::int as year
     from library_entries
@@ -497,7 +470,6 @@ export async function getStats(
     newest: ponta("nova"),
     reread: reread.map((r) => ({ slug: r.slug, title: r.title, author: r.author, times: r.times })),
     abandoned: abandoned?.n ?? 0,
-    patienceMonths: patience?.days ? patience.days / 30.44 : null,
     years: years.map((r) => r.year),
   };
 }
