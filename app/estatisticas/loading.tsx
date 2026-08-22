@@ -1,7 +1,7 @@
 /** O formato das estatísticas, antes dos números. Esqueleto, nunca ampulheta. */
 export default function Loading() {
   return (
-    <main className="mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+    <main className="mx-auto max-w-7xl px-6 pb-32 sm:px-10">
       <div className="mt-20 h-14 w-72 animate-pulse rounded-[var(--radius-2)] bg-[color-mix(in_srgb,var(--color-ink)_5%,transparent)] sm:mt-28" />
       <div className="mt-7 h-3 w-48 animate-pulse rounded-full bg-[color-mix(in_srgb,var(--color-ink)_4%,transparent)]" />
 

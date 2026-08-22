@@ -110,9 +110,11 @@ export default function Entrar() {
         );
         return;
       }
-      // A new reader lands at the door, never on an empty shelf: /bem-vindo shows
-      // who brought them, or hand-picked shelves if they came alone.
-      router.push(mode === "criar" ? "/bem-vindo" : "/");
+      // "tire a pagina de bem-vindo do gume (...) pode já redirecionar pra pasta
+      // inicial mesmo" — o dono. Quem cria conta ou entra vai direto pra /,
+      // igual todo mundo. A própria / já cobre a estante vazia (components de
+      // estado vazio de app/page.tsx); "quem te convidou" continua em /perfil.
+      router.push("/");
       router.refresh();
     });
 
@@ -199,7 +201,7 @@ export default function Entrar() {
             // Google. Some no `pending`: na prática resolve bem antes de a
             // pessoa notar "Um momento" na tela.
             await conviteEmVoo.current;
-            const res = await signIn.social({ provider: "google", callbackURL: "/bem-vindo" });
+            const res = await signIn.social({ provider: "google", callbackURL: "/" });
             // Se a resposta voltou com erro, a viagem nem começou: o navegador
             // continua aqui, e o botão precisa voltar a funcionar.
             if (res?.error) setGoogle("falhou");

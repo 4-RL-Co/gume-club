@@ -142,7 +142,25 @@ export const DEGRAU: Tinta[] = [
   { de: "#4ea9bc", brilho: "#b6d2d8" }, //  5  platina   · kenshi     · 190°
   { de: "#2e9e5d", brilho: "#85cca2" }, //  6  esmeralda · sensei     · 145°
   { de: "#5050d7", brilho: "#c2c2ea" }, //  7  diamante  · shogun     · 240°
-  { de: "#9d5ed4", brilho: "#dccceb" }, //  8  lâmina    · oni        · 272°
+  /**
+   * ═══ A LÂMINA MUDOU DE MATIZ QUANDO O ACCENT VIROU LILÁS ═══
+   *
+   * Era #9D5ED4 (272°, roxo) — e o accent do Gume virou lilás, matiz 308°
+   * (era verde-água, 167°). A só 36° de distância, os dois liam quase como
+   * a mesma cor num anel fino, contra um limiar de 30° que já é apertado
+   * para essa régua. "as cores do nosso site podem ser as mesmas cores do
+   * catppuccino puxando uns botões meio pro lilaz" — o dono, pedindo o
+   * accent lilás; perguntado se podia mexer nos degraus pra abrir espaço,
+   * a resposta foi sim.
+   *
+   * A Lâmina foi para 96°, verde-limão: o único vão com folga de sobra
+   * (48° do ouro, 49° do esmeralda) — a faixa roxo-rosa inteira (240° a
+   * 336°) já estava ocupada por diamante, o accent novo e a navalha, sem
+   * espaço pra encaixar mais um degrau a 30° de todos. A Navalha (9º
+   * degrau, logo abaixo) não precisou se mexer: a 304°, ela fica a 33° do
+   * accent novo — folgada.
+   */
+  { de: "#8dd45e", brilho: "#d8ebcc" }, //  8  lâmina    · oni        · 96°
   { de: "#d345ca", brilho: "#e6b7e3" }, //  9  navalha   · tengu      · 304°
   /**
    * O TOPO, E O ÚNICO COM AURA.

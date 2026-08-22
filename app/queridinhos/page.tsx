@@ -34,7 +34,7 @@ export default async function Queridinhos() {
   const livros = await getQueridinhos(100);
 
   return (
-    <main className="relative mx-auto max-w-6xl px-6 pb-32 sm:px-10">
+    <main className="relative mx-auto max-w-7xl px-6 pb-32 sm:px-10">
       {/* A aura do 1º colocado banha o topo: a lista editorial abre com a cara do
           livro que a comunidade mais ama hoje. Ver .aura-capa em globals.css. */}
       {livros[0]?.coverUrl && origemAceita(livros[0].coverUrl) && (
@@ -113,7 +113,12 @@ export default async function Queridinhos() {
                   href={`/livro/${livro.slug}`}
                   className="card group flex h-full flex-col items-center p-6 text-center sm:p-7"
                 >
-                  <span className="cover-lift block w-[58%]">
+                  {/* "quando eu coloco o mouse nao tem nenhuma animação" — o dono. O
+                      .card já ergue 2px no hover (globals.css), mas a capa em si ficava
+                      parada — diferente do resto do app (favoritos-vitrine.tsx,
+                      book-card.tsx), onde a capa ganha um lift PRÓPRIO, por cima do
+                      card. Mesmo tratamento aqui. */}
+                  <span className="cover-lift block w-[58%] transition-transform duration-200 group-hover:-translate-y-1">
                     <Cover title={livro.title} author={livro.author} src={livro.coverUrl} />
                   </span>
 
