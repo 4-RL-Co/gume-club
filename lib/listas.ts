@@ -187,17 +187,36 @@ export async function getListasParaExplorar(viewer: Viewer, limite = 6): Promise
 }
 
 /**
- * TODAS as listas públicas, para a galeria de /listas. Cronológico (a mais nova
- * primeiro), sem algoritmo: é o mesmo costume do feed. As editoriais da casa não
- * entram por aqui: elas são fixadas no topo da tela, e o destaque delas é editorial,
- * não conquistado por métrica.
+ * ════════════════════════════════════════════════════════════════════
+ *  TODAS as listas públicas, para a galeria de /listas e a aba de listas do
+ *  Explorar. SORTEADAS, e não cronológicas.
+ *
+ *  ═══ ERA CRONOLÓGICA, E UMA PESSOA SÓ TOMAVA A TELA ═══
+ *
+ *  "em listas montadas à mão, as listas tem q ser aleatorias pra não aparecer
+ *  o de só uma pessoa caso seja cronologico e ela criou varias" — o dono.
+ *
+ *  "A mais nova primeiro" parecia neutro, e não era: quem monta cinco listas
+ *  numa sentada (o jeito natural de organizar uma estante inteira de uma vez)
+ *  ocupa as cinco primeiras posições da galeria inteira — e com `limite` de
+ *  100 sem paginação visível, quem chegou antes pode nem aparecer mais. Não é
+ *  mérito, é só ordem de chegada, e o efeito é o oposto do que a tela promete
+ *  ("as listas de quem lê por aqui", no plural, de gente diferente).
+ *
+ *  Agora é `order by random()`, o mesmo mecanismo do sorteio de
+ *  getListasParaExplorar() (acima) e das três estantes da home deslogada
+ *  (app/page.tsx): reordena a cada visita, sem inventar um critério de
+ *  mérito, dando vez a todo mundo. As editoriais da casa continuam de fora
+ *  daqui: elas são fixadas no topo da tela, e o destaque delas é editorial,
+ *  não sorteio.
+ * ════════════════════════════════════════════════════════════════════
  */
 export async function getTodasAsListas(viewer: Viewer, limite = 100): Promise<ListaCard[]> {
   const rows = await db.execute<CardRow>(sql`
     ${cardSelect(viewer)}
        and ${podeSerDescoberto}
        and exists (select 1 from collection_items ci where ci.collection_id = collections.id)
-     order by collections.created_at desc
+     order by random()
      limit ${limite}`);
   return rows.map(paraCard);
 }

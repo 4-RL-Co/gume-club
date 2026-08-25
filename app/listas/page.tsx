@@ -19,12 +19,15 @@ export const dynamic = "force-dynamic";
  *  próprias mãos — e "lista" é o nome que sobra sem colidir. Ver ai/DECISIONS.md.
  *
  *  O explorar mostra um sorteio (seis, rotacionando); esta tela é o acervo
- *  inteiro, para quem quer garimpar. A ordem é cronológica, a mais nova
- *  primeiro, sem algoritmo: o mesmo costume do feed.
+ *  inteiro, para quem quer garimpar — e também é sorteada (ver a nota em
+ *  lib/listas.ts, getTodasAsListas): era cronológica, e quem montasse várias
+ *  listas numa sentada tomava a galeria inteira sozinho. "as listas de quem
+ *  lê por aqui" promete gente diferente, e ordem de chegada não entregava
+ *  isso.
  *
  *  A CURADORIA DA CASA fica FIXA no topo, fora da ordem: o destaque dela é
- *  editorial, decidido pela casa, e não conquistado por métrica. É o mesmo
- *  gesto do Letterboxd com as listas oficiais.
+ *  editorial, decidido pela casa, e não conquistado por métrica nem sorteio.
+ *  É o mesmo gesto do Letterboxd com as listas oficiais.
  * ════════════════════════════════════════════════════════════════════
  */
 export default async function Listas() {
@@ -33,7 +36,7 @@ export default async function Listas() {
 
   return (
     <main className="mx-auto max-w-7xl px-6 pb-32 sm:px-10">
-      <ScreenHeader title="Listas" meta={["a mais nova primeiro", "sem algoritmo"]}>
+      <ScreenHeader title="Listas" meta={["sorteadas", "sem algoritmo"]}>
         {/* Segunda porta pra criar uma lista — a primeira (components/my-shelves.tsx)
             só existe na coluna de vidro do desktop. Ver components/criar-lista.tsx. */}
         {viewer && <CriarLista />}

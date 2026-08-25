@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { users, works, collections, collectionItems } from "@/lib/db/schema";
 import {
   getListasDe, getListasGuardadas, guardarLista, esquecerLista, jaGuardei,
-  moverNaLista, numerarLista, descreverLista, getListasParaExplorar,
+  moverNaLista, numerarLista, descreverLista, getListasParaExplorar, getTodasAsListas,
   porNaLista, tirarDaLista, quemGuardou,
 } from "@/lib/listas";
 
@@ -277,6 +277,35 @@ describe("a linha entre contar curadoria e contar leitura", () => {
         "RANQUEAR gente por popularidade é a corrida que o produto recusa. O sorteio " +
         "existe para dar vez a todo mundo.",
     ).toBe(false);
+  });
+
+  /**
+   * "em listas montadas à mão, as listas tem q ser aleatorias pra não aparecer o de
+   * só uma pessoa caso seja cronologico e ela criou varias" — o dono. /listas (e a
+   * aba de listas do Explorar) usam a mesma consulta; era `order by created_at desc`,
+   * e quem montasse várias listas numa sentada tomava o topo da galeria inteira.
+   */
+  it("/listas não ordena por data de criação: quem monta várias numa sentada não toma a galeria", () => {
+    const src = readFileSync("lib/listas.ts", "utf8");
+    const bloco = src.slice(src.indexOf("export async function getTodasAsListas"));
+    const consulta = bloco.slice(0, bloco.indexOf("\n}"));
+
+    expect(
+      /order by[^`]*created_at/i.test(consulta),
+      "getTodasAsListas voltou a ordenar por data de criação. Quem monta várias " +
+        "listas numa sentada tomaria o topo da galeria inteira de novo — o sorteio " +
+        "existe para dar vez a gente diferente.",
+    ).toBe(false);
+    expect(/order by random\(\)/i.test(consulta), "getTodasAsListas parou de sortear.").toBe(true);
+  });
+
+  it("getTodasAsListas devolve o formato de sempre", async () => {
+    const listas = await getTodasAsListas(null, 6);
+    for (const l of listas) {
+      expect(Object.keys(l).sort()).toEqual(
+        ["capas", "description", "dono", "guardadas", "id", "livros", "name", "ranked", "slug"],
+      );
+    }
   });
 });
 

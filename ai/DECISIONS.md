@@ -5221,3 +5221,28 @@ régua de `edicaoDoLeitor()`/`edicaoPreferida()` em SQL cru (a versão
 do query builder não dava para importar direto: ela é presa a nomes
 de tabela sem apelido, e `getFavoritos()` já apelida todas as suas).
 Regressão coberta em `lib/favoritos.sql.test.ts`.
+
+## /listas sorteia, e não ordena mais por data
+
+"FILA: em listas montadas à mão, as listas tem q ser aleatorias pra
+não aparecer o de só uma pessoa caso seja cronologico e ela criou
+varias" — o dono.
+
+`getTodasAsListas()` (`lib/listas.ts`), usada por `/listas` e pela
+aba de listas do Explorar, era `order by collections.created_at
+desc` — decisão registrada em ai/DECISIONS.md:2376 quando a tela
+nasceu ("cronológica, a mais nova primeiro, sem algoritmo, o costume
+do feed"). Essa entrada fica como está (é histórico); esta é a nova
+decisão: quem monta várias listas numa sentada — o jeito natural de
+organizar uma estante inteira de uma vez — ocupava sozinho o topo da
+galeria inteira, e com o `limite` de 100 sem paginação visível,
+listas mais antigas de OUTRAS pessoas podiam nem aparecer mais. Não
+era mérito, era ordem de chegada.
+
+Agora é `order by random()`, o mesmo mecanismo que `getListasParaExplorar()`
+(no mesmo arquivo) e a home deslogada já usam para dar vez a todo mundo. A
+curadoria da casa continua fixada no topo, fora do sorteio — destaque
+editorial, não aleatório. `ScreenHeader` de `/listas` trocou "a mais nova
+primeiro" por "sorteadas". Regra travada por um teste estático (mesmo
+molde do que já defendia o Explorar contra ordenar por popularidade) em
+`lib/listas.sql.test.ts`.
