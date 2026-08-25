@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
-import { INSTAGRAM } from "@/lib/onde";
+import { INSTAGRAM, DISCORD } from "@/lib/onde";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -68,7 +68,7 @@ export function Cabecalho({
 }
 
 /**
- * As portas para o resto da casa: a outra tela, e o canal de contato.
+ * As portas para o resto da casa: a outra tela, e os canais de contato.
  *
  * Quem termina de ler uma delas tem uma próxima pergunta: "quem mais faz isso?", "o que
  * eu ganho com isso?", "quem decide o que vem por aí?".
@@ -92,21 +92,27 @@ export function Portas({ aqui }: { aqui: "quem-faz" | "insignias" }) {
       fora: false,
     },
     /**
-     * ═══ A PORTA QUE LEVA PARA FORA ═══
+     * ═══ AS PORTAS QUE LEVAM PARA FORA ═══
      *
      * As telas da casa respondem "quem faz" e "o que se ganha fazendo". Falta a pergunta
      * que vem depois de todas: **"e quem decide o que vem por aí?"**
      *
      * A resposta era "A conversa", um link para o GitHub Discussions — nichado demais
-     * para quem não lê código. O Instagram tomou o lugar: um canal que qualquer leitor já
-     * conhece, do tamanho das outras portas, e nunca filtrado — ele não é uma das telas, e
-     * cabe estar em todas.
+     * para quem não lê código. Dois canais tomaram o lugar, do tamanho das outras portas
+     * e nunca filtrados — nenhum dos dois é uma das telas, e cabe estar em todas.
      */
     {
       key: "instagram",
       href: INSTAGRAM,
       titulo: "Instagram",
       texto: "Onde se opina no que vem por aí, e onde se avisa que algo quebrou.",
+      fora: true,
+    },
+    {
+      key: "discord",
+      href: DISCORD,
+      titulo: "Discord",
+      texto: "Onde a conversa acontece de verdade. O convite não expira.",
       fora: true,
     },
   ].filter((p) => p.key !== aqui);
