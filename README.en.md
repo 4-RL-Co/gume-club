@@ -5,7 +5,7 @@
   <img src="./public/logo/lockup-vertical-preto.png" alt="Gume" width="260">
 </picture>
 
-**The mind never loses its edge.**
+**The reading mind never loses its edge.**
 
 An open reading log, built with the people who read it.
 
@@ -30,7 +30,7 @@ A reading app sells itself on its face, so this is the face. Dark background, a 
 
 *Gume* is the edge of a blade — the part that cuts.
 
-The mind never loses its edge. A blade nobody sharpens doesn't rust overnight: it loses its bite slowly, and it still looks like a blade. You only find out when it fails to cut what it always cut. The mind is the same.
+The reading mind never loses its edge. A blade nobody sharpens doesn't rust overnight: it loses its bite slowly, and it still looks like a blade. You only find out when it fails to cut what it always cut. The mind is the same.
 
 That's why we read. A book is a whetstone, and whoever runs the blade across the stone keeps its edge — not to collect covers, not to hit a target, and least of all to score points.
 

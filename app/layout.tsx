@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   // e as imagens de compartilhamento quebram fora da máquina. Vem do APP_URL.
   metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
   title: "Gume",
-  description: "A mente nunca perde o fio.",
+  description: "A mente leitora nunca perde o fio.",
 };
 
 /**

@@ -23,7 +23,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Gume",
     short_name: "Gume",
-    description: "A mente nunca perde o fio.",
+    description: "A mente leitora nunca perde o fio.",
     start_url: "/",
     display: "standalone",
     // O canvas escuro é a casa: a marca nasceu para ele, e é o tema que o

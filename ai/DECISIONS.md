@@ -5082,3 +5082,19 @@ tinham sido feitas com uma versão própria para telefone (`sm:hidden` /
 Sem dispositivo nem navegador neste ambiente para conferir ao vivo: esta
 é uma auditoria de código, não um teste visual. Vale o dono olhar no
 próprio telefone antes de considerar fechado.
+
+## O slogan ganha uma palavra: "a mente LEITORA nunca perde o fio"
+
+"o slogan do gume agora é 'A mente leitora nunca perde o fio.'" — o dono.
+
+Um "leitora" a mais, no mesmo lugar em todo canto que a frase aparecia:
+a home deslogada, /sobre, a imagem de Open Graph (`alt` e o texto
+desenhado nela), a descrição do manifesto PWA, a `description` de
+`app/layout.tsx` e a de `/sobre`, e os dois READMEs (`README.md`,
+`README.en.md` — lá, "The mind" virou "The reading mind", mantendo a
+mesma metáfora da lâmina que a versão em inglês já usa).
+
+`ai/DECISIONS.md:227` (o motto registrado quando o convite virou
+mecânica central) fica como estava: é um registro histórico do que a
+frase ERA naquele momento, e reescrever o passado é a mesma mentira que
+esse arquivo existe para evitar.

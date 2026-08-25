@@ -141,7 +141,7 @@ async function Manifesto() {
           <Mark size={104} className="mx-auto hidden text-[var(--color-ink-soft)] sm:block" />
 
           <h1 className="voice mx-auto mt-9 max-w-3xl sm:mt-12 text-[40px] leading-[1.06] tracking-[-0.02em] sm:text-[72px]">
-            A mente nunca <em className="italic text-[var(--color-ink-soft)]">perde o fio</em>.
+            A mente leitora nunca <em className="italic text-[var(--color-ink-soft)]">perde o fio</em>.
           </h1>
 
           <p className="mx-auto mt-6 max-w-md text-[16px] leading-relaxed text-[var(--color-ink-soft)] sm:text-[17px]">
