@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getViewer } from "@/lib/viewer";
 import { getBadges, getProgresso, META } from "@/lib/badges";
 import { INSIGNIAS, ORDEM } from "@/lib/badges-view";
@@ -195,14 +194,9 @@ export default async function Insignias() {
       </ul>
 
       <p className="mt-14 max-w-xl text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
-        Quase tudo aqui começa no mesmo lugar:{" "}
-        <Link
-          href="/o-que-falta"
-          className="underline decoration-[var(--color-ink)] underline-offset-4"
-        >
-          o que falta no catálogo
-        </Link>
-        . Um livro arrumado hoje já chega arrumado para a próxima pessoa que pegar ele.
+        Quase tudo aqui começa no mesmo lugar: um livro da sua estante com a ficha
+        incompleta. Um livro arrumado hoje já chega arrumado para a próxima pessoa que
+        pegar ele.
       </p>
       <Portas aqui="insignias" />
     </main>

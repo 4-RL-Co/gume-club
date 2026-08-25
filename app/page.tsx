@@ -9,7 +9,7 @@ import { Cover } from "@/components/cover";
 import { Mark } from "@/components/logo";
 import { Avatar, AvatarLink } from "@/components/avatar";
 import { Resume } from "@/components/resume";
-import { CODIGO, CONVERSA } from "@/lib/onde";
+import { CODIGO, INSTAGRAM } from "@/lib/onde";
 import { getCapasDaParede } from "@/lib/parede";
 
 export const dynamic = "force-dynamic";
@@ -284,10 +284,10 @@ async function Manifesto() {
               Veja quem faz.
             </Link>{" "}
             <a
-              href={CONVERSA}
+              href={INSTAGRAM}
               className="underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
             >
-              A conversa acontece aqui.
+              Siga no Instagram.
             </a>
           </p>
 

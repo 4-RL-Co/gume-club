@@ -3,10 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getViewer } from "@/lib/viewer";
 import { limitarEscrita } from "@/lib/escrita";
-import {
-  corrigirEdicao, reverter, proporCapa, julgarCapa, type Campo,
-} from "@/lib/corrections";
-import { porQueNaoAceita } from "@/lib/imagens";
+import { corrigirEdicao, reverter, type Campo } from "@/lib/corrections";
 
 /** Corrigir um dado desta edição. Qualquer leitor logado, e aplica na hora. */
 export async function corrigir(
@@ -31,41 +28,21 @@ export async function reverterCorrecao(slug: string, revisionId: string): Promis
   revalidatePath(`/livro/${slug}`);
 }
 
-/** Propor uma capa. Entra numa fila: é o único campo com plateia. */
-export async function proporUmaCapa(
-  slug: string,
-  editionId: string,
-  url: string,
-  nota: string,
-): Promise<{ erro: string | null }> {
-  const viewer = await getViewer();
-  if (viewer) await limitarEscrita(viewer.id);
-
-  /**
-   * A recusa VOLTA COMO VALOR, e não como exceção: o Next apaga a mensagem de um erro
-   * lançado dentro de uma ação de servidor quando o app roda em produção, e esta
-   * mensagem é uma instrução — a pessoa precisa dela para acertar na segunda tentativa.
-   *
-   * `proporCapa` confere a origem de novo do outro lado. É ela que fecha a porta; esta
-   * checagem aqui existe para a frase chegar viva até a tela.
-   */
-  const naoAceita = porQueNaoAceita(url);
-  if (naoAceita) return { erro: naoAceita };
-
-  try {
-    await proporCapa(viewer, editionId, url, nota);
-  } catch {
-    return { erro: "Não deu para enviar a sugestão agora. O problema é nosso." };
-  }
-
-  revalidatePath(`/livro/${slug}`);
-  return { erro: null };
-}
-
-/** Aplicar ou recusar uma capa da fila. Só bibliotecário. */
-export async function julgarUmaCapa(propostaId: string, aplicar: boolean): Promise<void> {
-  const viewer = await getViewer();
-  if (viewer) await limitarEscrita(viewer.id);
-  await julgarCapa(viewer, propostaId, aplicar);
-  revalidatePath("/o-que-falta");
-}
+/**
+ * ═══ "PROPOR UMA CAPA" E "JULGAR UMA CAPA" SAÍRAM DAQUI ═══
+ *
+ * Eram a ponte entre a tela e a fila de moderação (lib/corrections.ts: proporCapa,
+ * getFilaDeCapas, julgarCapa) — e já estavam órfãs antes desta limpeza: a capa virou um
+ * campo comum do formulário de correção (components/correction.tsx), aplicado na hora,
+ * sem fila. `proporUmaCapa` não tinha uma única tela chamando ela.
+ *
+ * A ÚNICA tela que ainda mostrava a fila para um bibliotecário era /o-que-falta, que
+ * saiu do app inteira ("tire a página inteira, e tudo que ela fazia" — o dono). Sem
+ * fila para julgar, `julgarUmaCapa` também ficou sem chamador.
+ *
+ * O que NÃO saiu: lib/corrections.ts continua com proporCapa/getFilaDeCapas/julgarCapa
+ * de pé, e o teste que os defende também. Isso é de propósito, e está em
+ * ai/DECISIONS.md ("sem fila de moderação agora"): a fila é infraestrutura engatilhada
+ * para o dia em que aparecer gente demais mexendo na mesma capa — só a PONTE entre ela
+ * e uma tela é que não existe mais, porque a tela que a usava não existe mais.
+ */

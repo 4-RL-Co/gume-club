@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Mark } from "@/components/mark";
-import { CODIGO, CONVERSA } from "@/lib/onde";
+import { CODIGO, INSTAGRAM } from "@/lib/onde";
 
 export const metadata = {
   title: "Sobre · Gume",
@@ -129,19 +129,12 @@ export default function Sobre() {
           mão.
         </p>
 
-        <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
-          <Link
-            href="/o-que-falta"
-            className="rounded-[var(--radius-control)] bg-[var(--color-ink)] px-5 py-2.5 text-[14px] font-medium text-[var(--color-canvas)]"
-          >
-            Ver o que falta
-          </Link>
-
+        <div className="mt-8">
           <Link
             href="/contribuidores"
-            className="text-[14px] text-[var(--color-ink-soft)] underline decoration-[var(--color-rule)] underline-offset-4 transition-colors hover:text-[var(--color-ink)]"
+            className="rounded-[var(--radius-control)] bg-[var(--color-ink)] px-5 py-2.5 text-[14px] font-medium text-[var(--color-canvas)]"
           >
-            quem faz
+            Ver quem faz
           </Link>
         </div>
       </section>
@@ -156,13 +149,12 @@ export default function Sobre() {
           >
             {CODIGO.replace("https://", "")}
           </a>
-          . Se você quiser opinar no que vem depois, ou avisar que alguma coisa quebrou, a
-          conversa acontece{" "}
+          . Se você quiser opinar no que vem depois, ou avisar que alguma coisa quebrou, é no{" "}
           <a
-            href={CONVERSA}
+            href={INSTAGRAM}
             className="underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
           >
-            aqui
+            Instagram
           </a>
           .
         </p>
