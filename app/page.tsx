@@ -9,7 +9,7 @@ import { Cover } from "@/components/cover";
 import { Mark } from "@/components/logo";
 import { Avatar, AvatarLink } from "@/components/avatar";
 import { Resume } from "@/components/resume";
-import { CODIGO, INSTAGRAM } from "@/lib/onde";
+import { CODIGO, INSTAGRAM, DISCORD } from "@/lib/onde";
 import { getCapasDaParede } from "@/lib/parede";
 
 export const dynamic = "force-dynamic";
@@ -288,6 +288,12 @@ async function Manifesto() {
               className="underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
             >
               Siga no Instagram.
+            </a>{" "}
+            <a
+              href={DISCORD}
+              className="underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+            >
+              Entre no Discord.
             </a>
           </p>
 

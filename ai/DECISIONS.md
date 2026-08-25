@@ -5152,3 +5152,31 @@ destino — nada foi apontado para uma página nova só para o link não
 morrer. `docs/NOMES.md` (a proposta de nomes, nunca executada) teve as
 duas entradas sobre `gaps.ts`/`falta-no-app.ts` marcadas como
 resolvidas por outro caminho: o arquivo simplesmente não existe mais.
+
+## O Discord entra, e "comunidade" ganha seção própria na barra
+
+"também criamos um servidor no discord, inclua isso também.
+https://discord.gg/4B3hmWE2Q2 << esse convite não expira" — o dono.
+
+`DISCORD` entrou em `lib/onde.ts` ao lado de `INSTAGRAM`, e os dois
+foram para os mesmos lugares onde o Instagram já estava: a barra
+lateral, a home deslogada, `/sobre` e as portas da casa de quem faz.
+
+No meio do trabalho, o dono viu o resultado e corrigiu: "acho que
+instagram embaixo de construir não funciona muito". Razão dele —
+"construir" é sobre CONTRIBUIR (código, catálogo), e o rosa
+(`--color-colaborar`) é a cor desse convite específico; seguir no
+Instagram ou entrar no Discord é outra coisa, é se CONECTAR. Empilhar
+os dois debaixo do mesmo rótulo confundia as duas perguntas.
+
+Perguntado onde deveriam morar (seção própria vs. fileira de ícones vs.
+fora da barra), a resposta foi seção própria: `components/sidebar.tsx`
+agora tem duas faixas separadas por filete — "construir" (só "Quem
+faz", com o rosa) e, embaixo, "comunidade" (Instagram e Discord, cor
+neutra, como qualquer outro item da barra). O rosa volta a significar
+uma coisa só.
+
+Achado no caminho: o handle do Instagram, sem hífen, colide por
+coincidência com o nome antigo do repositório no GitHub — resolvido
+com uma exceção estreita e documentada em `lib/nome-do-repo.test.ts`
+(só a URL completa é descontada da varredura, nunca o texto solto).

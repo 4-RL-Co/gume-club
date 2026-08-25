@@ -7,7 +7,7 @@ import {
   Home, Library, Users, Search, LogIn, LogOut, Info, UserRound, HeartHandshake,
   ArrowUpRight, ChevronUp, BarChart3, Compass,
 } from "lucide-react";
-import { INSTAGRAM } from "@/lib/onde";
+import { INSTAGRAM, DISCORD } from "@/lib/onde";
 import { IconeRedeSocial } from "@/components/icone-rede-social";
 import { GlassBar } from "@/components/glass-bar";
 import { Logo, Mark } from "@/components/logo";
@@ -327,26 +327,32 @@ export function Sidebar({
               {label}
             </Item>
           ))}
+        </div>
 
-          {/* ═══ O CANAL DE CONTATO, E POR QUE ELE SOBE ATÉ AQUI ═══
+        {/* ═══ COMUNIDADE, E POR QUE ELA NÃO É "CONSTRUIR" ═══
 
-              Era "A conversa", apontando pro GitHub Discussions: nichado demais para quem
-              não lê código. O Instagram tomou o lugar — é onde se opina no que vem por aí,
-              e onde se avisa que algo quebrou, num canal que qualquer leitor já conhece.
+            "acho que instagram embaixo de construir não funciona muito" — o dono. E ele
+            tinha razão: construir é sobre CONTRIBUIR (código, catálogo — a cor rosa é
+            desse convite, e só dele). Seguir no Instagram ou entrar no Discord não é
+            contribuir, é se conectar. Faixa própria, cor neutra como o resto da barra —
+            o rosa continua sendo só de quem constrói.
 
-              É o único item da barra que leva para FORA, e ele diz isso (a setinha, e a
-              aba nova). Um link que muda de site sem avisar é um empurrão, e o Gume não
-              empurra ninguém. */}
-          <Fora
-            href={INSTAGRAM}
-            icon={
-              <span style={{ color: "var(--color-colaborar)" }}>
-                <IconeRedeSocial url={INSTAGRAM} size={18} />
-              </span>
-            }
-          >
-            Instagram
-          </Fora>
+            Eram "A conversa", um item só, apontando pro GitHub Discussions: nichado
+            demais para quem não lê código. Agora são dois canais que qualquer leitor já
+            conhece: Instagram, para acompanhar; Discord, para conversar de verdade — o
+            convite "não expira" (o dono, sobre o link). */}
+        <div className="mt-6 border-t border-[var(--color-rule)] pt-5">
+          <h2 className="mb-2 px-2 text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
+            comunidade
+          </h2>
+          {[
+            { href: INSTAGRAM, label: "Instagram" },
+            { href: DISCORD, label: "Discord" },
+          ].map(({ href, label }) => (
+            <Fora key={href} href={href} icon={<IconeRedeSocial url={href} size={18} />}>
+              {label}
+            </Fora>
+          ))}
         </div>
 
         <div className="mt-auto pt-8">

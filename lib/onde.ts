@@ -6,12 +6,13 @@
  *  endereço que muda em três — e o quarto vira um link morto que ninguém percebe, porque
  *  quem clica num link morto vai embora em vez de reclamar.
  *
- *  ═══ A CONVERSA SAIU, E O INSTAGRAM VIROU O CANAL ═══
+ *  ═══ A CONVERSA SAIU, E DOIS CANAIS TOMARAM O LUGAR ═══
  *
  *  "A parte 'a conversa' direcionando pro github discussions acho nichado demais" — o
  *  dono. Discussions é onde quem já lê o código do Gume conversa; não é onde um leitor
- *  qualquer vai procurar a marca. O Instagram do Gume é o canal de contato agora, e ele
- *  mora aqui pelo mesmo motivo que CODIGO morava: um endereço em lugar só.
+ *  qualquer vai procurar a marca. O Instagram do Gume é o canal de contato, e o Discord
+ *  é onde se conversa de verdade — e os dois moram aqui pelo mesmo motivo que CODIGO
+ *  morava: um endereço em lugar só.
  * ════════════════════════════════════════════════════════════════════
  */
 
@@ -34,3 +35,6 @@ export const CODIGO = `https://github.com/${REPO}`;
 
 /** O canal de contato do Gume: onde se opina no que vem por aí, e onde se avisa que algo quebrou. */
 export const INSTAGRAM = "https://instagram.com/gumeclub";
+
+/** O convite não expira — "esse convite não expira", o dono. Onde a conversa acontece de verdade. */
+export const DISCORD = "https://discord.gg/4B3hmWE2Q2";

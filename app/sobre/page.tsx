@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Mark } from "@/components/mark";
-import { CODIGO, INSTAGRAM } from "@/lib/onde";
+import { CODIGO, INSTAGRAM, DISCORD } from "@/lib/onde";
 
 export const metadata = {
   title: "Sobre · Gume",
@@ -155,6 +155,13 @@ export default function Sobre() {
             className="underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
           >
             Instagram
+          </a>{" "}
+          ou no{" "}
+          <a
+            href={DISCORD}
+            className="underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+          >
+            Discord
           </a>
           .
         </p>
