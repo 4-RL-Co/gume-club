@@ -54,9 +54,19 @@ describe("o nome do repositório é gume-club, com hífen", () => {
     const culpados: string[] = [];
 
     for (const arquivo of varrer(process.cwd())) {
-      // `gumeclub` casa só a forma sem hífen: `gume-club` tem o hífen e `gume.club`
-      // (o domínio) tem o ponto, então nenhum dos dois cai aqui.
-      if (/gumeclub/i.test(readFileSync(arquivo, "utf8"))) culpados.push(arquivo);
+      /**
+       * `gumeclub` casa só a forma sem hífen: `gume-club` tem o hífen e `gume.club`
+       * (o domínio) tem o ponto, então nenhum dos dois cai aqui.
+       *
+       * ═══ E "instagram.com/gumeclub" NÃO É O REPOSITÓRIO ═══
+       *
+       * O Instagram do Gume é @gumeclub (lib/onde.ts, INSTAGRAM) — uma coincidência de
+       * nome com o slug velho do GitHub, e não o slug voltando. `instagram.com/gumeclub`
+       * nunca bate na API do GitHub, então ele sai da varredura antes de procurar; o resto
+       * do texto do arquivo continua sendo varrido normalmente.
+       */
+      const texto = readFileSync(arquivo, "utf8").replace(/instagram\.com\/gumeclub/gi, "");
+      if (/gumeclub/i.test(texto)) culpados.push(arquivo);
     }
 
     expect(

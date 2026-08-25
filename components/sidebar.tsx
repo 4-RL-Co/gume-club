@@ -5,9 +5,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home, Library, Users, Search, LogIn, LogOut, Info, UserRound, HeartHandshake,
-  MessagesSquare, ArrowUpRight, ChevronUp, BarChart3, Compass,
+  ArrowUpRight, ChevronUp, BarChart3, Compass,
 } from "lucide-react";
-import { CONVERSA } from "@/lib/onde";
+import { INSTAGRAM } from "@/lib/onde";
+import { IconeRedeSocial } from "@/components/icone-rede-social";
 import { GlassBar } from "@/components/glass-bar";
 import { Logo, Mark } from "@/components/logo";
 import { MyShelves, type Shelf } from "@/components/my-shelves";
@@ -327,17 +328,24 @@ export function Sidebar({
             </Item>
           ))}
 
-          {/* ═══ A CONVERSA, E POR QUE ELA SUBIU ATÉ AQUI ═══
+          {/* ═══ O CANAL DE CONTATO, E POR QUE ELE SOBE ATÉ AQUI ═══
 
-              É onde se decide o que o Gume vai ser. Ela existia em três telas, e nas três
-              era um link solto no fim de um parágrafo, lá embaixo: estar no app e ser
-              encontrável no app são coisas diferentes.
+              Era "A conversa", apontando pro GitHub Discussions: nichado demais para quem
+              não lê código. O Instagram tomou o lugar — é onde se opina no que vem por aí,
+              e onde se avisa que algo quebrou, num canal que qualquer leitor já conhece.
 
               É o único item da barra que leva para FORA, e ele diz isso (a setinha, e a
               aba nova). Um link que muda de site sem avisar é um empurrão, e o Gume não
               empurra ninguém. */}
-          <Fora href={CONVERSA} icon={<MessagesSquare {...ICON} style={{ color: "var(--color-colaborar)" }} />}>
-            A conversa
+          <Fora
+            href={INSTAGRAM}
+            icon={
+              <span style={{ color: "var(--color-colaborar)" }}>
+                <IconeRedeSocial url={INSTAGRAM} size={18} />
+              </span>
+            }
+          >
+            Instagram
           </Fora>
         </div>
 

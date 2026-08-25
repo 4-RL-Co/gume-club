@@ -1,18 +1,17 @@
 /**
  * ════════════════════════════════════════════════════════════════════
- *  OS DOIS ENDEREÇOS QUE FICAM FORA DO GUME.
+ *  OS ENDEREÇOS QUE FICAM FORA DO GUME.
  *
  *  Estavam copiados à mão em quatro telas. Um endereço copiado em quatro lugares é um
  *  endereço que muda em três — e o quarto vira um link morto que ninguém percebe, porque
  *  quem clica num link morto vai embora em vez de reclamar.
  *
- *  ═══ E A CONVERSA PRECISA SER FÁCIL DE ACHAR ═══
+ *  ═══ A CONVERSA SAIU, E O INSTAGRAM VIROU O CANAL ═══
  *
- *  Ela existia em três telas, e nas três era um link solto no fim de um parágrafo, lá
- *  embaixo. Estar no app e ser encontrável no app são coisas diferentes: o que está no
- *  rodapé de um texto é lido por quem já leu o texto todo, que é quase ninguém.
- *
- *  É onde se decide o que o Gume vai ser. Isso não pode morar num rodapé.
+ *  "A parte 'a conversa' direcionando pro github discussions acho nichado demais" — o
+ *  dono. Discussions é onde quem já lê o código do Gume conversa; não é onde um leitor
+ *  qualquer vai procurar a marca. O Instagram do Gume é o canal de contato agora, e ele
+ *  mora aqui pelo mesmo motivo que CODIGO morava: um endereço em lugar só.
  * ════════════════════════════════════════════════════════════════════
  */
 
@@ -33,5 +32,5 @@ export const REPO = "olegas4real/gume-club";
 /** Onde o código mora. Só a página Sobre pode falar disso em voz alta. */
 export const CODIGO = `https://github.com/${REPO}`;
 
-/** Onde se conversa sobre o que vem por aí, e onde se avisa que algo quebrou. */
-export const CONVERSA = `${CODIGO}/discussions`;
+/** O canal de contato do Gume: onde se opina no que vem por aí, e onde se avisa que algo quebrou. */
+export const INSTAGRAM = "https://instagram.com/gumeclub";

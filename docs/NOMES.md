@@ -13,7 +13,6 @@ contribuidor vê antes de ler uma linha de lógica. Alguns exemplos reais, hoje:
 | Português | Inglês | E são a mesma camada |
 |---|---|---|
 | `lib/exportar.ts`, `lib/honras.ts`, `lib/moderacao.ts`, `lib/nomes.ts` | `lib/shelf.ts`, `lib/viewer.ts`, `lib/social.ts`, `lib/stats.ts` | sim |
-| `lib/falta-no-app.ts` (lista de features que faltam) | `lib/gaps.ts` (a consulta das lacunas do catálogo) | dois conceitos, e o de domínio está em EN |
 | `components/gaveta.tsx`, `moldura.tsx`, `prosa.tsx` | `components/glass-bar.tsx`, `dense-list.tsx`, `live-search.tsx` | sim |
 
 Não é que uma língua esteja errada. É que **não há uma regra**, e sem regra cada arquivo novo
@@ -83,7 +82,10 @@ inventou, é português. Se é engenharia genérica que qualquer app teria, é i
 Para decidir com o tamanho real na mão. Estes são os arquivos que hoje estão do lado errado da
 fronteira:
 
-- `lib/gaps.ts` → `lacunas.ts` (ou outro nome PT). **NÃO fundir com `falta-no-app.ts`:** investiguei, e são conceitos diferentes: `gaps.ts` é a consulta das lacunas do CATÁLOGO (dado de livro faltando), `falta-no-app.ts` é a lista curada de features que faltam no APP. Coincidem só na palavra "falta".
+- ~~a consulta das lacunas do catálogo → `lacunas.ts`~~ **ficou sem objeto**: o arquivo em
+  questão e o da lista de features que faltam no app saíram do repositório junto com a
+  página `/o-que-falta`, que era a única tela dos dois ("tire a página inteira, e tudo
+  que ela fazia" — o dono).
 - ~~`lib/veredito.ts` → `veredito.ts`, `components/veredito.tsx` → `veredito.tsx`~~ **feito** (a
   nota é domínio, e a tela já diz "veredito"). Foi a primeira violação corrigida.
 - ~~`colecao_id` (obra) e `collection_id` (item de estante)~~ **resolvido por outro caminho**: a

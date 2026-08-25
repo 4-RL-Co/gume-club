@@ -1,26 +1,27 @@
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
-import { CONVERSA } from "@/lib/onde";
+import { INSTAGRAM } from "@/lib/onde";
 
 /**
  * ════════════════════════════════════════════════════════════════════
- *  A CASA DE QUEM FAZ. As três telas de contribuição, com a mesma cara.
+ *  A CASA DE QUEM FAZ. As telas de contribuição, com a mesma cara.
  *
- *  "Quem faz", "O que falta" e "As insígnias" **têm que ser as telas mais bonitas do
- *  app**, porque são elas que recebem quem contribui.
+ *  "Quem faz" e "As insígnias" **têm que ser as telas mais bonitas do app**, porque são
+ *  elas que recebem quem contribui.
  *
- *  ═══ E ELAS ERAM TRÊS TELAS ESTRANHAS UMA À OUTRA ═══
+ *  ═══ ELE JÁ FOI TRÊS TELAS, E "O QUE FALTA" SAIU ═══
  *
- *  Cada uma com o seu cabeçalho, a sua largura, o seu ritmo. Quem chegava numa não
- *  sabia que as outras duas eram do mesmo assunto — e o assunto é o coração do projeto.
+ *  Era "Quem faz", "O que falta" e "As insígnias". "O que falta" mostrava os livros com
+ *  ficha incompleta da sua própria estante e a fila de capas do bibliotecário — e "tire
+ *  a página inteira" foi o pedido: a página inteira saiu, e nada dela foi realocado.
  *
- *  Agora as três compartilham:
+ *  As telas que sobraram compartilham:
  *
  *    · o EIXO ROSA, que é a cor de colaborar (--color-colaborar) e não aparece em
  *      nenhum outro canto do app. Ele é o que diz "você está na casa de quem faz".
  *    · o mesmo cabeçalho, o mesmo respiro, a mesma largura de coluna.
  *    · e as PORTAS uma para a outra, no rodapé. Quem termina de ler uma delas tem uma
- *      próxima pergunta, e ela é sempre uma das outras duas.
+ *      próxima pergunta, e ela é sempre a outra.
  *
  *  ═══ O ROSA É UM FILETE, E NÃO UM FUNDO ═══
  *
@@ -67,22 +68,15 @@ export function Cabecalho({
 }
 
 /**
- * As portas para as outras duas telas da casa.
+ * As portas para o resto da casa: a outra tela, e o canal de contato.
  *
- * Quem termina de ler uma delas tem uma próxima pergunta, e ela é sempre uma das outras
- * duas: "quem faz isso?", "o que eu posso fazer?", "o que eu ganho com isso?".
+ * Quem termina de ler uma delas tem uma próxima pergunta: "quem mais faz isso?", "o que
+ * eu ganho com isso?", "quem decide o que vem por aí?".
  *
  * Sem elas, cada tela era um beco: a pessoa lia, concordava, e ia embora.
  */
-export function Portas({ aqui }: { aqui: "quem-faz" | "o-que-falta" | "insignias" }) {
+export function Portas({ aqui }: { aqui: "quem-faz" | "insignias" }) {
   const TODAS = [
-    {
-      key: "o-que-falta",
-      href: "/o-que-falta",
-      titulo: "O que falta",
-      texto: "Os livros sem capa, sem autor, sem ano. É por onde se começa.",
-      fora: false,
-    },
     {
       key: "quem-faz",
       href: "/contribuidores",
@@ -98,21 +92,21 @@ export function Portas({ aqui }: { aqui: "quem-faz" | "o-que-falta" | "insignias
       fora: false,
     },
     /**
-     * ═══ A QUARTA PORTA, E ELA LEVA PARA FORA ═══
+     * ═══ A PORTA QUE LEVA PARA FORA ═══
      *
-     * As três telas da casa respondem "quem faz", "o que dá para fazer" e "o que se ganha
-     * fazendo". Falta a quarta pergunta, que é a que vem depois de todas: **"e quem decide
-     * o que vem por aí?"**
+     * As telas da casa respondem "quem faz" e "o que se ganha fazendo". Falta a pergunta
+     * que vem depois de todas: **"e quem decide o que vem por aí?"**
      *
-     * A resposta existia, e era um link solto no rodapé de um parágrafo. Agora ela é uma
-     * porta, do tamanho das outras, e nunca é filtrada: ela não é uma das três telas, e
+     * A resposta era "A conversa", um link para o GitHub Discussions — nichado demais
+     * para quem não lê código. O Instagram tomou o lugar: um canal que qualquer leitor já
+     * conhece, do tamanho das outras portas, e nunca filtrado — ele não é uma das telas, e
      * cabe estar em todas.
      */
     {
-      key: "conversa",
-      href: CONVERSA,
-      titulo: "A conversa",
-      texto: "Onde se decide o que vem por aí, em voz alta. Dá para chegar e discordar.",
+      key: "instagram",
+      href: INSTAGRAM,
+      titulo: "Instagram",
+      texto: "Onde se opina no que vem por aí, e onde se avisa que algo quebrou.",
       fora: true,
     },
   ].filter((p) => p.key !== aqui);

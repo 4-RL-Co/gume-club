@@ -196,7 +196,6 @@ const PROSA_FORA_DAS_TELAS = [
   // O resumo da gaveta de "quando você leu" é texto que o leitor lê, e mora aqui
   // justamente para esta varredura alcançá-lo.
   "lib/leituras-view.ts",
-  "lib/falta-no-app.ts",
   "lib/shelf-view.ts",
   "lib/corrections-view.ts",
   "lib/veredito.ts",

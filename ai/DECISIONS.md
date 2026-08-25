@@ -5098,3 +5098,57 @@ mesma metáfora da lâmina que a versão em inglês já usa).
 mecânica central) fica como estava: é um registro histórico do que a
 frase ERA naquele momento, e reescrever o passado é a mesma mentira que
 esse arquivo existe para evitar.
+
+## A conversa sai do GitHub, o Instagram vira o canal de contato
+
+"agora temos instagram, coloque no site: http://instagram.com/gumeclub.
+A parte 'a conversa' direcionando pro github discussions acho nichado
+demais, pode tirar isso e deixa o insta como canal de contato" — o dono.
+
+`CONVERSA` (lib/onde.ts, apontando para o GitHub Discussions) virou
+`INSTAGRAM` (`https://instagram.com/gumeclub`), e trocou de lugar nos
+mesmos cinco pontos onde a conversa aparecia: a barra lateral (o item
+que leva para fora, com o ícone da marca via `IconeRedeSocial`), a home
+deslogada ("Siga no Instagram."), `/sobre` (o parágrafo final) e as
+portas da casa de quem faz (`components/casa-de-quem-faz.tsx`).
+
+O handle do Instagram, sem hífen, colide por acaso com o nome ANTIGO do
+repositório no GitHub — o que `lib/nome-do-repo.test.ts`
+existe para proibir. Não é o nome velho voltando: é um teste ganhando
+uma exceção estreita e documentada (só a URL exata
+`instagram.com/gumeclub` é descontada antes de procurar), e a prosa em
+volta do link evita escrever o handle solto para não reabrir a mesma
+confusão.
+
+## "O que falta" sai do app inteira
+
+"também tire a página O que falta." — o dono. Perguntado se a fila de
+capas do bibliotecário (a única coisa da página que não é só um link)
+deveria mudar de casa antes de a página sumir, a resposta foi "tira a
+página inteira, e tudo que ela fazia" — nada foi realocado.
+
+Saíram: a rota (`app/o-que-falta/page.tsx`), a grade dos livros da
+própria estante com ficha incompleta (`lib/gaps.ts`), a lista do que
+falta no app (`lib/falta-no-app.ts`, e a entrada dela em
+`lib/voice.test.ts`), e a fila de aprovação de capas
+(`components/cover-queue.tsx`). Junto foi a ponte entre tela e fila —
+`proporUmaCapa` e `julgarUmaCapa`, em
+`app/livro/[slug]/correction-actions.ts` — e ela já estava sem chamador
+antes desta limpeza: a capa virou um campo comum do formulário de
+correção (`components/correction.tsx`), aplicado na hora, sem fila,
+numa mudança anterior a esta.
+
+O que NÃO saiu: `lib/corrections.ts` continua com `proporCapa`,
+`getFilaDeCapas` e `julgarCapa` de pé, com o teste que os defende
+(`lib/corrections.sql.test.ts`). Isso é a mesma decisão de antes
+("sem fila de moderação agora", citada em `components/correction.tsx`):
+a fila é infraestrutura engatilhada para o dia em que aparecer gente
+demais mexendo na mesma capa — só a tela que a expunha é que não existe
+mais, porque era a única.
+
+Links que apontavam para `/o-que-falta` (`/insignias`, `/sobre`,
+`components/casa-de-quem-faz.tsx`) foram removidos ou reescritos sem
+destino — nada foi apontado para uma página nova só para o link não
+morrer. `docs/NOMES.md` (a proposta de nomes, nunca executada) teve as
+duas entradas sobre `gaps.ts`/`falta-no-app.ts` marcadas como
+resolvidas por outro caminho: o arquivo simplesmente não existe mais.
