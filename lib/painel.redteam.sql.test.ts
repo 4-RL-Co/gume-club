@@ -129,7 +129,7 @@ describe("as metas sobem quando são batidas", () => {
     expect(p.metas.contribuidores.batidas).toBeGreaterThanOrEqual(0);
     // O primeiro degrau de cada escada é o que o dono pediu.
     if (p.metas.usuarios.atual < 100) expect(p.metas.usuarios.alvo).toBe(100);
-    if (p.metas.contribuidores.atual < 5) expect(p.metas.contribuidores.alvo).toBe(5);
+    if (p.metas.contribuidores.atual < 10) expect(p.metas.contribuidores.alvo).toBe(10);
   });
 });
 

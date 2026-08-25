@@ -5180,3 +5180,44 @@ Achado no caminho: o handle do Instagram, sem hífen, colide por
 coincidência com o nome antigo do repositório no GitHub — resolvido
 com uma exceção estreita e documentada em `lib/nome-do-repo.test.ts`
 (só a URL completa é descontada da varredura, nunca o texto solto).
+
+## Contas de teste saem da contagem do painel, e a meta de conserto sobe para 10
+
+"remova esses usuarios da contagem do painel:
+gabriel.olegas@smt.social, gabriel.oligar@gmail.com e
+laboratoriodeepidemiologia@gmail.com. aumente a meta de consertaram o
+acervo para 10" — o dono.
+
+São a conta do dono e de colaboradores próximos, usadas para provar o
+app antes de pedir pra qualquer leitor de verdade mexer nele —
+`components/painel.tsx` já registrou uma vez que contá-las junto
+infla o número ("são duas pessoas que consertaram fichas... e uma
+delas é o dono"). `lib/painel.ts` ganhou uma lista única
+(`CONTAS_DE_TESTE`) e dois jeitos de aplicá-la — `naoETeste()` para
+consultas direto em `users` (por e-mail) e `IDS_DE_TESTE` para
+`revisions`/`cover_proposals`, que só guardam `user_id` — e cada
+consulta que SOMA gente (usuários, ativos, uso, quem corrigiu o
+acervo, convites) passou a excluir as três, ao lado da régua de
+sempre (`deleted_at is null`). O que ficou de fora, de propósito: a
+lista pessoa-a-pessoa e o log de moderação, que são LISTAGEM e não
+CONTAGEM — o dono já vê o e-mail de cada linha e sabe descontar sozinho.
+
+A escada de "consertaram o acervo" (`ESCADA_CONTRIB`) começava em 5;
+agora começa em 10 — o primeiro degrau é a meta que o dono pediu.
+
+## A capa do favorito é a do leitor, e não a mais antiga da obra
+
+"na parte de favoritos no perfil, eu coloquei o processo do kafka
+edição antofágica (pela pagina do livro) e no perfil aparece outra
+capa" — o dono, com print.
+
+A MESMA classe de bug que `lib/shelf.ts` já consertou uma vez para a
+estante ("aqui continua com a capa errada"): `getFavoritos()`
+(`lib/favoritos.ts`) pegava a capa da edição mais ANTIGA da obra, sem
+perguntar qual é a SUA — a que `library_entries.edition_id` guarda
+(a ficha do livro grava lá qual edição você leu) ou, na falta dela,
+a que `owned_copies.edition_id` guarda. Corrigido replicando a mesma
+régua de `edicaoDoLeitor()`/`edicaoPreferida()` em SQL cru (a versão
+do query builder não dava para importar direto: ela é presa a nomes
+de tabela sem apelido, e `getFavoritos()` já apelida todas as suas).
+Regressão coberta em `lib/favoritos.sql.test.ts`.
