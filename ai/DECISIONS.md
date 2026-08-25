@@ -5246,3 +5246,31 @@ editorial, não aleatório. `ScreenHeader` de `/listas` trocou "a mais nova
 primeiro" por "sorteadas". Regra travada por um teste estático (mesmo
 molde do que já defendia o Explorar contra ordenar por popularidade) em
 `lib/listas.sql.test.ts`.
+
+## Comunidade e apoiar ganham um CTA, em dois lugares — nunca incômodos
+
+"eu acho que a parte de comunidade e apoiar o gume deve aparecer em
+alguns outros lugares (que não sejam incomodos) para ter CTA, falta
+CTA pra isso e geralmente essas ações sao feitas apos uma chamada ou
+serem encorajados" — o dono.
+
+Instagram, Discord e Apoiar já moravam na barra e no rodapé da home/
+sobre — sempre visíveis, nunca ligados a um momento. Perguntado onde
+um convite de verdade caberia, a resposta foi o fim de `/estatísticas`
+e o fim do PRÓPRIO perfil público: os dois momentos em que a pessoa
+está olhando a própria trajetória de leitura, e não no meio de uma
+tarefa. Descartadas: um nudge disparado por um marco (honra nova,
+livro terminado) — mais fiel ao "depois de serem encorajados", mas é
+UI nova que ainda não existe e precisaria lembrar "já vi isso"; e
+copiar o rodapé da home para mais telas sem gatilho nenhum — era
+exatamente o "aparecer em todo canto" que o pedido queria evitar.
+
+Novo componente, `components/apoie-e-acompanhe.tsx` — mesma casca
+visual de `Portas` (`components/casa-de-quem-faz.tsx`), conteúdo
+diferente: Instagram, Discord e Apoiar, não Quem faz/Insígnias. Cor
+NEUTRA, e não o rosa (`--color-colaborar`) que `/apoiar` usa sozinha —
+"construir" é trabalho; seguir, conversar e apoiar são a mesma
+pergunta ("eu gosto disso, e quero que continue existindo"), e nenhuma
+delas é trabalho. No perfil, só aparece pro DONO olhando o PRÓPRIO
+perfil (`mine`): pedir a um visitante que siga o Gume na estante de
+outra pessoa é anúncio, não convite.

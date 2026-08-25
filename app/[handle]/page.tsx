@@ -26,6 +26,7 @@ import { getResenhasDe } from "@/lib/explore";
 import { PerfilAbas } from "@/components/perfil-abas";
 import { CuradoriaCard } from "@/components/curadoria-card";
 import { SeloIdealizador } from "@/components/selo-idealizador";
+import { ApoieEAcompanhe } from "@/components/apoie-e-acompanhe";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -311,6 +312,11 @@ export default async function Profile({ params }: { params: Promise<{ handle: st
         ehGuia={ehGuia}
         contagemEstante={{ tudo: counts.tudo ?? 0, lidos: counts.lidos ?? 0 }}
       />
+
+      {/* "falta CTA pra isso" — o dono. Só para o DONO do perfil olhando o próprio:
+          pedir a um visitante que siga o Gume na estante de outra pessoa é
+          anúncio, não convite. Ver o cabeçalho de components/apoie-e-acompanhe.tsx. */}
+      {mine && <ApoieEAcompanhe />}
     </main>
   );
 }
