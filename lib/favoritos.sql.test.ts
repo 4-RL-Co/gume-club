@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { users, works } from "@/lib/db/schema";
+import { users, works, editions } from "@/lib/db/schema";
 import { shelve } from "@/lib/library";
 import { getFavoritos, favoritar, desfavoritar, coroar, jaFavoritei } from "@/lib/favoritos";
 
@@ -95,6 +95,50 @@ describe("coroar, contra o unique(user_id, position) de verdade", () => {
     await coroar(leitor, antes[0]!.workId);
     const depois = await getFavoritos(leitor.id);
     expect(depois).toEqual(antes);
+  });
+});
+
+/**
+ * "pus o processo edição antofágica (pela página do livro) e no perfil aparece
+ * outra capa" — o dono. A mesma classe de bug que lib/shelf.ts já consertou uma
+ * vez para a estante ("aqui continua com a capa errada"); getFavoritos() pegava
+ * a edição mais ANTIGA da obra, crua, em vez da que o leitor escolheu.
+ */
+describe("a capa é a do leitor, e não a mais antiga", () => {
+  // Usuário PRÓPRIO, e não `leitor`: os testes de "o teto é cinco" já enchem os
+  // cinco lugares dele, e um sexto favoritar aqui recusaria por causa do teto,
+  // não por causa da capa — o que este teste quer provar é outra coisa.
+  it("mostra a capa da SUA edição, mesmo quando ela não é a primeira", async () => {
+    const [u] = await db.insert(users)
+      .values({ handle: `fav-edicoes-${marca}`, email: `fav-edicoes-${marca}@fav.test` })
+      .returning({ id: users.id });
+    const outroLeitor = { id: u!.id };
+
+    const [obra] = await db.insert(works)
+      .values({ slug: `fav-edicoes-${marca}`, title: `zz favorito edições ${marca}` })
+      .returning({ id: works.id });
+    const capaAntiga = `https://covers.test/${marca}-antiga.jpg`;
+    const capaEscolhida = `https://covers.test/${marca}-antofagica.jpg`;
+    await db.insert(editions).values({ workId: obra!.id, coverUrl: capaAntiga });
+    const escolhida = await db.insert(editions)
+      .values({ workId: obra!.id, coverUrl: capaEscolhida })
+      .returning({ id: editions.id });
+
+    // Lido NESTA edição — a mesma escolha que a ficha do livro grava.
+    await shelve(outroLeitor, obra!.id, "read", escolhida[0]!.id);
+    const r = await favoritar(outroLeitor, obra!.id);
+    expect(r.ok, "não conseguiu favoritar").toBe(true);
+
+    const lista = await getFavoritos(outroLeitor.id);
+    const fav = lista.find((f) => f.workId === obra!.id);
+    expect(
+      fav?.coverUrl,
+      "mostrou a capa da edição mais antiga, e não a que o leitor escolheu",
+    ).toBe(capaEscolhida);
+    expect(fav?.coverUrl).not.toBe(capaAntiga);
+
+    await db.execute(sql`delete from works where id = ${obra!.id}::uuid`);
+    await db.execute(sql`delete from users where id = ${outroLeitor.id}::uuid`);
   });
 });
 

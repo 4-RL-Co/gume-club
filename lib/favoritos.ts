@@ -36,6 +36,26 @@ export type FavoritoBook = {
   position: number;
 };
 
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  ═══ "PUS O PROCESSO EDIÇÃO ANTOFÁGICA, E NO PERFIL APARECE OUTRA CAPA" ═══
+ *
+ *  A MESMA classe de bug que lib/shelf.ts já consertou uma vez ("aqui
+ *  continua com a capa errada", ver o comentário lá): esta consulta pegava a
+ *  capa da edição MAIS ANTIGA da obra, crua, sem perguntar qual delas é a
+ *  SUA. Um work pode ter dezenas de edições — favoritar não escolhe uma, é
+ *  ler que escolhe (na ficha do livro, `library_entries.edition_id`, ou o
+ *  exemplar que você registrou, `owned_copies.edition_id`).
+ *
+ *  A régua é a mesma de `edicaoDoLeitor()` (lib/shelf.ts): a sua leitura
+ *  manda, depois o exemplar que você tem, só então o desempate genérico
+ *  (capa existe primeiro, depois a mais antiga). Repetida aqui em SQL cru,
+ *  e não importada, porque `edicaoDoLeitor()`/`edicaoPreferida()` são
+ *  fragmentos do query builder — presos aos nomes de tabela sem apelido
+ *  (`works`, `library_entries`), e esta consulta já apelida todas as suas
+ *  (`w`, `fb`...). Misturar os dois estilos na mesma consulta quebra o SQL.
+ * ════════════════════════════════════════════════════════════════════
+ */
 /** Os favoritos de alguém, na ordem — o [0] é sempre o coroado, quando existe. */
 export async function getFavoritos(userId: string): Promise<FavoritoBook[]> {
   const rows = await db.execute<{
@@ -43,13 +63,20 @@ export async function getFavoritos(userId: string): Promise<FavoritoBook[]> {
     cover_url: string | null; position: number;
   }>(sql`
     select w.id as work_id, w.slug, w.title, a.name as author,
-           (select e.cover_url from editions e
-             where e.work_id = w.id and e.cover_url is not null
-             order by e.created_at asc, e.id asc limit 1) as cover_url,
+           coalesce(e.cover_url, (
+             select e2.cover_url from editions e2
+              where e2.work_id = w.id and e2.cover_url is not null
+              order by e2.created_at asc, e2.id asc limit 1)) as cover_url,
            fb.position
       from favorite_books fb
       join works w on w.id = fb.work_id
       left join authors a on a.id = w.author_id
+      left join library_entries le on le.user_id = fb.user_id and le.work_id = fb.work_id
+      left join owned_copies oc on oc.user_id = fb.user_id and oc.work_id = fb.work_id
+      left join editions e on e.id = coalesce(
+        le.edition_id, oc.edition_id,
+        (select e3.id from editions e3 where e3.work_id = w.id
+          order by (e3.cover_url is null), e3.created_at asc, e3.id asc limit 1))
      where fb.user_id = ${userId}::uuid
      order by fb.position asc`);
 

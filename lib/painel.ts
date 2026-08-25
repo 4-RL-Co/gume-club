@@ -126,13 +126,14 @@ function janela(col: SQL, f: Filtro): SQL {
 // ─────────────────────────────────────────────────────────────── METAS
 
 /**
- * As metas SOBEM sozinhas. Bateu 100 usuários, a próxima é 250; bateu 5
- * contribuidores, a próxima é 10. Uma meta que fica parada depois de batida deixa
+ * As metas SOBEM sozinhas. Bateu 100 usuários, a próxima é 250; bateu 10
+ * contribuidores, a próxima é 25. Uma meta que fica parada depois de batida deixa
  * de puxar; uma que sobe continua sendo um horizonte. A escada começa onde o dono
- * pediu (100 e 5) e cresce em passos redondos.
+ * pediu (100 e, depois de "aumente a meta de consertaram o acervo para 10", 10) e
+ * cresce em passos redondos.
  */
 const ESCADA_USUARIOS = [100, 250, 500, 1000, 2500, 5000, 10000, 25000];
-const ESCADA_CONTRIB = [5, 10, 25, 50, 100, 250, 500];
+const ESCADA_CONTRIB = [10, 25, 50, 100, 250, 500];
 
 export type Meta = { alvo: number; atual: number; batidas: number };
 
@@ -142,6 +143,42 @@ function metaDe(atual: number, escada: number[]): Meta {
   const batidas = escada.filter((d) => d <= atual).length;
   return { alvo, atual, batidas };
 }
+
+// ───────────────────────────────────────────────────── CONTAS QUE NÃO CONTAM
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  CONTAS DE TESTE NÃO SÃO GENTE USANDO O GUME.
+ *
+ *  "remova esses usuarios da contagem do painel" — o dono. São a conta dele e de
+ *  colaboradores próximos, usadas para provar o app antes de pedir pra qualquer
+ *  leitor de verdade mexer nele. Contá-las junto infla todo número que este
+ *  painel mostra: de "quantos usuários" a "quem consertou o acervo" — a mesma
+ *  distorção que o comentário de components/painel.tsx já registrou uma vez
+ *  ("são duas pessoas que consertaram fichas... e uma delas é o dono").
+ *
+ *  Uma lista, num lugar só. Cada consulta que SOMA gente aplica esta mesma
+ *  exclusão, ao lado da régua de sempre (`deleted_at is null`) — nunca no lugar
+ *  dela: uma conta de teste apagada continua de fora pelo motivo de sempre.
+ * ════════════════════════════════════════════════════════════════════
+ */
+const CONTAS_DE_TESTE = [
+  "gabriel.olegas@smt.social",
+  "gabriel.oligar@gmail.com",
+  "laboratoriodeepidemiologia@gmail.com",
+];
+
+/** "este e-mail não é uma conta de teste" — para consultas direto na tabela `users`. */
+function naoETeste(coluna: SQL): SQL {
+  return sql`${coluna} <> all(${sql.param(CONTAS_DE_TESTE)}::text[])`;
+}
+
+/**
+ * Os IDs das contas de teste, para tabelas que só guardam `user_id` sem e-mail
+ * ao lado (revisions, cover_proposals) — é aqui que "quem consertou o acervo"
+ * mora, e é exatamente o número que "aumente a meta... para 10" reagiu.
+ */
+const IDS_DE_TESTE = sql`(select id from users where email = any(${sql.param(CONTAS_DE_TESTE)}::text[]))`;
 
 // ─────────────────────────────────────────────────────────────── TIPOS
 
@@ -430,29 +467,29 @@ async function getGente(hojeSP: SQL, filtro: Filtro): Promise<Painel["gente"]> {
     metodo_google: number; metodo_email: number; coorte_madura: number; retidos: number;
   }>(sql`
     select
-      count(*) filter (where deleted_at is null)::int as total,
-      count(*) filter (where deleted_at is null and created_at >= now() - interval '7 days')::int as novos7,
-      count(*) filter (where deleted_at is null and created_at >= now() - interval '30 days')::int as novos30,
-      count(*) filter (where deleted_at is null
-                         and created_at >= now() - interval '60 days'
+      count(*)::int as total,
+      count(*) filter (where created_at >= now() - interval '7 days')::int as novos7,
+      count(*) filter (where created_at >= now() - interval '30 days')::int as novos30,
+      count(*) filter (where created_at >= now() - interval '60 days'
                          and created_at <  now() - interval '30 days')::int as novos30_anterior,
-      count(*) filter (where deleted_at is null and created_at >= now() - interval '90 days')::int as novos90,
-      count(*) filter (where deleted_at is null and ${dentro})::int as novos_periodo,
-      count(*) filter (where deleted_at is null and last_seen_on >= ${hojeSP})::int as ativos1,
-      count(*) filter (where deleted_at is null and last_seen_on >= ${hojeSP} - 7)::int as ativos7,
-      count(*) filter (where deleted_at is null and last_seen_on >= ${hojeSP} - 30)::int as ativos30,
-      count(*) filter (where deleted_at is null and (last_seen_on is null or last_seen_on < ${hojeSP} - 30))::int as adormecidos,
+      count(*) filter (where created_at >= now() - interval '90 days')::int as novos90,
+      count(*) filter (where ${dentro})::int as novos_periodo,
+      count(*) filter (where last_seen_on >= ${hojeSP})::int as ativos1,
+      count(*) filter (where last_seen_on >= ${hojeSP} - 7)::int as ativos7,
+      count(*) filter (where last_seen_on >= ${hojeSP} - 30)::int as ativos30,
+      count(*) filter (where last_seen_on is null or last_seen_on < ${hojeSP} - 30)::int as adormecidos,
       (select count(*) from account a join users u on u.id = a."userId"
-        where u.deleted_at is null and a."providerId" = 'google')::int as metodo_google,
+        where u.deleted_at is null and ${naoETeste(sql`u.email`)}
+          and a."providerId" = 'google')::int as metodo_google,
       (select count(*) from account a join users u on u.id = a."userId"
-        where u.deleted_at is null and a."providerId" = 'credential')::int as metodo_email,
-      count(*) filter (where deleted_at is null
-                         and created_at <= now() - interval '7 days')::int as coorte_madura,
-      count(*) filter (where deleted_at is null
-                         and created_at <= now() - interval '7 days'
+        where u.deleted_at is null and ${naoETeste(sql`u.email`)}
+          and a."providerId" = 'credential')::int as metodo_email,
+      count(*) filter (where created_at <= now() - interval '7 days')::int as coorte_madura,
+      count(*) filter (where created_at <= now() - interval '7 days'
                          and last_seen_on is not null
                          and last_seen_on - (created_at at time zone ${FUSO})::date >= 7)::int as retidos
     from users
+   where deleted_at is null and ${naoETeste(sql`email`)}
   `);
 
   const [porDia, porSemana, porMes, serie, log] = await Promise.all([
@@ -494,7 +531,7 @@ async function serieCrescimento(gran: Granularidade, cond: SQL): Promise<Ponto[]
   const rows = await db.execute<{ chave: string; n: number }>(sql`
     select ${balde} as chave, count(*)::int as n
       from users
-     where deleted_at is null and ${cond}
+     where deleted_at is null and ${naoETeste(sql`email`)} and ${cond}
      group by 1 order by 1
   `);
   return rows.map((r) => ({ chave: r.chave, n: r.n }));
@@ -553,7 +590,7 @@ async function getUso(): Promise<Painel["uso"]> {
              (select count(*) from library_entries le where le.user_id = u.id)::int as livros,
              (select count(*) from library_entries le where le.user_id = u.id and le.status = 'read')::int as lidos
         from users u
-       where u.deleted_at is null
+       where u.deleted_at is null and ${naoETeste(sql`u.email`)}
     )
     select
       coalesce(avg(livros), 0)::float as media_livros,
@@ -567,17 +604,20 @@ async function getUso(): Promise<Painel["uso"]> {
       count(*) filter (where livros between 10 and 24)::int as faixa10,
       count(*) filter (where livros >= 25)::int as faixa25,
       (select count(*) from reviews r join users u on u.id = r.user_id
-        where u.deleted_at is null and r.deleted_at is null)::int as resenhas,
+        where u.deleted_at is null and ${naoETeste(sql`u.email`)} and r.deleted_at is null)::int as resenhas,
       (select count(*) from reviews r join users u on u.id = r.user_id
-        where u.deleted_at is null and r.deleted_at is null and r.created_at >= now() - interval '30 days')::int as resenhas30,
+        where u.deleted_at is null and ${naoETeste(sql`u.email`)} and r.deleted_at is null
+          and r.created_at >= now() - interval '30 days')::int as resenhas30,
       (select count(*) from ratings ra join users u on u.id = ra.user_id
-        where u.deleted_at is null and ra.rated_at >= now() - interval '30 days')::int as notas30
+        where u.deleted_at is null and ${naoETeste(sql`u.email`)}
+          and ra.rated_at >= now() - interval '30 days')::int as notas30
     from por_pessoa
   `);
 
   const notas = await db.execute<{ value: number; n: number }>(sql`
     select r.value, count(*)::int as n
-      from ratings r join users u on u.id = r.user_id and u.deleted_at is null
+      from ratings r join users u on u.id = r.user_id
+        and u.deleted_at is null and ${naoETeste(sql`u.email`)}
      group by r.value
   `);
   const PALAVRA: Record<number, string> = {
@@ -615,19 +655,24 @@ async function getContribuicao(filtro: Filtro): Promise<Omit<Painel["contribuica
   }>(sql`
     select
       (select count(*) from revisions
-        where reverted_at is null and user_id is not null
+        where reverted_at is null and user_id is not null and user_id not in ${IDS_DE_TESTE}
           and created_at >= now() - interval '30 days')::int as correcoes30,
       (select count(*) from revisions
-        where reverted_at is null and user_id is not null and ${dentro})::int as correcoes_periodo,
+        where reverted_at is null and user_id is not null and user_id not in ${IDS_DE_TESTE}
+          and ${dentro})::int as correcoes_periodo,
       (select count(distinct user_id) from revisions
-        where reverted_at is null and user_id is not null)::int as pessoas_corrigiram,
-      (select count(*) from cover_proposals)::int as capas_enviadas,
-      (select count(*) from cover_proposals where state = 'pending')::int as capas_esperando,
+        where reverted_at is null and user_id is not null and user_id not in ${IDS_DE_TESTE})::int as pessoas_corrigiram,
+      (select count(*) from cover_proposals
+        where user_id is null or user_id not in ${IDS_DE_TESTE})::int as capas_enviadas,
+      (select count(*) from cover_proposals
+        where state = 'pending' and (user_id is null or user_id not in ${IDS_DE_TESTE}))::int as capas_esperando,
       (select count(*) from works where needs_review = true)::int as obras_de_leitor,
       (select count(*) from (
-         select user_id from revisions where reverted_at is null and user_id is not null
+         select user_id from revisions
+          where reverted_at is null and user_id is not null and user_id not in ${IDS_DE_TESTE}
          union
-         select user_id from cover_proposals where user_id is not null
+         select user_id from cover_proposals
+          where user_id is not null and user_id not in ${IDS_DE_TESTE}
        ) q)::int as contribuintes
   `);
 
@@ -664,9 +709,10 @@ async function getConvite(): Promise<Painel["convite"]> {
       (select count(distinct invited_by) from users
         where invited_by is not null and deleted_at is null)::int as ja_convidou,
       (select count(*) from users c
-        where c.invited_by is not null and c.deleted_at is null)::int as vingaram
+        where c.invited_by is not null and c.deleted_at is null
+          and ${naoETeste(sql`c.email`)})::int as vingaram
     from users
-    where deleted_at is null
+    where deleted_at is null and ${naoETeste(sql`email`)}
   `);
 
   const jaConvidou = c?.ja_convidou ?? 0;
