@@ -5,7 +5,7 @@ import { ImageResponse } from "next/og";
 export const runtime = "nodejs";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "Gume: a mente nunca perde o fio.";
+export const alt = "Gume: a mente leitora nunca perde o fio.";
 
 /**
  * A imagem que aparece quando alguém cola um link do Gume em qualquer lugar.
@@ -83,7 +83,7 @@ export default function OpenGraphImage() {
             display: "flex",
           }}
         >
-          A mente nunca perde o fio.
+          A mente leitora nunca perde o fio.
         </div>
       </div>
     ),

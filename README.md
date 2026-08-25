@@ -5,7 +5,7 @@
   <img src="./public/logo/lockup-vertical-preto.png" alt="Gume" width="260">
 </picture>
 
-**A mente nunca perde o fio.**
+**A mente leitora nunca perde o fio.**
 
 Um registro de leitura aberto, construído com quem lê.
 
@@ -30,7 +30,7 @@ App de leitura se vende pela cara, então esta é a cara. Fundo escuro, serifa, 
 
 Gume é o fio da lâmina. A parte que corta.
 
-A mente nunca perde o fio. Uma lâmina que ninguém amola não enferruja de um dia para o outro: ela vai perdendo o corte, devagar, e continua parecendo uma lâmina. Você só descobre quando ela falha em cortar o que sempre cortou. Com a cabeça é igual.
+A mente leitora nunca perde o fio. Uma lâmina que ninguém amola não enferruja de um dia para o outro: ela vai perdendo o corte, devagar, e continua parecendo uma lâmina. Você só descobre quando ela falha em cortar o que sempre cortou. Com a cabeça é igual.
 
 Por isso a gente lê. Livro é pedra de amolar, e quem passa na pedra não perde o fio: não para colecionar capas, nem para bater meta, e muito menos para ganhar ponto.
 

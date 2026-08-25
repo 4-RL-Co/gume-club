@@ -4,7 +4,7 @@ import { CODIGO, CONVERSA } from "@/lib/onde";
 
 export const metadata = {
   title: "Sobre · Gume",
-  description: "A mente nunca perde o fio.",
+  description: "A mente leitora nunca perde o fio.",
 };
 
 /**
@@ -59,7 +59,7 @@ export default function Sobre() {
         <Mark size={30} className="text-[var(--color-ink-soft)]" />
 
         <h1 className="voice mt-10 max-w-2xl text-[40px] leading-[1.06] tracking-[-0.02em] sm:text-[58px]">
-          A mente nunca <em className="italic text-[var(--color-ink-soft)]">perde o fio</em>.
+          A mente leitora nunca <em className="italic text-[var(--color-ink-soft)]">perde o fio</em>.
         </h1>
       </section>
 
