@@ -6,16 +6,19 @@ import { INSTAGRAM, DISCORD } from "@/lib/onde";
  * ════════════════════════════════════════════════════════════════════
  *  A CASA DE QUEM FAZ. As telas de contribuição, com a mesma cara.
  *
- *  "Quem faz" e "As insígnias" **têm que ser as telas mais bonitas do app**, porque são
- *  elas que recebem quem contribui.
+ *  "Quem faz", "As insígnias", "O que vem por aí" e "O que já chegou" **têm que ser as
+ *  telas mais bonitas do app**, porque são elas que recebem quem contribui.
  *
- *  ═══ ELE JÁ FOI TRÊS TELAS, E "O QUE FALTA" SAIU ═══
+ *  ═══ ELE JÁ FOI TRÊS TELAS, "O QUE FALTA" SAIU, E DUAS ENTRARAM ═══
  *
  *  Era "Quem faz", "O que falta" e "As insígnias". "O que falta" mostrava os livros com
  *  ficha incompleta da sua própria estante e a fila de capas do bibliotecário — e "tire
  *  a página inteira" foi o pedido: a página inteira saiu, e nada dela foi realocado.
  *
- *  As telas que sobraram compartilham:
+ *  Depois entraram "O que vem por aí" e "O que já chegou" (ver ai/DECISIONS.md): decidir
+ *  o que o Gume vai ser também é construir, tanto quanto consertar uma ficha.
+ *
+ *  As telas da casa compartilham:
  *
  *    · o EIXO ROSA, que é a cor de colaborar (--color-colaborar) e não aparece em
  *      nenhum outro canto do app. Ele é o que diz "você está na casa de quem faz".
@@ -75,7 +78,7 @@ export function Cabecalho({
  *
  * Sem elas, cada tela era um beco: a pessoa lia, concordava, e ia embora.
  */
-export function Portas({ aqui }: { aqui: "quem-faz" | "insignias" }) {
+export function Portas({ aqui }: { aqui: "quem-faz" | "insignias" | "o-que-vem" | "o-que-chegou" }) {
   const TODAS = [
     {
       key: "quem-faz",
@@ -89,6 +92,27 @@ export function Portas({ aqui }: { aqui: "quem-faz" | "insignias" }) {
       href: "/insignias",
       titulo: "As insígnias e as honras",
       texto: "O que cada uma reconhece, e o que a pessoa fez para ganhá-la.",
+      fora: false,
+    },
+    /**
+     * ═══ DECIDIR O QUE VEM POR AÍ TAMBÉM É CONSTRUIR ═══
+     *
+     * "crie uma pagina de roadmap onde eu vou colocar funcionalidades q estão
+     * planejadas, que estão em andamento e ideias" — o dono. Reabre a decisão de
+     * 2026-07-11 ("o roadmap mora no GitHub Discussions") — ver ai/DECISIONS.md.
+     */
+    {
+      key: "o-que-vem",
+      href: "/o-que-vem",
+      titulo: "O que vem por aí",
+      texto: "O que está planejado, em andamento, e as ideias. Vota quem quiser.",
+      fora: false,
+    },
+    {
+      key: "o-que-chegou",
+      href: "/o-que-chegou",
+      titulo: "O que já chegou",
+      texto: "O que era ideia, virou planejado, e um dia saiu do ar direto pro app.",
       fora: false,
     },
     /**

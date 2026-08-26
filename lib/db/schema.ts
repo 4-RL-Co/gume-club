@@ -17,6 +17,12 @@ export const visibility = pgEnum("visibility", ["public", "followers", "private"
 export const shelfStatus = pgEnum("shelf_status", ["want_to_read", "reading", "read", "did_not_finish"]);
 export const ownState = pgEnum("own_state", ["owned", "wanted", "lent_out", "gone"]);
 export const editionFormat = pgEnum("edition_format", ["hardcover", "paperback", "ebook", "audiobook", "other"]);
+/**
+ * O status de um item de "o que vem por aí" (lib/roadmap.ts). "ideia" é o mais
+ * cedo; "lancado" tira o item de lá e o põe em "o que chegou" — ver
+ * `roadmapItems.lancadoEm`.
+ */
+export const roadmapStatus = pgEnum("roadmap_status", ["ideia", "planejado", "em_andamento", "lancado"]);
 
 /**
  * O que você faria com essa cópia. NÃO É UM MERCADO: é disponibilidade. O app não
@@ -872,4 +878,58 @@ export const favoriteBooks = pgTable("favorite_books", {
 }, (t) => [
   primaryKey({ columns: [t.userId, t.workId] }),
   uniqueIndex("favorite_books_user_position").on(t.userId, t.position),
+]);
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  "O QUE VEM POR AÍ". Um item por vez, escrito pelo dono, votado pelo leitor.
+ *
+ *  Reabre a decisão de 2026-07-11 ("o roadmap mora no GitHub Discussions") —
+ *  ver ai/DECISIONS.md pela entrada nova. Um item nasce "ideia", o dono sobe o
+ *  status à mão até "lancado" — e é a transição PARA "lancado" que grava
+ *  `lancadoEm`, o que ordena `getChangelog()` (lib/roadmap.ts). Não existe
+ *  status pra "recusado": o dono apaga o que não vai construir, e não escreve
+ *  um obituário público de ideia de leitor.
+ *
+ *  `position` é solto, sem unique constraint — o molde de `collectionItems`,
+ *  e não o de `favoriteBooks`: só o dono escreve aqui (via /painel), sem
+ *  disputa concorrente entre leitores votando ao mesmo tempo em quem manda na
+ *  ORDEM da lista.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export const roadmapItems = pgTable("roadmap_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  /** Pode ficar sem descrição: uma ideia às vezes é só um título. */
+  description: text("description"),
+  status: roadmapStatus("status").notNull().default("ideia"),
+  position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  lancadoEm: timestamp("lancado_em", { withTimezone: true }),
+});
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  O VOTO NUM ITEM DE "O QUE VEM POR AÍ". Três por ANO, e o ano mora na chave.
+ *
+ *  "cada usuario tem 3 upvotes por ano para gatar nessses itens" — o dono. Sem
+ *  fila de reset (não existe cron neste repo): `ano` faz parte da chave
+ *  primária, então a MESMA pessoa pode votar no MESMO item de novo num ano
+ *  seguinte — o interesse persiste, e o histórico nunca é apagado — mas nunca
+ *  duas vezes no mesmo item dentro do mesmo ano. O teto de 3 é contado em
+ *  lib/roadmap.ts (`count(*) where user_id = ... and ano = ano_atual`), do
+ *  mesmo jeito que `favoritar()` conta os 5 antes de inserir o 6º.
+ *
+ *  Quem votou é PRIVADO — mesmo padrão de review_upvotes/list_upvotes: só o
+ *  NÚMERO é público.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export const roadmapVotes = pgTable("roadmap_votes", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  itemId: uuid("item_id").notNull().references(() => roadmapItems.id, { onDelete: "cascade" }),
+  ano: smallint("ano").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  primaryKey({ columns: [t.userId, t.itemId, t.ano] }),
+  index("roadmap_votes_item_idx").on(t.itemId),
 ]);

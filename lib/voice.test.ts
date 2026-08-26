@@ -119,7 +119,7 @@ const PROIBIDO: { termo: RegExp; porque: string }[] = [
  *
  *  - /sobre pode dizer, em uma frase, que o código é aberto (é o manifesto).
  *
- *  - O PAINEL PRIVADO (a página e o seu componente) fala com o idealizador, e só com ele.
+ *  - O PAINEL PRIVADO (a página e os componentes dela) fala com o idealizador, e só com ele.
  *    Ele usa palavras que uma tela de leitor não pode usar (retenção, coorte, mediana,
  *    cadastros), porque quem lê ali é quem construiu o Gume. A rota inteira é privada e
  *    responde 404 para qualquer outra pessoa (ver app/painel/page.tsx), então nenhuma
@@ -131,6 +131,7 @@ const EXCECAO = new Set([
   "app/painel/page.tsx",
   "components/painel.tsx",
   "components/painel-grafico.tsx",
+  "components/painel-roadmap.tsx",
 ]);
 
 function arquivos(dir: string, out: string[] = []): string[] {

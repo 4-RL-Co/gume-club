@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getViewer } from "@/lib/viewer";
 import { souIdealizador } from "@/lib/authz";
 import { getPainel, filtroDaUrl } from "@/lib/painel";
+import { getTodosOsItens } from "@/lib/roadmap";
 import { Painel } from "@/components/painel";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +38,10 @@ export default async function PainelPrivado({
   // filtros na tela só reescreve a URL, e a página busca de novo com eles. filtroDaUrl não
   // confia no formato: valor estranho cai no padrão.
   const filtro = filtroDaUrl(await searchParams);
-  const dados = await getPainel(viewer, filtro);
+  const [dados, itensRoadmap] = await Promise.all([
+    getPainel(viewer, filtro),
+    getTodosOsItens(viewer),
+  ]);
 
-  return <Painel dados={dados} />;
+  return <Painel dados={dados} itensRoadmap={itensRoadmap} />;
 }
