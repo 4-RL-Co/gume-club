@@ -5320,3 +5320,31 @@ O que entrou:
   ninguém mais propõe item novo por este pedido, só vota no que já
   existe. Quem votou é PRIVADO, mesmo padrão de
   `review_upvotes`/`list_upvotes`: só o número é público.
+
+## Bibliotecária: a barra da reversão vira proporção, não "zero"
+
+Investigando quando a Rosângela (107 correções, todas sobreviventes)
+vira bibliotecária, apareceu a régua de `lib/librarian.ts`: "nenhuma
+correção revertida nos últimos 90 dias" — qualquer reversão, sozinha,
+trancava a insígnia inteira por 90 dias, não importa o volume.
+
+"é mt desproporcional uma pessoa corrigir 50 livros e se só 1 for
+revertido ela ja nao ganha" — o dono, ao ver a regra de verdade. Antes
+disso, o próprio dono já tinha resumido o que ACHAVA que a regra
+fazia: "se 1 correção for revertida ela ainda ganha, é só se forem
+revertidas a ponto do numero minimo nao bater" — o que fez a régua
+real (zero tolerância) parecer um bug, e não uma escolha.
+
+Perguntado como deixar proporcional ao volume (tolerar 1 reversão e
+travar na 2ª / abandonar o teto de 90 dias e confiar só no número
+mínimo / virar uma taxa), a escolha foi a taxa: `lib/librarian.ts`
+agora mede quantas correções da pessoa, NO TOTAL, foram revertidas nos
+últimos 90 dias, e bloqueia só acima de 10%
+(`TAXA_MAXIMA_DE_REVERSAO_RECENTE`). Uma reversão isolada numa carreira
+de 107 correções é ~1%, e não tranca mais nada; um padrão de verdade
+(mais de um décimo do que a pessoa fez sendo desfeito) continua
+trancando — o sinal "algo está errado agora" sobrevive, só que
+proporcional. A porta continua se fechando e reabrindo sozinha.
+
+Coberto em `lib/librarian.sql.test.ts`, novo — não havia teste de SQL
+para esta regra antes desta mudança.

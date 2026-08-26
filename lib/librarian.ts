@@ -45,20 +45,40 @@ import { sql, type SQL } from "drizzle-orm";
  *  por mais rápido que a pessoa digite. É o que impede a conta
  *  descartável de virar poder de reverter o trabalho dos outros.
  *
- *  NENHUMA REVERSÃO NOS ÚLTIMOS 90 DIAS. Quem está tendo correção
- *  desfeita AGORA não é quem deve poder desfazer a dos outros. E é uma
- *  porta que se fecha e reabre sozinha: passados 90 dias limpos, ela
- *  volta a abrir. Não é punição, é o critério continuando a valer.
+ *  NO MÁXIMO 10% REVERTIDO NOS ÚLTIMOS 90 DIAS, E NÃO "NENHUMA REVERSÃO".
+ *
+ *  "sobre rosangela, se 1 correção for revertida ela ainda ganha, é só se forem
+ *  revertidas a ponto do numero minimo nao bater pra insignia" — e depois, quando a
+ *  regra de verdade acabou sendo "zero reversão trava tudo": "é mt desproporcional
+ *  uma pessoa corrigir 50 livros e se só 1 for revertido ela ja nao ganha" — o dono.
+ *
+ *  A regra ERA "nenhuma reversão nos últimos 90 dias", ponto — uma correção desfeita
+ *  bloqueava a insígnia inteira por 90 dias, não importa se a pessoa tinha 50
+ *  correções sobreviventes ou 5.000. Isso mede a pessoa contra ZERO, e ninguém erra
+ *  zero vezes em cinquenta tentativas honestas.
+ *
+ *  Agora mede PROPORÇÃO: quantas das correções que a pessoa já fez, NO TOTAL, foram
+ *  revertidas nos últimos 90 dias. Uma reversão isolada numa carreira de 107 correções
+ *  é 1%, e não tranca nada. Um padrão de verdade — um décimo do que você fez sendo
+ *  desfeito — continua trancando, porque esse sinal ainda importa:
+ *  quem está errando muito agora não deveria poder desfazer o trabalho dos outros
+ *  agora. A porta continua se fechando e reabrindo sozinha, só que por PROPORÇÃO, e
+ *  não por qualquer reversão isolada.
  * ════════════════════════════════════════════════════════════════════
  */
-
-/** Correções que sobreviveram. Não "feitas": correção desfeita não é trabalho doado. */
 
 /** Uma conta de hoje não vira bibliotecária hoje. */
 export const DIAS_DE_CONTA = 30;
 
-/** Quem está tendo correção desfeita agora não desfaz a dos outros. */
+/** A janela em que uma reversão ainda pesa contra a proporção. */
 export const DIAS_SEM_REVERSAO = 90;
+
+/**
+ * Acima disto, a fração do que a pessoa fez que foi desfeita recentemente é grande
+ * demais: 1 em 10 é sinal de um padrão, e não de um deslize. Abaixo, ela continua
+ * podendo desfazer o trabalho dos outros mesmo tendo tropeçado uma vez.
+ */
+export const TAXA_MAXIMA_DE_REVERSAO_RECENTE = 0.1;
 
 /**
  * A condição, em SQL, sobre uma tabela `users` já em escopo com o alias dado.
@@ -85,14 +105,16 @@ export function ehBibliotecario(alias: SQL): SQL {
 
       and ${alias}.created_at < now() - make_interval(days => ${DIAS_DE_CONTA})
 
-      -- Nenhuma correção sua foi desfeita nos últimos 90 dias. A porta fecha e
-      -- reabre sozinha: não é punição, é o critério continuando a valer.
-      and not exists (
-        select 1 from revisions r2
-         where r2.user_id = ${alias}.id
-           and r2.reverted_at is not null
-           and r2.reverted_at > now() - make_interval(days => ${DIAS_SEM_REVERSAO})
-      )
+      -- A PROPORÇÃO, E NÃO "NENHUMA REVERSÃO". greatest(1, total) é só uma
+      -- trava contra dividir por zero: total nunca é zero de verdade aqui, porque
+      -- a linha de cima já exige 50 sobreviventes, e sobrevivente é um subconjunto
+      -- de total. Multiplicar (em vez de dividir) evita esse zero de vez.
+      and (select count(*) from revisions r2
+            where r2.user_id = ${alias}.id
+              and r2.reverted_at is not null
+              and r2.reverted_at > now() - make_interval(days => ${DIAS_SEM_REVERSAO}))
+          <= ${TAXA_MAXIMA_DE_REVERSAO_RECENTE}::float * greatest(
+               1, (select count(*) from revisions r3 where r3.user_id = ${alias}.id))
     )
   )`;
 }
