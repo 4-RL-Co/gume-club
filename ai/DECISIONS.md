@@ -5274,3 +5274,49 @@ pergunta ("eu gosto disso, e quero que continue existindo"), e nenhuma
 delas é trabalho. No perfil, só aparece pro DONO olhando o PRÓPRIO
 perfil (`mine`): pedir a um visitante que siga o Gume na estante de
 outra pessoa é anúncio, não convite.
+
+## "O que vem por aí" e "o que já chegou" — o roadmap ganha página própria
+
+"crie uma pagina de roadmap onde eu vou colocar funcionalidades q estão
+planejadas, que estão em andamento e ideias" + "cada usuario tem 3
+upvotes por ano para gatar nessses itens" — o dono, com o
+backloggd.com/roadmap, /changelog e /about como referência.
+
+Isto reabre a entrada de 2026-07-11 (mais acima neste arquivo): "o
+roadmap mora no GitHub Discussions... uma página dedicada é construída
+só quando houver propostas suficientes para fazê-la parecer viva." Faz
+sentido agora — nesta mesma sessão, "A conversa" (o link pro GitHub
+Discussions) saiu da barra por ser "nichado demais", substituída por
+Instagram/Discord. Não fazia mais sentido dizer que o roadmap mora lá.
+A entrada antiga fica como está: é o registro correto do que se
+decidiu naquele dia.
+
+O que entrou:
+- `roadmap_items`/`roadmap_votes` (migration 0067). Um item nasce
+  "ideia", o dono sobe o status à mão até "lancado" — só essa transição
+  grava `lancado_em`, e é ela quem tira o item de `/o-que-vem` e o põe
+  em `/o-que-chegou`. As duas telas são a MESMA tabela, filtrada por
+  status: nada foi escrito duas vezes.
+- O voto: **1 por item, no máximo 3 diferentes por ano** — decisão
+  tomada com o dono, junto de "constrói também uma página de
+  changelog". Dá para tirar o voto de um item e pôr em outro dentro do
+  mesmo ano (realocar, não gastar de novo). O ANO mora na própria
+  chave primária de `roadmap_votes` (não existe cron neste repo): a
+  mesma pessoa pode votar de novo no mesmo item num ano seguinte —
+  interesse que persiste — mas nunca duas vezes no mesmo item-ano.
+- **Votos informam. Eles não decidem** (`ai/PRD.md`, regra escrita
+  antes do primeiro voto de verdade): a ORDEM de cada item é sempre
+  `position`, escrita à mão pelo dono na aba nova de `/painel` — nunca
+  um cálculo de popularidade. `/o-que-vem` diz isso em voz alta pro
+  leitor, sem prometer que o mais votado é o próximo a sair.
+- A palavra "roadmap" **nunca aparece em texto de leitor** (`CLAUDE.md`
+  regra 7, `lib/voice.test.ts`) — as duas páginas públicas se chamam "o
+  que vem por aí" e "o que já chegou". "roadmap" continua livre no
+  código (arquivo, tabela, função): o teste de voz só varre JSX e
+  string de prosa, nunca `import` ou comentário. A aba de `/painel`
+  pode dizer "roadmap" à vontade — está na mesma exceção de
+  `components/painel.tsx`.
+- Administração só do idealizador (`assertIdealizador`, como sempre) —
+  ninguém mais propõe item novo por este pedido, só vota no que já
+  existe. Quem votou é PRIVADO, mesmo padrão de
+  `review_upvotes`/`list_upvotes`: só o número é público.

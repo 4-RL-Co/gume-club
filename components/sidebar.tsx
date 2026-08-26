@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home, Library, Users, Search, LogIn, LogOut, Info, UserRound, HeartHandshake,
-  ArrowUpRight, ChevronUp, BarChart3, Compass,
+  ArrowUpRight, ChevronUp, BarChart3, Compass, Milestone,
 } from "lucide-react";
 import { INSTAGRAM, DISCORD } from "@/lib/onde";
 import { IconeRedeSocial } from "@/components/icone-rede-social";
@@ -135,6 +135,7 @@ const LUGARES = [
  */
 const CONSTRUIR = [
   { href: "/contribuidores", label: "Quem faz", Icon: HeartHandshake },
+  { href: "/o-que-vem", label: "O que vem por aí", Icon: Milestone },
 ];
 
 const ICON = { size: 18, strokeWidth: 1.5 } as const;
@@ -713,6 +714,10 @@ function MenuCelular({
           ════════════════════════════════════════════════════════════ */}
       <Link href="/contribuidores" onClick={fecha} className={linha}>
         Quem faz
+      </Link>
+
+      <Link href="/o-que-vem" onClick={fecha} className={linha}>
+        O que vem por aí
       </Link>
 
       {apoio && (

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Painel as Dados, Fatia, Meta } from "@/lib/painel";
 import { GraficoSerie } from "@/components/painel-grafico";
+import { PainelRoadmap } from "@/components/painel-roadmap";
+import type { RoadmapItem } from "@/lib/roadmap-view";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -53,6 +55,7 @@ const ABAS = [
   { key: "saude", label: "saúde" },
   { key: "moderacao", label: "moderação" },
   { key: "agentic", label: "agentic" },
+  { key: "roadmap", label: "roadmap" },
 ] as const;
 type Aba = (typeof ABAS)[number]["key"];
 
@@ -72,7 +75,7 @@ function Kpi({ valor, label, nota, destaque = false }: { valor: string; label: s
   );
 }
 
-function Bloco({ titulo, desc, children }: { titulo: string; desc?: string; children: React.ReactNode }) {
+export function Bloco({ titulo, desc, children }: { titulo: string; desc?: string; children: React.ReactNode }) {
   return (
     <section className="mt-10">
       <div className="flex items-baseline justify-between gap-4">
@@ -283,7 +286,7 @@ function BaseDeGente({ pessoas }: { pessoas: Dados["pessoas"] }) {
   );
 }
 
-export function Painel({ dados }: { dados: Dados }) {
+export function Painel({ dados, itensRoadmap }: { dados: Dados; itensRoadmap: RoadmapItem[] }) {
   const { filtro, metas, gente, uso, contribuicao, convite, catalogo, pessoas, insights, moderacao } = dados;
   const router = useRouter();
   const pathname = usePathname();
@@ -756,6 +759,8 @@ export function Painel({ dados }: { dados: Dados }) {
       </Bloco>
       </>
       )}
+
+      {aba === "roadmap" && <PainelRoadmap itens={itensRoadmap} />}
     </main>
   );
 }
