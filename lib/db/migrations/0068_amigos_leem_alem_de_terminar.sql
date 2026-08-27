@@ -42,6 +42,31 @@ alter table activities
   add constraint activities_verb_check
   check (verb in ('started','finished','shelved','rated','reviewed','recommended','created_list'));
 
+-- ════════════════════════════════════════════════════════════════════
+--  EMENDA, DEPOIS DE DERRUBAR gume.club POR 44 MINUTOS.
+--
+--  Esta migration nunca tinha rodado de verdade em lugar nenhum além de um banco
+--  de desenvolvimento descartável: em produção, `drizzle-kit migrate` roda dentro
+--  de uma transação, e o CREATE UNIQUE INDEX abaixo falhou na hora — sobrou gente
+--  de verdade que editou a própria resenha antes desta fatia existir, e cada
+--  edição, no código antigo, empilhava uma linha nova em `activities` com o MESMO
+--  review_id. A migration inteira voltou atrás, o `drizzle-kit migrate && next
+--  start` do container nunca passou do migrate, e o site ficou fora do ar até
+--  este DELETE existir. Ver a entrada em ai/DECISIONS.md.
+--
+--  Por isso esta migration é editada em vez de ganhar uma 0069: ela não tem
+--  efeito nenhum gravado em produção para respeitar, e deixá-la quebrada no
+--  histórico faria QUALQUER deploy futuro cair na mesma cova.
+--
+--  Mantém a linha mais NOVA de cada resenha (id maior, uuidv7 ordena por tempo) —
+--  a mesma escolha que o record() com UPSERT já faz daqui em diante.
+-- ════════════════════════════════════════════════════════════════════
+delete from activities a
+using activities mais_nova
+where a.review_id is not null
+  and a.review_id = mais_nova.review_id
+  and a.id < mais_nova.id;
+
 create unique index if not exists activities_review_unique
   on activities (review_id)
   where review_id is not null;
