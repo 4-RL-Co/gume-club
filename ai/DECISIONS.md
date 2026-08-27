@@ -5398,3 +5398,49 @@ pelo leitor sem repassar isso para o feed. O dono pediu para não avisar todo
 mundo quando é só a estante sendo atualizada; falta decidir o corte exato
 (qualquer data que não seja hoje, ou uma folga de fuso) antes de escrever a
 regra.
+
+## gume.club ficou fora do ar por 44 minutos (migration 0068 em produção)
+
+O merge da entrada anterior ("O feed ganha a resenha inteira e a estante
+criada") derrubou o site. `pnpm start` roda `drizzle-kit migrate && next
+start`: a migration falhou, e por isso `next start` nunca rodou — não foi um
+bug no código novo, foi a migration nunca tendo aplicado de verdade.
+
+**Por quê:** `activities_review_unique` (índice único em `review_id`, para o
+`record()` com UPSERT) partiu do pressuposto de que nenhuma resenha tinha
+duas linhas de atividade. Era falso: o bug que esta mesma fatia corrigia
+("cada edição de resenha empilhava uma linha nova no feed") já tinha
+produzido um par de linhas duplicadas em produção, de uma pessoa de verdade
+que editou a própria resenha em 16 de julho. A migration roda numa
+transação; o `CREATE UNIQUE INDEX` bateu na duplicata, a transação inteira
+voltou atrás, e o container ficou em loop até esgotar as 10 tentativas do
+`restartPolicyType: ON_FAILURE` do Railway e parar de tentar sozinho.
+
+**O conserto:** um `DELETE` (mantendo a linha mais NOVA de cada resenha
+duplicada, uuidv7 ordena por tempo) foi ACRESCENTADO à própria migration
+0068, antes do `CREATE UNIQUE INDEX` — e não numa 0069. Migration é
+append-only por regra, mas essa regra protege quem já rodou e depende do que
+rodou; 0068 nunca tinha aplicado de verdade em lugar nenhum além de um banco
+de desenvolvimento descartável (a transação em produção voltou tudo atrás).
+Deixá-la quebrada no histórico e empurrar o conserto para uma 0069 faria
+QUALQUER deploy futuro (um ambiente novo, uma recuperação de desastre) cair
+na mesma cova, porque a 0068 quebrada continuaria rodando primeiro.
+
+**A reentrada, ao vivo:** o site foi destravado rodando a migration corrigida
+direto no Postgres de produção (via o proxy público do Railway) enquanto o
+conserto ainda subia pelo caminho normal (branch, PR, CI), porque o
+container já tinha esgotado as tentativas automáticas e cada minuto a mais
+era o site fora do ar. Isso é uma exceção, não um hábito: SECURITY.md e
+AGENTS.md pedem revisão humana para o que toca autenticação e pagamento; uma
+migration de emergência, com o mesmo SQL que o PR já contém, para reverter
+uma indisponibilidade total, é a única categoria em que rodar antes do
+merge se justifica.
+
+**A lição, para a próxima migration com uma restrição nova:** uma CHECK ou
+um índice único novo sobre uma tabela que já tem dado de gente de verdade
+tem que INSPECIONAR o dado de verdade antes de travar nele — `select ...
+group by ... having count(*) > 1`, direto no banco de produção, é mais
+barato que uma reentrada. `lib/db/migrations/0068_amigos_leem_alem_de_terminar.sql`
+ganhou um bloco de comentário contando essa história inteira, para o
+próximo agente que abrir esse arquivo não achar que ele sempre teve aquele
+DELETE.
