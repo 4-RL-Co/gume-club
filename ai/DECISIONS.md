@@ -5348,3 +5348,53 @@ proporcional. A porta continua se fechando e reabrindo sozinha.
 
 Coberto em `lib/librarian.sql.test.ts`, novo — não havia teste de SQL
 para esta regra antes desta mudança.
+
+## O feed ganha a resenha inteira e a estante criada
+
+"Aí tem que ser possível você clicar para ver a resenha completa, upvote ali
+tudo bonitinho, [...] se o amigo criou uma lista personalizada também" — o
+dono, sobre a página de amigos. "resenhou" já era um verbo do feed
+(`lib/social.ts`) desde a Fase 3, mas a linha só mostrava a frase; criar uma
+estante inventada não gerava linha nenhuma.
+
+**A resenha:** o corpo e o upvote (`components/resenha-no-feed.tsx`,
+reaproveitando `components/upvote-resenha.tsx` tal e qual) são buscados em
+LOTE por `getResenhasPorId()` (`lib/explore.ts`), e não dentro da consulta do
+feed. E ali dentro a visibilidade é conferida DE NOVO, com `visibleTo()` no
+autor da resenha — não só confiada na `visibility` que a `activity` copiou no
+instante em que foi gravada. Motivo: `saveReview()` roda a cada edição, e
+antes desta fatia cada edição inserida uma linha NOVA no feed (corrigir uma
+vírgula virava "resenhou de novo" pra quem te segue). Agora `record()` faz
+UPSERT na chave `activities_review_unique` (uma resenha, uma linha, sempre),
+mas mesmo assim uma linha antiga pode sobreviver com uma visibilidade que já
+não é verdade (a pessoa pode ter tornado a resenha privada por outro caminho
+que não `saveReview()`). Confiar só na cópia seria vazar o texto atual de uma
+resenha que hoje é privada, por uma linha de feed que jurava ser pública há
+uma semana. `lib/social.sql.test.ts` prova o ataque e a defesa.
+
+**A estante:** `activities.work_id` deixou de ser `NOT NULL` (migration
+0068) — uma CHECK (`work_id is not null or collection_id is not null`)
+segura o lugar dele. "criou uma lista" é a primeira linha do feed que não
+fala de um livro; falar disso exigiria inventar um livro que não tem nada a
+ver com o fato, e o schema.md já dizia "toda edição de metadado é uma
+revisão", nunca uma invenção. O card reaproveita `components/lista-card.tsx`
+(`ListaCardVis`) tal e qual como em `/listas` — o mesmo fato pesa o mesmo nas
+duas telas, a mesma régua de sempre. Mesma cautela da resenha:
+`getListasPorId()` (`lib/listas.ts`) confere `visibleTo()` de novo, e uma
+estante que ficou privada depois de criada some da linha antiga.
+
+**O que ficou de fora, de propósito:** `setShelvesByName()` (o "digite o nome
+da estante" dentro do editor de um livro) cria estantes sempre PRIVADAS e não
+grava atividade — ela nunca apareceria no feed de ninguém mesmo se gravasse
+(visibilidade privada), e adicionar isso ali seria mexer numa função de
+caminho quente sem ganho nenhum. Só os dois botões de "criar uma lista"
+deliberados (`novaEstante`, `novaEstanteComDescricao`) gravam.
+
+E uma dívida anotada, não resolvida aqui: preencher a estante
+retroativamente (um livro terminado em 2024, digitado hoje) ainda dispara a
+mesma linha "fulano terminou" que um clique ao vivo — `record()` sempre
+carimba `created_at` como agora, e `setStatus()` já aceita uma data escolhida
+pelo leitor sem repassar isso para o feed. O dono pediu para não avisar todo
+mundo quando é só a estante sendo atualizada; falta decidir o corte exato
+(qualquer data que não seja hoje, ou uma folga de fuso) antes de escrever a
+regra.

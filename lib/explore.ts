@@ -578,3 +578,40 @@ export async function getResenhasDoLivro(
     votei: r.votei,
   }));
 }
+
+export type ResenhaPorId = { body: string; upvotes: number; votei: boolean };
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  VÁRIAS RESENHAS, PELO ID, COMO UM MAPA. Para o feed de amigos: "fulano
+ *  resenhou" ganhou corpo e upvote (que antes só existiam na página do
+ *  livro), e uma consulta em LOTE evita uma ida ao banco por linha de feed.
+ *
+ *  A visibilidade roda de novo aqui, com visibleTo() no autor da RESENHA —
+ *  não só confiada na visibility da activity, que é uma cópia feita no
+ *  instante em que a resenha foi salva e pode ter ficado velha (a resenha
+ *  virou privada depois, e a linha antiga do feed não sabe). Uma resenha
+ *  ausente no mapa é uma resenha que sumiu, ficou privada ou foi moderada:
+ *  o feed cai para a frase sem corpo, o comportamento de sempre, e nunca
+ *  vaza o texto.
+ * ════════════════════════════════════════════════════════════════════
+ */
+export async function getResenhasPorId(viewer: Viewer, ids: string[]): Promise<Record<string, ResenhaPorId>> {
+  if (ids.length === 0) return {};
+
+  const rows = await db.execute<{ id: string; body: string; upvotes: number; votei: boolean }>(sql`
+    select reviews.id, reviews.body,
+           (select count(*) from review_upvotes ru where ru.review_id = reviews.id)::int as upvotes,
+           exists (
+             select 1 from review_upvotes ru
+              where ru.review_id = reviews.id and ru.user_id = ${viewer?.id ?? null}::uuid
+           ) as votei
+      from reviews
+     where reviews.id = any(${sql.param(ids)}::uuid[])
+       and reviews.deleted_at is null
+       and ${visibleTo(viewer, reviews.userId, reviews.visibility)}`);
+
+  const porId: Record<string, ResenhaPorId> = {};
+  for (const r of rows) porId[r.id] = { body: r.body, upvotes: r.upvotes, votei: r.votei };
+  return porId;
+}

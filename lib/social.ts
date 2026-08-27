@@ -7,7 +7,7 @@ import {
 
 /** Server only. Follows, the feed, and person-to-person recommendation. */
 
-export const VERBS = ["started", "finished", "shelved", "rated", "reviewed", "recommended"] as const;
+export const VERBS = ["started", "finished", "shelved", "rated", "reviewed", "recommended", "created_list"] as const;
 export type Verb = (typeof VERBS)[number];
 
 /**
@@ -17,15 +17,19 @@ export type Verb = (typeof VERBS)[number];
  * entry writes a private activity. If this ever defaults to public for a private
  * row, the feed becomes the leak: the row stays hidden and the activity announces
  * it anyway. See lib/authz.sql.test.ts, which proves it does not.
+ *
+ * `workId` é nulo só para "created_list": criar uma estante não fala de um
+ * livro, fala da estante (`extra.collectionId`). Ver a migration 0068.
  */
 export async function record(
   actorId: string,
   verb: Verb,
-  workId: string,
+  workId: string | null,
   extra: {
     visibility?: Visibility;
     rating?: number | null;
     reviewId?: string | null;
+    collectionId?: string | null;
     targetUserId?: string | null;
     note?: string | null;
     /**
@@ -38,17 +42,39 @@ export async function record(
     honra?: string | null;
   } = {},
 ): Promise<void> {
-  await db.insert(activities).values({
+  const values = {
     actorId,
     verb,
     workId,
+    collectionId: extra.collectionId ?? null,
     visibility: extra.visibility ?? "public",
     rating: extra.rating ?? null,
     reviewId: extra.reviewId ?? null,
     targetUserId: extra.targetUserId ?? null,
     note: extra.note ?? null,
     honra: extra.honra ?? null,
-  });
+  };
+
+  if (extra.reviewId) {
+    // Uma resenha, uma linha de feed, sempre. `saveReview()` chama record() a cada
+    // salvamento (inclusive corrigindo uma vírgula), e sem o UPSERT aqui cada edição
+    // empilhava uma cópia idêntica no feed de quem te segue. O upsert atualiza a
+    // visibilidade e a nota no lugar, e deixa o `id` (e por isso a posição no feed,
+    // que ordena por id e não por created_at) parado: consertar a resenha não
+    // carimba "resenhou de novo" no topo do feed de ninguém. A trava é
+    // `activities_review_unique`, migration 0068.
+    await db
+      .insert(activities)
+      .values(values)
+      .onConflictDoUpdate({
+        target: activities.reviewId,
+        targetWhere: sql`review_id is not null`,
+        set: { visibility: values.visibility, note: values.note },
+      });
+    return;
+  }
+
+  await db.insert(activities).values(values);
 }
 
 // ─────────────────────────────────────────────────────────────── follows
@@ -100,10 +126,21 @@ export type FeedItem = {
   actorName: string | null;
   actorImage: string | null;
   targetHandle: string | null;
-  workSlug: string;
-  workTitle: string;
+  /**
+   * Nulos só em "created_list": aquela linha fala de uma ESTANTE, não de um livro.
+   * Ver `collectionId` abaixo e a migration 0068.
+   */
+  workSlug: string | null;
+  workTitle: string | null;
   author: string | null;
   coverUrl: string | null;
+  /** Só em "reviewed". Quem quer o corpo, o upvote e o "quem votou" busca por
+   * este id em lote, com `getResenhasPorId()` (lib/explore.ts) — a mesma
+   * visibilidade é conferida de novo lá, e não só confiada nesta linha. */
+  reviewId: string | null;
+  /** Só em "created_list". A estante inteira (capas, nome, descrição) vem em
+   * lote de `getListasPorId()` (lib/listas.ts), pelo mesmo motivo. */
+  collectionId: string | null;
 };
 
 const PAGE = 30;
@@ -225,6 +262,9 @@ export async function getFeed(
       targetHandle: sql<string | null>`(
         select u2.handle from users u2 where u2.id = ${activities.targetUserId}
       )`,
+      // work_id é nulo em "created_list" (migration 0068): a linha fala de uma
+      // estante, não de um livro. LEFT JOIN, e não INNER, ou a linha some do feed
+      // inteiro nesse verbo.
       workSlug: works.slug,
       workTitle: works.title,
       author: authors.name,
@@ -233,10 +273,12 @@ export async function getFeed(
         where e.work_id = ${works.id} and e.cover_url is not null
         order by e.created_at asc limit 1
       )`,
+      reviewId: activities.reviewId,
+      collectionId: activities.collectionId,
     })
     .from(activities)
     .innerJoin(users, eq(users.id, activities.actorId))
-    .innerJoin(works, eq(works.id, activities.workId))
+    .leftJoin(works, eq(works.id, activities.workId))
     .leftJoin(authors, eq(authors.id, works.authorId))
     .where(and(
       // only the people you follow. not "everyone", not "suggested for you".
@@ -315,6 +357,8 @@ export async function getPraca(
       targetHandle: sql<string | null>`(
         select u2.handle from users u2 where u2.id = ${activities.targetUserId}
       )`,
+      // work_id é nulo em "created_list" (migration 0068). LEFT JOIN, e não
+      // INNER, ou a linha some da praça inteira nesse verbo.
       workSlug: works.slug,
       workTitle: works.title,
       author: authors.name,
@@ -323,10 +367,12 @@ export async function getPraca(
         where e.work_id = ${works.id} and e.cover_url is not null
         order by e.created_at asc limit 1
       )`,
+      reviewId: activities.reviewId,
+      collectionId: activities.collectionId,
     })
     .from(activities)
     .innerJoin(users, eq(users.id, activities.actorId))
-    .innerJoin(works, eq(works.id, activities.workId))
+    .leftJoin(works, eq(works.id, activities.workId))
     .leftJoin(authors, eq(authors.id, works.authorId))
     .where(and(
       // A porta de sempre. Ela é o que faz um banido sumir daqui junto com o resto.

@@ -24,6 +24,7 @@ import {
   type BookEdit, type ShelfSnapshot,
 } from "@/lib/curation";
 import { descreverLista } from "@/lib/listas";
+import { record } from "@/lib/social";
 import type { Visibility } from "@/lib/authz";
 
 /** Take the book off your shelf. Everything you attached to it goes with it. */
@@ -291,7 +292,10 @@ export async function toggleCollection(
 
 export async function novaEstante(name: string, visibility: Visibility): Promise<void> {
   const actor = await getActor();
-  await createCollection(actor, name, visibility);
+  const id = await createCollection(actor, name, visibility);
+  // A atividade herda a visibilidade da ESTANTE, a mesma lei de sempre: uma
+  // estante privada nunca anuncia a si mesma no feed de quem segue.
+  if (id) await record(actor.id, "created_list", null, { visibility, collectionId: id });
   revalidatePath("/");
   revalidatePath("/estante");
 }
@@ -312,6 +316,7 @@ export async function novaEstanteComDescricao(
   if (id && description.trim()) {
     await descreverLista(actor, id, description);
   }
+  if (id) await record(actor.id, "created_list", null, { visibility, collectionId: id });
   revalidatePath("/");
   revalidatePath("/estante");
 }

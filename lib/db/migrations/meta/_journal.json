@@ -477,6 +477,13 @@
       "when": 1784700817020,
       "tag": "0067_o_que_vem_por_ai",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1784700817021,
+      "tag": "0068_amigos_leem_alem_de_terminar",
+      "breakpoints": true
     }
   ]
 }

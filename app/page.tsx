@@ -507,6 +507,10 @@ async function Casa({ viewerId }: { viewerId: string }) {
 
   const primeiro = me?.displayName?.split(" ")[0] ?? null;
 
+  // "criou uma lista" (migration 0068) não tem capa: esta prévia de quatro é só
+  // livro, e a linha inteira mora em /pessoas.
+  const comLivro = feed.items.filter((it) => it.workSlug !== null);
+
   return (
     <main className="mx-auto max-w-7xl px-6 pb-32 sm:px-10">
       <header className="mt-20 sm:mt-28">
@@ -633,13 +637,16 @@ async function Casa({ viewerId }: { viewerId: string }) {
           </Link>
         </div>
 
-        {feed.items.length === 0 ? (
+        {/* "criou uma lista" não fala de livro nenhum, e este recorte de quatro é
+            só a prévia com capa. Ela mora inteira em /pessoas (components/feed-list.tsx),
+            que já sabe desenhar essa forma diferente de card. */}
+        {comLivro.length === 0 ? (
           <p className="mt-6 text-[15px] text-[var(--color-ink-soft)]">
             Ninguém por perto ainda. Siga alguém, e o que essa pessoa ler aparece aqui.
           </p>
         ) : (
           <ul className="mt-2">
-            {feed.items.slice(0, 4).map((it) => (
+            {comLivro.slice(0, 4).map((it) => (
               <li
                 key={it.id}
                 className="flex items-center gap-4 border-b border-[var(--color-rule)] py-5 last:border-b-0 last:pb-0"
@@ -647,7 +654,7 @@ async function Casa({ viewerId }: { viewerId: string }) {
                 <AvatarLink src={it.actorImage} name={it.actorName} handle={it.actorHandle} size={36} />
 
                 <Link href={`/livro/${it.workSlug}`} className="cover-lift w-10 shrink-0">
-                  <Cover title={it.workTitle} author={it.author} src={it.coverUrl} />
+                  <Cover title={it.workTitle!} author={it.author} src={it.coverUrl} />
                 </Link>
 
                 <p className="min-w-0 text-[14px] leading-relaxed text-[var(--color-ink-soft)]">

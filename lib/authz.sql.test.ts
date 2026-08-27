@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
 import { visibleTo } from "@/lib/authz";
-import { libraryEntries, users, works, follows } from "@/lib/db/schema";
+import { libraryEntries, users, works, follows, collections } from "@/lib/db/schema";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -176,6 +176,28 @@ describe("o feed não vaza", () => {
 
     // e o que ele NÃO PODE, que é a razão deste teste existir
     expect(titulos).not.toContain("Feed private");
+  });
+
+  it("uma linha 'created_list' (sem livro, migration 0068) também respeita a visibility", async () => {
+    const { getFeed } = await import("@/lib/social");
+    const ids: Record<string, string> = {};
+
+    for (const visibility of ["public", "private"] as const) {
+      const [col] = await db
+        .insert(collections)
+        .values({ userId: ana.id, slug: `authz-lista-${visibility}-${Date.now()}`, name: `Estante ${visibility}`, visibility })
+        .returning({ id: collections.id });
+      ids[visibility] = col!.id;
+      await db.execute(sql`
+        insert into activities (actor_id, verb, work_id, collection_id, visibility)
+        values (${ana.id}::uuid, 'created_list', null, ${col!.id}::uuid, ${visibility})`);
+    }
+
+    const feed = await getFeed({ id: bruno.id });
+    const collectionIds = feed.items.map((i) => i.collectionId);
+
+    expect(collectionIds).toContain(ids.public);
+    expect(collectionIds, "estante PRIVADA vazou pelo feed sem livro nenhum").not.toContain(ids.private);
   });
 
   it("um estranho, que não segue ninguém, tem o feed vazio", async () => {

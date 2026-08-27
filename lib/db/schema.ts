@@ -504,11 +504,22 @@ export const activities = pgTable("activities", {
   id: uuid("id").primaryKey().default(uuidv7),
   actorId: uuid("actor_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   verb: text("verb").notNull(),
-  workId: uuid("work_id").notNull().references(() => works.id, { onDelete: "cascade" }),
+  /**
+   * NULO só para "created_list" (migration 0068): criar uma estante não é sobre
+   * um livro nenhum, é sobre a estante. Toda outra linha continua exigindo um
+   * livro na prática, garantido pela CHECK abaixo, e não por NOT NULL.
+   */
+  workId: uuid("work_id").references(() => works.id, { onDelete: "cascade" }),
   targetUserId: uuid("target_user_id").references(() => users.id, { onDelete: "cascade" }),
   rating: smallint("rating"),
   /** Deleting a review takes its activity with it, so the feed never renders a headstone. */
   reviewId: uuid("review_id").references(() => reviews.id, { onDelete: "cascade" }),
+  /**
+   * A estante inventada, para "created_list". Mesma lógica do review_id acima:
+   * apagar a estante apaga a linha do feed junto, e nunca sobra uma lápide.
+   * Ver a migration 0068.
+   */
+  collectionId: uuid("collection_id").references(() => collections.id, { onDelete: "cascade" }),
   note: text("note"),
   visibility: visibility("visibility").notNull().default("public"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -523,6 +534,18 @@ export const activities = pgTable("activities", {
 }, (t) => [
   index("activities_actor_idx").on(t.actorId, t.id),
   index("activities_feed_idx").on(t.id),
+  // Toda linha fala de alguma coisa: um livro ou uma estante, nunca as duas
+  // faltando ao mesmo tempo. Ver a migration 0068.
+  check("activities_sobre_algo", sql`${t.workId} is not null or ${t.collectionId} is not null`),
+  // A lista de verbos, travada desde a migration 0010. "created_list" entrou na 0068.
+  check("activities_verb_check", sql`${t.verb} in ('started','finished','shelved','rated','reviewed','recommended','created_list')`),
+  /**
+   * Uma resenha, uma linha de feed, sempre. Sem isto, editar a mesma resenha três
+   * vezes empilhava três linhas idênticas no feed de quem te segue — e o record()
+   * em lib/social.ts faz UPSERT nesta chave (migration 0068), então precisa existir
+   * de verdade, e não só na cabeça de quem escreveu a query.
+   */
+  uniqueIndex("activities_review_unique").on(t.reviewId).where(sql`${t.reviewId} is not null`),
 ]);
 
 /**
