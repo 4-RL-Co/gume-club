@@ -1,11 +1,15 @@
 import Link from "next/link";
-import { BookOpen, BookCheck, Bookmark, Quote, PenLine, Send } from "lucide-react";
+import { BookOpen, BookCheck, Bookmark, Quote, PenLine, Send, Library } from "lucide-react";
 import { getFeed, type FeedItem } from "@/lib/social";
 import { getCoroasDe } from "@/lib/escada";
 import { NOME, type Honra } from "@/lib/honras";
 import { Moldura } from "@/components/moldura";
 import { Empty } from "@/components/empty";
 import { Cover } from "@/components/cover";
+import { ResenhaNoFeed } from "@/components/resenha-no-feed";
+import { ListaCardVis } from "@/components/lista-card";
+import { getResenhasPorId } from "@/lib/explore";
+import { getListasPorId } from "@/lib/listas";
 
 import { theirs } from "@/lib/veredito";
 import type { Viewer } from "@/lib/authz";
@@ -20,6 +24,7 @@ const SAID: Record<string, string> = {
   rated: "avaliou",
   reviewed: "resenhou",
   recommended: "recomendou",
+  created_list: "criou uma lista",
 };
 
 /**
@@ -38,7 +43,7 @@ const SAID: Record<string, string> = {
  *  com a CAPA, o feed vira uma barra de ícones com livros de enfeite, e
  *  a capa é o conteúdo.
  *
- *  E todos os seis têm o MESMO tamanho e a MESMA opacidade. Nenhum verbo
+ *  E todos os sete têm o MESMO tamanho e a MESMA opacidade. Nenhum verbo
  *  vale mais que outro: "terminou" não é uma conquista maior que
  *  "começou", e desenhar isso seria dizer o contrário.
  * ════════════════════════════════════════════════════════════════════
@@ -50,6 +55,7 @@ const GLIFO: Record<string, typeof BookOpen> = {
   rated: Quote, //           disse o que achou, em uma palavra
   reviewed: PenLine, //      escreveu
   recommended: Send, //      mandou para alguém: de PESSOA para pessoa
+  created_list: Library, //  montou uma estante nova
 };
 
 /** Iguais para os seis. Mexeu em um, disse que um verbo vale mais que outro. */
@@ -87,7 +93,7 @@ export async function FeedList({ viewer, cursor }: { viewer: Viewer; cursor: str
 
   return (
     <>
-      <FeedItems items={items} insignias={insignias} className="mt-8" />
+      <FeedItems items={items} insignias={insignias} viewer={viewer} className="mt-8" />
 
       {/* Cursor, nunca OFFSET: atividade nova chegando no meio da rolagem faria um
           offset pular ou repetir linha. O id é uuidv7, então ele ordena por tempo. */}
@@ -120,24 +126,93 @@ export async function FeedList({ viewer, cursor }: { viewer: Viewer; cursor: str
 export async function FeedItems({
   items,
   insignias: dadas,
+  viewer,
   className = "",
 }: {
   items: FeedItem[];
   /** Já carregadas pelo feed de amigos. A praça deixa em branco, e a gente busca. */
   insignias?: Record<string, Awaited<ReturnType<typeof getBadgesOf>>[string]>;
+  /** Para checar de novo a visibilidade da resenha e da estante, na leitura. */
+  viewer: Viewer;
   className?: string;
 }) {
   const quem = [...new Set(items.map((i) => i.actorId))];
+  const resenhaIds = [...new Set(
+    items.filter((i) => i.verb === "reviewed" && i.reviewId).map((i) => i.reviewId!),
+  )];
+  const listaIds = [...new Set(
+    items.filter((i) => i.verb === "created_list" && i.collectionId).map((i) => i.collectionId!),
+  )];
 
-  const [insignias, coroas] = await Promise.all([
+  const [insignias, coroas, resenhas, listas] = await Promise.all([
     dadas ? Promise.resolve(dadas) : getBadgesOf(quem),
     // UMA consulta para o feed inteiro, e não uma por linha. Ver lib/escada.ts.
     getCoroasDe(quem),
+    // O corpo e o upvote de cada resenha, em lote — e a visibilidade é
+    // conferida DE NOVO aqui, e não só confiada na linha da atividade. Ver
+    // lib/explore.ts.
+    getResenhasPorId(viewer, resenhaIds),
+    // A estante inteira de cada "criou uma lista", em lote, com a mesma cautela. Ver lib/listas.ts.
+    getListasPorId(viewer, listaIds),
   ]);
+
+  // Uma "criou uma lista" cuja estante sumiu ou ficou privada depois não vira uma
+  // linha vazia no feed: ela some, do mesmo jeito que uma resenha apagada leva a
+  // atividade junto (ON DELETE CASCADE). "Resenhou" sem corpo continua valendo — a
+  // frase sozinha já era o que o feed mostrava antes desta fatia.
+  const visiveis = items.filter((it) => it.verb !== "created_list" || (it.collectionId && listas[it.collectionId]));
 
   return (
     <ul className={`flex flex-col gap-4 ${className}`}>
-      {items.map((it) => (
+      {visiveis.map((it) => {
+        const data = new Date(it.createdAt).toLocaleDateString("pt-BR", { day: "numeric", month: "long" });
+
+        // "criou uma lista" não fala de livro nenhum: o card inteiro muda de forma,
+        // trocando a capa pela estante em si (components/lista-card.tsx), reaproveitada
+        // tal e qual como aparece em /listas — o mesmo fato pesa o mesmo nas duas telas.
+        if (it.verb === "created_list") {
+          const lista = listas[it.collectionId!]!;
+          return (
+            <li key={it.id} className="surface relative flex gap-5 p-6 sm:p-7">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute right-5 top-5 text-[var(--color-ink)] opacity-[0.14]"
+              >
+                <Library size={GLIFO_TAMANHO} strokeWidth={GLIFO_TRACO} />
+              </span>
+
+              <Link href={`/@${it.actorHandle}`} aria-label={it.actorName ?? it.actorHandle} className="shrink-0">
+                <Moldura
+                  coroa={coroas[it.actorId] ?? null}
+                  src={it.actorImage}
+                  name={it.actorName}
+                  handle={it.actorHandle}
+                  size={48}
+                />
+              </Link>
+
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] leading-relaxed text-[var(--color-ink-soft)]">
+                  <Link href={`/@${it.actorHandle}`} className="font-medium text-[var(--color-ink)] hover:underline">
+                    {it.actorName ?? it.actorHandle}
+                  </Link>
+                  <Badges badges={insignias[it.actorId] ?? []} className="ml-1.5" />{" "}
+                  {SAID.created_list}
+                </p>
+
+                <div className="mt-3">
+                  {/* mostrarDono=false: quem montou já está na cara logo acima, e
+                      repetir o rosto ali embaixo seria a mesma pessoa duas vezes. */}
+                  <ListaCardVis lista={lista} mostrarDono={false} />
+                </div>
+
+                <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">{data}</p>
+              </div>
+            </li>
+          );
+        }
+
+        return (
           <li key={it.id} className="surface relative flex gap-5 p-6 sm:p-7">
             {/* O selo do verbo. Canto de cima, à direita, e fraco: uma marca d'água,
                 e nunca um selo de importância. Decorativo de propósito (a frase já
@@ -175,7 +250,9 @@ export async function FeedItems({
             </Link>
 
             <Link href={`/livro/${it.workSlug}`} className="cover-lift w-12 shrink-0 sm:w-14">
-              <Cover title={it.workTitle} author={it.author} src={it.coverUrl} />
+              {/* Todo verbo daqui em diante fala de um livro: "created_list" já
+                  voltou mais acima, no próprio branch. */}
+              <Cover title={it.workTitle!} author={it.author} src={it.coverUrl} />
             </Link>
 
             <div className="min-w-0 flex-1">
@@ -223,12 +300,25 @@ export async function FeedItems({
                 <p className="voice mt-2 text-[15px] leading-relaxed text-[var(--color-ink)]">{it.note}</p>
               )}
 
-              <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-                {new Date(it.createdAt).toLocaleDateString("pt-BR", { day: "numeric", month: "long" })}
-              </p>
+              {/* A resenha inteira, com upvote — o que antes só existia na página do
+                  livro. Ausente quando a resenha sumiu, ficou privada ou foi moderada
+                  DEPOIS desta linha ter sido escrita: a frase acima continua verdadeira
+                  sozinha, e o feed nunca mostra um corpo que não pode mais mostrar. */}
+              {it.verb === "reviewed" && it.reviewId && resenhas[it.reviewId] && (
+                <ResenhaNoFeed
+                  reviewId={it.reviewId}
+                  workSlug={it.workSlug!}
+                  body={resenhas[it.reviewId]!.body}
+                  upvotes={resenhas[it.reviewId]!.upvotes}
+                  votei={resenhas[it.reviewId]!.votei}
+                />
+              )}
+
+              <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">{data}</p>
             </div>
-        </li>
-      ))}
+          </li>
+        );
+      })}
     </ul>
   );
 }

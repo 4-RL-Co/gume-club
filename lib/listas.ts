@@ -150,6 +150,33 @@ export async function getListasDe(viewer: Viewer, ownerId: string): Promise<List
 }
 
 /**
+ * Várias estantes, pelo id, como um mapa. Para o feed de amigos: "fulano criou uma
+ * lista" busca a estante inteira (capas, nome, descrição) EM LOTE, uma consulta para
+ * a página inteira, e não uma por linha — o mesmo motivo de getBadgesOf() e
+ * getCoroasDe() em lib/badges.ts e lib/escada.ts.
+ *
+ * A visibilidade roda de novo aqui dentro (cardSelect() já filtra por
+ * visibleTo()), e não é só confiada na visibility da activity: uma estante que
+ * ficou privada DEPOIS de criada não pode vazar pela linha antiga do feed.
+ * Uma estante ausente no mapa devolvido é uma estante que sumiu ou que o
+ * viewer não pode ver, e quem chama trata isso escondendo a linha do feed.
+ */
+export async function getListasPorId(viewer: Viewer, ids: string[]): Promise<Record<string, ListaCard>> {
+  if (ids.length === 0) return {};
+
+  const rows = await db.execute<CardRow>(sql`
+    ${cardSelect(viewer)}
+       and collections.id = any(${sql.param(ids)}::uuid[])`);
+
+  const porId: Record<string, ListaCard> = {};
+  for (const r of rows) {
+    const card = paraCard(r);
+    porId[card.id] = card;
+  }
+  return porId;
+}
+
+/**
  * As estantes que alguém GUARDOU. O crédito vai inteiro para quem montou: o card é o
  * mesmo, com o nome de quem fez. Uma estante que ficou privada depois some daqui,
  * porque o filtro de visibilidade roda de novo a cada leitura.
