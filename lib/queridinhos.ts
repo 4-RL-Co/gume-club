@@ -93,9 +93,23 @@ export async function getQueridinhos(limite = 100): Promise<Queridinho[]> {
     select w.slug,
            w.title,
            a.name as author,
+           -- A capa é a da edição que MAIS GENTE tem na estante, e só entre
+           -- edições igualmente tidas desempata pela mais antiga — a mesma régua
+           -- de lib/listas.ts, e pelo mesmo motivo: a mais antiga era um acidente
+           -- de importação, sem relação com o que os leitores de verdade têm.
+           --
+           -- CONTAGEM-DE-CAPA, não de gente: este número (quantos library_entries
+           -- apontam para a edição) nunca sai da consulta como coluna, nunca
+           -- aparece em tela — só decide qual IMAGEM aparece, e desaparece. Por
+           -- isso NÃO precisa da régua "só pública" que "leram" e "estantes"
+           -- seguem logo abaixo: aquelas são números que o card MOSTRA, e esta
+           -- não mostra nada. Ver ai/DECISIONS.md.
            (select e.cover_url from editions e
              where e.work_id = w.id and e.cover_url is not null
-             order by e.created_at asc limit 1) as "coverUrl",
+             order by (
+               select count(*) from library_entries le_capa where le_capa.edition_id = e.id
+             ) desc, e.created_at asc
+             limit 1) as "coverUrl",
            -- O VOTO, e é UM SÓ: o mesmo count que ordena a lista lá embaixo é o que
            -- o card imprime no coração. Eram dois números diferentes, e a lista
            -- ordenava pelo que ela não mostrava. Ver o cabeçalho.

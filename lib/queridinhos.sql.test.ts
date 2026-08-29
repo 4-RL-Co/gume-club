@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { readFileSync } from "node:fs";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { users, works, ratings } from "@/lib/db/schema";
+import { users, works, ratings, editions, libraryEntries } from "@/lib/db/schema";
 import { getQueridinhos } from "@/lib/queridinhos";
 
 /**
@@ -246,5 +246,71 @@ describe("o veredito privado conta no Top 100", () => {
           `adoraram": ordenar por outro faz a tela discordar de si mesma.`,
       ).toBe(false);
     }
+  });
+});
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  A CAPA DO TOP 100 TAMBÉM É A DA EDIÇÃO MAIS TIDA. Mesma régua de
+ *  lib/listas.ts, e o mesmo bug real que a motivou: "eu clico em romeu e
+ *  julieta e aparece do clube de literatura clássica (CLC) [...] mas na
+ *  lista aparecem outras capas" — o dono, ao ver /queridinhos.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("a capa do Top 100 é a da edição mais tida, não a mais antiga", () => {
+  const marcaCapa = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  const gente: string[] = [];
+  let obra: string;
+
+  beforeAll(async () => {
+    const mk = async (handle: string) => {
+      const [u] = await db
+        .insert(users)
+        .values({ handle, email: `${handle}@queridinhos.test`, emailVerified: true })
+        .returning({ id: users.id });
+      gente.push(u!.id);
+      return u!.id;
+    };
+
+    const quemAdora = await mk(`queridinhos-capa-adora-${marcaCapa}`);
+
+    const [w] = await db
+      .insert(works)
+      .values({ slug: `queridinhos-capa-${marcaCapa}`, title: `A obra da capa disputada ${marcaCapa}` })
+      .returning({ id: works.id });
+    obra = w!.id;
+
+    await db.insert(ratings).values({ userId: quemAdora, workId: obra, value: 5, visibility: "public" });
+
+    // A ANTIGA entrou primeiro no catálogo, e é a que a régua velha escolheria —
+    // mas ninguém tem ela na estante.
+    const [ea] = await db
+      .insert(editions)
+      .values({ workId: obra, coverUrl: "https://covers.test/antiga.jpg", createdAt: new Date("2020-01-01") })
+      .returning({ id: editions.id });
+
+    // A POPULAR entrou depois, mas é a que duas pessoas têm.
+    const [ep] = await db
+      .insert(editions)
+      .values({ workId: obra, coverUrl: "https://covers.test/popular.jpg", createdAt: new Date("2024-01-01") })
+      .returning({ id: editions.id });
+
+    for (let i = 0; i < 2; i++) {
+      const leitor = await mk(`queridinhos-capa-leitor-${i}-${marcaCapa}`);
+      await db.insert(libraryEntries).values({ userId: leitor, workId: obra, editionId: ep!.id });
+    }
+    // Referencia a ANTIGA só para o TypeScript não achar a variável morta —
+    // ninguém a possui de propósito, e é esse o ponto do teste.
+    expect(ea).toBeDefined();
+  });
+
+  afterAll(async () => {
+    for (const id of gente) await db.execute(sql`delete from users where id = ${id}::uuid`);
+    await db.execute(sql`delete from works where id = ${obra}::uuid`);
+  });
+
+  it("o Top 100 mostra a capa da edição mais tida, mesmo sendo a mais nova no catálogo", async () => {
+    const [querido] = await getQueridinhos(100).then((lista) => lista.filter((q) => q.slug === `queridinhos-capa-${marcaCapa}`));
+    expect(querido!.coverUrl).toBe("https://covers.test/popular.jpg");
   });
 });
