@@ -35,7 +35,7 @@ const INKS = [
 const PAPER = "240 236 228";
 
 export function Cover({
-  title, author, src, prioridade = false,
+  title, author, src, prioridade = false, imediato = false,
 }: {
   title: string;
   author?: string | null;
@@ -45,6 +45,22 @@ export function Cover({
    * tudo: ela é o motivo de a pessoa ter aberto a tela. Todo o resto fica lazy.
    */
   prioridade?: boolean;
+  /**
+   * ═══ QUANDO "SÓ CARREGA AO APARECER NA TELA" NÃO SABE DIZER SE APARECEU ═══
+   *
+   * O padrão do navegador (lazy) decide sozinho, pela posição do elemento, se já
+   * vale a pena baixar a imagem. Numa parede de capas girada em 3D e rolando
+   * sozinha por CSS (app/page.tsx, a home deslogada), essa conta erra: boa parte
+   * das capas nunca é considerada "visível", e fica esperando pra sempre um
+   * momento que não chega. No celular, tela menor, erra mais.
+   *
+   * `imediato` pula essa conta: a imagem baixa assim que o componente existe,
+   * sem esperar o navegador decidir. Diferente de `prioridade`, não pede
+   * preload nem prioridade de rede — é só "não espere a tela", não "baixe
+   * primeiro que tudo". Para um cenário fixo, pensado para estar cheio desde o
+   * primeiro quadro, esperar o navegador adivinhar é a régua errada.
+   */
+  imediato?: boolean;
 }) {
   /**
    * ═══ A IMAGEM QUE MORREU VIRA A CAPA TIPOGRÁFICA, e não um ícone quebrado ═══
@@ -97,6 +113,7 @@ export function Cover({
           fill
           sizes="(max-width: 640px) 45vw, 240px"
           priority={prioridade}
+          loading={prioridade ? undefined : imediato ? "eager" : undefined}
           onError={() => setMorreu(true)}
           className="object-cover"
           style={{ borderRadius: "var(--radius-cover)" }}

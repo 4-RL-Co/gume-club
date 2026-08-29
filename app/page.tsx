@@ -399,7 +399,11 @@ function Parede({ capas }: { capas: { title: string; author: string | null; cove
               >
                 {fita.map((c, i) => (
                   <span key={i} className="block w-24 shrink-0 sm:w-36">
-                    <Cover title={c.title} author={c.author} src={c.cover_url} />
+                    {/* imediato: a parede gira em 3D e rola sozinha, e isso confunde o
+                        cálculo de "apareceu na tela" que o carregamento preguiçoso
+                        padrão usa — boa parte das capas nunca era considerada visível
+                        e ficava esperando pra sempre. Ver components/cover.tsx. */}
+                    <Cover title={c.title} author={c.author} src={c.cover_url} imediato />
                   </span>
                 ))}
               </div>
