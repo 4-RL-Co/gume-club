@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn, signUp } from "@/lib/auth-client";
 import { rememberInviter } from "@/app/entrar/invite";
+import { registrarEvento, origemAtual } from "@/lib/funil-client";
 
 /**
  * Entrar. E-mail e senha, ou Google. Nada mais.
@@ -64,6 +65,18 @@ export default function Entrar() {
       vivo = false;
     };
   }, [convite]);
+
+  /**
+   * `viu_entrar`, uma vez, no instante do primeiro render — ANTES de o efeito
+   * do convite (acima) ter chance de terminar e trocar `mode`. É de propósito:
+   * a pergunta desta fatia é "a porta abriu como cadastro ou como login", e a
+   * resposta tem que ser a do momento em que a pessoa chegou, não a de depois
+   * de qualquer ajuste automático.
+   */
+  useEffect(() => {
+    registrarEvento("viu_entrar", { modoInicial: mode, origem: params.get("utm_source") ?? origemAtual() });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 

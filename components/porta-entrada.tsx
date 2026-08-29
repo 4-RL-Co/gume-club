@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { registrarEvento, origemAtual, hrefComUtm } from "@/lib/funil-client";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -14,19 +16,37 @@ import Link from "next/link";
  *  lê como "fazer login", não como "começar" — e é a hipótese mais
  *  provável, e a mais barata de testar, para o 0,16%.
  *
- *  Isto é um componente cliente (e não só um trecho de app/page.tsx, que é
- *  Server Component) porque a próxima fatia liga eventos de medição aqui
- *  dentro (visita, clique) — e um clique que já navega embora não pode
- *  depender de network. Nesta fatia ainda não há nenhum evento: só a copy
- *  e o destino dos links mudaram.
+ *  ═══ OS DOIS EVENTOS DESTA TELA ═══
+ *
+ *  `visita_home` no mount (uma vez, com a origem que o navegador enxerga) e
+ *  `clique_criar` no clique do CTA principal, via `sendBeacon`: o clique já
+ *  navega pra /entrar, e não pode esperar rede nenhuma terminar antes.
+ *
+ *  ═══ POR QUE OS HREFS COMEÇAM SEM utm_source, E MUDAM DEPOIS ═══
+ *
+ *  O servidor não sabe `window.location`, e a home é renderizada lá. Os links
+ *  nascem com o destino simples (`/entrar?novo=1`, `/entrar`) e só GANHAM o
+ *  `?utm_source=` depois de montar, no navegador — é um re-render comum, e
+ *  não uma divergência de hidratação, porque o HTML do primeiro paint no
+ *  cliente é idêntico ao do servidor; só o CLIQUE seguinte usa o link novo.
  * ════════════════════════════════════════════════════════════════════
  */
 export function PortaEntrada({ vitrine }: { vitrine: string | undefined }) {
+  const [hrefCriar, setHrefCriar] = useState("/entrar?novo=1");
+  const [hrefEntrar, setHrefEntrar] = useState("/entrar");
+
+  useEffect(() => {
+    registrarEvento("visita_home", { origem: origemAtual() });
+    setHrefCriar(hrefComUtm("/entrar?novo=1"));
+    setHrefEntrar(hrefComUtm("/entrar"));
+  }, []);
+
   return (
     <>
       <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
         <Link
-          href="/entrar?novo=1"
+          href={hrefCriar}
+          onClick={() => registrarEvento("clique_criar", { origem: origemAtual() })}
           className="w-full rounded-[var(--radius-control)] bg-[var(--color-ink)] px-7 py-3.5 text-[15px] font-medium text-[var(--color-canvas)] sm:w-auto"
         >
           Criar conta
@@ -48,7 +68,7 @@ export function PortaEntrada({ vitrine }: { vitrine: string | undefined }) {
       <p className="mt-5 text-[14px] text-[var(--color-ink-faint)]">
         já tem conta?{" "}
         <Link
-          href="/entrar"
+          href={hrefEntrar}
           className="text-[var(--color-ink-soft)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
         >
           entrar
