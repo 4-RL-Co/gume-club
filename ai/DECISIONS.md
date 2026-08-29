@@ -5484,3 +5484,21 @@ e por editora, em `lib/explorar-catalogo.ts`), que ainda usam a régua
 antiga (só a mais antiga com capa). Não mexido nesta fatia porque o pedido
 foi especificamente sobre "as listas"; se o mesmo incômodo aparecer lá,
 é a mesma régua para levar.
+
+## A mesma capa mais tida chega em /queridinhos
+
+Extensão direta da entrada anterior. O dono viu o mesmo sintoma em
+`/queridinhos` (o Top 100): Romeu e Julieta e O processo com capas que não
+batiam com a edição que os leitores de verdade têm. `lib/queridinhos.ts`
+tinha a mesma consulta ingênua (a edição mais antiga com capa) que
+`lib/listas.ts` tinha, porque as duas nasceram copiando o mesmo padrão.
+
+Ganhou a mesma régua e a mesma marca `CONTAGEM-DE-CAPA` — aqui sem exceção
+de teste estrutural para editar, porque `lib/queridinhos.ts` não tinha (e
+continua sem) uma trava genérica de "nenhum count em volta de leitura"
+como a de `lib/listas.ts`; a trava que existe ali é mais estreita (as
+contagens de ESTANTE, que a tela mostra, continuam só sobre o que é
+público) e não se aplica a um número que nunca sai da consulta.
+
+Ainda de fora: Explorar por gênero/autor/editora (`lib/explorar-catalogo.ts`),
+como já registrado na entrada anterior.
