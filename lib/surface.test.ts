@@ -84,6 +84,8 @@ const PUBLICO: Record<string, string> = {
 
   "app/relatar/actions.ts":
     "de propósito aberto a quem não tem conta: um bug pode ser justo o motivo de não conseguir se cadastrar. Não lê nem escreve dado de ninguém, só encaminha o texto pra caixa da moderação, e é limitada por IP (RATES.relatarProblema), não por usuário. Ver lib/acoes.test.ts (SEM_PORTEIRO) e lib/relatar.ts",
+  "app/api/eventos/route.ts":
+    "grava evento anônimo do funil de entrada (visita na home, clique, chegada em /entrar, cadastro): quem visita a home ainda não tem conta, então não há ator a resolver. Limitada por IP (RATES.eventosFunil), e o corpo aceito nunca guarda e-mail, IP ou qualquer identificador de pessoa — ver lib/funil.ts e lib/eventos-funil.sql.test.ts",
 };
 
 function arquivos(dir: string, out: string[] = []): string[] {

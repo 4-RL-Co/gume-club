@@ -116,6 +116,15 @@ export const RATES = {
    * inteira, ridículo pra um script.
    */
   relatarProblema: { limit: 3, windowMs: 60 * 60_000 },
+  /**
+   * O FUNIL DE ENTRADA. Aberto a quem não tem conta, de propósito — é
+   * literalmente sobre gente que ainda não tem uma. Sessenta por minuto é
+   * folgado para uma sessão de verdade (visita, clique, chegada em
+   * /entrar, cadastro é no máximo uns cinco eventos) e apertado para um
+   * script tentando encher a tabela de linha para inflar um número no
+   * painel.
+   */
+  eventosFunil: { limit: 60, windowMs: 60_000 },
 } as const;
 
 export type Regra = { limit: number; windowMs: number };

@@ -484,6 +484,13 @@
       "when": 1784700817021,
       "tag": "0068_amigos_leem_alem_de_terminar",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1784700817022,
+      "tag": "0069_funil_de_entrada",
+      "breakpoints": true
     }
   ]
 }
