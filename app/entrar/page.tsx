@@ -15,7 +15,12 @@ import { rememberInviter } from "@/app/entrar/invite";
 export default function Entrar() {
   const router = useRouter();
   const params = useSearchParams();
-  const [mode, setMode] = useState<"entrar" | "criar">("entrar");
+  // /entrar?novo=1: a home manda pra cá quem clicou em "Criar conta". Sem
+  // isto, todo mundo caía num formulário de LOGIN por padrão, e é a
+  // hipótese mais provável para 1.217 visitas virarem 2 cadastros.
+  const [mode, setMode] = useState<"entrar" | "criar">(
+    params.get("novo") === "1" ? "criar" : "entrar",
+  );
 
   // /entrar?convite=<handle>. Stored server-side in a short cookie so it survives
   // the trip to Google and back, and read once when the account is created. A
@@ -222,7 +227,11 @@ export default function Entrar() {
           <path fill="#FBBC05" d="M11.8 28.3c-.4-1.3-.7-2.7-.7-4.3s.3-3 .7-4.3v-5.7H4.5C2.9 17.1 2 20.4 2 24s.9 6.9 2.5 10l7.3-5.7z" />
           <path fill="#EA4335" d="M24 10.7c3.2 0 6.1 1.1 8.4 3.3l6.3-6.3C34.9 4.1 29.9 2 24 2 15.4 2 8.1 6.8 4.5 14l7.3 5.7c1.7-5.2 6.5-9 12.2-9z" />
         </svg>
-        {google === "indo" ? "Um momento" : "Entrar com o Google"}
+        {google === "indo"
+          ? "Um momento"
+          : mode === "criar"
+            ? "Criar conta com o Google"
+            : "Entrar com o Google"}
       </button>
 
       {google === "falhou" && (
@@ -236,7 +245,7 @@ export default function Entrar() {
           setMode(mode === "entrar" ? "criar" : "entrar");
           setError(null);
         }}
-        className="mt-8 text-[13px] text-[var(--color-ink-soft)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink)]"
+        className="mt-8 text-[14px] font-medium text-[var(--color-ink)] underline decoration-[var(--color-rule)] underline-offset-4 hover:text-[var(--color-ink-soft)]"
       >
         {mode === "entrar" ? "Não tenho conta ainda." : "Já tenho conta."}
       </button>

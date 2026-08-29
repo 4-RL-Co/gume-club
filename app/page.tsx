@@ -11,6 +11,7 @@ import { Avatar, AvatarLink } from "@/components/avatar";
 import { Resume } from "@/components/resume";
 import { CODIGO, INSTAGRAM, DISCORD } from "@/lib/onde";
 import { getCapasDaParede } from "@/lib/parede";
+import { PortaEntrada } from "@/components/porta-entrada";
 
 export const dynamic = "force-dynamic";
 
@@ -148,23 +149,7 @@ async function Manifesto() {
             Um registro de leitura aberto, construído com quem lê.
           </p>
 
-          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-            <Link
-              href="/entrar"
-              className="w-full rounded-[var(--radius-control)] bg-[var(--color-ink)] px-7 py-3.5 text-[15px] font-medium text-[var(--color-canvas)] sm:w-auto"
-            >
-              Entrar
-            </Link>
-
-            {vitrine && (
-              <Link
-                href={`/@${vitrine}`}
-                className="w-full rounded-[var(--radius-control)] border border-[var(--color-rule)] px-7 py-3.5 text-[15px] text-[var(--color-ink-soft)] transition-colors hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] sm:w-auto"
-              >
-                Ver uma estante
-              </Link>
-            )}
-          </div>
+          <PortaEntrada vitrine={vitrine} />
         </div>
       </section>
 
