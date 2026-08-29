@@ -128,6 +128,9 @@ export default function Entrar() {
         );
         return;
       }
+      if (mode === "criar") {
+        registrarEvento("cadastro_ok", { origem: params.get("utm_source") ?? origemAtual() });
+      }
       // "tire a pagina de bem-vindo do gume (...) pode já redirecionar pra pasta
       // inicial mesmo" — o dono. Quem cria conta ou entra vai direto pra /,
       // igual todo mundo. A própria / já cobre a estante vazia (components de
@@ -214,6 +217,17 @@ export default function Entrar() {
         onClick={async () => {
           setGoogle("indo");
           setError(null);
+          /**
+           * cadastro_ok, APROXIMADO. O mesmo botão serve pra entrar e criar
+           * conta, e não dá pra saber daqui se este clique vai criar uma
+           * conta nova ou só logar numa que já existe — essa certeza só
+           * mora dentro do Better Auth (lib/auth.ts), e esta fatia decidiu
+           * não tocar lá (decisão do dono). Dispara no CLIQUE, e não no
+           * sucesso: quem sai pro Google não volta por aqui para avisar.
+           */
+          if (mode === "criar") {
+            registrarEvento("cadastro_ok", { origem: params.get("utm_source") ?? origemAtual() });
+          }
           try {
             // Espera o cookie do convite terminar de gravar antes de sair pro
             // Google. Some no `pending`: na prática resolve bem antes de a
