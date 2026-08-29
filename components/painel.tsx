@@ -287,7 +287,7 @@ function BaseDeGente({ pessoas }: { pessoas: Dados["pessoas"] }) {
 }
 
 export function Painel({ dados, itensRoadmap }: { dados: Dados; itensRoadmap: RoadmapItem[] }) {
-  const { filtro, metas, gente, uso, contribuicao, convite, catalogo, pessoas, insights, moderacao } = dados;
+  const { filtro, metas, gente, uso, contribuicao, convite, funil, catalogo, pessoas, insights, moderacao } = dados;
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -592,6 +592,69 @@ export function Painel({ dados, itensRoadmap }: { dados: Dados; itensRoadmap: Ro
           </div>
           <Kpi valor={n(convite.quemJaConvidou)} label="pessoas já convidaram alguém" nota={`${um(convite.mediaPorConvidante)} vingaram por convidante`} />
           <Kpi valor={n(convite.convitesQueVingaram)} label="convites viraram conta de verdade" destaque />
+        </div>
+      </Bloco>
+
+      {/* ─────────────────────────────── FUNIL DE ENTRADA */}
+      <Bloco
+        titulo="funil de entrada"
+        desc={`últimos ${funil.janelaDias} dias`}
+      >
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Kpi valor={n(funil.totais.visitas)} label="visitas na home" />
+          <Kpi
+            valor={n(funil.totais.cliques)}
+            label='cliques em "criar conta"'
+            nota={funil.taxaVisitaClique === null ? "sem base ainda" : `${Math.round(funil.taxaVisitaClique * 100)}% das visitas`}
+          />
+          <Kpi
+            valor={n(funil.totais.viuEntrar)}
+            label="chegaram na porta"
+            nota={funil.taxaCliqueEntrar === null ? "sem base ainda" : `${Math.round(funil.taxaCliqueEntrar * 100)}% dos cliques`}
+          />
+          <Kpi
+            valor={n(funil.totais.cadastros)}
+            label="cadastros"
+            nota={funil.taxaEntrarCadastro === null ? "sem base ainda" : `${Math.round(funil.taxaEntrarCadastro * 100)}% de quem chegou`}
+            destaque
+          />
+        </div>
+
+        {/* "Cadastros" carrega uma aproximação, e ela é dita aqui, não escondida
+            num rodapé: o clique no Google em modo "criar" conta como cadastro,
+            mesmo quando é só um login — não dá pra saber a diferença sem tocar
+            o gancho de criação de usuário do Better Auth. Ver ai/DECISIONS.md. */}
+        <p className="mt-3 text-[11px] text-[var(--color-ink-faint)]">
+          &quot;cadastros&quot; é aproximado no caminho do Google: um clique em modo &quot;criar conta&quot; conta como cadastro, mesmo quando é só um login.
+        </p>
+
+        {funil.porOrigem.length > 0 && (
+          <div className="mt-4 rounded-2xl border p-5" style={{ borderColor: "var(--color-rule)", background: "var(--surface-1)" }}>
+            <div className="text-[12px] font-medium uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+              por origem, visitas → cadastros
+            </div>
+            <div className="mt-4">
+              <Distribuicao fatias={funil.porOrigem.map((o) => ({ rotulo: o.origem, n: o.visitas }))} />
+            </div>
+            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-[12px] text-[var(--color-ink-soft)]">
+              {funil.porOrigem.map((o) => (
+                <span key={o.origem} className="tabular">
+                  {o.origem}: {n(o.visitas)} → {n(o.cadastros)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="rounded-2xl border p-5" style={{ borderColor: "var(--color-rule)", background: "var(--surface-1)" }}>
+            <span className="text-[12px] font-medium uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">visitas por dia</span>
+            <div className="mt-4"><GraficoSerie pontos={funil.visitasPorDia} /></div>
+          </div>
+          <div className="rounded-2xl border p-5" style={{ borderColor: "var(--color-rule)", background: "var(--surface-1)" }}>
+            <span className="text-[12px] font-medium uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">cadastros por dia</span>
+            <div className="mt-4"><GraficoSerie pontos={funil.cadastrosPorDia} /></div>
+          </div>
         </div>
       </Bloco>
       </>
