@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { readFileSync } from "node:fs";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { users, works, collections, collectionItems } from "@/lib/db/schema";
+import { users, works, collections, collectionItems, editions, libraryEntries } from "@/lib/db/schema";
 import {
   getListasDe, getListasGuardadas, guardarLista, esquecerLista, jaGuardei,
   moverNaLista, numerarLista, descreverLista, getListasParaExplorar, getTodasAsListas,
@@ -231,10 +231,32 @@ describe("a linha entre contar curadoria e contar leitura", () => {
    * E O QUE CONTINUA PROIBIDO. A lista é de tabelas de LEITURA: contar gente em
    * volta delas é o contador de curtida que o README recusa, e ele recusa até
    * hoje. Se um count sobre uma destas nascer neste módulo, o build quebra.
+   *
+   * ═══ A ÚNICA EXCEÇÃO, E POR QUE ELA NÃO FURA A REGRA ═══
+   *
+   * "eu quero que você puxe a capa da edição que mais pessoas tem na estante" —
+   * o dono. Escolher qual EDIÇÃO ilustra o leque de uma estante conta quantos
+   * `library_entries` apontam para cada uma — mas esse número decide uma
+   * IMAGEM e depois desaparece: ele nunca é uma coluna devolvida, nunca vira
+   * "N pessoas têm este livro" em tela nenhuma. Marcado no SQL com o
+   * comentário `CONTAGEM-DE-CAPA`, exatamente para este teste reconhecer só
+   * ESSE count como isento, e continuar quebrando o build para qualquer
+   * outro. Ver lib/listas.ts e a entrada em ai/DECISIONS.md.
    */
-  it("nenhuma consulta deste módulo conta gente em volta de leitura", () => {
-    const src = readFileSync("lib/listas.ts", "utf8");
+  it("nenhuma consulta deste módulo conta gente em volta de leitura, fora da capa", () => {
+    const bruto = readFileSync("lib/listas.ts", "utf8");
     const DE_LEITURA = ["reviews", "ratings", "follows", "library_entries", "readings"];
+
+    // A ÚNICA exceção sai do texto ANTES da varredura: um count() sem essa marca,
+    // em qualquer lugar do arquivo, continua batendo na regra normalmente. O
+    // padrão exige a FORMA exata da consulta (select count(*) from
+    // library_entries), e não só a palavra "count" — um comentário QUE FALA
+    // sobre count() (como este aqui do lado) não pode se disfarçar da exceção.
+    const src = bruto.replace(
+      /--\s*CONTAGEM-DE-CAPA[\s\S]*?select\s+count\s*\(\*\)\s*from\s+library_entries[\s\S]*?\)/gi,
+      "",
+    );
+    expect(src.length, "a marca CONTAGEM-DE-CAPA sumiu de lib/listas.ts sem o count() sumir junto").toBeLessThan(bruto.length);
 
     for (const bloco of src.split(/\bsql`/).slice(1)) {
       const consulta = bloco.split("`")[0] ?? "";
@@ -479,5 +501,84 @@ describe("quem guardou", () => {
 
     await db.execute(sql`update users set banned_at = null where id = ${atacante.id}::uuid`);
     await esquecerLista(atacante, listaPublica);
+  });
+});
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ *  A CAPA DO LEQUE É A DA EDIÇÃO QUE MAIS GENTE TEM NA ESTANTE.
+ *
+ *  "eu quero que você puxe a capa da edição que mais pessoas tem na
+ *  estante" — o dono. Sem isto, o leque de uma lista mostrava a capa da
+ *  edição mais ANTIGA a entrar no catálogo (um acidente de importação),
+ *  mesmo que ninguém a tivesse e a maioria dos leitores tivesse escolhido
+ *  outra. Ver a entrada correspondente em ai/DECISIONS.md.
+ * ════════════════════════════════════════════════════════════════════
+ */
+describe("a capa da estante é a da edição mais tida, não a mais antiga", () => {
+  const marcaCapa = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  const gente: string[] = [];
+  let obra: string;
+  let edicaoAntiga: string;
+  let edicaoPopular: string;
+  let lista: string;
+
+  beforeAll(async () => {
+    const mk = async (handle: string) => {
+      const [u] = await db
+        .insert(users)
+        .values({ handle, email: `${handle}@listas.test`, emailVerified: true })
+        .returning({ id: users.id });
+      gente.push(u!.id);
+      return u!.id;
+    };
+
+    const dono = await mk(`listas-capa-dono-${marcaCapa}`);
+
+    const [w] = await db
+      .insert(works)
+      .values({ slug: `listas-capa-${marcaCapa}`, title: `A obra da capa disputada ${marcaCapa}` })
+      .returning({ id: works.id });
+    obra = w!.id;
+
+    // A ANTIGA entrou primeiro no catálogo — e é a que a régua velha (só
+    // created_at) escolheria — mas só UMA pessoa tem ela na estante.
+    const [ea] = await db
+      .insert(editions)
+      .values({ workId: obra, coverUrl: "https://covers.test/antiga.jpg", createdAt: new Date("2020-01-01") })
+      .returning({ id: editions.id });
+    edicaoAntiga = ea!.id;
+
+    // A POPULAR entrou depois, mas é a que TRÊS pessoas têm.
+    const [ep] = await db
+      .insert(editions)
+      .values({ workId: obra, coverUrl: "https://covers.test/popular.jpg", createdAt: new Date("2024-01-01") })
+      .returning({ id: editions.id });
+    edicaoPopular = ep!.id;
+
+    const donoDaAntiga = await mk(`listas-capa-antiga-${marcaCapa}`);
+    await db.insert(libraryEntries).values({ userId: donoDaAntiga, workId: obra, editionId: edicaoAntiga });
+
+    for (let i = 0; i < 3; i++) {
+      const leitor = await mk(`listas-capa-popular-${i}-${marcaCapa}`);
+      await db.insert(libraryEntries).values({ userId: leitor, workId: obra, editionId: edicaoPopular });
+    }
+
+    const [c] = await db
+      .insert(collections)
+      .values({ userId: dono, slug: `listas-capa-${marcaCapa}`, name: "A disputa de capa", visibility: "public" })
+      .returning({ id: collections.id });
+    lista = c!.id;
+    await db.insert(collectionItems).values({ collectionId: lista, workId: obra });
+  });
+
+  afterAll(async () => {
+    for (const id of gente) await db.execute(sql`delete from users where id = ${id}::uuid`);
+    await db.execute(sql`delete from works where id = ${obra}::uuid`);
+  });
+
+  it("o leque mostra a capa da edição mais tida, mesmo sendo a mais nova no catálogo", async () => {
+    const [card] = await getListasDe(null, gente[0]!);
+    expect(card!.capas[0]!.coverUrl).toBe("https://covers.test/popular.jpg");
   });
 });

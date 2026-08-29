@@ -101,9 +101,27 @@ function cardSelect(viewer: Viewer) {
                from (
                  select w.title,
                         a.name as author,
+                        -- A capa de UMA obra, entre as várias edições que ela tem: a da
+                        -- edição que MAIS GENTE tem na estante, e só entre edições
+                        -- igualmente tidas desempata pela mais antiga. Sem isto, o leque
+                        -- mostrava a primeira edição que o import trouxe — que podia ser
+                        -- uma que ninguém tem — em vez da que os leitores de verdade
+                        -- escolheram. Ver a entrada correspondente em ai/DECISIONS.md.
+                        --
+                        -- CONTAGEM-DE-CAPA, não de gente: este número NUNCA sai da
+                        -- consulta (não é uma coluna devolvida, não vira "N pessoas têm
+                        -- este livro" em tela nenhuma) — ele só decide qual IMAGEM
+                        -- aparece, e depois de decidir, desaparece. lib/listas.sql.test.ts
+                        -- reconhece esta marca como a ÚNICA exceção à regra "este módulo
+                        -- não conta gente em volta de leitura": qualquer OUTRA contagem
+                        -- perto de library_entries continua quebrando o build.
                         (select e.cover_url from editions e
                           where e.work_id = w.id and e.cover_url is not null
-                          order by e.created_at asc limit 1) as cover_url
+                          order by (
+                            select count(*) from library_entries le
+                             where le.edition_id = e.id
+                          ) desc, e.created_at asc
+                          limit 1) as cover_url
                    from collection_items ci
                    join works w on w.id = ci.work_id
                    left join authors a on a.id = w.author_id

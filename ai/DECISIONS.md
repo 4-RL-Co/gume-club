@@ -5444,3 +5444,43 @@ barato que uma reentrada. `lib/db/migrations/0068_amigos_leem_alem_de_terminar.s
 ganhou um bloco de comentário contando essa história inteira, para o
 próximo agente que abrir esse arquivo não achar que ele sempre teve aquele
 DELETE.
+
+## A capa do leque é a da edição que mais gente tem na estante
+
+"eu quero que você puxe a capa da edição que mais pessoas tem na estante.
+[...] eu clico em romeu e julieta e aparece do clube de literatura clássica
+(CLC), eu clico no processo e aparece do Kafka, mas na lista aparecem
+outras capas" — o dono.
+
+O leque de capas de uma estante inventada (`lib/listas.ts`, `cardSelect()`,
+usado por `/listas`, pela aba de listas do perfil, pelo Explorar e pela
+linha "criou uma lista" do feed) escolhia a capa pela edição mais ANTIGA a
+entrar no catálogo — um acidente de importação, sem relação nenhuma com o
+que os leitores de verdade têm. Confirmado com dados reais de produção:
+Romeu e Julieta tem uma edição da SCIPIONE (0 leitores) e uma do Clube de
+Literatura Clássica (1 leitor); O Processo tem edições sem leitor nenhum e
+uma da Antofágica (2 leitores). A régua antiga podia escolher qualquer uma
+das duas primeiras.
+
+A régua nova: entre as edições COM capa, vence a que mais `library_entries`
+apontam para ela; só desempata pela mais antiga. Sem capa continua fora da
+disputa (uma lombada sem imagem nunca é melhor que uma capa de uma edição
+menos popular).
+
+**Isto contava gente em volta de `library_entries`, e o teste estrutural
+de lib/listas.ts existe exatamente para travar isso** ("nenhuma consulta
+deste módulo conta gente em volta de leitura" — a régua do README contra
+contador de curtida disfarçado). A contagem aqui não fura a régua porque
+ela nunca SAI da consulta como número: decide qual imagem aparece, e some.
+Nenhuma tela mostra "2 pessoas têm esta edição". O teste ganhou uma exceção
+ÚNICA e documentada (marca `CONTAGEM-DE-CAPA` no SQL, reconhecida pelo
+padrão exato da consulta, não pela palavra "count" solta) — qualquer outra
+contagem nova em volta de leitura, neste arquivo, continua quebrando o
+build.
+
+**Ficou de fora, por ora:** o mesmo defeito existe em outras vitrines que
+mostram capa fora do contexto de um leitor específico (Explorar por gênero
+e por editora, em `lib/explorar-catalogo.ts`), que ainda usam a régua
+antiga (só a mais antiga com capa). Não mexido nesta fatia porque o pedido
+foi especificamente sobre "as listas"; se o mesmo incômodo aparecer lá,
+é a mesma régua para levar.
